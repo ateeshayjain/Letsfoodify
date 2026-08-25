@@ -279,6 +279,12 @@ wp eval-file scripts/taxonomy-cleanup.php execute --confirm
 bash scripts/wp02-verify.sh https://letsfoodify.com --redirects=scripts/redirects.csv
 bash tests/wp02-map-selftest.sh
 
+# --- WP-04 performance -----------------------------------------------
+php tests/perf-test.php               # script-deferral rule (11 assertions)
+# NOTE: smoke-test.sh covers JS/CSS counts and HTML weight only. Requests <=55
+# and page weight <=900KB need Lighthouse; LCP/INP/CLS need field data 48h
+# after launch. See build/docs/WP-04-NOTES.md.
+
 # --- WP-03 front end --------------------------------------------------
 python3 tools/render-preview.py       # regenerate preview/storefront.html from the theme
 
