@@ -1,0 +1,55 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<!-- wp:query-title {"type":"archive","fontSize":"3xl"} /-->
+<!-- wp:term-description {"textColor":"mute","fontSize":"md","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|60"}}}} /-->
+
+<!-- wp:columns {"align":"wide","style":{"spacing":{"blockGap":{"left":"var:preset|spacing|60"}}}} -->
+<div class="wp-block-columns alignwide">
+<!-- wp:column {"width":"232px"} -->
+<div class="wp-block-column" style="flex-basis:232px">
+<!-- wp:woocommerce/filter-wrapper {"filterType":"attribute-filter","heading":"Prep method"} -->
+<div class="wp-block-woocommerce-filter-wrapper">
+<!-- wp:woocommerce/attribute-filter {"attributeId":0,"heading":"Prep method","displayStyle":"list"} /-->
+</div>
+<!-- /wp:woocommerce/filter-wrapper -->
+<!-- wp:woocommerce/filter-wrapper {"filterType":"attribute-filter","heading":"Dietary"} -->
+<div class="wp-block-woocommerce-filter-wrapper">
+<!-- wp:woocommerce/attribute-filter {"attributeId":0,"heading":"Dietary","displayStyle":"list"} /-->
+</div>
+<!-- /wp:woocommerce/filter-wrapper -->
+<!-- wp:woocommerce/filter-wrapper {"filterType":"price-filter","heading":"Price"} -->
+<div class="wp-block-woocommerce-filter-wrapper">
+<!-- wp:woocommerce/price-filter {"heading":"Price"} /-->
+</div>
+<!-- /wp:woocommerce/filter-wrapper -->
+</div>
+<!-- /wp:column -->
+<!-- wp:column -->
+<div class="wp-block-column">
+<!-- wp:woocommerce/catalog-sorting /-->
+<!-- wp:woocommerce/product-results-count /-->
+<!-- wp:query {"queryId":0,"query":{"perPage":12,"pages":0,"offset":0,"postType":"product","order":"asc","orderBy":"title","inherit":true},"namespace":"woocommerce/product-query","layout":{"type":"default"}} -->
+<div class="wp-block-query">
+<!-- wp:post-template {"layout":{"type":"grid","columnCount":3}} -->
+<!-- wp:woocommerce/product-image {"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
+<!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}},"__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
+<!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
+<!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"base"} /-->
+<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true,"fontSize":"sm"} /-->
+<!-- /wp:post-template -->
+<!-- wp:query-pagination {"layout":{"type":"flex","justifyContent":"center"}} -->
+<!-- wp:query-pagination-previous /--><!-- wp:query-pagination-numbers /--><!-- wp:query-pagination-next /-->
+<!-- /wp:query-pagination -->
+<!-- wp:query-no-results -->
+<!-- wp:paragraph --><p>No products match those filters. <a href="/shop/">Clear them and start again.</a></p><!-- /wp:paragraph -->
+<!-- /wp:query-no-results -->
+</div>
+<!-- /wp:query -->
+</div>
+<!-- /wp:column -->
+</div>
+<!-- /wp:columns -->
+</main>
+<!-- /wp:group -->
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

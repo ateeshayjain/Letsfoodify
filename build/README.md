@@ -17,6 +17,12 @@ theme/foodify/          Blocksy child theme. Deploy this from git; never edit on
     product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
     patterns.php             Pattern category registration
   patterns/             Block patterns. Pages are assembled from these — no page builder.
+  templates/            Block templates: home, product, category, cart, checkout, page, 404
+  parts/                header.html, footer.html
+
+tools/
+  render-preview.py     Renders the theme to preview/storefront.html for review.
+                        The preview is GENERATED — never hand-edit it.
 
 scripts/
   bootstrap.sh              Configuration as code. The reason cutover is survivable.

@@ -54,7 +54,7 @@ failure shape this whole audit keeps finding.
 | Catalogue | 44 products · 12 categories · ~170 tags |
 | Payments | Razorpay (`woo-razorpay`). COD does not exist yet — WP-07 |
 | Theme today | Elessi + child, Elementor, Elementor Pro, Slider Revolution, Essential Addons, nasa-core. **All six are deleted in WP-03.** |
-| Theme target | Blocksy child, block theme, all tokens in `theme.json` |
+| Theme target | **Standalone block theme** (no parent — see `build/docs/WP-03-DECISIONS.md`). All tokens in `theme.json` |
 | SEO | None installed today. Rank Math (`seo-by-rank-math`) lands in WP-01 |
 | Fonts | Fraunces (display), Instrument Sans (UI). Self-hosted — see `assets/fonts/MANIFEST.md` |
 | Team | One developer. Fifteen weeks to launch, seventeen to handover |
@@ -278,6 +278,9 @@ wp eval-file scripts/taxonomy-cleanup.php undo-noindex # reverses it
 wp eval-file scripts/taxonomy-cleanup.php execute --confirm
 bash scripts/wp02-verify.sh https://letsfoodify.com --redirects=scripts/redirects.csv
 bash tests/wp02-map-selftest.sh
+
+# --- WP-03 front end --------------------------------------------------
+python3 tools/render-preview.py       # regenerate preview/storefront.html from the theme
 
 # --- WP-01, week 1 ----------------------------------------------------
 bash scripts/wp01-preflight.sh https://letsfoodify.com   # read-only + backup + dry-run

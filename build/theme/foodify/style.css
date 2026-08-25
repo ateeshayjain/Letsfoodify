@@ -1,11 +1,10 @@
 /*
 Theme Name:   Foodify
 Theme URI:    https://letsfoodify.com
-Description:  Foodify storefront child theme. All design tokens live in theme.json — do not
+Description:  Foodify storefront theme (block theme). All design tokens live in theme.json — do not
               hardcode colours, type sizes, spacing or radii anywhere in CSS. Use
               var(--wp--preset--*) for presets and var(--wp--custom--*) for the rest.
 Author:       Curiousmystic
-Template:     blocksy
 Version:      1.0.0
 Requires PHP: 8.1
 Text Domain:  foodify

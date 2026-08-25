@@ -1,0 +1,1417 @@
+<title>Foodify Block Theme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap">
+<style>
+:root{
+--wp--preset--color--paper:#FDFBF7;
+--wp--preset--color--surface:#FFFFFF;
+--wp--preset--color--char:#2B2A27;
+--wp--preset--color--mute:#7A736A;
+--wp--preset--color--line:#E6DCCB;
+--wp--preset--color--line-strong:#9C8A6E;
+--wp--preset--color--flame:#F07040;
+--wp--preset--color--flame-ink:#C4451A;
+--wp--preset--color--flame-wash:#FCEADF;
+--wp--preset--color--flame-deep:#B03D14;
+--wp--preset--color--leaf:#4A7818;
+--wp--preset--color--leaf-ink:#3B6113;
+--wp--preset--color--leaf-wash:#E8F0DC;
+--wp--preset--color--kraft:#C6884A;
+--wp--preset--color--kraft-pale:#F4EBDF;
+--wp--preset--color--kraft-deep:#8A5A28;
+--wp--preset--color--danger:#B3261E;
+--wp--preset--font-size--xs:0.75rem;
+--wp--preset--font-size--sm:0.8125rem;
+--wp--preset--font-size--base:1rem;
+--wp--preset--font-size--md:1.125rem;
+--wp--preset--font-size--lg:1.25rem;
+--wp--preset--font-size--xl:1.5rem;
+--wp--preset--font-size--2xl:2rem;
+--wp--preset--font-size--3xl:2.5rem;
+--wp--preset--font-size--4xl:3.5rem;
+--wp--preset--font-family--display:Fraunces, Georgia, 'Times New Roman', serif;
+--wp--preset--font-family--ui:'Instrument Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+--wp--preset--spacing--10:0.25rem;
+--wp--preset--spacing--20:0.5rem;
+--wp--preset--spacing--30:0.75rem;
+--wp--preset--spacing--40:1rem;
+--wp--preset--spacing--50:1.5rem;
+--wp--preset--spacing--60:2rem;
+--wp--preset--spacing--70:3rem;
+--wp--preset--spacing--80:4rem;
+--wp--preset--spacing--90:6rem;
+--wp--custom--tap-target:44px;
+--wp--custom--ease:cubic-bezier(.2,.8,.2,1);
+--wp--custom--radius--control:8px;
+--wp--custom--radius--card:12px;
+--wp--custom--radius--pill:999px;
+--wp--custom--track:#EFE8DC;
+}
+.has-paper-color{color:var(--wp--preset--color--paper)}
+.has-paper-background-color{background-color:var(--wp--preset--color--paper)}
+.has-paper-border-color{border-color:var(--wp--preset--color--paper);border-style:solid}
+.has-surface-color{color:var(--wp--preset--color--surface)}
+.has-surface-background-color{background-color:var(--wp--preset--color--surface)}
+.has-surface-border-color{border-color:var(--wp--preset--color--surface);border-style:solid}
+.has-char-color{color:var(--wp--preset--color--char)}
+.has-char-background-color{background-color:var(--wp--preset--color--char)}
+.has-char-border-color{border-color:var(--wp--preset--color--char);border-style:solid}
+.has-mute-color{color:var(--wp--preset--color--mute)}
+.has-mute-background-color{background-color:var(--wp--preset--color--mute)}
+.has-mute-border-color{border-color:var(--wp--preset--color--mute);border-style:solid}
+.has-line-color{color:var(--wp--preset--color--line)}
+.has-line-background-color{background-color:var(--wp--preset--color--line)}
+.has-line-border-color{border-color:var(--wp--preset--color--line);border-style:solid}
+.has-line-strong-color{color:var(--wp--preset--color--line-strong)}
+.has-line-strong-background-color{background-color:var(--wp--preset--color--line-strong)}
+.has-line-strong-border-color{border-color:var(--wp--preset--color--line-strong);border-style:solid}
+.has-flame-color{color:var(--wp--preset--color--flame)}
+.has-flame-background-color{background-color:var(--wp--preset--color--flame)}
+.has-flame-border-color{border-color:var(--wp--preset--color--flame);border-style:solid}
+.has-flame-ink-color{color:var(--wp--preset--color--flame-ink)}
+.has-flame-ink-background-color{background-color:var(--wp--preset--color--flame-ink)}
+.has-flame-ink-border-color{border-color:var(--wp--preset--color--flame-ink);border-style:solid}
+.has-flame-wash-color{color:var(--wp--preset--color--flame-wash)}
+.has-flame-wash-background-color{background-color:var(--wp--preset--color--flame-wash)}
+.has-flame-wash-border-color{border-color:var(--wp--preset--color--flame-wash);border-style:solid}
+.has-flame-deep-color{color:var(--wp--preset--color--flame-deep)}
+.has-flame-deep-background-color{background-color:var(--wp--preset--color--flame-deep)}
+.has-flame-deep-border-color{border-color:var(--wp--preset--color--flame-deep);border-style:solid}
+.has-leaf-color{color:var(--wp--preset--color--leaf)}
+.has-leaf-background-color{background-color:var(--wp--preset--color--leaf)}
+.has-leaf-border-color{border-color:var(--wp--preset--color--leaf);border-style:solid}
+.has-leaf-ink-color{color:var(--wp--preset--color--leaf-ink)}
+.has-leaf-ink-background-color{background-color:var(--wp--preset--color--leaf-ink)}
+.has-leaf-ink-border-color{border-color:var(--wp--preset--color--leaf-ink);border-style:solid}
+.has-leaf-wash-color{color:var(--wp--preset--color--leaf-wash)}
+.has-leaf-wash-background-color{background-color:var(--wp--preset--color--leaf-wash)}
+.has-leaf-wash-border-color{border-color:var(--wp--preset--color--leaf-wash);border-style:solid}
+.has-kraft-color{color:var(--wp--preset--color--kraft)}
+.has-kraft-background-color{background-color:var(--wp--preset--color--kraft)}
+.has-kraft-border-color{border-color:var(--wp--preset--color--kraft);border-style:solid}
+.has-kraft-pale-color{color:var(--wp--preset--color--kraft-pale)}
+.has-kraft-pale-background-color{background-color:var(--wp--preset--color--kraft-pale)}
+.has-kraft-pale-border-color{border-color:var(--wp--preset--color--kraft-pale);border-style:solid}
+.has-kraft-deep-color{color:var(--wp--preset--color--kraft-deep)}
+.has-kraft-deep-background-color{background-color:var(--wp--preset--color--kraft-deep)}
+.has-kraft-deep-border-color{border-color:var(--wp--preset--color--kraft-deep);border-style:solid}
+.has-danger-color{color:var(--wp--preset--color--danger)}
+.has-danger-background-color{background-color:var(--wp--preset--color--danger)}
+.has-danger-border-color{border-color:var(--wp--preset--color--danger);border-style:solid}
+.has-xs-font-size{font-size:var(--wp--preset--font-size--xs)}
+.has-sm-font-size{font-size:var(--wp--preset--font-size--sm)}
+.has-base-font-size{font-size:var(--wp--preset--font-size--base)}
+.has-md-font-size{font-size:var(--wp--preset--font-size--md)}
+.has-lg-font-size{font-size:var(--wp--preset--font-size--lg)}
+.has-xl-font-size{font-size:var(--wp--preset--font-size--xl)}
+.has-2-xl-font-size{font-size:var(--wp--preset--font-size--2xl)}
+.has-3-xl-font-size{font-size:var(--wp--preset--font-size--3xl)}
+.has-4-xl-font-size{font-size:var(--wp--preset--font-size--4xl)}
+.has-display-font-family{font-family:var(--wp--preset--font-family--display)}
+.has-ui-font-family{font-family:var(--wp--preset--font-family--ui)}
+body{background:var(--wp--preset--color--paper);color:var(--wp--preset--color--char);font-family:var(--wp--preset--font-family--ui);font-size:var(--wp--preset--font-size--base);line-height:1.6}
+h1,h2,h3,h4{font-family:var(--wp--preset--font-family--display);font-weight:700;line-height:1.15;letter-spacing:-0.02em}
+h1{font-size:var(--wp--preset--font-size--4xl);line-height:1.05}
+h2{font-size:var(--wp--preset--font-size--2xl)}
+h3{font-family:var(--wp--preset--font-family--ui);font-size:var(--wp--preset--font-size--lg);font-weight:600}
+a{text-decoration:underline;color:var(--wp--preset--color--flame-ink)}
+.wp-element-button,.wp-block-button__link{background:var(--wp--preset--color--flame-ink);color:var(--wp--preset--color--surface)}
+
+*{box-sizing:border-box}
+body{margin:0;-webkit-font-smoothing:antialiased}
+img{max-width:100%}
+.wp-block-group,.wp-block-columns{width:100%}
+.wp-site-blocks>*{margin:0}
+main>.wp-block-group,main>section,main>div{margin:0}
+.wp-block-group.has-background,.wp-block-group[style*=background]{width:100%}
+.wp-block-columns{display:flex;gap:var(--wp--preset--spacing--50);flex-wrap:wrap;align-items:flex-start}
+.wp-block-column{flex:1 1 0;min-width:0}
+.wp-block-columns.is-not-stacked-on-mobile{flex-wrap:nowrap}
+.wp-block-buttons{display:flex;gap:var(--wp--preset--spacing--30);flex-wrap:wrap}
+.wp-block-button__link,.wp-element-button{display:inline-flex;align-items:center;justify-content:center;
+  background:var(--wp--preset--color--flame-ink);color:var(--wp--preset--color--paper);
+  border:1px solid var(--wp--preset--color--flame-ink);border-radius:var(--wp--custom--radius--pill);
+  padding:12px 24px;font-weight:600;text-decoration:none;font-size:var(--wp--preset--font-size--base);
+  min-height:var(--wp--custom--tap-target);cursor:pointer}
+.wp-block-button.is-style-outline .wp-block-button__link{background:transparent;color:var(--wp--preset--color--char);
+  border-color:var(--wp--preset--color--line-strong)}
+.wp-block-separator{border:0;border-top:1px solid currentColor;opacity:.25}
+.wp-block-list.is-style-plain{list-style:none;padding:0;margin:0}
+.wp-block-list.is-style-plain li{padding:4px 0}
+.wp-block-list.is-style-plain a{color:inherit;text-decoration:none;opacity:.85}
+.wp-block-list.is-style-plain a:hover{opacity:1;text-decoration:underline}
+h1,h2,h3{margin:0 0 .4em}
+p{margin:0 0 1em}
+/* constrained layout, as theme.json declares it */
+main,header>div,footer>div,.wp-block-group>.wp-block-group,
+.wp-block-group[class*=has-background]>*{margin-left:auto;margin-right:auto}
+.fx-shell main>*,header>div>*,footer>div>*{max-width:760px;margin-left:auto;margin-right:auto}
+.fx-shell .alignwide,.fx-shell main>.alignwide{max-width:1200px}
+header>div,footer>div{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40)}
+main{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40)}
+
+
+
+/* Only rules that theme.json cannot express belong here. Keep this file short.
+   Radius, the tap target, the motion curve and the progress track are all
+   settings.custom in theme.json — nothing below invents a value. */
+
+/* Accessibility floor — audit found 308 sub-44px targets and 437 nodes at 11.6px.
+   Scoped to CONTROLS, not every anchor. `a` on its own also caught inline links in
+   body copy, breadcrumbs and footer lists; min-height does nothing to an inline
+   element but inflates every link that is block or inline-block, which is most of
+   a nav. WCAG 2.5.8 exempts links inline in a sentence, so they are left alone. */
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+.wp-element-button,
+.wc-block-components-button,
+.woocommerce a.button,
+.woocommerce button.button,
+.wp-block-navigation-item__content,
+.woocommerce-MyAccount-navigation a,
+li.product a.woocommerce-LoopProduct-link,
+.wc-block-grid__product-link {
+  min-height: var(--wp--custom--tap-target);
+}
+/* Buttons need the height to actually centre their label. */
+button, [role="button"], input[type="submit"], input[type="button"],
+.wp-element-button, .wc-block-components-button, .woocommerce a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body { font-size: var(--wp--preset--font-size--base); }   /* 16px floor, never smaller */
+:focus-visible { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+
+/* Motion: one curve, and honour the OS setting */
+a, button, .fd-card {
+  transition: color .15s var(--wp--custom--ease),
+              background-color .15s var(--wp--custom--ease),
+              border-color .15s var(--wp--custom--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important; }
+}
+
+/* Product imagery sits on Kraft Pale, never pure white — see Design Playbook §02 */
+.woocommerce ul.products li.product img,
+.wc-block-grid__product-image img,
+.woocommerce div.product div.images img {
+  background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--card);
+}
+
+/* Prep-method chip — the brand's core attribute, shown above the product name */
+.fd-prep {
+  display: inline-flex; align-items: center;
+  gap: var(--wp--preset--spacing--20);
+  font-size: var(--wp--preset--font-size--sm); font-weight: 600;
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--pill);
+  padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+}
+.fd-prep::before {
+  content: ""; border-radius: 50%;
+  width: var(--wp--preset--spacing--20); height: var(--wp--preset--spacing--20);
+  background: var(--wp--preset--color--leaf);
+}
+.fd-prep--hot::before  { background: var(--wp--preset--color--flame); }
+.fd-prep--cook::before { background: var(--wp--preset--color--kraft-deep); }
+
+/* Per-serving price — reframes ₹210 against a delivery order */
+.fd-per-serving {
+  display: block;
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+  font-weight: 400;
+}
+.price, .amount { font-variant-numeric: tabular-nums; }
+
+/* Free-shipping progress */
+.fd-progress {
+  background: var(--wp--custom--track);
+  border-radius: var(--wp--custom--radius--pill);
+  height: var(--wp--preset--spacing--20);
+  overflow: hidden;
+}
+.fd-progress > i {
+  display: block; height: 100%;
+  background: var(--wp--preset--color--leaf);
+  border-radius: var(--wp--custom--radius--pill);
+  transition: width .25s var(--wp--custom--ease);
+}
+
+/* Wide content never scrolls the page sideways.
+   Scrolling is applied to the WRAPPER, never the <table>. `display:block` on a table
+   drops it out of table layout, so column widths collapse and cells stop aligning —
+   most visibly in the cart on desktop. */
+.wp-block-table,
+.woocommerce .woocommerce-cart-form,
+.fd-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.wp-block-table > table,
+.woocommerce table.shop_table { width: 100%; }
+
+/* WCAG 1.4.11 — a form control's boundary needs 3:1 against its background.
+   --line (#E6DCCB) is 1.3:1 on paper: fine for a divider, not for an input. */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea,
+.wc-block-components-text-input input {
+  border: 1.5px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control);
+  min-height: var(--wp--custom--tap-target);
+  font-size: var(--wp--preset--font-size--base);   /* 16px stops iOS zooming on focus */
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--wp--preset--color--flame-ink);
+  box-shadow: 0 0 0 3px var(--wp--preset--color--flame-wash);
+  outline: none;
+}
+/* Small uppercase badge text on the flame wash needs the deeper ink to clear AA. */
+.fd-badge--flame {
+  background: var(--wp--preset--color--flame-wash);
+  color: var(--wp--preset--color--flame-deep);
+}
+
+
+.fx-logo{font-size:var(--wp--preset--font-size--xl);font-weight:700;margin:0;letter-spacing:-.02em}
+.fx-logo span{color:var(--wp--preset--color--flame-ink)}
+.fx-nav{display:flex;gap:22px;flex-wrap:wrap}
+.fx-nav a{color:var(--wp--preset--color--char);text-decoration:none;font-size:var(--wp--preset--font-size--base)}
+.fx-nav a:hover{color:var(--wp--preset--color--flame-ink)}
+.fx-bag{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border:0;
+  border-radius:var(--wp--custom--radius--pill);padding:0 16px;height:40px;display:inline-flex;
+  align-items:center;gap:8px;font-weight:600;font-size:var(--wp--preset--font-size--sm);cursor:pointer}
+.fx-bagn{background:var(--wp--preset--color--flame);color:#241703;border-radius:999px;
+  min-width:19px;height:19px;display:grid;place-items:center;font-size:11px}
+.fx-acct{background:none;border:1px solid var(--wp--preset--color--line-strong);border-radius:999px;
+  width:40px;height:40px;cursor:pointer;color:var(--wp--preset--color--char)}
+.fx-bowl{position:relative;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--h) 22%,#fff) 0,transparent 42%),
+             radial-gradient(circle at 50% 50%,var(--h) 0,color-mix(in srgb,var(--h) 70%,#2A1B08) 76%);
+  box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--h) 28%,#FFFDF8)}
+.fx-time{position:absolute;bottom:2%;right:-2%;background:var(--wp--preset--color--char);
+  color:var(--wp--preset--color--paper);font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px}
+.fx-grid{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:var(--wp--preset--spacing--40)}
+.fx-card{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
+  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--40);
+  display:flex;flex-direction:column;gap:var(--wp--preset--spacing--20)}
+.fx-media{position:relative;padding:4px 10px 0}
+.fx-chip{position:absolute;top:0;left:0;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:4px 9px;border-radius:999px;
+  background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep)}
+.fx-chip--flavors{background:var(--wp--preset--color--leaf-wash);color:var(--wp--preset--color--leaf-ink)}
+.fx-chip--hot{background:#F3E3D4;color:var(--wp--preset--color--kraft-deep)}
+.fx-name{font-size:var(--wp--preset--font-size--md);margin:0}
+.fx-rating{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
+.fx-stars{color:var(--wp--preset--color--flame);letter-spacing:-1px}
+.fx-price{font-weight:700;margin:auto 0 0;font-variant-numeric:tabular-nums}
+.fx-price s{color:var(--wp--preset--color--mute);font-weight:400;margin-right:6px}
+.fx-price--lg{font-size:var(--wp--preset--font-size--2xl)}
+.fx-off{font-size:12px;background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep);
+  padding:3px 8px;border-radius:3px;vertical-align:middle}
+.fx-add{width:100%}
+.fx-add--lg{width:auto;flex:1;min-height:52px}
+.fx-crumb{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
+.fx-crumb a{color:inherit}
+.fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
+.fx-thumbs{display:flex;gap:10px;justify-content:center;margin-top:18px}
+.fx-thumbs .fx-bowl{width:60px}
+.fx-ph{text-align:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--wp--preset--color--mute);margin-top:12px}
+.fx-stock{color:var(--wp--preset--color--leaf-ink);font-weight:600;font-size:var(--wp--preset--font-size--sm)}
+.fx-atc{display:flex;gap:12px;margin:var(--wp--preset--spacing--40) 0 0}
+.fx-qty{display:flex;align-items:center;border:1px solid var(--wp--preset--color--line-strong);
+  border-radius:var(--wp--custom--radius--pill);overflow:hidden}
+.fx-qty button{background:none;border:0;padding:0 16px;height:52px;font-size:17px;cursor:pointer;color:inherit}
+.fx-spec{border:1px solid var(--wp--preset--color--line);border-radius:var(--wp--custom--radius--card);
+  overflow:hidden;margin:var(--wp--preset--spacing--60) 0;background:var(--wp--preset--color--surface)}
+.fx-spec h2{font-size:var(--wp--preset--font-size--lg);margin:0;padding:16px 22px 4px}
+.fx-spec-note{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);padding:0 22px 14px;margin:0}
+.fx-spec dl{margin:0;display:grid;grid-template-columns:1fr 1fr}
+.fx-spec dl>div{padding:13px 22px;border-top:1px solid var(--wp--preset--color--line)}
+.fx-spec dl>div:nth-child(odd){border-right:1px solid var(--wp--preset--color--line)}
+.fx-spec dt{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--wp--preset--color--mute);margin-bottom:3px}
+.fx-spec dd{margin:0;font-size:var(--wp--preset--font-size--base)}
+.fx-veg{color:var(--wp--preset--color--leaf-ink);font-weight:600}
+.fx-filter{margin-bottom:var(--wp--preset--spacing--50)}
+.fx-filter h4{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--wp--preset--color--mute);margin:0 0 10px;font-family:var(--wp--preset--font-family--ui)}
+.fx-filter label{display:flex;gap:9px;align-items:center;font-size:var(--wp--preset--font-size--sm);
+  padding:5px 0;color:var(--wp--preset--color--char)}
+.fx-range{height:4px;background:var(--wp--preset--color--line);border-radius:999px;position:relative}
+.fx-range::after{content:"";position:absolute;left:10%;right:25%;top:0;bottom:0;
+  background:var(--wp--preset--color--flame-ink);border-radius:999px}
+.fx-rangev{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);margin-top:8px}
+.fx-sort,.fx-count{display:inline-block;font-size:var(--wp--preset--font-size--sm);
+  color:var(--wp--preset--color--mute);margin:0 18px var(--wp--preset--spacing--40) 0}
+.fx-pag{display:flex;gap:10px;justify-content:center;margin-top:var(--wp--preset--spacing--60)}
+.fx-pag a{padding:8px 14px;border:1px solid var(--wp--preset--color--line);border-radius:6px;
+  font-size:var(--wp--preset--font-size--sm);cursor:pointer}
+.fx-pag a.on{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-color:var(--wp--preset--color--char)}
+.fx-reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--wp--preset--spacing--40)}
+.fx-review{margin:0;background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
+  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)}
+.fx-review blockquote{margin:0 0 14px;font-family:var(--wp--preset--font-family--display);
+  font-size:var(--wp--preset--font-size--md);line-height:1.45}
+.fx-review figcaption{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
+.fx-verified{color:var(--wp--preset--color--leaf-ink)}
+.fx-ship{margin:0 0 10px;font-size:var(--wp--preset--font-size--sm)}
+.fd-progress{background:var(--wp--custom--track);border-radius:var(--wp--custom--radius--pill);height:8px;overflow:hidden}
+.fd-progress>i{display:block;height:100%;background:var(--wp--preset--color--leaf);border-radius:999px}
+.fx-cart,.fx-checkout{display:grid;grid-template-columns:1.6fr 1fr;gap:var(--wp--preset--spacing--60);align-items:start}
+.fx-carttable{width:100%;border-collapse:collapse}
+.fx-carttable td{padding:16px 12px 16px 0;border-bottom:1px solid var(--wp--preset--color--line);vertical-align:middle}
+.fx-carttable .fx-bowl{width:64px}
+.fx-meta{display:block;font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
+.fx-qtycell button{background:none;border:1px solid var(--wp--preset--color--line-strong);
+  border-radius:6px;width:28px;height:28px;margin:0 6px;cursor:pointer}
+.fx-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.fx-summary{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
+  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)}
+.fx-summary h2{font-size:var(--wp--preset--font-size--lg);margin:0 0 16px}
+.fx-row{display:flex;justify-content:space-between;gap:14px;padding:7px 0;font-size:var(--wp--preset--font-size--base)}
+.fx-disc{color:var(--wp--preset--color--leaf-ink)}
+.fx-total{border-top:1px solid var(--wp--preset--color--line-strong);margin-top:8px;padding-top:14px;
+  font-family:var(--wp--preset--font-family--display);font-size:var(--wp--preset--font-size--lg);font-weight:700}
+.fx-field{display:block;margin-bottom:var(--wp--preset--spacing--30)}
+.fx-field span{display:block;font-size:var(--wp--preset--font-size--sm);margin-bottom:5px;font-weight:600}
+.fx-field input,.fx-field select{width:100%;padding:12px 14px;font-size:16px;
+  border:1.5px solid var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--control);
+  min-height:var(--wp--custom--tap-target);background:var(--wp--preset--color--surface);color:inherit;font-family:inherit}
+.fx-fieldcount{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--leaf-ink);
+  font-weight:600;margin-bottom:var(--wp--preset--spacing--40)}
+.fx-pay{margin:18px 0}
+.fx-pay label{display:flex;gap:9px;align-items:center;padding:9px 0;font-size:var(--wp--preset--font-size--sm)}
+.fx-note{padding:10px 14px;background:var(--wp--preset--color--flame-wash);
+  color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
+@media (max-width:900px){
+  .fx-grid{--cols:2 !important}
+  .fx-reviews{grid-template-columns:1fr}
+  .fx-cart,.fx-checkout{grid-template-columns:1fr}
+  .wp-block-columns{flex-direction:column}
+  .wp-block-columns.is-not-stacked-on-mobile{flex-direction:row;flex-wrap:wrap}
+  .wp-block-columns.is-not-stacked-on-mobile>.wp-block-column{flex:1 1 45%}
+  .fx-spec dl{grid-template-columns:1fr}
+  .fx-spec dl>div:nth-child(odd){border-right:0}
+}
+@media (max-width:560px){ .fx-grid{--cols:1 !important} .fx-nav{display:none} }
+
+.proto{position:sticky;top:0;z-index:99;background:#14201C;color:#F5F2EA;border-bottom:1px solid #23332D}
+.proto-in{max-width:1240px;margin:0 auto;padding:9px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.proto-tag{font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;
+  font-family:var(--wp--preset--font-family--ui)}
+.tabs{display:flex;gap:3px;flex-wrap:wrap}
+.tab{background:none;border:1px solid transparent;border-radius:999px;padding:5px 13px;
+  font-size:12.5px;font-weight:600;color:#9DAEA6;cursor:pointer;font-family:var(--wp--preset--font-family--ui)}
+.tab[aria-selected=true]{background:var(--wp--preset--color--flame);border-color:var(--wp--preset--color--flame);color:#241703}
+.tab:hover{color:#F5F2EA}
+.banner{background:var(--wp--preset--color--flame-wash);color:#6B4A0C;padding:12px 20px;
+  font-size:13px;border-bottom:1px solid #EBD9B4;font-family:var(--wp--preset--font-family--ui)}
+.banner b{font-family:var(--wp--preset--font-family--ui)}
+</style>
+<div class="proto"><div class="proto-in">
+<span class="proto-tag">Foodify · WP-03 · rendered from the theme</span>
+<div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" data-s="home">Home</button><button class="tab" role="tab" aria-selected="false" data-s="shop">Category / shop</button><button class="tab" role="tab" aria-selected="false" data-s="product">Product</button><button class="tab" role="tab" aria-selected="false" data-s="cart">Cart</button><button class="tab" role="tab" aria-selected="false" data-s="checkout">Checkout</button><button class="tab" role="tab" aria-selected="false" data-s="notfound">404</button></div>
+</div></div>
+<div class="banner"><b>This page is generated from the real theme</b> — <code>theme.json</code> tokens,
+<code>templates/*.html</code>, <code>parts/*.html</code> and <code>patterns/*.php</code>. Edit the theme and this
+changes with it. Food imagery is a CSS placeholder pending the week-3 shoot; product data is fixture data.
+It approximates WordPress's block renderer — judge layout, type and hierarchy here, behaviour on staging.</div>
+<div class="fx-shell" id="s-home"><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+
+<div class="wp-block-group">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+
+
+
+
+
+
+
+<div class="wp-block-group">
+<button class="fx-acct" aria-label="Account">◍</button>
+<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group">
+
+
+
+<div class="wp-block-cover alignfull" style="padding-top:var(--wp--preset--spacing--70);padding-bottom:var(--wp--preset--spacing--70);min-height:420px">
+<span aria-hidden="true" class="wp-block-cover__background has-kraft-pale-background-color has-background-dim-0 has-background-dim"></span>
+<div class="wp-block-cover__inner-container">
+
+<div class="wp-block-columns are-vertically-aligned-center">
+
+<div class="wp-block-column is-vertically-aligned-center" style="flex-basis:55%">
+
+<h1 class="wp-block-heading has-4-xl-font-size">Home-style Indian meals, ready in 6 minutes</h1>
+
+
+<p class="has-mute-color has-text-color has-md-font-size">No cooking. No preservatives. 12-month shelf life. Just add hot water.</p>
+
+
+<div class="wp-block-buttons">
+
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/shop/">Shop all meals</a></div>
+
+
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#how-it-works">How it works</a></div>
+
+</div>
+
+</div>
+
+
+<div class="wp-block-column is-vertically-aligned-center" style="flex-basis:45%">
+
+<div class="wp-block-group fd-hero-image fd-photo-placeholder has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--90);padding-bottom:var(--wp--preset--spacing--90)">
+
+<p class="has-text-align-center has-mute-color has-text-color has-sm-font-size">Photography placeholder — prepared Dal Makhni, steam rising</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div></div>
+
+
+
+
+<div class="wp-block-group alignwide has-border-color has-line-border-color" style="border-top-width:1px;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns is-not-stacked-on-mobile">
+
+<div class="wp-block-column">
+<p class="has-display-font-family has-base-font-size" style="font-weight:600">No preservatives</p>
+<p class="has-mute-color has-text-color has-sm-font-size">Shelf life comes from drying, not chemistry.</p>
+</div>
+
+
+<div class="wp-block-column">
+<p class="has-display-font-family has-base-font-size" style="font-weight:600">9–12 month life</p>
+<p class="has-mute-color has-text-color has-sm-font-size">Printed on every pack and every product page.</p>
+</div>
+
+
+<div class="wp-block-column">
+<p class="has-display-font-family has-base-font-size" style="font-weight:600">FSSAI licensed</p>
+<p class="has-mute-color has-text-color has-sm-font-size">10012345678901, on pack and on invoice.</p>
+</div>
+
+
+<div class="wp-block-column">
+<p class="has-display-font-family has-base-font-size" style="font-weight:600">Made in Noida</p>
+<p class="has-mute-color has-text-color has-sm-font-size">Our own kitchen. Not white-labelled.</p>
+</div>
+
+</div>
+
+</div>
+
+
+
+
+<section id="how-it-works" class="wp-block-group alignwide" style="padding-top:var(--wp--preset--spacing--70);padding-bottom:var(--wp--preset--spacing--70)">
+
+<h2 class="wp-block-heading has-text-align-center has-2-xl-font-size">Three steps, six minutes</h2>
+
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column">
+
+<div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
+
+<p class="has-leaf-ink-color has-text-color has-sm-font-size" style="font-weight:700">STEP 1</p>
+
+
+<h3 class="wp-block-heading has-lg-font-size">Tear the pack</h3>
+
+
+<p class="has-mute-color has-text-color has-sm-font-size">Empty the contents into a bowl.</p>
+
+</div>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
+
+<p class="has-leaf-ink-color has-text-color has-sm-font-size" style="font-weight:700">STEP 2</p>
+
+
+<h3 class="wp-block-heading has-lg-font-size">Add hot water</h3>
+
+
+<p class="has-mute-color has-text-color has-sm-font-size">Stir well and cover.</p>
+
+</div>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
+
+<p class="has-leaf-ink-color has-text-color has-sm-font-size" style="font-weight:700">STEP 3</p>
+
+
+<h3 class="wp-block-heading has-lg-font-size">Wait 6 minutes</h3>
+
+
+<p class="has-mute-color has-text-color has-sm-font-size">Eat.</p>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+
+
+
+<div class="wp-block-group alignwide" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80)">
+
+<h2 class="wp-block-heading has-2-xl-font-size">Sorted by how you make it</h2>
+
+
+<p class="has-mute-color has-text-color has-md-font-size" style="margin-bottom:var(--wp--preset--spacing--60)">Not by cuisine, not by price. The question is how much effort you have tonight.</p>
+
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column">
+
+<div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
+<p class="has-flame-deep-color has-text-color has-sm-font-size" style="font-weight:700;letter-spacing:0.1em;text-transform:uppercase">Just add hot water</p>
+<h3 class="wp-block-heading has-lg-font-size">Express</h3>
+<p class="has-mute-color has-text-color has-sm-font-size">Ready in six minutes. For trains, hostels, hotel kettles, and nights when cooking is not happening.</p>
+<p class="has-sm-font-size"><a href="/product-category/express/">Shop Express →</a></p>
+</div>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
+<p class="has-kraft-deep-color has-text-color has-sm-font-size" style="font-weight:700;letter-spacing:0.1em;text-transform:uppercase">Five minutes on the stove</p>
+<h3 class="wp-block-heading has-lg-font-size">Hot &amp; Fresh</h3>
+<p class="has-mute-color has-text-color has-sm-font-size">One pan, one flame, almost no effort. For when you want it to taste like it took an hour.</p>
+<p class="has-sm-font-size"><a href="/product-category/hot-and-fresh/">Shop Hot &amp; Fresh →</a></p>
+</div>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
+<p class="has-leaf-ink-color has-text-color has-sm-font-size" style="font-weight:700;letter-spacing:0.1em;text-transform:uppercase">Stir with drinking water</p>
+<h3 class="wp-block-heading has-lg-font-size">Flavors</h3>
+<p class="has-mute-color has-text-color has-sm-font-size">Chutneys without the grinding, the soaking or the mess. Stir, rest a minute, serve.</p>
+<p class="has-sm-font-size"><a href="/product-category/flavors/">Shop Flavors →</a></p>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+
+<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80)">
+
+<h2 class="wp-block-heading has-2-xl-font-size">What people reorder</h2>
+
+
+<p class="has-mute-color has-text-color has-md-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">Eight best sellers. The full catalogue lives on <a href="/shop/">the shop page</a> — this page is not a wall of 140 products.</p>
+
+<div class="fx-grid" style="--cols:4"><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Express Dal Fry</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">(84)</span></div>
+  <p class="fx-price"><s>₹210</s> ₹185</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Idli Sambhar</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fx-rc">(62)</span></div>
+  <p class="fx-price"><s>₹225</s> ₹195</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Express Dal Khichdi</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fx-rc">(41)</span></div>
+  <p class="fx-price">₹185</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#C98A34"><span class="fx-time">5 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Aloo ka Mazaa</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fx-rc">(28)</span></div>
+  <p class="fx-price">₹100</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#B98D3E"><span class="fx-time">7 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Super Millet Idli</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.6</span> <span class="fx-rc">(33)</span></div>
+  <p class="fx-price">₹210</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#C2571F"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Pav Bhaji</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">(57)</span></div>
+  <p class="fx-price">₹185</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#4E8B66"><span class="fx-time">1 MIN</span></div><span class="fx-chip fx-chip--flavors">Flavors</span></div>
+  <h3 class="fx-name">Coconut Red Chutney</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fx-rc">(19)</span></div>
+  <p class="fx-price">₹240</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div><span class="fx-chip fx-chip--hot">Hot &amp; Fresh</span></div>
+  <h3 class="fx-name">Masala Chai</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fx-rc">(71)</span></div>
+  <p class="fx-price">₹375</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article></div>
+</div>
+
+
+
+
+<div class="wp-block-group alignwide has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80)">
+
+<h2 class="wp-block-heading has-2-xl-font-size">What customers say</h2>
+
+
+<p class="has-mute-color has-text-color has-sm-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">Pulled live from our Google Business Profile. Real names, real counts — nothing written in-house.</p>
+
+<div class="fx-reviews"><figure class="fx-review"><blockquote>Carried six Express packs to Leh. Hotel kettle, six minutes, actual dal chawal at 11,000 feet.</blockquote><figcaption>★★★★★ · Rohit M. · <span class="fx-verified">Google review</span></figcaption></figure><figure class="fx-review"><blockquote>My mother is 78 and cooks less now. The Jain dal fry means she eats a proper lunch without standing at the stove.</blockquote><figcaption>★★★★★ · Anjali S. · <span class="fx-verified">Google review</span></figcaption></figure><figure class="fx-review"><blockquote>Sceptical about dried chutney. The coconut one is genuinely close to what my grandmother grinds.</blockquote><figcaption>★★★★☆ · Deepa R. · <span class="fx-verified">Google review</span></figcaption></figure></div>
+
+
+</div>
+
+
+
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div><div class="fx-shell" id="s-shop" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+
+<div class="wp-block-group">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+
+
+
+
+
+
+
+<div class="wp-block-group">
+<button class="fx-acct" aria-label="Account">◍</button>
+<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<h1 class="has-3-xl-font-size">Foodify Express</h1>
+<p class="has-md-font-size has-mute-color has-text-color">Add hot water, wait six minutes, eat. The Express range is built for trains, hostels and hotel kettles — fourteen home-style meals that need no cooking at all, with a nine to twelve month shelf life and no preservatives.</p>
+
+
+<div class="wp-block-columns alignwide">
+
+<div class="wp-block-column" style="flex-basis:232px">
+
+<div class="wp-block-woocommerce-filter-wrapper">
+<div class="fx-filter"><h4>Prep method</h4><label><input type="checkbox">Just add hot water (14)</label><label><input type="checkbox">Stir with drinking water (7)</label><label><input type="checkbox">Requires cooking (11)</label></div>
+</div>
+
+
+<div class="wp-block-woocommerce-filter-wrapper">
+<div class="fx-filter"><h4>Dietary</h4><label><input type="checkbox">Vegan (9)</label><label><input type="checkbox">Gluten free (12)</label><label><input type="checkbox">Jain (6)</label><label><input type="checkbox">Millet based (5)</label><label><input type="checkbox">High protein (7)</label></div>
+</div>
+
+
+<div class="wp-block-woocommerce-filter-wrapper">
+<div class="fx-filter"><h4>Price</h4><div class="fx-range"></div><p class="fx-rangev">₹100 — ₹1,800</p></div>
+</div>
+
+</div>
+
+
+<div class="wp-block-column">
+<div class="fx-sort">Sort: <strong>Bestselling</strong></div>
+<div class="fx-count">Showing 1–12 of 14</div>
+
+<div class="wp-block-query">
+
+
+<h3 class="fx-posttitle has-md-font-size">Express Dal Fry</h3>
+<div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">84 reviews</span></div>
+<p class="fx-price fx-price--lg has-base-font-size"><s>₹210</s> ₹185 <span class="fx-off">12% off</span></p>
+
+
+
+
+
+
+<p>No products match those filters. <a href="/shop/">Clear them and start again.</a></p>
+
+</div>
+
+</div>
+
+</div>
+
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div><div class="fx-shell" id="s-product" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+
+<div class="wp-block-group">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+
+
+
+
+
+
+
+<div class="wp-block-group">
+<button class="fx-acct" aria-label="Account">◍</button>
+<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--80)">
+<p class="fx-crumb"><a href="#">Home</a> / <a href="#">Express</a> / Dal Fry</p>
+
+
+<div class="wp-block-columns alignwide" style="margin-top:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-column" style="flex-basis:52%">
+<div class="fx-gallery"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div><div class="fx-thumbs"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time"></span></div><div class="fx-bowl" style="--h:#C67A2A"><span class="fx-time"></span></div><div class="fx-bowl" style="--h:#B9702B"><span class="fx-time"></span></div><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time"></span></div></div><p class="fx-ph">Photography placeholder — pack shot, prepared bowl, ingredients, scale</p></div>
+</div>
+
+
+
+<div class="wp-block-column">
+<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+<div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">84 reviews</span></div>
+<p class="fx-price fx-price--lg has-2-xl-font-size"><s>₹210</s> ₹185 <span class="fx-off">12% off</span></p>
+
+<p class="has-mute-color has-text-color has-xs-font-size">MRP inclusive of all taxes. Per-serving price shown above.</p>
+
+<p class="has-md-font-size">Yellow moong and toor, tempered with cumin, tomato and a little ghee. Dried slowly so the tempering survives.</p>
+<p class="fx-stock">In stock</p>
+<div class="fx-atc"><div class="fx-qty"><button>−</button><span>1</span><button>+</button></div><button class="wp-element-button fx-add fx-add--lg">Add to bag · ₹185</button></div>
+
+
+<div class="wp-block-group fd-delivery-estimate has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);margin-top:var(--wp--preset--spacing--50);padding:var(--wp--preset--spacing--40)">
+
+<p class="has-sm-font-size" style="font-weight:600">Delivery &amp; payment</p>
+
+
+<p class="has-mute-color has-text-color has-sm-font-size">Enter your PIN code at checkout for a delivery date and cash-on-delivery availability. Shipping and any handling are shown in the cart, before checkout — never added at the last screen.</p>
+
+</div>
+
+</div>
+
+</div>
+
+
+<section class="fx-spec"><h2>Pack &amp; label</h2><p class="fx-spec-note">Structured fields — the same data feeds the Google product feed.</p><dl><div><dt>Net quantity</dt><dd>80 g</dd></div><div><dt>Servings</dt><dd>2</dd></div><div><dt>Shelf life</dt><dd>12 months</dd></div><div><dt>Best before</dt><dd>14 Aug 2027</dd></div><div><dt>Veg / non-veg</dt><dd><span class="fx-veg">● Vegetarian</span></dd></div><div><dt>Allergens</dt><dd>Milk (ghee)</dd></div><div><dt>Country of origin</dt><dd>India</dd></div><div><dt>FSSAI licence</dt><dd>10012345678901</dd></div><div><dt>Marketed by</dt><dd>AVAC Ventures, Noida 201304</dd></div><div><dt>Consumer care</dt><dd>care@letsfoodify.com</dd></div></dl></section>
+
+
+<div class="wp-block-group alignwide" style="padding-top:var(--wp--preset--spacing--80)">
+
+<h2 class="wp-block-heading has-2-xl-font-size">Complete the meal</h2>
+
+<div class="fx-grid" style="--cols:4"><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Express Dal Fry</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">(84)</span></div>
+  <p class="fx-price"><s>₹210</s> ₹185</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Idli Sambhar</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fx-rc">(62)</span></div>
+  <p class="fx-price"><s>₹225</s> ₹195</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Express Dal Khichdi</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fx-rc">(41)</span></div>
+  <p class="fx-price">₹185</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article><article class="fx-card">
+  <div class="fx-media"><div class="fx-bowl" style="--h:#C98A34"><span class="fx-time">5 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
+  <h3 class="fx-name">Aloo ka Mazaa</h3>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fx-rc">(28)</span></div>
+  <p class="fx-price">₹100</p>
+  <button class="wp-element-button fx-add">Add to bag</button>
+</article></div>
+</div>
+
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div><div class="fx-shell" id="s-cart" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+
+<div class="wp-block-group">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+
+
+
+
+
+
+
+<div class="wp-block-group">
+<button class="fx-acct" aria-label="Account">◍</button>
+<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-leaf-wash-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);margin-bottom:var(--wp--preset--spacing--50);padding:var(--wp--preset--spacing--40)">
+<p class="fx-ship"><strong>₹106 away from free shipping.</strong> Add one more pack and delivery is on us.</p><div class="fd-progress"><i style="width:82%"></i></div>
+
+
+</div>
+
+
+<div class="fx-cart"><table class="fx-carttable"><tbody><tr><td><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time"></span></div></td><td><strong>Express Dal Fry</strong><span class="fx-meta">Express · 6 MIN</span></td><td class="fx-qtycell"><button>−</button>1<button>+</button></td><td class="fx-num">₹185</td></tr><tr><td><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time"></span></div></td><td><strong>Idli Sambhar</strong><span class="fx-meta">Express · 6 MIN</span></td><td class="fx-qtycell"><button>−</button>1<button>+</button></td><td class="fx-num">₹195</td></tr><tr><td><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time"></span></div></td><td><strong>Express Dal Khichdi</strong><span class="fx-meta">Express · 6 MIN</span></td><td class="fx-qtycell"><button>−</button>1<button>+</button></td><td class="fx-num">₹185</td></tr></tbody></table>
+<aside class="fx-summary"><h2>Summary</h2>
+<div class="fx-row"><span>Subtotal</span><span class="fx-num">₹620</span></div>
+<div class="fx-row fx-disc"><span>NALIN10 · 10%</span><span class="fx-num">−₹62</span></div>
+<div class="fx-row"><span>Shipping</span><span class="fx-num">Free</span></div>
+<div class="fx-row"><span>GST</span><span class="fx-num">Included</span></div>
+<div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹558</span></div>
+<button class="wp-element-button fx-add fx-add--lg">Checkout</button></aside></div>
+
+<p class="has-mute-color has-text-color has-sm-font-size">Shipping and handling are calculated here, before you go to checkout. Nothing new is added at the payment step.</p>
+
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div><div class="fx-shell" id="s-checkout" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+
+<div class="wp-block-group">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+
+
+
+
+
+
+
+<div class="wp-block-group">
+<button class="fx-acct" aria-label="Account">◍</button>
+<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+<div class="fx-checkout">
+<div><p class="fx-fieldcount">Nine fields. The audited site asked twenty-five.</p><label class="fx-field"><span>Mobile number</span><input placeholder="98••• ••210"></label><label class="fx-field"><span>Email</span><input placeholder="you@example.com"></label><label class="fx-field"><span>Full name</span><input placeholder="Priya Sharma"></label><label class="fx-field"><span>PIN code</span><input placeholder="201304"></label><label class="fx-field"><span>City</span><input placeholder="Noida"></label><label class="fx-field"><span>State</span><select><option>Uttar Pradesh</option></select></label><label class="fx-field"><span>Address</span><input placeholder="Flat, house number, building"></label><label class="fx-field"><span>Address line 2 (optional)</span><input placeholder="Area, street, landmark"></label><label class="fx-field"><span>Order notes (optional)</span><input placeholder=""></label></div>
+<aside class="fx-summary"><h2>Your order</h2>
+<div class="fx-row"><span>3 items</span><span class="fx-num">₹620</span></div>
+<div class="fx-row fx-disc"><span>Prepaid saving</span><span class="fx-num">−₹25</span></div>
+<div class="fx-row"><span>Shipping</span><span class="fx-num">Free</span></div>
+<div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹595</span></div>
+<div class="fx-pay"><label><input type="radio" checked> Pay now — save ₹25</label>
+<label><input type="radio"> Cash on delivery</label></div>
+<button class="wp-element-button fx-add fx-add--lg">Place order</button></aside></div>
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div><div class="fx-shell" id="s-notfound" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+
+<div class="wp-block-group">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+
+
+
+
+
+
+
+<div class="wp-block-group">
+<button class="fx-acct" aria-label="Account">◍</button>
+<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--90);padding-bottom:var(--wp--preset--spacing--90)">
+
+<h1 class="wp-block-heading has-3-xl-font-size">That page has moved on</h1>
+
+
+<p class="has-mute-color has-text-color has-md-font-size">We tidied the site and some old links went with it. The food is all still here.</p>
+
+
+<div class="wp-block-buttons"><div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/shop/">Shop all products</a></div><div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="/">Home</a></div></div>
+
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div>
+<script>
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('[data-s]'); if (!t) return;
+  ["home", "shop", "product", "cart", "checkout", "notfound"].forEach(function (s) {
+    document.getElementById('s-' + s).hidden = (s !== t.dataset.s);
+  });
+  document.querySelectorAll('.tab').forEach(function (b) {
+    b.setAttribute('aria-selected', String(b.dataset.s === t.dataset.s));
+  });
+  window.scrollTo(0, 0);
+});
+</script>

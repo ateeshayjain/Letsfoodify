@@ -16,12 +16,12 @@ define( 'FOODIFY_VERSION', '1.0.0' );
 define( 'FOODIFY_DIR', get_stylesheet_directory() );
 
 /**
- * Styles. Parent first, child second, both versioned off the theme constant so a
- * deploy busts the CDN without a manual purge.
+ * Styles. One stylesheet, versioned off the theme constant so a deploy busts the
+ * CDN without a manual purge. There is no parent theme — see
+ * docs/WP-03-DECISIONS.md for why this is standalone rather than a Blocksy child.
  */
 add_action( 'wp_enqueue_scripts', static function (): void {
-	wp_enqueue_style( 'blocksy-parent', get_template_directory_uri() . '/style.css', [], FOODIFY_VERSION );
-	wp_enqueue_style( 'foodify', get_stylesheet_uri(), [ 'blocksy-parent' ], FOODIFY_VERSION );
+	wp_enqueue_style( 'foodify', get_stylesheet_uri(), [], FOODIFY_VERSION );
 }, 20 );
 
 /**
