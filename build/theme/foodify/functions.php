@@ -81,3 +81,4 @@ require_once FOODIFY_DIR . '/inc/product-attributes.php';   // must load BEFORE 
 require_once FOODIFY_DIR . '/inc/product-display.php';
 require_once FOODIFY_DIR . '/inc/patterns.php';
 require_once FOODIFY_DIR . '/inc/shortcodes.php';
+require_once FOODIFY_DIR . '/inc/account.php';

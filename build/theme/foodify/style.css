@@ -174,3 +174,78 @@ input:focus, select:focus, textarea:focus {
    take Flame Deep, which clears AA. */
 .fd-stars { color: var(--wp--preset--color--flame-deep); letter-spacing: -1px; }
 .fd-verified { color: var(--wp--preset--color--leaf-ink); }
+
+/* Account — WooCommerce's my-account markup, styled to the token set.
+   Two columns on desktop, stacked on mobile; the nav is a real list of links,
+   not a sidebar widget. */
+.woocommerce-account .woocommerce {
+  display: grid;
+  grid-template-columns: 15rem 1fr;
+  gap: var(--wp--preset--spacing--60);
+  align-items: start;
+}
+.woocommerce-MyAccount-navigation ul { list-style: none; margin: 0; padding: 0; }
+.woocommerce-MyAccount-navigation li a {
+  display: block;
+  padding: var(--wp--preset--spacing--30) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+  color: var(--wp--preset--color--char);
+  text-decoration: none;
+  font-weight: 500;
+  min-height: var(--wp--custom--tap-target);
+}
+.woocommerce-MyAccount-navigation li a:hover { color: var(--wp--preset--color--flame-ink); }
+.woocommerce-MyAccount-navigation li.is-active a {
+  color: var(--wp--preset--color--flame-ink);
+  font-weight: 700;
+  border-bottom-color: var(--wp--preset--color--flame-ink);
+}
+.fd-account-lead {
+  color: var(--wp--preset--color--mute);
+  font-size: var(--wp--preset--font-size--base);
+  max-width: 52ch;
+}
+
+/* Orders table. Reorder leads; Details is secondary — WP-05 puts one-tap
+   reorder first, because this is a store people rebuy the same six things from. */
+.woocommerce-orders-table { width: 100%; border-collapse: collapse; }
+.woocommerce-orders-table th {
+  text-align: left;
+  font-size: var(--wp--preset--font-size--xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wp--preset--color--mute);
+  padding: 0 var(--wp--preset--spacing--30) var(--wp--preset--spacing--20) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line-strong);
+}
+.woocommerce-orders-table td {
+  padding: var(--wp--preset--spacing--40) var(--wp--preset--spacing--30) var(--wp--preset--spacing--40) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+  vertical-align: middle;
+}
+.woocommerce-orders-table__cell-order-total { font-variant-numeric: tabular-nums; }
+.fd-reorder { /* inherits .wp-element-button */ }
+.fd-secondary {
+  background: transparent;
+  color: var(--wp--preset--color--char);
+  border-color: var(--wp--preset--color--line-strong);
+}
+.woocommerce-orders-table__cell-order-actions { display: flex; gap: var(--wp--preset--spacing--20); flex-wrap: wrap; }
+
+/* Addresses */
+.woocommerce-Addresses { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--wp--preset--spacing--40); }
+.woocommerce-Address {
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--50);
+}
+.woocommerce-Address-title h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
+.woocommerce-Address address { font-style: normal; line-height: 1.6; color: var(--wp--preset--color--mute); }
+
+@media (max-width: 900px) {
+  .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
+  .woocommerce-orders-table thead { display: none; }
+  .woocommerce-orders-table tr { display: grid; gap: var(--wp--preset--spacing--10); padding: var(--wp--preset--spacing--40) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
+  .woocommerce-orders-table td { border: 0; padding: 0; }
+}

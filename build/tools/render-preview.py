@@ -235,7 +235,10 @@ def dynamic(name, attrs, inner):
         lis = "".join(f'<label><input type="checkbox">{o}</label>' for o in opts.get(h, []))
         return f'<div class="fx-filter"><h4>{h}</h4>{lis}</div>'
     if name == "woocommerce/classic-shortcode":
-        return cart_or_checkout(a.get("shortcode", "cart"))
+        sc = a.get("shortcode", "cart")
+        if sc == "my_account":
+            return my_account(SIGNED_IN)
+        return cart_or_checkout(sc)
     if name.startswith("query-pagination"):
         return '' if name != "query-pagination" else '<nav class="fx-pag"><a>1</a><a class="on">2</a><a>Next →</a></nav>'
     return inner or ""
@@ -286,6 +289,64 @@ def cart_or_checkout(which):
 <div class="fx-pay"><label><input type="radio" checked> Pay now — save ₹25</label>
 <label><input type="radio"> Cash on delivery</label></div>
 <button class="wp-element-button fx-add fx-add--lg">Place order</button></aside></div>'''
+
+
+SIGNED_IN = True   # flipped per screen by main()
+
+ORDERS = [
+    ("#1194", "22 Aug 2026", "Delivered", "₹805", "3 items"),
+    ("#1121", "31 Jul 2026", "Delivered", "₹560", "2 items"),
+    ("#1088", "09 Jul 2026", "Delivered", "₹1,240", "6 items"),
+]
+
+
+def my_account(signed_in):
+    """WooCommerce's my-account markup, as the classic shortcode emits it."""
+    if not signed_in:
+        # WooCommerce's own login form. WP-05's OTP plugin replaces exactly this,
+        # which is why the theme does not render a form of its own.
+        return '''<div class="woocommerce"><div class="fd-signin">
+<h2>Sign in</h2>
+<p class="fd-account-lead">Your saved addresses come back automatically, so checkout is four taps.</p>
+<label class="fx-field"><span>Mobile number</span><input placeholder="98••• ••210"></label>
+<button class="wp-element-button">Send code</button>
+<p class="fd-account-lead" style="margin-top:1rem">No password. We send a six-digit code to your phone.</p>
+<div class="fx-note">WP-05 · week 11 — mobile-OTP login replaces this form once the SMS gateway
+is DLT-registered. The theme renders WooCommerce\u2019s form so the OTP plugin can take it over
+without a template change. Guest checkout stays the default path either way.</div>
+</div></div>'''
+
+    nav = "".join(
+        f'<li class="woocommerce-MyAccount-navigation-link{" is-active" if i == 0 else ""}">'
+        f'<a href="#">{label}</a></li>'
+        for i, label in enumerate(["Orders &amp; reorder", "Saved addresses", "Your details", "Log out"]))
+
+    rows = "".join(
+        f'<tr><td><strong>{no}</strong></td><td>{date}</td><td>{status}</td>'
+        f'<td class="woocommerce-orders-table__cell-order-total">{total}<span class="fx-meta">{items}</span></td>'
+        f'<td class="woocommerce-orders-table__cell-order-actions">'
+        f'<button class="wp-element-button fd-reorder">Reorder</button>'
+        f'<button class="wp-element-button fd-secondary">Details</button></td></tr>'
+        for no, date, status, total, items in ORDERS)
+
+    return f'''<div class="woocommerce">
+<nav class="woocommerce-MyAccount-navigation"><ul>{nav}</ul></nav>
+<div class="woocommerce-MyAccount-content">
+<p class="fd-account-lead">Your past orders are one tap from being your next one.</p>
+<table class="woocommerce-orders-table"><thead><tr>
+<th>Order</th><th>Date</th><th>Status</th><th>Total</th><th>&nbsp;</th>
+</tr></thead><tbody>{rows}</tbody></table>
+
+<h2 style="margin-top:2.5rem">Saved addresses</h2>
+<p class="fd-account-lead">Your shipping address is the one checkout fills in. Change it here and your
+next order picks it up automatically.</p>
+<div class="woocommerce-Addresses">
+<div class="woocommerce-Address"><div class="woocommerce-Address-title"><h2>Shipping</h2></div>
+<address>Ateeshay Jain<br>N-7011 Parx Laureate, Sector 108<br>Noida 201304<br>+91 98••• ••210</address></div>
+<div class="woocommerce-Address"><div class="woocommerce-Address-title"><h2>Billing</h2></div>
+<address>Ateeshay Jain<br>N-7011 Parx Laureate, Sector 108<br>Noida 201304<br>care@example.com</address></div>
+</div>
+</div></div>'''
 
 
 # ── block parser ──────────────────────────────────────────────────────────────
@@ -473,6 +534,8 @@ FIXTURE_CSS = """
   font-weight:600;margin-bottom:var(--wp--preset--spacing--40)}
 .fx-pay{margin:18px 0}
 .fx-pay label{display:flex;gap:9px;align-items:center;padding:9px 0;font-size:var(--wp--preset--font-size--sm)}
+.fd-signin{max-width:26rem}
+.fd-signin h2{font-size:var(--wp--preset--font-size--2xl);margin:0 0 .3em}
 .fx-note{padding:10px 14px;background:var(--wp--preset--color--flame-wash);
   color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
 @media (max-width:900px){
@@ -493,6 +556,8 @@ SCREENS = [
     ("product",  "Product",          "single-product.html"),
     ("cart",     "Cart",             "page-cart.html"),
     ("checkout", "Checkout",         "page-checkout.html"),
+    ("account",  "Account",          "page-my-account.html"),
+    ("signin",   "Sign in",          "page-my-account.html"),
     ("notfound", "404",              "404.html"),
 ]
 
@@ -508,6 +573,7 @@ def main():
     panels, tabs = [], []
     for i, (sid, label, fn) in enumerate(SCREENS):
         path = os.path.join(THEME, "templates", fn)
+        globals()["SIGNED_IN"] = (sid != "signin")
         body = render(open(path).read())
         body = body.replace("<!--FOODIFY_YEAR-->", str(datetime.date.today().year))
         tabs.append(f'<button class="tab" role="tab" aria-selected="{str(i == 0).lower()}" data-s="{sid}">{label}</button>')

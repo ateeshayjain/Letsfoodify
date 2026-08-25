@@ -85,8 +85,8 @@ hierarchy and responsive behaviour on it. Judge behaviour on staging.
 ### Still to do inside WP-03
 
 - ~~Two shortcodes referenced and not written~~ — **done**, see below.
-- **The account template** (`page-my-account.html`) waits on WP-05, since its
-  content is the OTP login and address book.
+- ~~The account template waits on WP-05~~ — **built**, see below. The OTP
+  *mechanism* still waits on WP-05; the template does not.
 - **Photography.** Every food image is a CSS placeholder. This is the week-3
   shoot, and it is the single biggest visual difference between the preview and
   the real thing.
@@ -184,3 +184,59 @@ Fixed at the source. The shortcodes emit `fd-` (theme) classes, the styles live
 in `style.css`, and the renderer's fixture was pointed at the same classes with
 its duplicate rules deleted. `fx-` now means fixture and `fd-` means shipped, with
 no overlap.
+
+
+---
+
+## The account template
+
+`templates/page-my-account.html` + `inc/account.php`.
+
+### Why there is no login form in the theme
+
+Mobile-OTP login is WP-05, week 11, on an SMS gateway that waits on DLT
+registration — client-owned and weeks out. An OTP plugin replaces WooCommerce's
+login form wholesale.
+
+So the theme renders **WooCommerce's own form** and the plugin takes it over.
+A form hand-built here would either fight the plugin or sit silently behind it,
+and one that *looks* like OTP while posting a password is exactly the kind of
+thing that reads as finished and is not. Nothing in the template changes when
+the plugin lands.
+
+### What is built, and works now
+
+- **Menu reordered.** WooCommerce ships Dashboard / Orders / Downloads /
+  Addresses / Account details / Logout. Downloads is dead weight on a store with
+  no digital products — an empty tab is a dead end — and the default Dashboard is
+  a paragraph of prose. Orders leads, relabelled "Orders & reorder", because
+  reordering is what people come back for.
+- **Reorder is the primary action on an order row.** WooCommerce puts "View"
+  first and buries "Order again" behind it, which is backwards for a store people
+  rebuy the same six things from. WP-05: *"one-tap reorder as the primary action,
+  not 'view details'."* View is demoted to a secondary "Details".
+- **The default address is named.** WooCommerce keeps a billing and a shipping
+  address and calls neither "default", so a customer with two cannot tell which
+  one checkout will use. Until the full address book exists, saying which one
+  wins beats leaving it unexplained.
+- **A development guard for the WP-01 leak.** WP-05's acceptance says *"no source
+  comments, debug output or PHP notices render anywhere on /my-account/"* — the
+  audit found a developer comment above the login box, the first screen a
+  returning customer sees. Under `WP_DEBUG` a recurrence is loud; in production
+  it is silent, so the guard cannot become the next thing that leaks.
+
+### Still WP-05, not done here
+
+- **The OTP flow itself** — gateway, rate limiting (five requests an hour blocks
+  the sixth), the 30-second resend cooldown, DND delivery.
+- **A true multi-address book.** WooCommerce stores one billing and one shipping
+  address. WP-05 wants several with a default flag, which is a data model, not a
+  template. The template is ready for it; the storage is not built.
+- **Post-purchase account claim** on the order-received page.
+
+### In the preview
+
+Two screens, because they are different problems: **Account** (signed in —
+orders, reorder, saved addresses) and **Sign in** (where OTP lands). Both render
+the same WooCommerce classes the live template gets, styled from `style.css`, so
+the preview shows the real styling rather than a lookalike.

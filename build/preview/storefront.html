@@ -316,6 +316,81 @@ input:focus, select:focus, textarea:focus {
 .fd-stars { color: var(--wp--preset--color--flame-deep); letter-spacing: -1px; }
 .fd-verified { color: var(--wp--preset--color--leaf-ink); }
 
+/* Account — WooCommerce's my-account markup, styled to the token set.
+   Two columns on desktop, stacked on mobile; the nav is a real list of links,
+   not a sidebar widget. */
+.woocommerce-account .woocommerce {
+  display: grid;
+  grid-template-columns: 15rem 1fr;
+  gap: var(--wp--preset--spacing--60);
+  align-items: start;
+}
+.woocommerce-MyAccount-navigation ul { list-style: none; margin: 0; padding: 0; }
+.woocommerce-MyAccount-navigation li a {
+  display: block;
+  padding: var(--wp--preset--spacing--30) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+  color: var(--wp--preset--color--char);
+  text-decoration: none;
+  font-weight: 500;
+  min-height: var(--wp--custom--tap-target);
+}
+.woocommerce-MyAccount-navigation li a:hover { color: var(--wp--preset--color--flame-ink); }
+.woocommerce-MyAccount-navigation li.is-active a {
+  color: var(--wp--preset--color--flame-ink);
+  font-weight: 700;
+  border-bottom-color: var(--wp--preset--color--flame-ink);
+}
+.fd-account-lead {
+  color: var(--wp--preset--color--mute);
+  font-size: var(--wp--preset--font-size--base);
+  max-width: 52ch;
+}
+
+/* Orders table. Reorder leads; Details is secondary — WP-05 puts one-tap
+   reorder first, because this is a store people rebuy the same six things from. */
+.woocommerce-orders-table { width: 100%; border-collapse: collapse; }
+.woocommerce-orders-table th {
+  text-align: left;
+  font-size: var(--wp--preset--font-size--xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wp--preset--color--mute);
+  padding: 0 var(--wp--preset--spacing--30) var(--wp--preset--spacing--20) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line-strong);
+}
+.woocommerce-orders-table td {
+  padding: var(--wp--preset--spacing--40) var(--wp--preset--spacing--30) var(--wp--preset--spacing--40) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+  vertical-align: middle;
+}
+.woocommerce-orders-table__cell-order-total { font-variant-numeric: tabular-nums; }
+.fd-reorder { /* inherits .wp-element-button */ }
+.fd-secondary {
+  background: transparent;
+  color: var(--wp--preset--color--char);
+  border-color: var(--wp--preset--color--line-strong);
+}
+.woocommerce-orders-table__cell-order-actions { display: flex; gap: var(--wp--preset--spacing--20); flex-wrap: wrap; }
+
+/* Addresses */
+.woocommerce-Addresses { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--wp--preset--spacing--40); }
+.woocommerce-Address {
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--50);
+}
+.woocommerce-Address-title h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
+.woocommerce-Address address { font-style: normal; line-height: 1.6; color: var(--wp--preset--color--mute); }
+
+@media (max-width: 900px) {
+  .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
+  .woocommerce-orders-table thead { display: none; }
+  .woocommerce-orders-table tr { display: grid; gap: var(--wp--preset--spacing--10); padding: var(--wp--preset--spacing--40) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
+  .woocommerce-orders-table td { border: 0; padding: 0; }
+}
+
 
 .fx-logo{font-size:var(--wp--preset--font-size--xl);font-weight:700;margin:0;letter-spacing:-.02em}
 .fx-logo span{color:var(--wp--preset--color--flame-ink)}
@@ -417,6 +492,8 @@ input:focus, select:focus, textarea:focus {
   font-weight:600;margin-bottom:var(--wp--preset--spacing--40)}
 .fx-pay{margin:18px 0}
 .fx-pay label{display:flex;gap:9px;align-items:center;padding:9px 0;font-size:var(--wp--preset--font-size--sm)}
+.fd-signin{max-width:26rem}
+.fd-signin h2{font-size:var(--wp--preset--font-size--2xl);margin:0 0 .3em}
 .fx-note{padding:10px 14px;background:var(--wp--preset--color--flame-wash);
   color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
 @media (max-width:900px){
@@ -445,7 +522,7 @@ input:focus, select:focus, textarea:focus {
 </style>
 <div class="proto"><div class="proto-in">
 <span class="proto-tag">Foodify · WP-03 · rendered from the theme</span>
-<div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" data-s="home">Home</button><button class="tab" role="tab" aria-selected="false" data-s="shop">Category / shop</button><button class="tab" role="tab" aria-selected="false" data-s="product">Product</button><button class="tab" role="tab" aria-selected="false" data-s="cart">Cart</button><button class="tab" role="tab" aria-selected="false" data-s="checkout">Checkout</button><button class="tab" role="tab" aria-selected="false" data-s="notfound">404</button></div>
+<div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" data-s="home">Home</button><button class="tab" role="tab" aria-selected="false" data-s="shop">Category / shop</button><button class="tab" role="tab" aria-selected="false" data-s="product">Product</button><button class="tab" role="tab" aria-selected="false" data-s="cart">Cart</button><button class="tab" role="tab" aria-selected="false" data-s="checkout">Checkout</button><button class="tab" role="tab" aria-selected="false" data-s="account">Account</button><button class="tab" role="tab" aria-selected="false" data-s="signin">Sign in</button><button class="tab" role="tab" aria-selected="false" data-s="notfound">404</button></div>
 </div></div>
 <div class="banner"><b>This page is generated from the real theme</b> — <code>theme.json</code> tokens,
 <code>templates/*.html</code>, <code>parts/*.html</code> and <code>patterns/*.php</code>. Edit the theme and this
@@ -1329,6 +1406,218 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div>
 
 </footer>
+</div><div class="fx-shell" id="s-account" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+
+<div class="wp-block-group">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+
+
+
+
+
+
+
+<div class="wp-block-group">
+<button class="fx-acct" aria-label="Account">◍</button>
+<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+<div class="woocommerce">
+<nav class="woocommerce-MyAccount-navigation"><ul><li class="woocommerce-MyAccount-navigation-link is-active"><a href="#">Orders &amp; reorder</a></li><li class="woocommerce-MyAccount-navigation-link"><a href="#">Saved addresses</a></li><li class="woocommerce-MyAccount-navigation-link"><a href="#">Your details</a></li><li class="woocommerce-MyAccount-navigation-link"><a href="#">Log out</a></li></ul></nav>
+<div class="woocommerce-MyAccount-content">
+<p class="fd-account-lead">Your past orders are one tap from being your next one.</p>
+<table class="woocommerce-orders-table"><thead><tr>
+<th>Order</th><th>Date</th><th>Status</th><th>Total</th><th>&nbsp;</th>
+</tr></thead><tbody><tr><td><strong>#1194</strong></td><td>22 Aug 2026</td><td>Delivered</td><td class="woocommerce-orders-table__cell-order-total">₹805<span class="fx-meta">3 items</span></td><td class="woocommerce-orders-table__cell-order-actions"><button class="wp-element-button fd-reorder">Reorder</button><button class="wp-element-button fd-secondary">Details</button></td></tr><tr><td><strong>#1121</strong></td><td>31 Jul 2026</td><td>Delivered</td><td class="woocommerce-orders-table__cell-order-total">₹560<span class="fx-meta">2 items</span></td><td class="woocommerce-orders-table__cell-order-actions"><button class="wp-element-button fd-reorder">Reorder</button><button class="wp-element-button fd-secondary">Details</button></td></tr><tr><td><strong>#1088</strong></td><td>09 Jul 2026</td><td>Delivered</td><td class="woocommerce-orders-table__cell-order-total">₹1,240<span class="fx-meta">6 items</span></td><td class="woocommerce-orders-table__cell-order-actions"><button class="wp-element-button fd-reorder">Reorder</button><button class="wp-element-button fd-secondary">Details</button></td></tr></tbody></table>
+
+<h2 style="margin-top:2.5rem">Saved addresses</h2>
+<p class="fd-account-lead">Your shipping address is the one checkout fills in. Change it here and your
+next order picks it up automatically.</p>
+<div class="woocommerce-Addresses">
+<div class="woocommerce-Address"><div class="woocommerce-Address-title"><h2>Shipping</h2></div>
+<address>Ateeshay Jain<br>N-7011 Parx Laureate, Sector 108<br>Noida 201304<br>+91 98••• ••210</address></div>
+<div class="woocommerce-Address"><div class="woocommerce-Address-title"><h2>Billing</h2></div>
+<address>Ateeshay Jain<br>N-7011 Parx Laureate, Sector 108<br>Noida 201304<br>care@example.com</address></div>
+</div>
+</div></div>
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div><div class="fx-shell" id="s-signin" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+
+<div class="wp-block-group">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+
+
+
+
+
+
+
+<div class="wp-block-group">
+<button class="fx-acct" aria-label="Account">◍</button>
+<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+<div class="woocommerce"><div class="fd-signin">
+<h2>Sign in</h2>
+<p class="fd-account-lead">Your saved addresses come back automatically, so checkout is four taps.</p>
+<label class="fx-field"><span>Mobile number</span><input placeholder="98••• ••210"></label>
+<button class="wp-element-button">Send code</button>
+<p class="fd-account-lead" style="margin-top:1rem">No password. We send a six-digit code to your phone.</p>
+<div class="fx-note">WP-05 · week 11 — mobile-OTP login replaces this form once the SMS gateway
+is DLT-registered. The theme renders WooCommerce’s form so the OTP plugin can take it over
+without a template change. Guest checkout stays the default path either way.</div>
+</div></div>
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
 </div><div class="fx-shell" id="s-notfound" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
@@ -1433,7 +1722,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <script>
 document.addEventListener('click', function (e) {
   var t = e.target.closest('[data-s]'); if (!t) return;
-  ["home", "shop", "product", "cart", "checkout", "notfound"].forEach(function (s) {
+  ["home", "shop", "product", "cart", "checkout", "account", "signin", "notfound"].forEach(function (s) {
     document.getElementById('s-' + s).hidden = (s !== t.dataset.s);
   });
   document.querySelectorAll('.tab').forEach(function (b) {
