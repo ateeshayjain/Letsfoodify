@@ -159,6 +159,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `tests/checkout-test.php` | 15 assertions. The cart may only promise what it knows |
 | `docs/WP-07-NOTES.md` | Prepaid saving, COD rules, and the GST question left open |
 | `tests/payments-test.php` | 34 assertions. The label and the fee are one calculation |
+| `docs/WP-08-NOTES.md` | Review collection, verified reviews, and the placeholder FSSAI licence |
+| `tests/reviews-test.php` | 43 assertions. Never ask after a refund; never publish a placeholder |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |

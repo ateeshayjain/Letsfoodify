@@ -225,33 +225,22 @@ add_filter( 'script_loader_tag', static function ( string $tag, string $handle )
  * template's own image, not on a request-wide static.
  */
 
-/**
- * The footer's copyright year.
+/*
+ * The FOODIFY_YEAR substitution moved to inc/business-profile.php.
  *
- * BUG THIS FIXES: `parts/footer.html` carried `<!--FOODIFY_YEAR-->` and NOTHING
- * IN THE THEME REPLACED IT. Only tools/render-preview.py did — so the preview
- * showed a current year the live site could never render, and the live footer
- * read "© The Foodify Company" with the year sitting there as an invisible HTML
- * comment. The preview exists to stop the mockup drifting from the theme, and
- * this was the preview doing the drifting.
- *
- * It also survived the blocking gate, because the footer-year check WARNED when
- * no year was found instead of failing. That warn is now a failure.
- *
- * A render_block filter rather than a shortcode: shortcodes are not expanded
- * inside block template parts, so a [year] shortcode would have printed itself.
+ * It now shares one token table with the FSSAI licence number, because two
+ * render_block filters doing the same job is how the second one gets forgotten —
+ * and forgetting the first is precisely what shipped `<!--FOODIFY_YEAR-->` to
+ * the live footer as an invisible HTML comment while the preview rendered a
+ * year the site could never show.
  */
-add_filter( 'render_block', static function ( $html ) {
-	if ( ! is_string( $html ) || false === strpos( $html, 'FOODIFY_YEAR' ) ) {
-		return $html;   // cheap guard — this runs for every block on every page
-	}
-	return str_replace( '<!--FOODIFY_YEAR-->', esc_html( wp_date( 'Y' ) ), $html );
-} );
 
 /** Feature modules. Each is independently removable. */
 require_once FOODIFY_DIR . '/inc/checkout-fields.php';
 require_once FOODIFY_DIR . '/inc/checkout-flow.php';    // WP-06: the page around the form
 require_once FOODIFY_DIR . '/inc/payments.php';          // WP-07: prepaid saving, COD rules
+require_once FOODIFY_DIR . '/inc/business-profile.php';  // WP-08: NAP, licence, token table
+require_once FOODIFY_DIR . '/inc/reviews.php';           // WP-08: product reviews + the ask
 require_once FOODIFY_DIR . '/inc/coupon-attribution.php';
 require_once FOODIFY_DIR . '/inc/product-attributes.php';   // must load BEFORE product-display
 require_once FOODIFY_DIR . '/inc/product-display.php';

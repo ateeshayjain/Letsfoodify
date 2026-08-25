@@ -356,6 +356,15 @@ input:focus, select:focus, textarea:focus {
 }
 .wc_payment_methods li { min-height: var(--wp--custom--tapTarget); }
 
+/* Review count beside a listing's stars — WP-08. "★★★★★" from one review reads
+   as established and is not, which is the fake-viewer-counter failure in a
+   place Google issues manual actions for. */
+.fd-rating-count {
+  display: block;
+  font-size: var(--wp--preset--font-size--xs);
+  color: var(--wp--preset--color--mute);
+}
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }

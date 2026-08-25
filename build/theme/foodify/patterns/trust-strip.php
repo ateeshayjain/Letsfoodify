@@ -25,7 +25,7 @@
 <!-- wp:column -->
 <div class="wp-block-column">
 <!-- wp:paragraph {"fontSize":"base","style":{"typography":{"fontWeight":"600"}},"fontFamily":"display"} --><p class="has-display-font-family has-base-font-size" style="font-weight:600">FSSAI licensed</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm","textColor":"mute"} --><p class="has-mute-color has-text-color has-sm-font-size">10012345678901, on pack and on invoice.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"sm","textColor":"mute"} --><p class="has-mute-color has-text-color has-sm-font-size"><!--FOODIFY_FSSAI-->, on pack and on invoice.</p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:column -->
 <!-- wp:column -->

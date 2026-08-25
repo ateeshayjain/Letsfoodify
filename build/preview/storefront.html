@@ -497,6 +497,15 @@ input:focus, select:focus, textarea:focus {
 }
 .wc_payment_methods li { min-height: var(--wp--custom--tapTarget); }
 
+/* Review count beside a listing's stars — WP-08. "★★★★★" from one review reads
+   as established and is not, which is the fake-viewer-counter failure in a
+   place Google issues manual actions for. */
+.fd-rating-count {
+  display: block;
+  font-size: var(--wp--preset--font-size--xs);
+  color: var(--wp--preset--color--mute);
+}
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
@@ -645,7 +654,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <div class="fx-shell" id="s-home"><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
 
 </div>
 
@@ -739,7 +748,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 <div class="wp-block-column">
 <p class="has-display-font-family has-base-font-size" style="font-weight:600">FSSAI licensed</p>
-<p class="has-mute-color has-text-color has-sm-font-size">10012345678901, on pack and on invoice.</p>
+<p class="has-mute-color has-text-color has-sm-font-size">NOT CONFIGURED, on pack and on invoice.</p>
 </div>
 
 
@@ -881,49 +890,49 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <div class="fx-grid" style="--cols:4"><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Express Dal Fry</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">(84)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">84 reviews</span></div>
   <p class="fx-price"><s>₹210</s> ₹185</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Idli Sambhar</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fx-rc">(62)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">62 reviews</span></div>
   <p class="fx-price"><s>₹225</s> ₹195</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Express Dal Khichdi</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fx-rc">(41)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">41 reviews</span></div>
   <p class="fx-price">₹185</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#C98A34"><span class="fx-time">5 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Aloo ka Mazaa</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fx-rc">(28)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fd-rating-count">28 reviews</span></div>
   <p class="fx-price">₹100</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#B98D3E"><span class="fx-time">7 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Super Millet Idli</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.6</span> <span class="fx-rc">(33)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.6</span> <span class="fd-rating-count">33 reviews</span></div>
   <p class="fx-price">₹210</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#C2571F"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Pav Bhaji</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">(57)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">57 reviews</span></div>
   <p class="fx-price">₹185</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#4E8B66"><span class="fx-time">1 MIN</span></div><span class="fx-chip fx-chip--flavors">Flavors</span></div>
   <h3 class="fx-name">Coconut Red Chutney</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fx-rc">(19)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">19 reviews</span></div>
   <p class="fx-price">₹240</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div><span class="fx-chip fx-chip--hot">Hot &amp; Fresh</span></div>
   <h3 class="fx-name">Masala Chai</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fx-rc">(71)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">71 reviews</span></div>
   <p class="fx-price">₹375</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article></div>
@@ -996,7 +1005,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1007,7 +1016,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div><div class="fx-shell" id="s-shop" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
 
 </div>
 
@@ -1136,7 +1145,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1147,7 +1156,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div><div class="fx-shell" id="s-product" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
 
 </div>
 
@@ -1214,7 +1223,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div>
 
 
-<section class="fx-spec"><h2>Pack &amp; label</h2><p class="fx-spec-note">Structured fields — the same data feeds the Google product feed.</p><dl><div><dt>Net quantity</dt><dd>80 g</dd></div><div><dt>Servings</dt><dd>2</dd></div><div><dt>Shelf life</dt><dd>12 months</dd></div><div><dt>Best before</dt><dd>14 Aug 2027</dd></div><div><dt>Veg / non-veg</dt><dd><span class="fx-veg">● Vegetarian</span></dd></div><div><dt>Allergens</dt><dd>Milk (ghee)</dd></div><div><dt>Country of origin</dt><dd>India</dd></div><div><dt>FSSAI licence</dt><dd>10012345678901</dd></div><div><dt>Marketed by</dt><dd>AVAC Ventures, Noida 201304</dd></div><div><dt>Consumer care</dt><dd>care@letsfoodify.com</dd></div></dl></section>
+<section class="fx-spec"><h2>Pack &amp; label</h2><p class="fx-spec-note">Structured fields — the same data feeds the Google product feed.</p><dl><div><dt>Net quantity</dt><dd>80 g</dd></div><div><dt>Servings</dt><dd>2</dd></div><div><dt>Shelf life</dt><dd>12 months</dd></div><div><dt>Best before</dt><dd>14 Aug 2027</dd></div><div><dt>Veg / non-veg</dt><dd><span class="fx-veg">● Vegetarian</span></dd></div><div><dt>Allergens</dt><dd>Milk (ghee)</dd></div><div><dt>Country of origin</dt><dd>India</dd></div><div><dt>FSSAI licence</dt><dd>NOT CONFIGURED</dd></div><div><dt>Marketed by</dt><dd>AVAC Ventures, Noida 201304</dd></div><div><dt>Consumer care</dt><dd>care@letsfoodify.com</dd></div></dl></section>
 
 
 <div class="wp-block-group alignwide" style="padding-top:var(--wp--preset--spacing--80)">
@@ -1224,25 +1233,25 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <div class="fx-grid" style="--cols:4"><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Express Dal Fry</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">(84)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">84 reviews</span></div>
   <p class="fx-price"><s>₹210</s> ₹185</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Idli Sambhar</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fx-rc">(62)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">62 reviews</span></div>
   <p class="fx-price"><s>₹225</s> ₹195</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Express Dal Khichdi</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fx-rc">(41)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">41 reviews</span></div>
   <p class="fx-price">₹185</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article><article class="fx-card">
   <div class="fx-media"><div class="fx-bowl" style="--h:#C98A34"><span class="fx-time">5 MIN</span></div><span class="fx-chip fx-chip--express">Express</span></div>
   <h3 class="fx-name">Aloo ka Mazaa</h3>
-  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fx-rc">(28)</span></div>
+  <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fd-rating-count">28 reviews</span></div>
   <p class="fx-price">₹100</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article></div>
@@ -1298,7 +1307,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1309,7 +1318,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div><div class="fx-shell" id="s-cart" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
 
 </div>
 
@@ -1408,7 +1417,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1465,7 +1474,7 @@ convenience or platform fee is added.</p>
 <p class="fd-checkout-help has-text-align-center has-mute-color has-text-color has-sm-font-size">Stuck? <a href="/contact-us/">Talk to us</a> · <a href="/shipping/">Shipping</a> · <a href="/returns/">Returns</a> · <a href="/privacy-policy/">Privacy</a> · <a href="/terms/">Terms</a></p>
 
 
-<p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901</p>
+<p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED</p>
 
 
 <p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1476,7 +1485,7 @@ convenience or platform fee is added.</p>
 </div><div class="fx-shell" id="s-account" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
 
 </div>
 
@@ -1575,7 +1584,7 @@ payload all keep reading the meta they have always read.</div>
 <hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1586,7 +1595,7 @@ payload all keep reading the meta they have always read.</div>
 </div><div class="fx-shell" id="s-signin" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
 
 </div>
 
@@ -1677,7 +1686,7 @@ without a template change. Guest checkout stays the default path either way.</di
 <hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1688,7 +1697,7 @@ without a template change. Guest checkout stays the default path either way.</di
 </div><div class="fx-shell" id="s-notfound" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
 
 </div>
 
@@ -1777,7 +1786,7 @@ without a template change. Guest checkout stays the default path either way.</di
 <hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>

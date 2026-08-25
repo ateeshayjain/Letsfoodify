@@ -71,9 +71,37 @@ grep -qi '<h1' <<<"$HOME"                     && ok "homepage has an H1"        
 grep -qi 'name="description"' <<<"$HOME"      && ok "homepage meta description"     || no "homepage meta description MISSING"
 grep -qi 'property="og:' <<<"$HOME"           && ok "homepage Open Graph tags"      || no "homepage Open Graph MISSING"
 grep -qi 'name="description"' <<<"$PDP"       && ok "product meta description"      || no "product meta description MISSING"
-grep -q  'aggregateRating' <<<"$PDP"          && ok "product aggregateRating schema"|| wr "no aggregateRating yet (expected until the first review lands)"
-grep -q  '"@type":"Product"' <<<"$PDP" || grep -q '"@type": *"Product"' <<<"$PDP" \
-                                              && ok "Product schema present"        || no "Product schema MISSING"
+# WP-08. Exactly ONE Product node. Both WooCommerce and Rank Math emit Product
+# structured data, and which yields to the other is something I could not verify
+# by reading plugin source from this environment. So assert the OUTCOME rather
+# than the mechanism: two Product nodes on one page is a real conflict whichever
+# plugin produced them.
+#
+# `grep -o | wc -l`, not `grep -c`: grep -c counts LINES, so minified schema
+# would report 1 for any number of nodes. That mistake is already in this
+# project's history.
+if GOT "$PDP"; then
+  NODES=$(grep -oE '"@type" *: *"Product"' <<<"$PDP" | wc -l | tr -d ' ')
+  case "$NODES" in
+    0) no "Product schema MISSING" ;;
+    1) ok "exactly one Product schema node" ;;
+    *) no "$NODES Product schema nodes on one page — WooCommerce and Rank Math are both emitting; disable one" ;;
+  esac
+
+  # The schema and the page must tell the same story about reviews. A rating in
+  # structured data that the page cannot show is fabricated social proof in the
+  # one format built to be trusted, and it is what manual actions are for. The
+  # reverse — visible reviews, no schema — is the SEO value silently not landing.
+  PAGE_RATED=0;   grep -qiE 'woocommerce-product-rating|star-rating' <<<"$PDP" && PAGE_RATED=1
+  SCHEMA_RATED=0; grep -qi  'aggregateRating' <<<"$PDP" && SCHEMA_RATED=1
+  if   [[ "$PAGE_RATED" == 1 && "$SCHEMA_RATED" == 1 ]]; then ok "reviews on the page and in the schema agree"
+  elif [[ "$PAGE_RATED" == 0 && "$SCHEMA_RATED" == 0 ]]; then ok "no reviews yet, and the schema does not claim any"
+  elif [[ "$PAGE_RATED" == 0 && "$SCHEMA_RATED" == 1 ]]; then no "schema claims an aggregateRating the page cannot show — fabricated social proof"
+  else                                                        wr "reviews are visible but absent from the schema — the SEO value is not landing"
+  fi
+else
+  no "schema checks could not run — product page did not load"
+fi
 # 000 means the request failed, which is not evidence the sitemap is retired.
 WPSM="$(CODE "$BASE/wp-sitemap.xml")"
 if   [[ "$WPSM" == "000" ]]; then no "core sitemap check could not run (network) — not a pass"
@@ -81,6 +109,22 @@ elif [[ "$WPSM" != "200" ]]; then ok "core sitemap retired ($WPSM)"
 else                              no "core wp-sitemap.xml still served — two sitemaps compete"; fi
 
 hdr "3 · Honesty — things that must be gone"
+# WP-08. `FSSAI 10012345678901` was hardcoded into the site header, both footers
+# and the trust strip. It is the number people type when they need a number, and
+# a food business displaying a fabricated licence is a compliance problem rather
+# than a typo. It now comes from configuration, and an unset licence renders the
+# words NOT CONFIGURED — deliberately not a number, so it cannot be mistaken for
+# one. Either string reaching production is a blocking failure.
+if GOT "$HOME"; then
+  grep -q '10012345678901' <<<"$HOME" \
+    && no "the placeholder FSSAI licence 10012345678901 is live on the site" \
+    || ok "no placeholder FSSAI licence number"
+  grep -q 'NOT CONFIGURED' <<<"$HOME" \
+    && no "FSSAI licence renders NOT CONFIGURED — set it via the foodify_business_profile filter" \
+    || ok "FSSAI licence number is configured"
+else
+  no "cannot check the FSSAI licence — homepage did not load"
+fi
 if GOT "$PDP"; then
   grep -qi 'people are viewing' <<<"$PDP" && no "fake viewer counter still present" || ok "no fake viewer counter"
 else

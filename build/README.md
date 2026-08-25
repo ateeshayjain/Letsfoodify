@@ -18,6 +18,10 @@ theme/foodify/          Standalone block theme. Deploy from git; never edit on t
                              error focus, coupon demoted, one-page checkout
     payments.php             WP-07. Prepaid saving (label == fee), COD rules,
                              chosen-method resolution. GST treatment is FLAGGED
+    business-profile.php     WP-08. NAP, FSSAI licence, LocalBusiness schema, and
+                             the token table. Publishes nothing half-built
+    reviews.php              WP-08. Post-delivery review ask, verified-owner
+                             reviews, rating counts
     product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
     patterns.php             Pattern category registration
     product-attributes.php   Filter attributes, forced non-indexable (WP-02)

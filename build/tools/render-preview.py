@@ -133,7 +133,7 @@ def product_card(p):
     return f'''<article class="fx-card">
   <div class="fx-media">{BOWL.format(hue=hue, time=time)}<span class="fx-chip fx-chip--{rng.split()[0].lower()}">{html.escape(rng)}</span></div>
   <h3 class="fx-name">{html.escape(name)}</h3>
-  <div class="fx-rating">{stars(rating)} <span class="fx-rc">({count})</span></div>
+  <div class="fx-rating">{stars(rating)} <span class="fd-rating-count">{count} reviews</span></div>
   <p class="fx-price">{sale}₹{price}</p>
   <button class="wp-element-button fx-add">Add to bag</button>
 </article>'''
@@ -213,7 +213,7 @@ def dynamic(name, attrs, inner):
         rows = [("Net quantity", "80 g"), ("Servings", "2"), ("Shelf life", "12 months"),
                 ("Best before", "14 Aug 2027"), ("Veg / non-veg", '<span class="fx-veg">● Vegetarian</span>'),
                 ("Allergens", "Milk (ghee)"), ("Country of origin", "India"),
-                ("FSSAI licence", "10012345678901"), ("Marketed by", "AVAC Ventures, Noida 201304"),
+                ("FSSAI licence", "NOT CONFIGURED"), ("Marketed by", "AVAC Ventures, Noida 201304"),
                 ("Consumer care", "care@letsfoodify.com")]
         cells = "".join(f"<div><dt>{k}</dt><dd>{v}</dd></div>" for k, v in rows)
         return (f'<section class="fx-spec"><h2>Pack &amp; label</h2>'
@@ -633,7 +633,16 @@ def main():
         path = os.path.join(THEME, "templates", fn)
         globals()["SIGNED_IN"] = (sid != "signin")
         body = render(open(path).read())
+        # The theme substitutes these from foodify_content_tokens(). The preview
+        # must resolve the SAME tokens or it drifts from the site — which is
+        # exactly how <!--FOODIFY_YEAR--> reached the live footer as an invisible
+        # comment while the preview showed a year the site could never render.
+        #
+        # FSSAI shows NOT CONFIGURED here on purpose: the client has not supplied
+        # the licence number, and the preview showing a plausible one is how the
+        # dummy got into four templates in the first place.
         body = body.replace("<!--FOODIFY_YEAR-->", str(datetime.date.today().year))
+        body = body.replace("<!--FOODIFY_FSSAI-->", "NOT CONFIGURED")
         tabs.append(f'<button class="tab" role="tab" aria-selected="{str(i == 0).lower()}" data-s="{sid}">{label}</button>')
         panels.append(f'<div class="fx-shell" id="s-{sid}"{"" if i == 0 else " hidden"}>{body}</div>')
 

@@ -45,23 +45,42 @@ CHECKOUT_FORM = """
 def pages(mode):
     leak    = "// 3. Inject JS step-switching script to show only one box at a time" if mode == "bad" else ""
     counter = "<span>70 people are viewing this right now</span>" if mode == "bad" else ""
+
+    # WP-08 fixtures.
+    #   good — one Product node, a real-shaped FSSAI licence, no reviews yet and
+    #          no schema claiming any.
+    #   bad  — TWO Product nodes (WooCommerce and Rank Math both emitting), the
+    #          placeholder licence live on the page, and an aggregateRating the
+    #          page cannot show, which is fabricated social proof.
+    if mode == "bad":
+        head = HEAD.replace(
+            "</head>",
+            '<script type="application/ld+json">{"@type": "Product","name":"Express Dal Fry",'
+            '"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","reviewCount":"312"}}'
+            "</script></head>")
+        foot = FOOT.replace("</footer>", " · FSSAI licence 10012345678901</footer>")
+    else:
+        head = HEAD
+        foot = FOOT.replace("</footer>", " · FSSAI licence 12419064000123</footer>")
+
+    HEAD_, FOOT_ = head, foot
     return {
-        "/": HEAD + "<h1>A real meal in six minutes</h1>" + PAD +
-             '<a href="/product/express-dal-fry/">Dal Fry</a>' + FOOT,
-        "/product/express-dal-fry/": HEAD + "<h1>Express Dal Fry</h1>" + counter + PAD + FOOT,
-        "/shop/": HEAD + "<h1>Shop</h1>" + PAD + '<a href="/?add-to-cart=42">Add</a>' + FOOT,
-        "/cart/": HEAD + "<h1>Cart</h1>" + PAD + "<p>1 item in your cart</p>" + FOOT,
+        "/": HEAD_ + "<h1>A real meal in six minutes</h1>" + PAD +
+             '<a href="/product/express-dal-fry/">Dal Fry</a>' + FOOT_,
+        "/product/express-dal-fry/": HEAD_ + "<h1>Express Dal Fry</h1>" + counter + PAD + FOOT_,
+        "/shop/": HEAD_ + "<h1>Shop</h1>" + PAD + '<a href="/?add-to-cart=42">Add</a>' + FOOT_,
+        "/cart/": HEAD_ + "<h1>Cart</h1>" + PAD + "<p>1 item in your cart</p>" + FOOT_,
         # WP-06: the good build runs a stripped checkout header. The bad one
         # runs the full site chrome, where every nav link is an exit.
-        "/checkout/": HEAD + ('<nav class="wp-block-navigation"><a href="/shop/">Shop</a></nav>'
+        "/checkout/": HEAD_ + ('<nav class="wp-block-navigation"><a href="/shop/">Shop</a></nav>'
                               if mode == "bad" else
                               '<p class="fd-checkout-back"><a href="/cart/">Back to cart</a></p>')
-                      + "<h1>Checkout</h1>" + PAD + CHECKOUT_FORM + FOOT,
-        "/my-account/": HEAD + "<h1>My account</h1>" + leak + PAD + FOOT,
+                      + "<h1>Checkout</h1>" + PAD + CHECKOUT_FORM + FOOT_,
+        "/my-account/": HEAD_ + "<h1>My account</h1>" + leak + PAD + FOOT_,
         # WP-05's address book is a rewrite endpoint. The "bad" fixture omits it
         # so the 404 the gate must catch is a real 404, not an asserted string.
         **({} if mode == "bad" else
-           {"/my-account/address-book/": HEAD + "<h1>Sign in</h1>" + PAD + FOOT}),
+           {"/my-account/address-book/": HEAD_ + "<h1>Sign in</h1>" + PAD + FOOT_}),
         "/robots.txt": "User-agent: *\nSitemap: /sitemap_index.xml\n",
         "/sitemap_index.xml": '<?xml version="1.0"?><sitemapindex></sitemapindex>',
     }
@@ -157,6 +176,11 @@ check("stripped checkout header",         "PASS checkout uses the stripped heade
 check("no site nav on checkout",          "PASS no site navigation on checkout" in out)
 check("prepaid saving on the payment option",
       "PASS prepaid saving shown on the payment option" in out)
+check("exactly one Product schema node",  "PASS exactly one Product schema node" in out)
+check("schema does not over-claim reviews",
+      "PASS no reviews yet, and the schema does not claim any" in out)
+check("FSSAI licence configured",         "PASS FSSAI licence number is configured" in out)
+check("no placeholder licence",           "PASS no placeholder FSSAI licence number" in out)
 check("exits 0",                          rc == 0)
 
 print("\n── Case 2 · site carrying the audit's defects ──")
@@ -171,6 +195,13 @@ check("cached checkout page CAUGHT",  "served FROM AN EDGE CACHE (HIT)" in out)
 check("missing no-store CAUGHT",      "does NOT send no-store" in out)
 check("missing theme marker CAUGHT",  "the WP-06 module is not running here" in out)
 check("full site chrome on checkout CAUGHT", "checkout is NOT using the stripped header" in out)
+# The three WP-08 failures, each of which publishes something untrue.
+check("duplicate Product schema CAUGHT",
+      "Product schema nodes on one page" in out)
+check("fabricated aggregateRating CAUGHT",
+      "fabricated social proof" in out)
+check("placeholder FSSAI licence CAUGHT",
+      "placeholder FSSAI licence 10012345678901 is live" in out)
 check("exits non-zero",         rc != 0)
 
 print("\n── Case 3 · unreachable site (the regression test) ──")
@@ -187,6 +218,10 @@ check("says the cache policy could not be verified",
       "cache policy NOT verified" in out)
 check("does NOT falsely clear the checkout header",
       "PASS no site navigation on checkout" not in out)
+check("does NOT falsely clear the FSSAI licence",
+      "PASS no placeholder FSSAI licence number" not in out)
+check("does NOT falsely clear the schema",
+      "PASS exactly one Product schema node" not in out)
 check("says the page did not load", "did not load" in out)
 check("exits non-zero", rc != 0)
 
