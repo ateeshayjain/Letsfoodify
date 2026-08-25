@@ -298,7 +298,8 @@ A returning customer types none of them.</p>{inputs}</div>
 <div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹595</span></div>
 <p class="fd-cart-promise is-promise">GST is included. This is the final amount — no handling,
 convenience or platform fee is added.</p>
-<div class="fx-pay"><label><input type="radio" checked> Pay now — save ₹25</label>
+<div class="fx-pay"><label><input type="radio" checked> Pay now
+<span class="fd-pay-saving">Save ₹25</span></label>
 <label><input type="radio"> Cash on delivery</label></div>
 <button class="wp-element-button fx-add fx-add--lg">Place order</button></aside></div>'''
 

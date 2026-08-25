@@ -145,7 +145,25 @@ function foodify_bump_coupon_stats( int $coupon_id, string $month, array $delta 
  * 3. The notification
  * ---------------------------------------------------------------------- */
 
-add_action( 'woocommerce_order_status_processing', static function ( int $order_id ): void {
+/**
+ * Credit the partner once, whatever path the order took to becoming real.
+ *
+ * WHY NOT `woocommerce_payment_complete`, WHICH IS WHAT SCOPE §6 SAYS.
+ * A cash-on-delivery order NEVER FIRES IT. WooCommerce's COD gateway moves the
+ * order straight to a status without going through payment_complete, so hooking
+ * that would have silently failed to credit a partner on every cash order — and
+ * on an Indian D2C food store that is most of them. Nothing errors. The partner
+ * simply never hears about their sales, and the first anyone knows is a
+ * conversation about missing commission.
+ *
+ * WHY TWO STATUSES. Binding to `processing` alone makes attribution depend on
+ * COD landing there, and how COD chooses its status is not something I could
+ * verify from this environment. Rather than guard against a configuration key I
+ * cannot confirm exists, this fires on `completed` as well. The idempotency meta
+ * below means the second one is a no-op when the first already ran, so an order
+ * that skips processing is credited late rather than never.
+ */
+function foodify_attribute_order( int $order_id ): void {
 	$order = wc_get_order( $order_id );
 	if ( ! $order instanceof WC_Order ) {
 		return;
@@ -180,7 +198,10 @@ add_action( 'woocommerce_order_status_processing', static function ( int $order_
 
 	$order->update_meta_data( FOODIFY_NOTIFIED_META, current_time( 'mysql' ) );
 	$order->save();
-}, 20, 1 );
+}
+
+add_action( 'woocommerce_order_status_processing', 'foodify_attribute_order', 20, 1 );
+add_action( 'woocommerce_order_status_completed',  'foodify_attribute_order', 20, 1 );
 
 /** Refunds reverse the counters and send a correction. */
 add_action( 'woocommerce_order_refunded', static function ( int $order_id, int $refund_id ): void {

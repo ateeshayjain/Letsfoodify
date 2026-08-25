@@ -39,7 +39,7 @@ CHECKOUT_FORM = """
  <input name="billing_address_1"><input name="billing_address_2">
  <input name="shipping_first_name"><input name="shipping_postcode">
  <li class="payment_method_cod">Cash on delivery</li>
- <li class="payment_method_razorpay">Razorpay</li>"""
+ <li class="payment_method_razorpay">Razorpay <span class="fd-pay-saving">Save &#8377;25</span></li>"""
 
 
 def pages(mode):
@@ -155,6 +155,8 @@ check("private-page marker seen",         "PASS /checkout/ carries the theme's p
 check("edge reports not cached",          "PASS /checkout/ reported by the edge as not cached" in out)
 check("stripped checkout header",         "PASS checkout uses the stripped header" in out)
 check("no site nav on checkout",          "PASS no site navigation on checkout" in out)
+check("prepaid saving on the payment option",
+      "PASS prepaid saving shown on the payment option" in out)
 check("exits 0",                          rc == 0)
 
 print("\n── Case 2 · site carrying the audit's defects ──")

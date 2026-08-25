@@ -482,6 +482,21 @@ input:focus, select:focus, textarea:focus {
 /* An error the customer is sent to must be visible when they arrive there. */
 .woocommerce-error:focus { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
 
+/* Payment options — WP-07. The saving is named on the radio itself, and the
+   number comes from the same function as the fee, so the label cannot drift
+   from the money. Green because it is a real reduction, not a badge. */
+.fd-pay-saving {
+  display: inline-block;
+  margin-left: var(--wp--preset--spacing--20);
+  font-size: var(--wp--preset--font-size--xs);
+  font-weight: 600;
+  color: var(--wp--preset--color--leaf-ink);
+  background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--pill);
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+}
+.wc_payment_methods li { min-height: var(--wp--custom--tapTarget); }
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
@@ -1438,7 +1453,8 @@ A returning customer types none of them.</p><label class="fx-field"><span>Mobile
 <div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹595</span></div>
 <p class="fd-cart-promise is-promise">GST is included. This is the final amount — no handling,
 convenience or platform fee is added.</p>
-<div class="fx-pay"><label><input type="radio" checked> Pay now — save ₹25</label>
+<div class="fx-pay"><label><input type="radio" checked> Pay now
+<span class="fd-pay-saving">Save ₹25</span></label>
 <label><input type="radio"> Cash on delivery</label></div>
 <button class="wp-element-button fx-add fx-add--lg">Place order</button></aside></div>
 </main>

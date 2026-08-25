@@ -251,6 +251,7 @@ add_filter( 'render_block', static function ( $html ) {
 /** Feature modules. Each is independently removable. */
 require_once FOODIFY_DIR . '/inc/checkout-fields.php';
 require_once FOODIFY_DIR . '/inc/checkout-flow.php';    // WP-06: the page around the form
+require_once FOODIFY_DIR . '/inc/payments.php';          // WP-07: prepaid saving, COD rules
 require_once FOODIFY_DIR . '/inc/coupon-attribution.php';
 require_once FOODIFY_DIR . '/inc/product-attributes.php';   // must load BEFORE product-display
 require_once FOODIFY_DIR . '/inc/product-display.php';

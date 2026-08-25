@@ -148,6 +148,20 @@ if REQUIRE_BODY "checkout" "$CHK"; then
       && ok "state is a select" || no "state is not a select — free text corrupts GST and shipping"
     grep -qi 'cod\|cash on delivery' <<<"$CHK" && ok "COD offered" || no "COD not offered at checkout"
     grep -qi 'razorpay' <<<"$CHK" && ok "Razorpay present" || no "Razorpay missing"
+
+    # WP-07: the prepaid saving is named on the payment option itself, from the
+    # same function that applies the fee.
+    #
+    # WARN, not FAIL, and deliberately so. A missing saving is a legitimate
+    # CONFIGURATION — the client can set prepaid_flat to 0 and mean it — unlike
+    # the footer year, where the theme always emits one and absence proved the
+    # substitution had broken. Do not "tighten" this to a failure: it would
+    # block a deploy over a pricing decision.
+    if grep -qi 'razorpay' <<<"$CHK"; then
+      grep -qi 'fd-pay-saving' <<<"$CHK" \
+        && ok "prepaid saving shown on the payment option" \
+        || wr "no prepaid saving on the payment options — intended, or is inc/payments.php not loading?"
+    fi
     grep -qE 'name="billing_email"[^>]*required|billing_email.*validate-required' <<<"$CHK" \
       && ok "email is required" || wr "could not confirm email is required — check manually"
 

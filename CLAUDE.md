@@ -157,6 +157,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/WP-05-NOTES.md` | Address book, checkout chooser, account claim, OTP rule |
 | `docs/WP-06-NOTES.md` | Checkout shell, the no-cache privacy control, honest totals |
 | `tests/checkout-test.php` | 15 assertions. The cart may only promise what it knows |
+| `docs/WP-07-NOTES.md` | Prepaid saving, COD rules, and the GST question left open |
+| `tests/payments-test.php` | 34 assertions. The label and the fee are one calculation |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |

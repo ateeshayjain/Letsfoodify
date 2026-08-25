@@ -16,6 +16,8 @@ theme/foodify/          Standalone block theme. Deploy from git; never edit on t
     checkout-fields.php      25 fields → 9, email required, state as select, PIN auto-fill
     checkout-flow.php        WP-06. No-cache on private pages, honest cart total,
                              error focus, coupon demoted, one-page checkout
+    payments.php             WP-07. Prepaid saving (label == fee), COD rules,
+                             chosen-method resolution. GST treatment is FLAGGED
     product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
     patterns.php             Pattern category registration
     product-attributes.php   Filter attributes, forced non-indexable (WP-02)
