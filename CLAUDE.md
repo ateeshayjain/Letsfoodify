@@ -27,9 +27,14 @@ developer on their own machine — including the week-2 cache test. See §7.
 ### History note
 
 Sessions 1–3 ran inside an unrelated iOS repository, because that was the
-workspace available. Everything was moved here in one commit; the earlier
-per-session commits live on the `claude/letsfoodify-revamp-b6cf4i` branch of
-`ateeshayjain/TheMoneyApp` if the reasoning behind a change is ever needed.
+workspace available. Everything was moved here in one commit, which kept every
+file and none of the reasoning — so the eight original commit messages are
+reproduced verbatim in **`docs/HISTORY.md`**. That is now the only copy; the
+source branch on `ateeshayjain/TheMoneyApp` is being deleted.
+
+Read `docs/HISTORY.md` when you want to know *why* a call went the way it did.
+Read `build/docs/VERIFICATION-2026-08-25.md` when you want to know *what* is
+wrong in the kit and what changed.
 
 One thing that cost a session and is worth carrying forward: that repo ignored
 `build/` for Xcode artefacts, and the rule matched at any depth, so the entire

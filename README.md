@@ -13,6 +13,7 @@ build/                 The build kit
   tests/selftest.py    Proves smoke-test.sh catches what it claims
   docs/                VERIFICATION (read first), REVIEW-NOTES, SOLO-PLAN, MIGRATION
 planning/              Pre-engagement scope, the WP-01 runbook, and two design pages
+docs/HISTORY.md        The eight original commit messages — why each call was made
 ```
 
 ## Start here
@@ -20,6 +21,7 @@ planning/              Pre-engagement scope, the WP-01 runbook, and two design p
 ```bash
 cat CLAUDE.md                                  # rules, tokens, verified plugin facts
 cat build/docs/VERIFICATION-2026-08-25.md      # what in the kit was wrong, and why
+cat docs/HISTORY.md                            # how it was found, decision by decision
 python3 build/tests/selftest.py                # prove the blocking gate works
 ```
 
