@@ -88,7 +88,14 @@ def serve(mode, port):
     return srv
 
 
+# Resolve relative to this file, not the caller's cwd — the test has to work from
+# the repo root, from build/, and from tests/ alike.
+KIT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # .../build
 GATE = os.environ.get("GATE", "scripts/smoke-test.sh")
+if not os.path.isabs(GATE):
+    GATE = os.path.join(KIT, GATE)
+if not os.path.isfile(GATE):
+    sys.exit(f"Gate not found: {GATE}")
 G, R = "\033[32m", "\033[0m"
 RED, YEL = "\033[31m", "\033[33m"
 passed = failed = 0
@@ -106,7 +113,7 @@ def run(port):
     env = dict(os.environ); env.pop("HTTPS_PROXY", None); env.pop("http_proxy", None)
     env["NO_PROXY"] = "*"
     p = subprocess.run(["bash", GATE, f"http://127.0.0.1:{port}"],
-                       capture_output=True, text=True, timeout=120, env=env)
+                       capture_output=True, text=True, timeout=120, env=env, cwd=KIT)
     # Strip colour before matching, or "PASS" and its label are never adjacent.
     return ANSI.sub("", p.stdout + p.stderr), p.returncode
 
