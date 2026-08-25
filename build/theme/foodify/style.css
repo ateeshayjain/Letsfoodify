@@ -136,3 +136,41 @@ input:focus, select:focus, textarea:focus {
   background: var(--wp--preset--color--flame-wash);
   color: var(--wp--preset--color--flame-deep);
 }
+
+/* Free-shipping progress — [foodify_free_shipping_progress].
+   The bar reads its threshold from the shipping method that would actually
+   apply, so what it promises is what checkout charges. */
+.fd-ship { margin: 0 0 var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
+.fd-shipping-progress { display: grid; gap: var(--wp--preset--spacing--20); }
+
+/* Google Business Profile reviews — [foodify_google_reviews].
+   Renders nothing when there are no real reviews; there is no sample state. */
+.fd-reviews {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--wp--preset--spacing--40);
+}
+.fd-review {
+  margin: 0;
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--50);
+  display: flex; flex-direction: column; gap: var(--wp--preset--spacing--30);
+}
+.fd-review blockquote {
+  margin: 0;
+  font-family: var(--wp--preset--font-family--display);
+  font-size: var(--wp--preset--font-size--md);
+  line-height: 1.45;
+}
+.fd-review figcaption {
+  margin-top: auto;
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+}
+.fd-review figcaption a { color: inherit; }
+/* Flame is decorative-only and fails as text, so the stars sit on the wash and
+   take Flame Deep, which clears AA. */
+.fd-stars { color: var(--wp--preset--color--flame-deep); letter-spacing: -1px; }
+.fd-verified { color: var(--wp--preset--color--leaf-ink); }

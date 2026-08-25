@@ -84,9 +84,7 @@ hierarchy and responsive behaviour on it. Judge behaviour on staging.
 
 ### Still to do inside WP-03
 
-- **Two shortcodes are referenced and not yet written**:
-  `[foodify_google_reviews]` and `[foodify_free_shipping_progress]`. The preview
-  fixtures them; the theme does not implement them yet.
+- ~~Two shortcodes referenced and not written~~ — **done**, see below.
 - **The account template** (`page-my-account.html`) waits on WP-05, since its
   content is the OTP login and address book.
 - **Photography.** Every food image is a CSS placeholder. This is the week-3
@@ -97,3 +95,92 @@ hierarchy and responsive behaviour on it. Judge behaviour on staging.
   `tags-to-attributes.php` has created them on a live install. Set them in the
   Site Editor after the WP-02 migration, then export the template back to the
   theme.
+
+
+---
+
+## The two shortcodes (added after the first WP-03 pass)
+
+`inc/shortcodes.php`. Both render nothing rather than something untrue.
+
+### `[foodify_free_shipping_progress]`
+
+**The threshold is read from the shipping method that would actually apply** —
+never a constant. A bar promising free shipping while checkout charges for
+delivery is worse than no bar: it is principle 03 broken by the component meant
+to demonstrate it.
+
+Two details decide whether it tells the truth, and both are easy to get wrong:
+
+- **Zone.** The customer's shipping zone decides which free-shipping method
+  applies. One hardcoded number is wrong the moment a second zone exists, so
+  `foodify_free_shipping_threshold()` resolves the zone from the customer's own
+  destination and takes the **lowest** qualifying minimum — the one they hit
+  first, so the honest one to show.
+- **Discounts.** WooCommerce compares `min_amount` against the subtotal *after*
+  discounts unless the method ignores them.
+  `foodify_shipping_comparison_subtotal()` mirrors
+  `WC_Shipping_Free_Shipping::is_available()`. Reimplement it wrong and a coupon
+  either falsely qualifies the customer or falsely un-qualifies them — and they
+  find out at the payment step.
+
+It also registers a **cart fragment**. The cart page replaces
+`.woocommerce-cart-form` and `.cart_totals` on a quantity change; this block sits
+outside both, so without the fragment it would keep showing the pre-update figure.
+A stale promise is the failure this component exists to prevent.
+
+### `[foodify_google_reviews limit="3"]`
+
+WP-08's review widget, replacing three testimonials attributed to the same name.
+**If there are no real reviews it renders nothing** — there is no sample state,
+because inventing filler is the thing being removed.
+
+**Fetched server-side and cached for 12 hours**, deliberately:
+
+- Places API bills per request. An uncached widget bills once per pageview — a
+  cost that grows with exactly the traffic the SEO work is meant to create.
+- No third-party script runs in the customer's browser, so no customer data
+  reaches Google from this component and there is nothing to disclose.
+
+A failed fetch caches an empty result for 15 minutes, so a wrong key does not
+retry on every view. Star-only reviews (a rating with no words) are dropped —
+they prove nothing on a page whose job is showing what people said.
+
+**Configuration.** Key and place ID are read from constants first so they can
+live in `wp-config.php` and stay out of database backups, which get copied
+between environments:
+
+```php
+define( 'FOODIFY_GOOGLE_PLACES_KEY', '...' );
+define( 'FOODIFY_GOOGLE_PLACE_ID',  '...' );
+```
+
+Options `foodify_google_places_key` / `foodify_google_place_id` are the fallback.
+Flush the cache after replying to a review: `do_action( 'foodify_flush_google_reviews' )`.
+
+### Tested
+
+`tests/shortcode-test.php` — 17 assertions, plain PHP, no WordPress. It loads the
+**real file** behind a few no-op stubs rather than a copied-out helper, so the
+tests cannot drift from the shipping code.
+
+```bash
+php tests/shortcode-test.php
+```
+
+Covers: no method, zero threshold, empty cart, part way, exactly on the
+threshold, over it, a negative subtotal, and one paisa short. Plus review
+normalisation — star-only, no author, rating 0, rating 6, missing optionals.
+
+### A drift this introduced, and closed
+
+The shortcodes first emitted `fx-` classes, which is the **preview's fixture
+prefix** — they only existed in the renderer's CSS. The preview would have looked
+right and the live site would have rendered reviews unstyled: the preview
+flattering the real thing, which is precisely what generating it from the theme
+is supposed to prevent.
+
+Fixed at the source. The shortcodes emit `fd-` (theme) classes, the styles live
+in `style.css`, and the renderer's fixture was pointed at the same classes with
+its duplicate rules deleted. `fx-` now means fixture and `fd-` means shipped, with
+no overlap.

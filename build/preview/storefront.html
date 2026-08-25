@@ -278,6 +278,44 @@ input:focus, select:focus, textarea:focus {
   color: var(--wp--preset--color--flame-deep);
 }
 
+/* Free-shipping progress — [foodify_free_shipping_progress].
+   The bar reads its threshold from the shipping method that would actually
+   apply, so what it promises is what checkout charges. */
+.fd-ship { margin: 0 0 var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
+.fd-shipping-progress { display: grid; gap: var(--wp--preset--spacing--20); }
+
+/* Google Business Profile reviews — [foodify_google_reviews].
+   Renders nothing when there are no real reviews; there is no sample state. */
+.fd-reviews {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--wp--preset--spacing--40);
+}
+.fd-review {
+  margin: 0;
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--50);
+  display: flex; flex-direction: column; gap: var(--wp--preset--spacing--30);
+}
+.fd-review blockquote {
+  margin: 0;
+  font-family: var(--wp--preset--font-family--display);
+  font-size: var(--wp--preset--font-size--md);
+  line-height: 1.45;
+}
+.fd-review figcaption {
+  margin-top: auto;
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+}
+.fd-review figcaption a { color: inherit; }
+/* Flame is decorative-only and fails as text, so the stars sit on the wash and
+   take Flame Deep, which clears AA. */
+.fd-stars { color: var(--wp--preset--color--flame-deep); letter-spacing: -1px; }
+.fd-verified { color: var(--wp--preset--color--leaf-ink); }
+
 
 .fx-logo{font-size:var(--wp--preset--font-size--xl);font-weight:700;margin:0;letter-spacing:-.02em}
 .fx-logo span{color:var(--wp--preset--color--flame-ink)}
@@ -355,16 +393,6 @@ input:focus, select:focus, textarea:focus {
 .fx-pag a{padding:8px 14px;border:1px solid var(--wp--preset--color--line);border-radius:6px;
   font-size:var(--wp--preset--font-size--sm);cursor:pointer}
 .fx-pag a.on{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-color:var(--wp--preset--color--char)}
-.fx-reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--wp--preset--spacing--40)}
-.fx-review{margin:0;background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
-  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)}
-.fx-review blockquote{margin:0 0 14px;font-family:var(--wp--preset--font-family--display);
-  font-size:var(--wp--preset--font-size--md);line-height:1.45}
-.fx-review figcaption{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
-.fx-verified{color:var(--wp--preset--color--leaf-ink)}
-.fx-ship{margin:0 0 10px;font-size:var(--wp--preset--font-size--sm)}
-.fd-progress{background:var(--wp--custom--track);border-radius:var(--wp--custom--radius--pill);height:8px;overflow:hidden}
-.fd-progress>i{display:block;height:100%;background:var(--wp--preset--color--leaf);border-radius:999px}
 .fx-cart,.fx-checkout{display:grid;grid-template-columns:1.6fr 1fr;gap:var(--wp--preset--spacing--60);align-items:start}
 .fx-carttable{width:100%;border-collapse:collapse}
 .fx-carttable td{padding:16px 12px 16px 0;border-bottom:1px solid var(--wp--preset--color--line);vertical-align:middle}
@@ -393,8 +421,7 @@ input:focus, select:focus, textarea:focus {
   color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
 @media (max-width:900px){
   .fx-grid{--cols:2 !important}
-  .fx-reviews{grid-template-columns:1fr}
-  .fx-cart,.fx-checkout{grid-template-columns:1fr}
+    .fx-cart,.fx-checkout{grid-template-columns:1fr}
   .wp-block-columns{flex-direction:column}
   .wp-block-columns.is-not-stacked-on-mobile{flex-direction:row;flex-wrap:wrap}
   .wp-block-columns.is-not-stacked-on-mobile>.wp-block-column{flex:1 1 45%}
@@ -721,7 +748,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 <p class="has-mute-color has-text-color has-sm-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">Pulled live from our Google Business Profile. Real names, real counts — nothing written in-house.</p>
 
-<div class="fx-reviews"><figure class="fx-review"><blockquote>Carried six Express packs to Leh. Hotel kettle, six minutes, actual dal chawal at 11,000 feet.</blockquote><figcaption>★★★★★ · Rohit M. · <span class="fx-verified">Google review</span></figcaption></figure><figure class="fx-review"><blockquote>My mother is 78 and cooks less now. The Jain dal fry means she eats a proper lunch without standing at the stove.</blockquote><figcaption>★★★★★ · Anjali S. · <span class="fx-verified">Google review</span></figcaption></figure><figure class="fx-review"><blockquote>Sceptical about dried chutney. The coconut one is genuinely close to what my grandmother grinds.</blockquote><figcaption>★★★★☆ · Deepa R. · <span class="fx-verified">Google review</span></figcaption></figure></div>
+<div class="fd-reviews"><figure class="fd-review"><blockquote>Carried six Express packs to Leh. Hotel kettle, six minutes, actual dal chawal at 11,000 feet.</blockquote><figcaption><span class="fd-stars">★★★★★</span> · Rohit M. · <span class="fd-verified">Google review</span></figcaption></figure><figure class="fd-review"><blockquote>My mother is 78 and cooks less now. The Jain dal fry means she eats a proper lunch without standing at the stove.</blockquote><figcaption><span class="fd-stars">★★★★★</span> · Anjali S. · <span class="fd-verified">Google review</span></figcaption></figure><figure class="fd-review"><blockquote>Sceptical about dried chutney. The coconut one is genuinely close to what my grandmother grinds.</blockquote><figcaption><span class="fd-stars">★★★★☆</span> · Deepa R. · <span class="fd-verified">Google review</span></figcaption></figure></div>
 
 
 </div>
@@ -1125,7 +1152,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 
 <div class="wp-block-group has-border-color has-line-border-color has-leaf-wash-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);margin-bottom:var(--wp--preset--spacing--50);padding:var(--wp--preset--spacing--40)">
-<p class="fx-ship"><strong>₹106 away from free shipping.</strong> Add one more pack and delivery is on us.</p><div class="fd-progress"><i style="width:82%"></i></div>
+<div class="fd-shipping-progress"><p class="fd-ship"><strong>₹106</strong> away from free shipping.</p><div class="fd-progress" role="progressbar" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100" aria-label="Progress toward free shipping"><i style="width:82%"></i></div></div>
 
 
 </div>

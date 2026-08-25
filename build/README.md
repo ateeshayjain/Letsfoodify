@@ -16,6 +16,8 @@ theme/foodify/          Blocksy child theme. Deploy this from git; never edit on
     checkout-fields.php      25 fields → 9, email required, state as select, PIN auto-fill
     product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
     patterns.php             Pattern category registration
+    product-attributes.php   Filter attributes, forced non-indexable (WP-02)
+    shortcodes.php           Free-shipping progress + Google reviews
   patterns/             Block patterns. Pages are assembled from these — no page builder.
   templates/            Block templates: home, product, category, cart, checkout, page, 404
   parts/                header.html, footer.html

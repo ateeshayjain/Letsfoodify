@@ -154,14 +154,16 @@ REVIEWS = [
 def shortcode(code):
     if "google_reviews" in code:
         cards = "".join(
-            f'<figure class="fx-review"><blockquote>{html.escape(q)}</blockquote>'
-            f'<figcaption>{"★"*s}{"☆"*(5-s)} · {html.escape(who)} · <span class="fx-verified">Google review</span></figcaption></figure>'
+            f'<figure class="fd-review"><blockquote>{html.escape(q)}</blockquote>'
+            f'<figcaption><span class="fd-stars">{"★"*s}{"☆"*(5-s)}</span> · {html.escape(who)} · <span class="fd-verified">Google review</span></figcaption></figure>'
             for q, who, s in REVIEWS)
-        return f'<div class="fx-reviews">{cards}</div>'
+        return f'<div class="fd-reviews">{cards}</div>'
     if "free_shipping_progress" in code:
-        return ('<p class="fx-ship"><strong>₹106 away from free shipping.</strong> '
-                'Add one more pack and delivery is on us.</p>'
-                '<div class="fd-progress"><i style="width:82%"></i></div>')
+        return ('<div class="fd-shipping-progress">'
+                '<p class="fd-ship"><strong>₹106</strong> away from free shipping.</p>'
+                '<div class="fd-progress" role="progressbar" aria-valuenow="82" aria-valuemin="0" '
+                'aria-valuemax="100" aria-label="Progress toward free shipping">'
+                '<i style="width:82%"></i></div></div>')
     return f'<div class="fx-note">shortcode: {html.escape(code)}</div>'
 
 
@@ -447,16 +449,6 @@ FIXTURE_CSS = """
 .fx-pag a{padding:8px 14px;border:1px solid var(--wp--preset--color--line);border-radius:6px;
   font-size:var(--wp--preset--font-size--sm);cursor:pointer}
 .fx-pag a.on{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-color:var(--wp--preset--color--char)}
-.fx-reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--wp--preset--spacing--40)}
-.fx-review{margin:0;background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
-  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)}
-.fx-review blockquote{margin:0 0 14px;font-family:var(--wp--preset--font-family--display);
-  font-size:var(--wp--preset--font-size--md);line-height:1.45}
-.fx-review figcaption{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
-.fx-verified{color:var(--wp--preset--color--leaf-ink)}
-.fx-ship{margin:0 0 10px;font-size:var(--wp--preset--font-size--sm)}
-.fd-progress{background:var(--wp--custom--track);border-radius:var(--wp--custom--radius--pill);height:8px;overflow:hidden}
-.fd-progress>i{display:block;height:100%;background:var(--wp--preset--color--leaf);border-radius:999px}
 .fx-cart,.fx-checkout{display:grid;grid-template-columns:1.6fr 1fr;gap:var(--wp--preset--spacing--60);align-items:start}
 .fx-carttable{width:100%;border-collapse:collapse}
 .fx-carttable td{padding:16px 12px 16px 0;border-bottom:1px solid var(--wp--preset--color--line);vertical-align:middle}
@@ -485,8 +477,7 @@ FIXTURE_CSS = """
   color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
 @media (max-width:900px){
   .fx-grid{--cols:2 !important}
-  .fx-reviews{grid-template-columns:1fr}
-  .fx-cart,.fx-checkout{grid-template-columns:1fr}
+    .fx-cart,.fx-checkout{grid-template-columns:1fr}
   .wp-block-columns{flex-direction:column}
   .wp-block-columns.is-not-stacked-on-mobile{flex-direction:row;flex-wrap:wrap}
   .wp-block-columns.is-not-stacked-on-mobile>.wp-block-column{flex:1 1 45%}
