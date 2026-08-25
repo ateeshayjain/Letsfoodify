@@ -225,8 +225,32 @@ add_filter( 'script_loader_tag', static function ( string $tag, string $handle )
  * template's own image, not on a request-wide static.
  */
 
+/**
+ * The footer's copyright year.
+ *
+ * BUG THIS FIXES: `parts/footer.html` carried `<!--FOODIFY_YEAR-->` and NOTHING
+ * IN THE THEME REPLACED IT. Only tools/render-preview.py did — so the preview
+ * showed a current year the live site could never render, and the live footer
+ * read "© The Foodify Company" with the year sitting there as an invisible HTML
+ * comment. The preview exists to stop the mockup drifting from the theme, and
+ * this was the preview doing the drifting.
+ *
+ * It also survived the blocking gate, because the footer-year check WARNED when
+ * no year was found instead of failing. That warn is now a failure.
+ *
+ * A render_block filter rather than a shortcode: shortcodes are not expanded
+ * inside block template parts, so a [year] shortcode would have printed itself.
+ */
+add_filter( 'render_block', static function ( $html ) {
+	if ( ! is_string( $html ) || false === strpos( $html, 'FOODIFY_YEAR' ) ) {
+		return $html;   // cheap guard — this runs for every block on every page
+	}
+	return str_replace( '<!--FOODIFY_YEAR-->', esc_html( wp_date( 'Y' ) ), $html );
+} );
+
 /** Feature modules. Each is independently removable. */
 require_once FOODIFY_DIR . '/inc/checkout-fields.php';
+require_once FOODIFY_DIR . '/inc/checkout-flow.php';    // WP-06: the page around the form
 require_once FOODIFY_DIR . '/inc/coupon-attribution.php';
 require_once FOODIFY_DIR . '/inc/product-attributes.php';   // must load BEFORE product-display
 require_once FOODIFY_DIR . '/inc/product-display.php';

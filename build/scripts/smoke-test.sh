@@ -30,6 +30,9 @@ hdr(){ printf '\n\033[1;36m%s\033[0m\n' "$1"; }
 # checked for content before anything is asserted about it.
 FETCH(){ curl -fsSL --max-time 25 -A 'FoodifySmokeTest/1.0' "$1" 2>/dev/null; }
 CODE(){ curl -s -o /dev/null -w '%{http_code}' --max-time 25 "$1"; }
+# Response headers only. Empty means the request failed — checked before use,
+# because "no HIT header" and "could not ask" are otherwise the same string.
+HEADERS(){ curl -sS -o /dev/null -D - --max-time 25 -A 'FoodifySmokeTest/1.0' "$1" 2>/dev/null; }
 
 # Guard: returns 0 only if $1 looks like a real HTML document.
 GOT(){ [[ ${#1} -gt 500 && "$1" == *"<"* ]]; }
@@ -106,7 +109,7 @@ fi
 if GOT "$HOME"; then
   YEAR="$(date +%Y)"
   FOUND="$(grep -oiE '(©|&copy;|&#169;)[[:space:]]*[0-9]{4}' <<<"$HOME" | grep -oE '[0-9]{4}' | sort -u | tail -1)"
-  if   [[ -z "$FOUND" ]];          then wr "no copyright year found in the footer"
+  if   [[ -z "$FOUND" ]];          then no "no copyright year in the footer — the FOODIFY_YEAR substitution is broken"
   elif [[ "$FOUND" == "$YEAR" ]];  then ok "footer year current ($FOUND)"
   else                                  no "footer year is $FOUND, current year is $YEAR"; fi
 fi
@@ -147,10 +150,62 @@ if REQUIRE_BODY "checkout" "$CHK"; then
     grep -qi 'razorpay' <<<"$CHK" && ok "Razorpay present" || no "Razorpay missing"
     grep -qE 'name="billing_email"[^>]*required|billing_email.*validate-required' <<<"$CHK" \
       && ok "email is required" || wr "could not confirm email is required — check manually"
+
+    # WP-06: checkout runs a stripped header. Every nav link on this page is an
+    # exit, and the audited site ran the full site chrome here. Positive check
+    # first — the marker must be present — so a body that arrived empty cannot
+    # report "no navigation" as a pass.
+    if grep -qi 'fd-checkout-back' <<<"$CHK"; then
+      ok "checkout uses the stripped header"
+      grep -qi 'wp-block-navigation' <<<"$CHK" \
+        && no "checkout still renders site navigation — every link there is an exit" \
+        || ok "no site navigation on checkout"
+    else
+      no "checkout is NOT using the stripped header (parts/header-checkout.html)"
+    fi
   fi
 fi
 
-hdr "5 · Performance budget (uncached HTML)"
+hdr "5 · Privacy — pages that must never be cached"
+# A page cache that serves /checkout/ or /my-account/ to an anonymous visitor
+# serves ONE CUSTOMER'S name, address and phone TO ANOTHER. It is a data breach,
+# not a performance bug, and it is silent: everything renders, orders go through,
+# and nobody finds out until a customer says they saw somebody else's address.
+#
+# REVIEW-NOTES item 1 records that the only cache measurement anyone has taken of
+# this site was almost certainly polluted by the tester's own cart cookie. So
+# this asserts rather than assumes — and asserts POSITIVELY first, because a
+# missing header and an unanswered request look identical to grep.
+for p in "/cart/" "/checkout/" "/my-account/"; do
+  H="$(HEADERS "$BASE$p")"
+  if ! grep -qi '^HTTP/' <<<"$H"; then
+    no "$p — could not read response headers; cache policy NOT verified"
+    continue
+  fi
+
+  grep -qiE '^cache-control:.*no-store' <<<"$H" \
+    && ok "$p sends Cache-Control: no-store" \
+    || no "$p does NOT send no-store — a shared cache may serve one customer's details to another"
+
+  # Proves inc/checkout-flow.php is loaded and running on this page, which is a
+  # different question from whether the header policy is right.
+  grep -qi '^x-foodify-private:' <<<"$H" \
+    && ok "$p carries the theme's private-page marker" \
+    || no "$p missing X-Foodify-Private — the WP-06 module is not running here"
+
+  # Only now that headers demonstrably arrived is an absence check meaningful.
+  if grep -qiE '^(x-cache|cf-cache-status|hcdn-cache|x-hcdn-cache|x-litespeed-cache|x-proxy-cache|x-fastcgi-cache):' <<<"$H"; then
+    if grep -qiE '^(x-cache|cf-cache-status|hcdn-cache|x-hcdn-cache|x-litespeed-cache|x-proxy-cache|x-fastcgi-cache):[^\r]*hit' <<<"$H"; then
+      no "$p was served FROM AN EDGE CACHE (HIT) — private data is being shared between visitors"
+    else
+      ok "$p reported by the edge as not cached"
+    fi
+  else
+    wr "$p — no edge cache header at all; the CDN's behaviour here is unconfirmed"
+  fi
+done
+
+hdr "6 · Performance budget (uncached HTML)"
 read -r TTFB TOTAL SIZE HTTPC < <(curl -s -o /dev/null \
   -w '%{time_starttransfer} %{time_total} %{size_download} %{http_code}' --max-time 30 "$PDP_URL")
 # 0 bytes in 0 seconds is not a fast page, it is a failed request.
@@ -171,7 +226,7 @@ else
   no "asset budget could not be measured — product page did not load"
 fi
 
-hdr "6 · Redirects"
+hdr "7 · Redirects"
 if [[ -n "$REDIRECTS" && -f "$REDIRECTS" ]]; then
   n=0; bad=0
   while IFS=, read -r src tgt typ note; do

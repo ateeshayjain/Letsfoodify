@@ -14,6 +14,8 @@ theme/foodify/          Standalone block theme. Deploy from git; never edit on t
   inc/
     coupon-attribution.php   Partner ownership, notification email, admin column, dashboard widget
     checkout-fields.php      25 fields → 9, email required, state as select, PIN auto-fill
+    checkout-flow.php        WP-06. No-cache on private pages, honest cart total,
+                             error focus, coupon demoted, one-page checkout
     product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
     patterns.php             Pattern category registration
     product-attributes.php   Filter attributes, forced non-indexable (WP-02)
@@ -24,7 +26,7 @@ theme/foodify/          Standalone block theme. Deploy from git; never edit on t
   patterns/             Block patterns. Pages are assembled from these — no page builder.
   templates/            Block templates: home, product, category, cart, checkout,
                         my-account, page, 404
-  parts/                header.html, footer.html
+  parts/                header.html, footer.html, and stripped checkout versions
 
 tools/
   render-preview.py     Renders the theme to preview/storefront.html for review.

@@ -403,5 +403,27 @@
 				}
 			}
 		}
-	}
+	},
+	"templateParts": [
+		{
+			"name": "header",
+			"title": "Header",
+			"area": "header"
+		},
+		{
+			"name": "footer",
+			"title": "Footer",
+			"area": "footer"
+		},
+		{
+			"name": "header-checkout",
+			"title": "Header — checkout",
+			"area": "header"
+		},
+		{
+			"name": "footer-checkout",
+			"title": "Footer — checkout",
+			"area": "footer"
+		}
+	]
 }

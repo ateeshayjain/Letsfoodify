@@ -269,6 +269,7 @@ def cart_or_checkout(which):
 <div class="fx-row"><span>Shipping</span><span class="fx-num">Free</span></div>
 <div class="fx-row"><span>GST</span><span class="fx-num">Included</span></div>
 <div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹558</span></div>
+<p class="fd-cart-promise is-estimate">Shipping is calculated from your PIN code at the next step. Nothing else is added.</p>
 <button class="wp-element-button fx-add fx-add--lg">Checkout</button></aside></div>'''
     # Rendered as a RETURNING customer sees it: the chooser above, and every
     # field already carrying the default address. That is WP-05's acceptance
@@ -285,7 +286,9 @@ def cart_or_checkout(which):
         + '</label>'
         for l, v, filled in fields)
     return f'''<div class="fx-checkout">
-<div>{address_chooser()}
+<div><div class="woocommerce-form-coupon-toggle"><div class="woocommerce-info">Have a code from a
+partner or a creator? <a href="#" class="showcoupon">Enter it here</a></div></div>
+{address_chooser()}
 <p class="fx-fieldcount">Nine fields for a first order — the audited site asked twenty-five.
 A returning customer types none of them.</p>{inputs}</div>
 <aside class="fx-summary"><h2>Your order</h2>
@@ -293,6 +296,8 @@ A returning customer types none of them.</p>{inputs}</div>
 <div class="fx-row fx-disc"><span>Prepaid saving</span><span class="fx-num">−₹25</span></div>
 <div class="fx-row"><span>Shipping</span><span class="fx-num">Free</span></div>
 <div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹595</span></div>
+<p class="fd-cart-promise is-promise">GST is included. This is the final amount — no handling,
+convenience or platform fee is added.</p>
 <div class="fx-pay"><label><input type="radio" checked> Pay now — save ₹25</label>
 <label><input type="radio"> Cash on delivery</label></div>
 <button class="wp-element-button fx-add fx-add--lg">Place order</button></aside></div>'''
@@ -425,6 +430,11 @@ def render(markup, depth=0):
             tag = a.get("tagName", "div")
             if os.path.exists(p):
                 out.append(f"<{tag}>" + render(open(p).read(), depth + 1) + f"</{tag}>")
+            else:
+                # Say so. A missing part rendering as nothing is a preview that
+                # quietly disagrees with the theme, which is the one thing
+                # generating it from the theme is meant to prevent.
+                out.append(f'<div class="fx-note">missing template part: {a.get("slug","")}</div>')
             continue
         if name == "pattern":
             out.append(render(load_pattern(a.get("slug", "")), depth + 1))

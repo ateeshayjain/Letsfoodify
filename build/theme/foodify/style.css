@@ -298,6 +298,49 @@ input:focus, select:focus, textarea:focus {
 .fd-claim h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
 .fd-claim__note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); margin-bottom: 0; }
 
+/* Checkout shell — WP-06. The audited site ran the full site chrome here and
+   switched between boxes with injected JavaScript. This is one page, stripped:
+   every navigation link on a checkout page is an exit. */
+.fd-checkout-back a { text-decoration: none; min-height: var(--wp--custom--tapTarget); display: inline-flex; align-items: center; }
+.fd-checkout-help a { color: inherit; }
+
+/* The cart's total promise. Rendered from state, never hardcoded — see
+   foodify_cart_promise(). An estimate must not look like a guarantee. */
+.fd-cart-promise {
+  margin: var(--wp--preset--spacing--30) 0 0;
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+  line-height: 1.6;
+}
+.fd-cart-promise.is-promise { color: var(--wp--preset--color--leaf-ink); }
+
+/* Final-amount line, inside the order review where the number is. */
+.fd-order-note td {
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+  padding-top: var(--wp--preset--spacing--30);
+  border-top: 1px solid var(--wp--preset--color--line);
+}
+
+/* Coupon entry is demoted to a line of text. It is here for WP-09's partner
+   codes, not to ask every customer whether they are paying too much. */
+.woocommerce-form-coupon-toggle .woocommerce-info {
+  background: none; border: 0; padding: 0;
+  margin: 0 0 var(--wp--preset--spacing--40);
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+}
+.woocommerce-form-coupon-toggle .woocommerce-info::before { content: none; }
+.woocommerce-form-coupon {
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--40);
+  margin: 0 0 var(--wp--preset--spacing--50);
+}
+
+/* An error the customer is sent to must be visible when they arrive there. */
+.woocommerce-error:focus { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }

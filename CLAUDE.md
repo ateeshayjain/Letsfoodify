@@ -155,6 +155,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `tests/selftest.py` | Proves `smoke-test.sh` catches what it claims. Run before trusting the gate |
 | `scripts/clean-elementor-meta.php` | WP-03. Orphaned postmeta, dry-run by default |
 | `docs/WP-05-NOTES.md` | Address book, checkout chooser, account claim, OTP rule |
+| `docs/WP-06-NOTES.md` | Checkout shell, the no-cache privacy control, honest totals |
+| `tests/checkout-test.php` | 15 assertions. The cart may only promise what it knows |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |

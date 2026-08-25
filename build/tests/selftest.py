@@ -51,7 +51,12 @@ def pages(mode):
         "/product/express-dal-fry/": HEAD + "<h1>Express Dal Fry</h1>" + counter + PAD + FOOT,
         "/shop/": HEAD + "<h1>Shop</h1>" + PAD + '<a href="/?add-to-cart=42">Add</a>' + FOOT,
         "/cart/": HEAD + "<h1>Cart</h1>" + PAD + "<p>1 item in your cart</p>" + FOOT,
-        "/checkout/": HEAD + "<h1>Checkout</h1>" + PAD + CHECKOUT_FORM + FOOT,
+        # WP-06: the good build runs a stripped checkout header. The bad one
+        # runs the full site chrome, where every nav link is an exit.
+        "/checkout/": HEAD + ('<nav class="wp-block-navigation"><a href="/shop/">Shop</a></nav>'
+                              if mode == "bad" else
+                              '<p class="fd-checkout-back"><a href="/cart/">Back to cart</a></p>')
+                      + "<h1>Checkout</h1>" + PAD + CHECKOUT_FORM + FOOT,
         "/my-account/": HEAD + "<h1>My account</h1>" + leak + PAD + FOOT,
         # WP-05's address book is a rewrite endpoint. The "bad" fixture omits it
         # so the 404 the gate must catch is a real 404, not an asserted string.
@@ -80,6 +85,18 @@ def serve(mode, port):
             self.send_header("Content-Type", "text/plain" if path.endswith(".txt") else "text/html")
             self.send_header("Content-Length", str(len(b)))
             self.send_header("Set-Cookie", "woocommerce_items_in_cart=1; Path=/")
+            # WP-06 privacy headers. The "good" fixture sends them; the "bad"
+            # one omits them AND reports an edge cache HIT, which is the actual
+            # failure being defended against — one customer's checkout page
+            # served to another.
+            if path in ("/cart/", "/checkout/", "/my-account/", "/my-account/address-book/"):
+                if mode == "bad":
+                    self.send_header("X-Cache", "HIT")
+                else:
+                    self.send_header("Cache-Control",
+                                     "no-cache, no-store, must-revalidate, max-age=0, private")
+                    self.send_header("X-Foodify-Private", "1")
+                    self.send_header("X-Cache", "BYPASS")
             self.end_headers()
             self.wfile.write(b)
 
@@ -133,6 +150,11 @@ check("core sitemap retired",             "core sitemap retired" in out)
 check("billing fields within budget",     "billing fields: 8" in out)
 check("COD detected",                     "PASS COD offered" in out)
 check("address-book endpoint reachable",  "PASS /my-account/address-book/ \u2192 200" in out)
+check("checkout sends no-store",          "PASS /checkout/ sends Cache-Control: no-store" in out)
+check("private-page marker seen",         "PASS /checkout/ carries the theme's private-page marker" in out)
+check("edge reports not cached",          "PASS /checkout/ reported by the edge as not cached" in out)
+check("stripped checkout header",         "PASS checkout uses the stripped header" in out)
+check("no site nav on checkout",          "PASS no site navigation on checkout" in out)
 check("exits 0",                          rc == 0)
 
 print("\n── Case 2 · site carrying the audit's defects ──")
@@ -141,6 +163,12 @@ out, rc = run(8972); s2.shutdown()
 check("leaked comment CAUGHT",  "developer comment still leaking" in out)
 check("fake counter CAUGHT",    "fake viewer counter still present" in out)
 check("missing address-book endpoint CAUGHT", "rewrite rules not flushed" in out)
+# The one that matters most: a cached checkout page shares one customer's
+# details with the next visitor. The gate must call that a failure, not a win.
+check("cached checkout page CAUGHT",  "served FROM AN EDGE CACHE (HIT)" in out)
+check("missing no-store CAUGHT",      "does NOT send no-store" in out)
+check("missing theme marker CAUGHT",  "the WP-06 module is not running here" in out)
+check("full site chrome on checkout CAUGHT", "checkout is NOT using the stripped header" in out)
 check("exits non-zero",         rc != 0)
 
 print("\n── Case 3 · unreachable site (the regression test) ──")
@@ -151,6 +179,12 @@ check("does NOT falsely clear the fake counter",
       "PASS no fake viewer counter" not in out)
 check("does NOT falsely clear the address-book endpoint",
       "endpoint registered" not in out)
+check("does NOT falsely clear the cache policy",
+      "sends Cache-Control: no-store" not in out)
+check("says the cache policy could not be verified",
+      "cache policy NOT verified" in out)
+check("does NOT falsely clear the checkout header",
+      "PASS no site navigation on checkout" not in out)
 check("says the page did not load", "did not load" in out)
 check("exits non-zero", rc != 0)
 

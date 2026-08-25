@@ -439,6 +439,49 @@ input:focus, select:focus, textarea:focus {
 .fd-claim h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
 .fd-claim__note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); margin-bottom: 0; }
 
+/* Checkout shell — WP-06. The audited site ran the full site chrome here and
+   switched between boxes with injected JavaScript. This is one page, stripped:
+   every navigation link on a checkout page is an exit. */
+.fd-checkout-back a { text-decoration: none; min-height: var(--wp--custom--tapTarget); display: inline-flex; align-items: center; }
+.fd-checkout-help a { color: inherit; }
+
+/* The cart's total promise. Rendered from state, never hardcoded — see
+   foodify_cart_promise(). An estimate must not look like a guarantee. */
+.fd-cart-promise {
+  margin: var(--wp--preset--spacing--30) 0 0;
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+  line-height: 1.6;
+}
+.fd-cart-promise.is-promise { color: var(--wp--preset--color--leaf-ink); }
+
+/* Final-amount line, inside the order review where the number is. */
+.fd-order-note td {
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+  padding-top: var(--wp--preset--spacing--30);
+  border-top: 1px solid var(--wp--preset--color--line);
+}
+
+/* Coupon entry is demoted to a line of text. It is here for WP-09's partner
+   codes, not to ask every customer whether they are paying too much. */
+.woocommerce-form-coupon-toggle .woocommerce-info {
+  background: none; border: 0; padding: 0;
+  margin: 0 0 var(--wp--preset--spacing--40);
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+}
+.woocommerce-form-coupon-toggle .woocommerce-info::before { content: none; }
+.woocommerce-form-coupon {
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--40);
+  margin: 0 0 var(--wp--preset--spacing--50);
+}
+
+/* An error the customer is sent to must be visible when they arrive there. */
+.woocommerce-error:focus { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
@@ -1298,10 +1341,8 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <div class="fx-row"><span>Shipping</span><span class="fx-num">Free</span></div>
 <div class="fx-row"><span>GST</span><span class="fx-num">Included</span></div>
 <div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹558</span></div>
+<p class="fd-cart-promise is-estimate">Shipping is calculated from your PIN code at the next step. Nothing else is added.</p>
 <button class="wp-element-button fx-add fx-add--lg">Checkout</button></aside></div>
-
-<p class="has-mute-color has-text-color has-sm-font-size">Shipping and handling are calculated here, before you go to checkout. Nothing new is added at the payment step.</p>
-
 </main>
 
 <footer>
@@ -1361,41 +1402,33 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 </footer>
 </div><div class="fx-shell" id="s-checkout" hidden><header>
-<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
-
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI 10012345678901</p>
-
-</div>
-
-
-
-<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40)">
 
 <div class="wp-block-group">
 <p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
 
+<p class="fd-checkout-back has-mute-color has-text-color has-sm-font-size"><a href="/cart/">← Back to cart</a></p>
 
-
-
-
-
-
-
-<div class="wp-block-group">
-<button class="fx-acct" aria-label="Account">◍</button>
-<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>
 </div>
 
 </div>
+
+
+
+<div class="wp-block-group has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-leaf-ink-color has-text-color has-sm-font-size">Secure checkout · GST included in every price · No charges added after this page</p>
 
 </div>
 
 </header>
 
-<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
-<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--70)">
+<h1 class="fx-posttitle has-2-xl-font-size">Express Dal Fry</h1>
 <div class="fx-checkout">
-<div><form class="fd-address-choose"><fieldset><legend>Deliver to</legend><label class="fd-address-choose__option"><input type="radio" name="fx-addr" checked><span class="fd-address-choose__label">Home</span><span class="fd-address-choose__body">N-7011 Parx Laureate, Sector 108, Noida, 201304</span></label><label class="fd-address-choose__option"><input type="radio" name="fx-addr"><span class="fd-address-choose__label">Office</span><span class="fd-address-choose__body">Tower C, 9th floor, Sector 16, Noida, 201301</span></label><a class="fd-address-choose__manage" href="#">Manage saved addresses</a></fieldset></form>
+<div><div class="woocommerce-form-coupon-toggle"><div class="woocommerce-info">Have a code from a
+partner or a creator? <a href="#" class="showcoupon">Enter it here</a></div></div>
+<form class="fd-address-choose"><fieldset><legend>Deliver to</legend><label class="fd-address-choose__option"><input type="radio" name="fx-addr" checked><span class="fd-address-choose__label">Home</span><span class="fd-address-choose__body">N-7011 Parx Laureate, Sector 108, Noida, 201304</span></label><label class="fd-address-choose__option"><input type="radio" name="fx-addr"><span class="fd-address-choose__label">Office</span><span class="fd-address-choose__body">Tower C, 9th floor, Sector 16, Noida, 201301</span></label><a class="fd-address-choose__manage" href="#">Manage saved addresses</a></fieldset></form>
 <p class="fx-fieldcount">Nine fields for a first order — the audited site asked twenty-five.
 A returning customer types none of them.</p><label class="fx-field"><span>Mobile number</span><input value="98••• ••210"></label><label class="fx-field"><span>Email</span><input value="you@example.com"></label><label class="fx-field"><span>Full name</span><input value="Ateeshay Jain"></label><label class="fx-field"><span>PIN code</span><input value="201304"></label><label class="fx-field"><span>City</span><input value="Noida"></label><label class="fx-field"><span>State</span><select><option>Uttar Pradesh</option></select></label><label class="fx-field"><span>Address</span><input value="N-7011 Parx Laureate"></label><label class="fx-field"><span>Address line 2 (optional)</span><input value="Sector 108"></label><label class="fx-field"><span>Order notes (optional)</span><input placeholder=""></label></div>
 <aside class="fx-summary"><h2>Your order</h2>
@@ -1403,63 +1436,23 @@ A returning customer types none of them.</p><label class="fx-field"><span>Mobile
 <div class="fx-row fx-disc"><span>Prepaid saving</span><span class="fx-num">−₹25</span></div>
 <div class="fx-row"><span>Shipping</span><span class="fx-num">Free</span></div>
 <div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹595</span></div>
+<p class="fd-cart-promise is-promise">GST is included. This is the final amount — no handling,
+convenience or platform fee is added.</p>
 <div class="fx-pay"><label><input type="radio" checked> Pay now — save ₹25</label>
 <label><input type="radio"> Cash on delivery</label></div>
 <button class="wp-element-button fx-add fx-add--lg">Place order</button></aside></div>
 </main>
 
 <footer>
-<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-top-width:1px;padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
 
-<div class="wp-block-columns">
-
-<div class="wp-block-column" style="flex-basis:38%">
-<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
-
-<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
-
-</div>
+<p class="fd-checkout-help has-text-align-center has-mute-color has-text-color has-sm-font-size">Stuck? <a href="/contact-us/">Talk to us</a> · <a href="/shipping/">Shipping</a> · <a href="/returns/">Returns</a> · <a href="/privacy-policy/">Privacy</a> · <a href="/terms/">Terms</a></p>
 
 
-<div class="wp-block-column">
-
-<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+<p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901</p>
 
 
-<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/">Express</a></li><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/">Flavors</a></li><li><a href="/shop/">All products</a></li></ul>
-
-</div>
-
-
-<div class="wp-block-column">
-
-<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
-
-
-<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
-
-</div>
-
-
-<div class="wp-block-column">
-
-<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
-
-
-<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
-
-</div>
-
-</div>
-
-
-<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
-
-
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345678901 · care@letsfoodify.com</p>
-
-
-<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+<p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
 
 </div>
 
