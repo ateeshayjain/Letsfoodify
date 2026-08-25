@@ -1,0 +1,689 @@
+<title>Foodify Revamp Docket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+:root{
+  --paper:#F6F5F2; --surface:#FFFFFF; --surface-2:#EFEDE8;
+  --ink:#15181F; --ink-2:#4A5060; --ink-3:#7B8294;
+  --rule:#E2E0DB; --rule-2:#D2CFC8;
+  --accent:#B0761A; --accent-soft:#F0E3CB;
+  --rec:#2C6558; --rec-soft:#DCEBE6;
+  --risk:#A63D28; --risk-soft:#F3DFD9;
+  --sans:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#101319; --surface:#171B23; --surface-2:#1D222C;
+    --ink:#EDEBE6; --ink-2:#A8AEBD; --ink-3:#767D8E;
+    --rule:#262B36; --rule-2:#333A47;
+    --accent:#E0A93F; --accent-soft:#33291640;
+    --rec:#5FB39E; --rec-soft:#16302B40;
+    --risk:#E07A5F; --risk-soft:#33201940;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101319; --surface:#171B23; --surface-2:#1D222C;
+  --ink:#EDEBE6; --ink-2:#A8AEBD; --ink-3:#767D8E;
+  --rule:#262B36; --rule-2:#333A47;
+  --accent:#E0A93F; --accent-soft:#33291640;
+  --rec:#5FB39E; --rec-soft:#16302B40;
+  --risk:#E07A5F; --risk-soft:#33201940;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--serif); font-size:17px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:940px; margin:0 auto; padding:0 28px 96px}
+
+/* ---- masthead ---- */
+.masthead{padding:56px 0 0}
+.eyebrow{
+  font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--accent); margin:0 0 18px
+}
+h1{
+  font-family:var(--sans); font-weight:700; font-size:clamp(34px,5.4vw,52px);
+  line-height:1.05; letter-spacing:-.022em; margin:0 0 20px; text-wrap:balance;
+}
+.standfirst{
+  font-size:20px; line-height:1.55; color:var(--ink-2); max-width:62ch; margin:0 0 34px;
+}
+.meta{
+  display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule); margin-bottom:44px;
+}
+.meta div{
+  flex:1 1 168px; padding:15px 20px 15px 0; border-right:1px solid var(--rule);
+}
+.meta div:last-child{border-right:0}
+.meta dt{
+  font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 5px;
+}
+.meta dd{margin:0; font-family:var(--sans); font-size:14.5px; font-weight:500; line-height:1.4}
+.flag{color:var(--risk)}
+
+/* ---- index ---- */
+.index{
+  background:var(--surface); border:1px solid var(--rule); border-radius:3px;
+  padding:24px 26px; margin-bottom:56px;
+}
+.index h2{
+  font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 16px;
+}
+.index ol{
+  list-style:none; margin:0; padding:0; column-width:230px; column-gap:34px;
+}
+.index li{margin:0 0 7px; break-inside:avoid}
+.index a{
+  font-family:var(--sans); font-size:14px; color:var(--ink-2);
+  text-decoration:none; display:flex; gap:11px;
+}
+.index a:hover{color:var(--accent)}
+.index .n{font-family:var(--mono); font-size:12px; color:var(--ink-3); min-width:16px}
+
+/* ---- sections ---- */
+section{margin:0 0 60px; scroll-margin-top:20px}
+h2.sec{
+  font-family:var(--sans); font-weight:700; font-size:26px; letter-spacing:-.015em;
+  margin:0 0 8px; display:flex; gap:14px; align-items:baseline; text-wrap:balance;
+}
+h2.sec .num{
+  font-family:var(--mono); font-size:14px; font-weight:500; color:var(--accent);
+}
+.sec-rule{border:0; border-top:2px solid var(--ink); margin:0 0 26px}
+h3{
+  font-family:var(--sans); font-weight:600; font-size:17px; letter-spacing:-.005em;
+  margin:34px 0 10px; color:var(--ink);
+}
+p{margin:0 0 16px; max-width:68ch}
+ul,ol.body{margin:0 0 16px; padding-left:22px; max-width:68ch}
+li{margin:0 0 8px}
+strong{font-weight:600}
+em{font-style:italic; color:var(--ink-2)}
+a{color:var(--accent)}
+code{
+  font-family:var(--mono); font-size:.86em; background:var(--surface-2);
+  padding:1.5px 5px; border-radius:2px;
+}
+
+/* ---- callouts ---- */
+.call{
+  border-left:3px solid var(--rule-2); padding:2px 0 2px 20px; margin:0 0 20px;
+  max-width:70ch;
+}
+.call .lbl{
+  font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.13em;
+  text-transform:uppercase; display:block; margin-bottom:6px;
+}
+.call p:last-child{margin-bottom:0}
+.call.rec{border-left-color:var(--rec)}
+.call.rec .lbl{color:var(--rec)}
+.call.risk{border-left-color:var(--risk)}
+.call.risk .lbl{color:var(--risk)}
+.call.note{border-left-color:var(--accent)}
+.call.note .lbl{color:var(--accent)}
+
+/* ---- tables ---- */
+.scroll{overflow-x:auto; margin:0 0 22px; -webkit-overflow-scrolling:touch}
+table{border-collapse:collapse; width:100%; font-family:var(--sans); font-size:14.5px}
+th{
+  text-align:left; font-weight:600; font-size:10.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-3); padding:0 16px 9px 0;
+  border-bottom:1.5px solid var(--ink-2); white-space:nowrap;
+}
+td{padding:11px 16px 11px 0; border-bottom:1px solid var(--rule); vertical-align:top; line-height:1.45}
+td:last-child,th:last-child{padding-right:0}
+.num-col{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+tr.total td{border-bottom:0; border-top:1.5px solid var(--ink-2); font-weight:700; padding-top:12px}
+.tag{
+  font-family:var(--mono); font-size:12px; color:var(--accent); white-space:nowrap;
+}
+
+/* ---- workstream cards ---- */
+.ws{display:flex; flex-direction:column; gap:0; margin:0 0 24px}
+.ws-item{
+  display:grid; grid-template-columns:52px 1fr 84px; gap:18px; align-items:start;
+  padding:20px 0; border-bottom:1px solid var(--rule);
+}
+.ws-item:first-child{border-top:1px solid var(--rule)}
+.ws-id{
+  font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent);
+  padding-top:2px;
+}
+.ws-body h4{
+  font-family:var(--sans); font-size:16.5px; font-weight:600; margin:0 0 7px;
+  letter-spacing:-.005em;
+}
+.ws-body p{font-size:15.5px; margin:0 0 9px; line-height:1.55; color:var(--ink-2); max-width:62ch}
+.ws-body p:last-child{margin-bottom:0}
+.ws-out{
+  font-family:var(--sans); font-size:13px; color:var(--ink-3); font-style:normal;
+  display:block; padding-top:3px;
+}
+.ws-out b{
+  font-weight:600; letter-spacing:.1em; text-transform:uppercase; font-size:10px;
+  color:var(--ink-3);
+}
+.ws-days{
+  font-family:var(--mono); font-size:15px; font-weight:500; text-align:right;
+  font-variant-numeric:tabular-nums; padding-top:2px; white-space:nowrap;
+}
+.ws-days span{display:block; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); font-family:var(--sans); font-weight:600; margin-top:2px}
+
+/* ---- gantt ---- */
+.gantt{margin:0 0 10px; min-width:640px}
+.gantt-head{
+  display:grid; grid-template-columns:132px repeat(13,1fr); gap:3px;
+  font-family:var(--mono); font-size:10px; color:var(--ink-3);
+  padding-bottom:7px; border-bottom:1px solid var(--rule); margin-bottom:9px;
+}
+.gantt-head span{text-align:center}
+.gantt-head span:first-child{text-align:left; font-family:var(--sans);
+  font-size:10px; font-weight:600; letter-spacing:.11em; text-transform:uppercase}
+.gantt-row{
+  display:grid; grid-template-columns:132px repeat(13,1fr); gap:3px;
+  align-items:center; margin-bottom:5px;
+}
+.gantt-lbl{font-family:var(--sans); font-size:13px; font-weight:500; padding-right:10px}
+.bar{
+  height:24px; border-radius:2px; background:var(--accent-soft);
+  border:1px solid var(--accent); display:flex; align-items:center;
+  justify-content:center; font-family:var(--mono); font-size:10px; color:var(--accent);
+}
+.bar.b-rec{background:var(--rec-soft); border-color:var(--rec); color:var(--rec)}
+.gantt-note{
+  font-family:var(--sans); font-size:13px; color:var(--ink-3);
+  padding-top:12px; border-top:1px solid var(--rule); margin-top:6px;
+}
+
+/* ---- code ---- */
+pre{
+  font-family:var(--mono); font-size:12.5px; line-height:1.6; background:var(--surface);
+  border:1px solid var(--rule); border-left:3px solid var(--accent); border-radius:3px;
+  padding:18px 20px; overflow-x:auto; margin:0 0 20px; color:var(--ink-2);
+}
+pre b{color:var(--ink); font-weight:500}
+
+/* ---- questions ---- */
+.qgroup{margin:0 0 26px}
+.qgroup h3{margin-top:0}
+.q{
+  display:grid; grid-template-columns:34px 1fr; gap:12px; padding:11px 0;
+  border-bottom:1px solid var(--rule); align-items:start;
+}
+.q:first-of-type{border-top:1px solid var(--rule)}
+.qn{
+  font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent);
+  padding-top:2px;
+}
+.q p{margin:0; font-size:15.5px; line-height:1.5}
+.blocks{
+  font-family:var(--sans); font-size:11px; font-weight:600; color:var(--risk);
+  letter-spacing:.08em; text-transform:uppercase;
+}
+
+/* ---- out of scope ---- */
+.oos{list-style:none; padding:0; margin:0 0 16px; max-width:70ch}
+.oos li{
+  padding:9px 0 9px 26px; border-bottom:1px solid var(--rule); position:relative;
+  font-family:var(--sans); font-size:15px; margin:0;
+}
+.oos li::before{
+  content:"—"; position:absolute; left:0; color:var(--ink-3); font-family:var(--mono);
+}
+
+footer{
+  border-top:2px solid var(--ink); padding-top:22px; margin-top:24px;
+  font-family:var(--sans); font-size:13.5px; color:var(--ink-3); line-height:1.6;
+}
+footer a{color:var(--ink-2)}
+
+@media (max-width:640px){
+  body{font-size:16px}
+  .wrap{padding:0 20px 64px}
+  .ws-item{grid-template-columns:40px 1fr; gap:12px}
+  .ws-days{grid-column:2; text-align:left; padding-top:8px}
+  .ws-days span{display:inline; margin-left:6px}
+  .meta div{flex:1 1 100%; border-right:0; border-bottom:1px solid var(--rule); padding-right:0}
+  .meta div:last-child{border-bottom:0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Pre-quote scope · 24 Aug 2026</p>
+  <h1>letsfoodify.com — revamp &amp; SEO</h1>
+  <p class="standfirst">Nalin's nine asks, decoded into eleven workstreams, six recommendations, and the fifteen questions that have to be answered before any of this becomes a number.</p>
+
+  <dl class="meta">
+    <div><dt>Client</dt><dd>The Foodify Company<br>Noida 201304</dd></div>
+    <div><dt>Stack</dt><dd>WordPress + WooCommerce<br>live</dd></div>
+    <div><dt>Effort</dt><dd>63–72 dev-days<br>~9 weeks to launch</dd></div>
+    <div><dt>Status</dt><dd class="flag">Not confirmed<br>with client</dd></div>
+  </dl>
+
+  <div class="call risk">
+    <span class="lbl">Evidence limit</span>
+    <p>letsfoodify.com is blocked by this environment's egress policy, so the live site was never loaded. The business read below comes from search-engine snapshots of the site's own pages. Plugin stack, theme, hosting, gateway, traffic and current Core Web Vitals are <strong>unknown</strong> — first item of Phase 0, and the reason effort carries a 15% contingency.</p>
+  </div>
+</header>
+
+<nav class="index">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#brief"><span class="n">01</span> The brief, decoded</a></li>
+    <li><a href="#business"><span class="n">02</span> What the business is</a></li>
+    <li><a href="#rec"><span class="n">03</span> Recommendations</a></li>
+    <li><a href="#ws"><span class="n">04</span> Workstreams</a></li>
+    <li><a href="#reviews"><span class="n">05</span> The Google reviews ask</a></li>
+    <li><a href="#coupon"><span class="n">06</span> Coupon engine spec</a></li>
+    <li><a href="#seo"><span class="n">07</span> SEO migration risk</a></li>
+    <li><a href="#compliance"><span class="n">08</span> India compliance</a></li>
+    <li><a href="#phasing"><span class="n">09</span> Phasing</a></li>
+    <li><a href="#cost"><span class="n">10</span> Effort &amp; cost</a></li>
+    <li><a href="#questions"><span class="n">11</span> Open questions</a></li>
+    <li><a href="#oos"><span class="n">12</span> Out of scope</a></li>
+    <li><a href="#threads"><span class="n">13</span> Open threads</a></li>
+  </ol>
+</nav>
+
+<section id="brief">
+  <h2 class="sec"><span class="num">01</span> The brief, decoded</h2><hr class="sec-rule">
+  <p>Nalin's list from 21 Aug, verbatim, mapped to build items.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>What he said</th><th>What it means to build</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>"e-commerce website"</td><td>Revamp the existing WooCommerce store, not a new stack</td><td class="tag">W2, W3</td></tr>
+      <tr><td>"SEO friendly"</td><td>Technical SEO + on-page + a migration that doesn't lose rankings</td><td class="tag">W7</td></tr>
+      <tr><td>"connected to google reviews"</td><td>Three separate things clients conflate — §05</td><td class="tag">W8</td></tr>
+      <tr><td>"create a google profile (GBN I think)"</td><td>Google <em>Business</em> Profile. But Merchant Center is the higher-ROI surface — R5</td><td class="tag">W8</td></tr>
+      <tr><td>"login using mobile number… or continue as guest"</td><td>OTP auth + saved address book, guest checkout preserved</td><td class="tag">W4</td></tr>
+      <tr><td>"admin friendly dashboard"</td><td>Curated ops dashboard + a staff role that isn't full admin</td><td class="tag">W6</td></tr>
+      <tr><td>"coupon code… email to the person… (inventory &amp; value)"</td><td>Partner coupon attribution. <strong>The one genuinely custom build</strong> — §06</td><td class="tag">W5</td></tr>
+      <tr><td>"user friendly UI/UX, aesthetically appealing"</td><td>Design system + rebuilt PLP/PDP/cart/checkout</td><td class="tag">W2</td></tr>
+      <tr><td>"mobile responsive"</td><td>Mobile-first, not a desktop design squeezed down</td><td class="tag">W2, W3</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call note">
+    <span class="lbl">Not in the brief, but required</span>
+    <p>Payments, shipping, GST invoicing, and FSSAI / Legal Metrology display duties (§08). These are in scope by necessity for an Indian online food seller. If the client already has them solved they drop out and the estimate falls.</p>
+  </div>
+</section>
+
+<section id="business">
+  <h2 class="sec"><span class="num">02</span> What the business actually is</h2><hr class="sec-rule">
+  <p>D2C packaged food. Instant, preservative-free, home-style Indian food — mostly dehydrated product that reconstitutes with hot water. Three ranges:</p>
+  <ul>
+    <li><strong>Foodify Express</strong> — add hot water, ready in minutes. Positioned at travellers, students, the elderly, families.</li>
+    <li><strong>Foodify Hot &amp; Fresh</strong> — minimal stove cooking.</li>
+    <li><strong>Foodify Flavors</strong> — chutneys, stir with cold water.</li>
+  </ul>
+  <p>Observed SKUs: Dal Fry (Jain), Dal Makhni, Idli Sambhar, Pav Bhaji, Palak Gravy, Dal Khichdi, Aloo ka Mazaa, Super Millet Idli, Sprouted Millets &amp; Beetroot Cheela, Masala Chai, Lemon Masala Tea, Coconut Red Chutney and chutney combos. Prices ₹100 – ₹1,800+, singles and combos, several on sale. Shelf life is 9–12 months and already published per product — which is exactly the field the e-commerce shelf-life rule turns on (§08).</p>
+
+  <h3>Existing URL shapes — the SEO asset</h3>
+  <pre><b>/</b>                         <b>/shop/</b>                  <b>/express/</b>
+<b>/contact-us/</b>              <b>/product-category/meals/</b>   <b>/product-category/chutney/</b>
+<b>/product/&lt;slug&gt;/</b>          e.g. /product/pav-bhaji/, /product/super-millet-idli/</pre>
+
+  <div class="call note">
+    <span class="lbl">Read on the buyer</span>
+    <p>A Jain variant, millet SKUs, and an elderly/traveller framing say the buyer is health-and-convenience led, skews 35+, and a meaningful slice is diaspora or travel-driven. That should steer both the design and the keyword set, and it makes the gifting/combo path worth merchandising properly. Confirm against their real order data in Phase 0 rather than taking my word for it.</p>
+  </div>
+</section>
+
+<section id="rec">
+  <h2 class="sec"><span class="num">03</span> Recommendations</h2><hr class="sec-rule">
+
+  <div class="call rec"><span class="lbl">R1 — Revamp on WooCommerce, don't rebuild headless</span>
+  <p>Every requirement in the brief has a mature WooCommerce path. The client's admin is non-technical and already knows this back office. A headless rebuild would roughly double build cost, add a permanent maintenance burden they can't service in-house, and risk the indexed catalogue for no commercial gain at this size. Revisit past roughly ₹50L/mo GMV or a multi-warehouse operation.</p></div>
+
+  <div class="call rec"><span class="lbl">R2 — Treat it as a replatform of the presentation layer, URLs frozen</span>
+  <p>New theme, rebuilt templates, new design system; product and category URLs preserved byte-for-byte wherever possible. This single decision protects the "SEO" half of the brief — §07.</p></div>
+
+  <div class="call rec"><span class="lbl">R3 — Coupon attribution: build thin now, buy the platform later</span>
+  <p>If coupon owners are a handful of known partners, a 4–6 day custom add-on does exactly what Nalin described with no licence fee. Move to AffiliateWP when they need self-service signup, payouts and 50+ partners. §06.</p></div>
+
+  <div class="call rec"><span class="lbl">R4 — OTP login, with guest checkout kept as the default path</span>
+  <p>Mobile-OTP accounts are right for address reuse, but forcing registration is the classic Indian D2C conversion killer. Guest stays primary; the account is offered post-purchase — "save this address for next time".</p></div>
+
+  <div class="call rec"><span class="lbl">R5 — "Google profile" is probably the wrong Google surface to lead with</span>
+  <p>Business Profile helps brand and local search, and their Noida address means they can hold one. But for a packaged-goods catalogue the surface that moves revenue is <strong>Google Merchant Center</strong> — free product listings and a Shopping feed. Do both, lead with Merchant Center. Say this plainly, because they asked for the other one.</p></div>
+
+  <div class="call rec"><span class="lbl">R6 — Compliance display is a launch blocker, not a nice-to-have</span>
+  <p>FSSAI licence display, packaged-commodity declarations and the shelf-life rule are legal duties for an Indian online food seller. Build them into the PDP template rather than bolting them on. Client confirms specifics with their own FSSAI consultant — this scopes the build, it isn't legal advice.</p></div>
+
+  <div class="call risk"><span class="lbl">Hard dependency, starts week 1</span>
+  <p>TRAI <strong>DLT registration</strong> for transactional SMS carries a 1–2 week lead time and is client-owned. It gates the OTP flow in W4. If it doesn't start in week 1 it becomes the critical path instead of design sign-off.</p></div>
+</section>
+
+<section id="ws">
+  <h2 class="sec"><span class="num">04</span> Workstreams</h2><hr class="sec-rule">
+  <p>Effort in dev-days for a small team. Ranges are honest, not padded — the spread is mostly Phase 0 unknowns.</p>
+
+  <div class="ws">
+    <div class="ws-item"><div class="ws-id">W1</div><div class="ws-body">
+      <h4>Discovery &amp; audit</h4>
+      <p>Access handover — hosting, WP admin, DNS, GA4, Search Console, gateway, SMS/email senders. Full plugin and theme inventory. Baseline capture: traffic, revenue, GSC queries and impressions, Core Web Vitals, conversion rate. <strong>Complete URL inventory</strong>, which becomes the migration contract in §07. Order volume and AOV, to size everything else.</p>
+      <span class="ws-out"><b>Output</b> · audit note, baseline metrics sheet, URL inventory</span>
+    </div><div class="ws-days">3<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W2</div><div class="ws-body">
+      <h4>UI/UX design</h4>
+      <p>Design system, then screens: home, shop/PLP with filters, PDP, cart, checkout, account and address book, order history, the three range landing pages, contact, content template. Mobile-first artboards, desktop derived. Food photography audited and a shot-list issued for gaps.</p>
+      <span class="ws-out"><b>Output</b> · Figma, mobile + desktop, with empty/loading/error/OOS states</span>
+    </div><div class="ws-days">8–10<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W3</div><div class="ws-body">
+      <h4>Front-end build</h4>
+      <p>Theme build against the design system, all templates. Performance is a build-time constraint rather than a later pass: responsive images and modern formats, lazy loading, critical CSS, font strategy, minimal plugin JS. Target Core Web Vitals green on 4G mobile.</p>
+      <span class="ws-out"><b>Output</b> · theme on staging, all templates, passing CWV</span>
+    </div><div class="ws-days">10–12<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W4</div><div class="ws-body">
+      <h4>Accounts &amp; checkout</h4>
+      <p>Mobile-OTP registration and login, saved address book with a default, reuse at checkout. Guest checkout preserved and primary. Order history. Checkout field trim — every removed field is conversion. WhatsApp OTP via a WABA provider is worth costing as an alternative: delivery in India is materially better and it opens order-status notifications later.</p>
+      <span class="ws-out"><b>Output</b> · OTP auth, address book, guest path, on staging</span>
+    </div><div class="ws-days">3–4<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W5</div><div class="ws-body">
+      <h4>Coupon attribution engine</h4>
+      <p>The custom piece. Full functional spec in §06. <strong>Blocked on Q7–Q11</strong> — don't start building until they're answered.</p>
+      <span class="ws-out"><b>Output</b> · plugin, partner email, admin reporting screen</span>
+    </div><div class="ws-days">4–6<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W6</div><div class="ws-body">
+      <h4>Admin dashboard</h4>
+      <p>A curated landing screen: today's orders, revenue, low stock, pending shipments, coupon performance from W5. A <strong>Shop Staff role</strong> that can process orders without holding full admin. Bulk price and stock editing. Order-status emails in the brand's voice.</p>
+      <span class="ws-out"><b>Output</b> · dashboard screen, staff role, documented in the runbook</span>
+    </div><div class="ws-days">2–3<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W7</div><div class="ws-body">
+      <h4>SEO — technical, migration, on-page</h4>
+      <p>Migration risk plan is §07 and is the important half. Technical: schema (Product, Offer, AggregateRating, Organization, BreadcrumbList), sitemaps, robots, canonicals, internal linking, faceted-URL control. On-page: rewritten titles and metas across the catalogue, category copy, PDP copy answering real queries — "instant idli sambar", "ready to eat jain food", "travel food india", "millet breakfast instant" — and FAQ blocks with schema.</p>
+      <span class="ws-out"><b>Output</b> · 301 map, validating schema, rewritten metadata, keyword map</span>
+    </div><div class="ws-days">10<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W8</div><div class="ws-body">
+      <h4>Google surfaces</h4>
+      <p>Business Profile: create, claim, verify, categories, photos, posts. <strong>Merchant Center: account, product feed from WooCommerce, feed validation, free listings live</strong> — the revenue item. Reviews, all three senses disambiguated in §05. GA4 e-commerce events verified end to end, GSC property confirmed on the new build.</p>
+      <span class="ws-out"><b>Output</b> · GBP live, feed approved, review surfaces live, analytics verified</span>
+    </div><div class="ws-days">3<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W9</div><div class="ws-body">
+      <h4>Compliance &amp; trust</h4>
+      <p>FSSAI licence displayed site-wide and on invoices. Per-product mandatory declarations. Shelf-life-at-delivery rule enforced. Refreshed shipping, returns, privacy and terms pages. GST-compliant invoicing. Trust surfaces — contact route, real address, order-status comms.</p>
+      <span class="ws-out"><b>Output</b> · compliance checklist signed off, policy pages live</span>
+    </div><div class="ws-days">2<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W10</div><div class="ws-body">
+      <h4>QA, launch, hypercare</h4>
+      <p>Cross-browser and real-device QA. Full checkout regression on live payment rails. Load check. Launch runbook with the 301 map applied at cutover and a rollback path. Then 30 days of hypercare: GSC coverage and crawl errors, rankings and conversion against the W1 baseline, bug fixes.</p>
+      <span class="ws-out"><b>Output</b> · QA sign-off, launch, 30-day report against baseline</span>
+    </div><div class="ws-days">8<span>days</span></div></div>
+
+    <div class="ws-item"><div class="ws-id">W11</div><div class="ws-body">
+      <h4>Handover</h4>
+      <p>Admin runbook for a non-technical operator: add a product, run a sale, issue a partner coupon, read the dashboard, ship an order. Recorded walkthroughs. Maintenance plan — backups, updates, who to call.</p>
+      <span class="ws-out"><b>Output</b> · runbook, screen recordings, maintenance plan</span>
+    </div><div class="ws-days">2<span>days</span></div></div>
+  </div>
+</section>
+
+<section id="reviews">
+  <h2 class="sec"><span class="num">05</span> "Connected to Google reviews" — three different asks</h2><hr class="sec-rule">
+  <p>Clients say this and mean any of three things. Price and build them separately.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Sense</th><th>What it actually is</th><th>Call</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Show GBP reviews on the site</strong></td><td>A widget pulling Business Profile reviews onto home and PDP as social proof. Reads the Places API. Easy.</td><td class="tag">Build — likely what he means</td></tr>
+      <tr><td><strong>Stars in Google search results</strong></td><td>Collect <em>product</em> reviews on-site, mark up with AggregateRating so stars appear in organic listings. Needs a post-delivery review-collection flow, not just a widget.</td><td class="tag">Build — the SEO-valuable one</td></tr>
+      <tr><td><strong>Google Customer Reviews</strong></td><td>Opt-in survey via Merchant Center producing a seller rating for Shopping ads.</td><td class="tag">Park — phase 2</td></tr>
+    </tbody>
+  </table></div>
+  <p>Confirm which he wants. Build the first two, park the third until Merchant Center is running and volume supports it.</p>
+</section>
+
+<section id="coupon">
+  <h2 class="sec"><span class="num">06</span> The coupon attribution engine</h2><hr class="sec-rule">
+
+  <div class="call note"><span class="lbl">What was asked, verbatim</span>
+  <p>"Coupon code is essential so that an email is sent to the person who gets an email mentioning that a sales has happened using their coupon code (inventory &amp; value). Also this should be visible on the backend dashboard."</p></div>
+
+  <p>Read: <strong>partner/influencer coupon attribution.</strong> Each partner gets a code. When a customer buys with it, the partner is emailed that a sale happened, with what sold and for how much. Admin sees the same, aggregated.</p>
+  <p>"Inventory &amp; value" reads as <em>which items and what quantity</em> plus <em>the order value</em>. <strong>Confirm that reading</strong> — it could equally mean the partner's remaining redemption allowance. The spec below covers the first; Q10 settles it.</p>
+
+  <h3>Build vs buy</h3>
+  <div class="scroll"><table>
+    <thead><tr><th></th><th>Custom add-on</th><th>AffiliateWP + Affiliate Coupons</th></tr></thead>
+    <tbody>
+      <tr><td>Cost</td><td>4–6 dev-days, no licence</td><td>~$149–299/yr, ~2 days setup</td></tr>
+      <tr><td>Does what was asked</td><td>Exactly</td><td>Yes, plus a lot more</td></tr>
+      <tr><td>Partner self-service portal</td><td>No</td><td>Yes</td></tr>
+      <tr><td>Commission &amp; payouts</td><td>No</td><td>Yes</td></tr>
+      <tr><td>Fraud / self-referral controls</td><td>Basic</td><td>Mature</td></tr>
+      <tr><td>Maintenance</td><td>Ours, forever</td><td>Vendor's</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call rec"><span class="lbl">Call</span>
+  <p>Custom <strong>if</strong> partners are few — under 20, known personally, not paid a per-sale commission through the system. The moment they want partners logging in to see their own numbers, or automated commission and payouts, buy AffiliateWP. Writing payouts, TDS handling and fraud controls from scratch is a bad trade.</p></div>
+
+  <h3>Data model</h3>
+  <p>Extend the native WooCommerce coupon. Don't invent a parallel discount system.</p>
+  <pre><b>Coupon meta</b> (on wp_posts / shop_coupon):
+  _foodify_owner_name
+  _foodify_owner_email        <b>←</b> notification target
+  _foodify_owner_phone        <b>←</b> optional, for WhatsApp later
+  _foodify_notify_enabled     <b>←</b> bool
+  _foodify_commission_pct     <b>←</b> optional, reporting only in v1
+
+<b>Attribution record</b> (custom table, one row per redeeming order):
+  id, order_id, coupon_id, coupon_code, owner_email,
+  order_total, discount_amount, commission_amount,
+  line_items_json           <b>←</b> SKU, name, qty, line total   ("inventory")
+  order_status, notified_at, created_at</pre>
+  <p>A custom table rather than order meta — it keeps reporting queries cheap and survives order deletion for accounting.</p>
+
+  <h3>Trigger</h3>
+  <p>Write the attribution row on <strong>payment complete</strong>, never order creation — an unpaid or failed order must not tell a partner they made a sale. Handle the reversal path: on refund or cancellation mark the row reversed and, per Q11, optionally send a correction. Silent reversal is how partner trust dies.</p>
+
+  <h3>Partner email</h3>
+  <p>Partner name, code used, order date, <strong>line items — SKU, product, qty, line value</strong>, order value, discount given, commission if configured, and month-to-date totals for that code. Plain, branded, mobile-legible.</p>
+  <div class="call risk"><span class="lbl">No buyer PII, ever</span>
+  <p>No customer name, address, phone or email in the partner email. That's a privacy line and a DPDP-Act-shaped one. State it to the client explicitly so they don't ask for it in month three.</p></div>
+
+  <h3>Admin reporting</h3>
+  <p>A <strong>Coupon Performance</strong> screen — per code: redemptions, gross value, discount given, commission owed, last used, partner contact. Date filtering, CSV export, drill-through to orders. Summarised as a widget on the W6 dashboard.</p>
+
+  <h3>Tests worth writing</h3>
+  <ul>
+    <li>Payment-complete fires exactly one notification per order</li>
+    <li>A failed-then-retried payment does not double-notify</li>
+    <li>Refund reverses the row</li>
+    <li>A coupon with notification disabled emails nobody</li>
+    <li>Two coupons on one order attribute to both without double-counting revenue</li>
+    <li>Deleting a coupon doesn't orphan history</li>
+    <li>The email contains zero customer PII</li>
+  </ul>
+</section>
+
+<section id="seo">
+  <h2 class="sec"><span class="num">07</span> The SEO migration risk</h2><hr class="sec-rule">
+
+  <div class="call risk"><span class="lbl">Read this before quoting</span>
+  <p>A WordPress "revamp" is the most common way a store loses its rankings. The brief asks for a revamp <em>and</em> better SEO in one sentence, and those pull against each other unless the migration is a first-class deliverable. The catalogue at <code>/product/&lt;slug&gt;/</code> is an accumulated asset. A new theme that changes permalink structure, drops the category taxonomy, or renames slugs "for tidiness" throws it away — and the loss surfaces 3–6 weeks after launch, long after everyone agreed the project went well.</p></div>
+
+  <h3>Non-negotiables</h3>
+  <ol class="body">
+    <li><strong>Freeze the URL structure.</strong> Product and category URLs preserved exactly. Any change justified individually and carrying a 301.</li>
+    <li><strong>Complete URL inventory before design starts.</strong> Crawl the live site, export every indexed URL with its GSC impressions. That list is the migration contract.</li>
+    <li><strong>A 301 map for every URL that does change</strong>, applied at cutover and crawler-tested on staging. Not "we'll add redirects after."</li>
+    <li><strong>Preserve title, meta and schema through the theme change.</strong> A new theme frequently drops the SEO plugin's output silently. Verify per template.</li>
+    <li><strong>Staging noindexed; verify production is not.</strong> A <code>noindex</code> shipped to production is the classic launch catastrophe. Explicit checklist item at cutover.</li>
+    <li><strong>Baseline before, measure after.</strong> W1 captures the numbers; hypercare compares against them. Without a baseline nobody can tell whether the revamp helped or hurt — which is how these projects avoid accountability.</li>
+  </ol>
+  <p>Say this at kickoff. It reframes "why is SEO a separate line item" before it gets asked.</p>
+</section>
+
+<section id="compliance">
+  <h2 class="sec"><span class="num">08</span> India compliance — food, sold online</h2><hr class="sec-rule">
+  <div class="call note"><span class="lbl">Scope, not counsel</span>
+  <p>A build checklist. The client confirms specifics with their own FSSAI consultant.</p></div>
+  <ul>
+    <li><strong>FSSAI licence number displayed</strong> on the website and on invoices. Mandatory for a food business operator.</li>
+    <li><strong>Packaged-commodity declarations</strong> per listing under Legal Metrology and the e-commerce rules: MRP inclusive of taxes, net quantity, best-before, veg/non-veg mark, ingredients, allergens, nutritional info, country of origin, consumer-care contact. These belong in the PDP template as <strong>structured fields</strong>, not free text — that way they're enforceable, and they feed the Merchant Center product feed at no extra cost.</li>
+    <li><strong>Shelf-life-at-delivery.</strong> FSSAI requires meaningful remaining shelf life at delivery — commonly cited as 30% remaining or 45 days, whichever is less. Their 9–12 month lives make this comfortable, but stock rotation should surface in the admin so old batches aren't shipped. Verify the current threshold; the rule has been revised.</li>
+    <li><strong>GST invoicing</strong> — compliant tax invoice per order, correct HSN and rate per food category.</li>
+    <li><strong>DPDP Act</strong> — the OTP flow and coupon emails both touch personal data. Privacy policy reflects what's actually collected; partner emails carry no buyer PII.</li>
+  </ul>
+</section>
+
+<section id="phasing">
+  <h2 class="sec"><span class="num">09</span> Phasing</h2><hr class="sec-rule">
+  <div class="scroll"><div class="gantt">
+    <div class="gantt-head">
+      <span>Phase</span>
+      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+      <span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span>
+    </div>
+    <div class="gantt-row"><span class="gantt-lbl">0 · Discovery</span>
+      <div class="bar" style="grid-column:2/3">W1</div></div>
+    <div class="gantt-row"><span class="gantt-lbl">1 · Design</span>
+      <div class="bar" style="grid-column:3/5">W2</div></div>
+    <div class="gantt-row"><span class="gantt-lbl">2 · Build</span>
+      <div class="bar" style="grid-column:5/9">W3 · W4 · W5 · W6</div></div>
+    <div class="gantt-row"><span class="gantt-lbl">3 · SEO &amp; Google</span>
+      <div class="bar" style="grid-column:6/10">W7 · W8 · W9</div></div>
+    <div class="gantt-row"><span class="gantt-lbl">4 · Launch</span>
+      <div class="bar" style="grid-column:10/11">W10</div></div>
+    <div class="gantt-row"><span class="gantt-lbl">5 · Hypercare</span>
+      <div class="bar b-rec" style="grid-column:11/15">W10 · W11</div></div>
+    <p class="gantt-note">Weeks. Phases 2 and 3 deliberately overlap — SEO and compliance work against templates as they land, rather than queueing behind the whole build.</p>
+  </div></div>
+  <div class="call risk"><span class="lbl">Critical path</span>
+  <p><strong>~9 weeks to launch, 13 to close.</strong> Design sign-off at the end of week 3 is the critical path — every week it slips, the whole schedule slips. Say that at kickoff. The client's DLT registration, started week 1, is the only other thing that can become critical.</p></div>
+</section>
+
+<section id="cost">
+  <h2 class="sec"><span class="num">10</span> Effort &amp; indicative cost</h2><hr class="sec-rule">
+  <div class="scroll"><table>
+    <thead><tr><th>Workstream</th><th class="num-col">Days</th></tr></thead>
+    <tbody>
+      <tr><td>W1 · Discovery &amp; audit</td><td class="num-col">3</td></tr>
+      <tr><td>W2 · UI/UX design</td><td class="num-col">8–10</td></tr>
+      <tr><td>W3 · Front-end build</td><td class="num-col">10–12</td></tr>
+      <tr><td>W4 · Accounts &amp; checkout</td><td class="num-col">3–4</td></tr>
+      <tr><td>W5 · Coupon engine</td><td class="num-col">4–6</td></tr>
+      <tr><td>W6 · Admin dashboard</td><td class="num-col">2–3</td></tr>
+      <tr><td>W7 · SEO technical + content</td><td class="num-col">10</td></tr>
+      <tr><td>W8 · Google surfaces</td><td class="num-col">3</td></tr>
+      <tr><td>W9 · Compliance &amp; trust</td><td class="num-col">2</td></tr>
+      <tr><td>W10 · QA, launch, hypercare</td><td class="num-col">8</td></tr>
+      <tr><td>W11 · Handover</td><td class="num-col">2</td></tr>
+      <tr><td>Contingency, 15% — Phase 0 unknowns</td><td class="num-col">8–9</td></tr>
+      <tr class="total"><td>Total</td><td class="num-col">63–72</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call note"><span class="lbl">On price</span>
+  <p><strong>Apply your own rate card — I haven't assumed one.</strong> At a blended ₹6,000–₹12,000/day typical of a small Indian shop, that lands ₹3.8L–₹8.6L. Treat it as a sanity band, not a quote.</p></div>
+
+  <h3>Recurring, client-borne</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Item</th><th class="num-col">Indicative / year</th></tr></thead>
+    <tbody>
+      <tr><td>Managed hosting — Cloudways / Rocket.net tier</td><td class="num-col">₹15,000–35,000</td></tr>
+      <tr><td>Premium plugins — SEO, OTP, backup, review</td><td class="num-col">₹25,000–60,000</td></tr>
+      <tr><td>SMS OTP</td><td class="num-col">₹0.15–0.25 each</td></tr>
+      <tr><td>AffiliateWP — only if R3 flips to buy</td><td class="num-col">₹13,000–26,000</td></tr>
+      <tr><td>Maintenance retainer — recommended</td><td class="num-col">quote separately</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="questions">
+  <h2 class="sec"><span class="num">11</span> Open questions</h2><hr class="sec-rule">
+  <p>These block the quote. Q1–Q3 are internal — settle them before this document goes anywhere near Nalin.</p>
+
+  <div class="qgroup"><h3>Commercial <span class="blocks">internal</span></h3>
+    <div class="q"><span class="qn">Q1</span><p>Who's paying, and what's my role — build it, or spec it and oversee a vendor?</p></div>
+    <div class="q"><span class="qn">Q2</span><p>Is there a budget band already in the client's head? It decides custom vs buy in several places.</p></div>
+    <div class="q"><span class="qn">Q3</span><p>Is the 30-day hypercare in scope, or does it end at launch? Recommend in — see §07.</p></div>
+  </div>
+
+  <div class="qgroup"><h3>Product</h3>
+    <div class="q"><span class="qn">Q4</span><p>Does the current site convert at all today? Orders/month and AOV size every decision below.</p></div>
+    <div class="q"><span class="qn">Q5</span><p>Payment gateway and shipping partner — existing, or in scope?</p></div>
+    <div class="q"><span class="qn">Q6</span><p>Any mobile app or marketplace presence — Amazon, Flipkart, BigBasket — this has to sit alongside?</p></div>
+  </div>
+
+  <div class="qgroup"><h3>Coupon engine <span class="blocks">blocks W5</span></h3>
+    <div class="q"><span class="qn">Q7</span><p>How many coupon owners? Ten known influencers, or an open affiliate programme?</p></div>
+    <div class="q"><span class="qn">Q8</span><p>Do owners earn a commission, and does the system need to calculate and track payouts?</p></div>
+    <div class="q"><span class="qn">Q9</span><p>Do owners need to log in and see their own numbers, or is the email enough?</p></div>
+    <div class="q"><span class="qn">Q10</span><p>Confirm "inventory &amp; value" = line items + order value. Or does "inventory" mean the partner's remaining redemption allowance?</p></div>
+    <div class="q"><span class="qn">Q11</span><p>What happens on refund — does the partner get a correction email?</p></div>
+  </div>
+
+  <div class="qgroup"><h3>Content &amp; assets</h3>
+    <div class="q"><span class="qn">Q12</span><p>Who writes product copy — them or us? 30+ SKUs of rewritten copy is real effort, priced in W7's content half.</p></div>
+    <div class="q"><span class="qn">Q13</span><p>Is there usable food photography, or is a shoot needed? Not currently priced.</p></div>
+    <div class="q"><span class="qn">Q14</span><p>Who owns the GBP once created, and can the Noida address pass verification — is it staffed and does it receive post?</p></div>
+  </div>
+
+  <div class="qgroup"><h3>Access</h3>
+    <div class="q"><span class="qn">Q15</span><p>Full access to hosting, WP admin, DNS, GA4, Search Console, gateway. Without GSC history there's no SEO baseline and no way to prove the revamp helped.</p></div>
+  </div>
+</section>
+
+<section id="oos">
+  <h2 class="sec"><span class="num">12</span> Explicitly out of scope</h2><hr class="sec-rule">
+  <p>Named so they don't arrive later as assumptions.</p>
+  <ul class="oos">
+    <li>Headless or custom-stack rebuild — see R1</li>
+    <li>Mobile apps</li>
+    <li>Photography and videography production</li>
+    <li>Paid media management — Google and Meta spend, campaign ops</li>
+    <li>Marketplace listings — Amazon, Flipkart, BigBasket, Blinkit</li>
+    <li>ERP/WMS integration, multi-warehouse inventory</li>
+    <li>Subscription commerce — <em>worth raising separately, it suits this product category unusually well</em></li>
+    <li>Multilingual</li>
+    <li>Ongoing SEO retainer past the 30-day hypercare</li>
+    <li>FSSAI or GST filing and consulting — display duties only</li>
+  </ul>
+</section>
+
+<section id="threads">
+  <h2 class="sec"><span class="num">13</span> Open threads</h2><hr class="sec-rule">
+  <ul>
+    <li><strong>"Feedback for Aangan"</strong> — the 21 Aug message carried a second item Nalin never answered. Unrelated to this scope and not actioned here. Chase it.</li>
+    <li><strong>The live site was never loaded.</strong> Everything in §02 is from search snapshots. First hour of Phase 0 is a real crawl; expect §02 to move.</li>
+    <li><strong>"GBN"</strong> is almost certainly Google Business Profile — confirm, and use the conversation to raise Merchant Center per R5.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Sources — <a href="https://letsfoodify.com/">The Foodify Company</a> ·
+  <a href="https://letsfoodify.com/shop/">Shop</a> ·
+  <a href="https://letsfoodify.com/express/">Express</a> ·
+  <a href="https://letsfoodify.com/product-category/meals/">Meals</a> ·
+  <a href="https://letsfoodify.com/product-category/chutney/">Chutney</a> ·
+  <a href="https://letsfoodify.com/product/pav-bhaji/">Pav Bhaji</a> ·
+  <a href="https://letsfoodify.com/product/dal-fry-jain/">Dal Fry (Jain)</a> ·
+  <a href="https://letsfoodify.com/product/super-millet-idli/">Super Millet Idli</a> ·
+  <a href="https://forum.openfoodfacts.org/t/fssai-mandates-for-e-comm-fbos/698">FSSAI mandates for e-commerce FBOs</a></p>
+  <p>Pre-quote working document · not client-facing as it stands · 24 Aug 2026</p>
+</footer>
+
+</div>

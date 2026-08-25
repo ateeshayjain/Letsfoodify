@@ -1,0 +1,70 @@
+# Foodify rebuild — build kit
+
+Working files for the letsfoodify.com rebuild. Companion to the Rebuild Scope, the
+internal build spec (WP-00…WP-14) and the Design Playbook.
+
+**Context that shapes everything here: one developer, and a host migration inside the
+project.** The original ten-week plan assumed a pod of four or five. See
+`docs/SOLO-PLAN.md` for the re-sequenced version — it is 15 weeks, not 10.
+
+```
+theme/foodify/          Blocksy child theme. Deploy this from git; never edit on the server.
+  theme.json            ALL design tokens. Colour, type, spacing, radius. Single source of truth.
+  style.css             Only what theme.json cannot express. Keep it short.
+  inc/
+    coupon-attribution.php   Partner ownership, notification email, admin column, dashboard widget
+    checkout-fields.php      25 fields → 9, email required, state as select, PIN auto-fill
+    product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
+    patterns.php             Pattern category registration
+  patterns/             Block patterns. Pages are assembled from these — no page builder.
+
+scripts/
+  bootstrap.sh              Configuration as code. The reason cutover is survivable.
+  taxonomy-cleanup.php      170 tags → ~20, with a data-derived redirect map
+  clean-elementor-meta.php  Orphaned postmeta, prefix resolved through $wpdb
+  smoke-test.sh             Post-deploy assertions. Exits non-zero on a blocking failure.
+
+docs/
+  SOLO-PLAN.md          Re-sequenced schedule, what gets deferred, weekly cadence
+  MIGRATION.md          Host move runbook
+  REVIEW-NOTES.md       Known gaps and unverified assumptions — read before you ship
+```
+
+## Why configuration lives in a script
+
+The rebuild happens on staging while prod keeps taking orders. At cutover you cannot push
+the staging database to prod, because prod has weeks of orders staging has never seen.
+
+Only two things move safely: **files**, and **reproducible configuration**. So every
+setting lives in `bootstrap.sh` rather than in someone's memory of an admin screen. Run it
+on staging to build the environment; run the same script on prod at cutover.
+
+With one developer and no second pair of eyes, this matters more, not less.
+
+## Order of operations
+
+```bash
+# Week 1 — safe against the live site
+./scripts/bootstrap.sh --env=prod --phase=1 --dry-run
+./scripts/bootstrap.sh --env=prod --phase=1
+
+# Taxonomy, three passes a month apart
+wp eval-file scripts/taxonomy-cleanup.php report
+wp eval-file scripts/taxonomy-cleanup.php noindex      # wait 30 days
+wp eval-file scripts/taxonomy-cleanup.php execute --confirm
+
+# Staging rebuild
+./scripts/bootstrap.sh --env=staging
+
+# Before every deploy, and immediately after cutover
+./scripts/smoke-test.sh https://letsfoodify.com --redirects=scripts/redirects.csv
+```
+
+## Rules
+
+1. **No colour, font size or spacing value is ever hardcoded.** It comes from `theme.json`
+   as `var(--wp--preset--*)`. If a value isn't in the token set, add it there first.
+2. **The theme is deployed, never edited live.** No file editing in wp-admin.
+3. **`bootstrap.sh` is the only place a setting is recorded.** Changed something in the
+   admin? Add it to the script in the same sitting or it will not survive cutover.
+4. **`smoke-test.sh` must exit 0 before cutover.** It is not advisory.

@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Foodify — post-deploy assertions. Run after every deploy and immediately after cutover.
+#   ./smoke-test.sh https://staging.letsfoodify.com
+#   ./smoke-test.sh https://letsfoodify.com --redirects=redirects.csv
+set -uo pipefail
+
+BASE="${1:-}"; [[ -z "$BASE" ]] && { echo "Usage: $0 <base-url> [--redirects=file.csv]"; exit 2; }
+BASE="${BASE%/}"; REDIRECTS=""
+for a in "${@:2}"; do [[ "$a" == --redirects=* ]] && REDIRECTS="${a#*=}"; done
+
+PASS=0; FAIL=0; WARN=0
+ok(){ printf '\033[32m  PASS\033[0m %s\n' "$1"; PASS=$((PASS+1)); }
+no(){ printf '\033[31m  FAIL\033[0m %s\n' "$1"; FAIL=$((FAIL+1)); }
+wr(){ printf '\033[33m  WARN\033[0m %s\n' "$1"; WARN=$((WARN+1)); }
+hdr(){ printf '\n\033[1;36m%s\033[0m\n' "$1"; }
+
+# One fetch per page, reused across assertions.
+FETCH(){ curl -fsSL --max-time 25 -A 'FoodifySmokeTest/1.0' "$1" 2>/dev/null; }
+CODE(){ curl -s -o /dev/null -w '%{http_code}' --max-time 25 "$1"; }
+
+hdr "1 · Reachability"
+for p in "/" "/shop/" "/cart/" "/checkout/" "/my-account/" "/robots.txt" "/sitemap_index.xml"; do
+  c=$(CODE "$BASE$p")
+  [[ "$c" == "200" ]] && ok "$p → 200" || no "$p → $c"
+done
+
+hdr "2 · SEO — the audit's critical findings must not come back"
+HOME=$(FETCH "$BASE/")
+PDP_URL=$(printf '%s' "$HOME" | grep -oE 'href="[^"]*/product/[^"]+/"' | head -1 | sed 's/href="//;s/"$//')
+PDP_URL="${PDP_URL:-$BASE/shop/}"
+PDP=$(FETCH "$PDP_URL")
+
+grep -qi '<h1' <<<"$HOME"                     && ok "homepage has an H1"            || no "homepage has NO H1 (regression)"
+grep -qi 'name="description"' <<<"$HOME"      && ok "homepage meta description"     || no "homepage meta description MISSING"
+grep -qi 'property="og:' <<<"$HOME"           && ok "homepage Open Graph tags"      || no "homepage Open Graph MISSING"
+grep -qi 'name="description"' <<<"$PDP"       && ok "product meta description"      || no "product meta description MISSING"
+grep -q  'aggregateRating' <<<"$PDP"          && ok "product aggregateRating schema"|| wr "no aggregateRating yet (expected until the first review lands)"
+grep -q  '"@type":"Product"' <<<"$PDP" || grep -q '"@type": *"Product"' <<<"$PDP" \
+                                              && ok "Product schema present"        || no "Product schema MISSING"
+[[ "$(CODE "$BASE/wp-sitemap.xml")" != "200" ]] && ok "core sitemap retired"         || no "core wp-sitemap.xml still served — two sitemaps compete"
+
+hdr "3 · Honesty — things that must be gone"
+grep -qi 'people are viewing' <<<"$PDP"       && no "fake viewer counter still present" || ok "no fake viewer counter"
+ACC=$(FETCH "$BASE/my-account/")
+grep -q  'Inject JS step-switching' <<<"$ACC" && no "developer comment still leaking on /my-account/" || ok "no leaked source comment"
+grep -qiE '©[[:space:]]*20(1[0-9]|2[0-4])' <<<"$HOME" && wr "footer year looks stale" || ok "footer year current"
+
+hdr "4 · Commerce"
+CHK=$(FETCH "$BASE/checkout/")
+FIELDS=$(grep -oE 'name="(billing|shipping)_[a-z_]+"' <<<"$CHK" | sort -u | wc -l | tr -d ' ')
+[[ "$FIELDS" -le 12 ]] && ok "checkout fields: $FIELDS (budget ≤12 incl. shipping mirror)" \
+                       || no "checkout fields: $FIELDS — budget is 12, audit baseline was 25"
+grep -q 'billing_state' <<<"$CHK" && grep -qE '<select[^>]*billing_state' <<<"$CHK" \
+  && ok "state is a select" || wr "state may still be free text — verify manually"
+grep -qi 'cod\|cash on delivery' <<<"$CHK" && ok "COD offered" || no "COD not offered at checkout"
+grep -qi 'razorpay' <<<"$CHK" && ok "Razorpay present" || no "Razorpay missing"
+
+hdr "5 · Performance budget (uncached HTML)"
+read -r TTFB TOTAL SIZE < <(curl -s -o /dev/null \
+  -w '%{time_starttransfer} %{time_total} %{size_download}' --max-time 30 "$PDP_URL")
+awk -v t="$TTFB" 'BEGIN{exit !(t<0.6)}'  && ok "TTFB ${TTFB}s (<0.6s)"        || wr "TTFB ${TTFB}s — budget 0.6s"
+awk -v s="$SIZE" 'BEGIN{exit !(s<300000)}' && ok "HTML $((SIZE/1024))KB (<300KB)" || wr "HTML $((SIZE/1024))KB — audit baseline 288KB"
+JS=$(grep -oE '<script[^>]+src=' <<<"$PDP" | wc -l | tr -d ' ')
+CSS=$(grep -oE '<link[^>]+stylesheet' <<<"$PDP" | wc -l | tr -d ' ')
+[[ "$JS"  -le 12 ]] && ok "JS files: $JS (budget 12, baseline 73)"   || no "JS files: $JS — budget is 12"
+[[ "$CSS" -le 6  ]] && ok "CSS files: $CSS (budget 6, baseline 60)"  || no "CSS files: $CSS — budget is 6"
+
+hdr "6 · Redirects"
+if [[ -n "$REDIRECTS" && -f "$REDIRECTS" ]]; then
+  n=0; bad=0
+  while IFS=, read -r src tgt typ note; do
+    [[ "$src" == "source" || -z "$src" ]] && continue
+    n=$((n+1))
+    hops=$(curl -s -o /dev/null -w '%{num_redirects}' -L --max-time 20 "$BASE$src")
+    final=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 20 "$BASE$src")
+    if   [[ "$final" != "200" ]]; then no "$src → final $final"; bad=$((bad+1))
+    elif [[ "$hops" -gt 1 ]];    then wr "$src → $hops hops (chain)"
+    fi
+  done < "$REDIRECTS"
+  [[ "$bad" -eq 0 ]] && ok "all $n redirects resolve to 200" || no "$bad of $n redirects broken"
+else
+  wr "no redirect map supplied — pass --redirects=redirects.csv before cutover"
+fi
+
+hdr "Result"
+printf '  %d passed · %d failed · %d warnings\n\n' "$PASS" "$FAIL" "$WARN"
+[[ "$FAIL" -eq 0 ]] || { echo "BLOCKING failures. Do not cut over."; exit 1; }
+echo "Clear to proceed."

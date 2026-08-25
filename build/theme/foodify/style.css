@@ -1,0 +1,139 @@
+/*
+Theme Name:   Foodify
+Theme URI:    https://letsfoodify.com
+Description:  Foodify storefront child theme. All design tokens live in theme.json — do not
+              hardcode colours, type sizes, spacing or radii anywhere in CSS. Use
+              var(--wp--preset--*) for presets and var(--wp--custom--*) for the rest.
+Author:       Curiousmystic
+Template:     blocksy
+Version:      1.0.0
+Requires PHP: 8.1
+Text Domain:  foodify
+*/
+
+/* Only rules that theme.json cannot express belong here. Keep this file short.
+   Radius, the tap target, the motion curve and the progress track are all
+   settings.custom in theme.json — nothing below invents a value. */
+
+/* Accessibility floor — audit found 308 sub-44px targets and 437 nodes at 11.6px.
+   Scoped to CONTROLS, not every anchor. `a` on its own also caught inline links in
+   body copy, breadcrumbs and footer lists; min-height does nothing to an inline
+   element but inflates every link that is block or inline-block, which is most of
+   a nav. WCAG 2.5.8 exempts links inline in a sentence, so they are left alone. */
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+.wp-element-button,
+.wc-block-components-button,
+.woocommerce a.button,
+.woocommerce button.button,
+.wp-block-navigation-item__content,
+.woocommerce-MyAccount-navigation a,
+li.product a.woocommerce-LoopProduct-link,
+.wc-block-grid__product-link {
+  min-height: var(--wp--custom--tap-target);
+}
+/* Buttons need the height to actually centre their label. */
+button, [role="button"], input[type="submit"], input[type="button"],
+.wp-element-button, .wc-block-components-button, .woocommerce a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body { font-size: var(--wp--preset--font-size--base); }   /* 16px floor, never smaller */
+:focus-visible { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+
+/* Motion: one curve, and honour the OS setting */
+a, button, .fd-card {
+  transition: color .15s var(--wp--custom--ease),
+              background-color .15s var(--wp--custom--ease),
+              border-color .15s var(--wp--custom--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important; }
+}
+
+/* Product imagery sits on Kraft Pale, never pure white — see Design Playbook §02 */
+.woocommerce ul.products li.product img,
+.wc-block-grid__product-image img,
+.woocommerce div.product div.images img {
+  background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--card);
+}
+
+/* Prep-method chip — the brand's core attribute, shown above the product name */
+.fd-prep {
+  display: inline-flex; align-items: center;
+  gap: var(--wp--preset--spacing--20);
+  font-size: var(--wp--preset--font-size--sm); font-weight: 600;
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--pill);
+  padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+}
+.fd-prep::before {
+  content: ""; border-radius: 50%;
+  width: var(--wp--preset--spacing--20); height: var(--wp--preset--spacing--20);
+  background: var(--wp--preset--color--leaf);
+}
+.fd-prep--hot::before  { background: var(--wp--preset--color--flame); }
+.fd-prep--cook::before { background: var(--wp--preset--color--kraft-deep); }
+
+/* Per-serving price — reframes ₹210 against a delivery order */
+.fd-per-serving {
+  display: block;
+  font-size: var(--wp--preset--font-size--sm);
+  color: var(--wp--preset--color--mute);
+  font-weight: 400;
+}
+.price, .amount { font-variant-numeric: tabular-nums; }
+
+/* Free-shipping progress */
+.fd-progress {
+  background: var(--wp--custom--track);
+  border-radius: var(--wp--custom--radius--pill);
+  height: var(--wp--preset--spacing--20);
+  overflow: hidden;
+}
+.fd-progress > i {
+  display: block; height: 100%;
+  background: var(--wp--preset--color--leaf);
+  border-radius: var(--wp--custom--radius--pill);
+  transition: width .25s var(--wp--custom--ease);
+}
+
+/* Wide content never scrolls the page sideways.
+   Scrolling is applied to the WRAPPER, never the <table>. `display:block` on a table
+   drops it out of table layout, so column widths collapse and cells stop aligning —
+   most visibly in the cart on desktop. */
+.wp-block-table,
+.woocommerce .woocommerce-cart-form,
+.fd-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.wp-block-table > table,
+.woocommerce table.shop_table { width: 100%; }
+
+/* WCAG 1.4.11 — a form control's boundary needs 3:1 against its background.
+   --line (#E6DCCB) is 1.3:1 on paper: fine for a divider, not for an input. */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea,
+.wc-block-components-text-input input {
+  border: 1.5px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control);
+  min-height: var(--wp--custom--tap-target);
+  font-size: var(--wp--preset--font-size--base);   /* 16px stops iOS zooming on focus */
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--wp--preset--color--flame-ink);
+  box-shadow: 0 0 0 3px var(--wp--preset--color--flame-wash);
+  outline: none;
+}
+/* Small uppercase badge text on the flame wash needs the deeper ink to clear AA. */
+.fd-badge--flame {
+  background: var(--wp--preset--color--flame-wash);
+  color: var(--wp--preset--color--flame-deep);
+}
