@@ -7,6 +7,28 @@ riskiest package in the project despite being the smallest.
 Ordered so that the reversible, self-contained fixes land first and the one
 change that can damage the whole site lands last, behind its own gate.
 
+> **Updated 25 Aug 2026, after the kit audit.** Two things changed since this was
+> written and both matter:
+>
+> **The gate for WP-01 is `wp01-verify.sh`, not `smoke-test.sh`.** smoke-test.sh
+> is the *cutover* gate (WP-14): it asserts nine checkout fields (WP-06, week 11),
+> COD (WP-07, week 12) and the WP-04 asset budget (week 10). In week 1 the live
+> site has 25 fields, no COD and 73 JS files, so smoke-test.sh returns four
+> blocking failures on a perfectly correct WP-01. A gate that cannot pass either
+> stalls the work or teaches you to ignore it, and on a solo build the gate is
+> what stands in for code review.
+>
+> **Step 5's Rank Math commands are now in `bootstrap.sh --phase=1`**, with
+> assertions this document did not have — every patch is checked, the portfolio
+> CPT is detected rather than guessed, and the catalogue is verified still
+> indexable before the script exits. Run the script; use the commands below only
+> to *inspect* what it did. Steps 1-4 stay manual: they are theme options and
+> page content that differ per install.
+>
+> Start with `scripts/wp01-preflight.sh` — it asserts access, takes and
+> size-checks the backup, records every value WP-01 overwrites, captures the
+> baseline and URL inventory, and dry-runs phase 1.
+
 ---
 
 ## The one thing that can go badly wrong
@@ -24,6 +46,10 @@ and it is the last thing done, after everything else is verified.
 ---
 
 ## Pre-flight — do not skip
+
+**Run `bash scripts/wp01-preflight.sh https://letsfoodify.com` first** — it does
+everything in this section and refuses rather than warns. The commands are kept
+below so you can see what it is doing and run any of them on their own.
 
 ```bash
 # 1. Full backup, restore-tested. WP-00 requires this; WP-01 depends on it.
@@ -48,7 +74,9 @@ bash scripts/bootstrap.sh --env=staging --phase=1
 bash scripts/smoke-test.sh; echo "exit=$?"
 ```
 
-**Do not proceed to production until `smoke-test.sh` exits 0 on staging.**
+**Do not proceed to production until `wp01-verify.sh` exits 0 on staging.**
+(`smoke-test.sh` will still fail there — see the note at the top. That is
+expected in week 1, not a regression.)
 
 ---
 
@@ -255,7 +283,16 @@ Defaults are written with `add_option()`, which is a **no-op if the option
 already exists**. If Rank Math was ever installed and removed on this site, the
 defaults will not reapply and you must set them explicitly.
 
-### 5c. Set what is actually missing
+### 5c. Let the script set them
+
+`bootstrap.sh --phase=1` now applies all of the below, asserting each patch and
+dying on the first failure — `wp option patch` on a key Rank Math never reads
+*succeeds*, so an unasserted run cannot tell you it did nothing. It also verifies
+the catalogue is still indexable before exiting.
+
+Run the script. The commands here are the equivalent by hand, for inspection or
+for a one-off repair:
+
 ```bash
 # Only for keys 5b showed as wrong or absent:
 wp option patch update rank-math-options-titles tax_product_tag_custom_robots on
@@ -351,12 +388,19 @@ bash scripts/bootstrap.sh --env=prod --phase=1 --dry-run
 # 2. Only after I have said yes:
 bash scripts/bootstrap.sh --env=prod --phase=1
 
-# 3. Blocking gate:
-bash scripts/smoke-test.sh; echo "exit=$?"
+# 3. Blocking gate — the WP-01 one:
+bash scripts/wp01-verify.sh https://letsfoodify.com; echo "exit=$?"
 ```
 
-If `smoke-test.sh` exits non-zero, the deploy is not done — it is failed. Roll
+If `wp01-verify.sh` exits non-zero, the deploy is not done — it is failed. Roll
 back to the pre-flight snapshot rather than patching forward under time pressure.
+
+Its own self-test proves it catches what it claims, including a catalogue
+accidentally set to noindex:
+
+```bash
+python3 tests/wp01-selftest.py     # 25 assertions across 4 fixture sites
+```
 
 Anything changed in wp-admin during steps 1–5 that is **not** yet in
 `bootstrap.sh` must be added now, before the session ends. At cutover only files
@@ -365,6 +409,10 @@ and this script survive.
 ---
 
 ## Acceptance criteria — the handover's four, restated as runnable checks
+
+All four are checked by `wp01-verify.sh`, which walks **every** product for
+criterion 2 rather than sampling one — a product with an empty short description
+renders an empty meta description, and sampling is exactly how that passes.
 
 | # | Criterion | Check |
 |---|---|---|

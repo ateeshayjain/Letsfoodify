@@ -22,7 +22,10 @@ scripts/
   bootstrap.sh              Configuration as code. The reason cutover is survivable.
   taxonomy-cleanup.php      170 tags → ~20, with a data-derived redirect map
   clean-elementor-meta.php  Orphaned postmeta, prefix resolved through $wpdb
-  smoke-test.sh             Post-deploy assertions. Exits non-zero on a blocking failure.
+  wp01-preflight.sh         Week 1: access, backup, rollback record, baseline, dry-run
+  wp01-verify.sh            Week 1 GATE: the four WP-01 acceptance criteria
+  smoke-test.sh             CUTOVER gate (WP-14). Fails during WP-01 by design —
+                            it asserts COD and nine fields, which arrive in weeks 11-12.
 
 docs/
   SOLO-PLAN.md          Re-sequenced schedule, what gets deferred, weekly cadence

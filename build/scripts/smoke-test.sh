@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-# Foodify — post-deploy assertions. Run after every deploy and immediately after cutover.
+# Foodify — THE CUTOVER GATE (WP-14). Run before every deploy of the rebuilt
+# store and immediately after cutover.
+#
+# NOT the week-1 gate. This asserts the finished store: nine checkout fields
+# (WP-06, week 11), COD (WP-07, week 12), and the WP-04 asset budget (week 10).
+# Run against the live site during WP-01 it returns four blocking failures on a
+# perfectly correct week-1 result. Use scripts/wp01-verify.sh for WP-01.
 #   ./smoke-test.sh https://staging.letsfoodify.com
 #   ./smoke-test.sh https://letsfoodify.com --redirects=redirects.csv
 set -uo pipefail

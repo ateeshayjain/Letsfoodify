@@ -271,7 +271,15 @@ wp eval-file scripts/taxonomy-cleanup.php report
 wp eval-file scripts/taxonomy-cleanup.php noindex     # then wait 30 days
 wp eval-file scripts/taxonomy-cleanup.php execute     # emits redirects.csv
 
-# --- Gate (blocking) --------------------------------------------------
+# --- WP-01, week 1 ----------------------------------------------------
+bash scripts/wp01-preflight.sh https://letsfoodify.com   # read-only + backup + dry-run
+bash scripts/wp01-verify.sh    https://letsfoodify.com   # the WP-01 gate
+python3 tests/wp01-selftest.py                            # prove that gate works
+
+# --- Gates (blocking) — TWO of them, for different weeks ---------------
+# wp01-verify.sh  = week 1.  smoke-test.sh = CUTOVER (WP-14).
+# smoke-test.sh asserts nine checkout fields, COD and the WP-04 asset budget —
+# none of which exist before week 10, so it fails by design during WP-01.
 bash scripts/smoke-test.sh https://staging.letsfoodify.com; echo "exit=$?"
 python3 tests/selftest.py          # prove the gate works before trusting it
 GATE=scripts/smoke-test.sh.orig python3 tests/selftest.py   # reproduces the old fail-open
