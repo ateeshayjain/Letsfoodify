@@ -20,7 +20,9 @@ theme/foodify/          Blocksy child theme. Deploy this from git; never edit on
 
 scripts/
   bootstrap.sh              Configuration as code. The reason cutover is survivable.
-  taxonomy-cleanup.php      170 tags → ~20, with a data-derived redirect map
+  tags-to-attributes.php    Tags → filter attributes. MUST run before the cleanup.
+  taxonomy-cleanup.php      170 tags → ~20, redirect-then-delete, reversible noindex
+  wp02-verify.sh            WP-02 GATE: static chain/loop analysis, then live checks
   clean-elementor-meta.php  Orphaned postmeta, prefix resolved through $wpdb
   wp01-preflight.sh         Week 1: access, backup, rollback record, baseline, dry-run
   wp01-verify.sh            Week 1 GATE: the four WP-01 acceptance criteria

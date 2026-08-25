@@ -266,10 +266,18 @@ bash scripts/bootstrap.sh --env=staging --dry-run          # ALWAYS first
 bash scripts/bootstrap.sh --env=staging --phase=1
 bash scripts/bootstrap.sh --env=prod    --phase=1 --dry-run # show me before running
 
-# --- Taxonomy (WP-02, three passes, weeks apart) ----------------------
+# --- WP-02 taxonomy — ORDER MATTERS, see planning/WP-02-RUNBOOK.md ----
+# Weeks 1-2: migrate FIRST (deleting tags destroys the relationships it reads),
+# then noindex to start the 30-day clock.
+wp eval-file scripts/tags-to-attributes.php report
+wp eval-file scripts/tags-to-attributes.php execute --confirm
 wp eval-file scripts/taxonomy-cleanup.php report
-wp eval-file scripts/taxonomy-cleanup.php noindex     # then wait 30 days
-wp eval-file scripts/taxonomy-cleanup.php execute     # emits redirects.csv
+wp eval-file scripts/taxonomy-cleanup.php noindex      # 30-day clock starts here
+wp eval-file scripts/taxonomy-cleanup.php undo-noindex # reverses it
+# Week 14: redirect-then-delete, then gate.
+wp eval-file scripts/taxonomy-cleanup.php execute --confirm
+bash scripts/wp02-verify.sh https://letsfoodify.com --redirects=scripts/redirects.csv
+bash tests/wp02-map-selftest.sh
 
 # --- WP-01, week 1 ----------------------------------------------------
 bash scripts/wp01-preflight.sh https://letsfoodify.com   # read-only + backup + dry-run

@@ -196,6 +196,38 @@ if ( 'execute' === $mode ) {
 	}
 
 	/*
+	 * THE ATTRIBUTE MIGRATION MUST HAVE RUN FIRST.
+	 *
+	 * WP-02 does not only delete tags — it moves the useful ones (vegan,
+	 * gluten-free, prep method) into filter attributes. Delete first and the
+	 * term relationships are gone with the terms: which products were vegan is
+	 * not recoverable from anything left on the site. The migration reads those
+	 * relationships, so it has exactly one chance to run.
+	 */
+	if ( function_exists( 'foodify_attribute_map' ) ) {
+		$migrated = 0;
+		foreach ( array_keys( foodify_attribute_map() ) as $attr_slug ) {
+			$tax = 'pa_' . $attr_slug;
+			if ( taxonomy_exists( $tax ) ) {
+				$migrated += (int) wp_count_terms( [ 'taxonomy' => $tax, 'hide_empty' => true ] );
+			}
+		}
+		if ( 0 === $migrated && ! in_array( '--skip-attribute-check', $args, true ) ) {
+			WP_CLI::error(
+				"No populated Foodify attribute terms found.\n\n" .
+				"tags-to-attributes.php has not run, or matched nothing. Deleting tags now\n" .
+				"destroys the term relationships it needs and they cannot be recovered.\n\n" .
+				"Run first:  wp eval-file tags-to-attributes.php report\n" .
+				"Then:       wp eval-file tags-to-attributes.php execute --confirm\n\n" .
+				"If the attributes genuinely are not wanted, pass --skip-attribute-check."
+			);
+		}
+		WP_CLI::log( sprintf( 'Attribute migration check: %d attribute terms in use.', $migrated ) );
+	} else {
+		WP_CLI::warning( 'Foodify theme not active — cannot confirm the attribute migration ran.' );
+	}
+
+	/*
 	 * ORDER MATTERS AND IT USED TO BE WRONG.
 	 *
 	 * The original wrote redirects.csv, deleted every term, and told you to import the

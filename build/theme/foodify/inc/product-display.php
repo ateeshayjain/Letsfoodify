@@ -5,10 +5,15 @@
  * Principle 01 of the Design Playbook: prep effort is the deciding attribute for an
  * instant-food catalogue, so it leads the card, ahead of price.
  *
- * Expects two product fields, set per SKU:
- *   _foodify_prep_method   hot_water | drinking_water | cooking
+ * Expects per SKU:
+ *   pa_prep (attribute)    hot-water | drinking-water | cooking  — CANONICAL
+ *   _foodify_prep_method   legacy meta, fallback only until migration completes
  *   _foodify_prep_minutes  integer
  *   _foodify_servings      integer, drives the per-serving price
+ *
+ * Prep method is resolved via foodify_prep_method() in product-attributes.php.
+ * Do not read the meta directly anywhere else — two readers of the same fact
+ * drift, and then the chip and the shop filter disagree about the same product.
  *
  * @package Foodify
  */
@@ -26,7 +31,12 @@ const FOODIFY_LOW_STOCK_AT = 5;
 
 /** @return array{label:string, modifier:string}|null */
 function foodify_prep_chip_parts( WC_Product $product ): ?array {
-	$method  = (string) $product->get_meta( '_foodify_prep_method' );
+	// Resolved through ONE function: the pa_prep attribute is canonical, the
+	// legacy meta is the fallback for products not yet migrated. Reading the meta
+	// directly here is how the chip and the filter come to disagree.
+	$method  = function_exists( 'foodify_prep_method' )
+		? foodify_prep_method( $product )
+		: (string) $product->get_meta( '_foodify_prep_method' );
 	$minutes = (int) $product->get_meta( '_foodify_prep_minutes' );
 
 	$map = [

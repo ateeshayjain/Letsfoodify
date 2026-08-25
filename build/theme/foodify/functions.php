@@ -77,5 +77,6 @@ add_filter( 'wp_get_attachment_image_attributes', static function ( array $attr,
 /** Feature modules. Each is independently removable. */
 require_once FOODIFY_DIR . '/inc/checkout-fields.php';
 require_once FOODIFY_DIR . '/inc/coupon-attribution.php';
+require_once FOODIFY_DIR . '/inc/product-attributes.php';   // must load BEFORE product-display
 require_once FOODIFY_DIR . '/inc/product-display.php';
 require_once FOODIFY_DIR . '/inc/patterns.php';

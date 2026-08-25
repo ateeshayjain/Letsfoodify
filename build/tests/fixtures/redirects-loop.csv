@@ -1,0 +1,3 @@
+source,target,type,note
+/product-tag/a/,/product-tag/b/,301,loop
+/product-tag/b/,/product-tag/a/,301,loop
