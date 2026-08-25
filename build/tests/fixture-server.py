@@ -1,57 +1,35 @@
 #!/usr/bin/env python3
-"""Minimal WooCommerce-shaped fixture server for smoke-test self-testing.
-   Usage: fixture-server.py <port> <good|bad>"""
-import sys, http.server, socketserver
+"""Serve the smoke-test fixtures by hand, for eyeballing the gate.
 
-MODE = sys.argv[2]
-YEAR = __import__('datetime').date.today().year
+    tests/fixture-server.py <port> <good|bad>
 
-HEAD = """<!doctype html><html><head>
-<meta name="description" content="Instant home-style Indian meals, ready in 6 minutes">
-<meta property="og:title" content="The Foodify Company">
-<meta property="og:image" content="/x.jpg">
-<meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/a.css"><script src="/a.js"></script>
-<script type="application/ld+json">{"@type": "Product","name":"Express Dal Fry"}</script>
-</head><body>"""
-FOOT = f"<footer>&copy; {YEAR} The Foodify Company</footer></body></html>"
-PAD  = "<p>" + ("Home-style Indian food, gently dried. " * 30) + "</p>"
+There is exactly ONE definition of these fixtures and it lives in selftest.py,
+which is the thing that actually runs in the gate. This file used to carry its
+own copy; two fixture sets that must agree is the same drift risk as two
+merchant normalizers or two net-worth definitions, and the copy had already
+fallen a route behind before anyone noticed.
+"""
+import os
+import sys
+import importlib.util
 
-LEAK    = "// 3. Inject JS step-switching script to show only one box at a time" if MODE == "bad" else ""
-COUNTER = "<span>70 people are viewing this right now</span>" if MODE == "bad" else ""
+if len(sys.argv) < 3 or sys.argv[2] not in ("good", "bad"):
+    sys.exit(__doc__)
 
-PAGES = {
- "/":            HEAD + "<h1>A real meal in six minutes</h1>" + PAD + '<a href="/product/express-dal-fry/">Dal Fry</a>' + FOOT,
- "/product/express-dal-fry/": HEAD + "<h1>Express Dal Fry</h1>" + COUNTER + PAD + FOOT,
- "/shop/":       HEAD + "<h1>Shop</h1>" + PAD + '<a href="/?add-to-cart=42">Add</a>' + FOOT,
- "/cart/":       HEAD + "<h1>Cart</h1>" + PAD + "<p>1 item</p>" + FOOT,
- "/checkout/":   HEAD + "<h1>Checkout</h1>" + PAD + """
-   <input name="billing_first_name"><input name="billing_phone">
-   <input name="billing_email" required><input name="billing_postcode">
-   <input name="billing_city"><select name="billing_state" id="billing_state"><option value="UP">Uttar Pradesh</option></select>
-   <input name="billing_address_1"><input name="billing_address_2">
-   <input name="shipping_first_name"><input name="shipping_postcode">
-   <li class="payment_method_cod">Cash on delivery</li><li class="payment_method_razorpay">Razorpay</li>""" + FOOT,
- "/my-account/": HEAD + "<h1>My account</h1>" + LEAK + PAD + FOOT,
- "/robots.txt":  "User-agent: *\nSitemap: /sitemap_index.xml\n",
- "/sitemap_index.xml": '<?xml version="1.0"?><sitemapindex></sitemapindex>',
-}
+_spec = importlib.util.spec_from_file_location(
+    "selftest_fixtures", os.path.join(os.path.dirname(os.path.abspath(__file__)), "selftest.py"))
+_mod = importlib.util.module_from_spec(_spec)
+# selftest.py runs its cases at import time. Only the fixture definitions are
+# wanted here, so execute it far enough to get them and no further.
+_src = open(_spec.origin).read().split("print(f\"Gate under test")[0]
+exec(compile(_src, _spec.origin, "exec"), _mod.__dict__)
 
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        path = self.path.split("?")[0]
-        if path == "/wp-sitemap.xml":                      # retired by Rank Math
-            self.send_error(404); return
-        body = PAGES.get(path)
-        if body is None: self.send_error(404); return
-        b = body.encode()
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain" if path.endswith(".txt") else "text/html")
-        self.send_header("Content-Length", str(len(b)))
-        self.send_header("Set-Cookie", "woocommerce_items_in_cart=1; Path=/")
-        self.end_headers(); self.wfile.write(b)
-    def log_message(self, *a): pass
-
-socketserver.TCPServer.allow_reuse_address = True
-with socketserver.TCPServer(("127.0.0.1", int(sys.argv[1])), H) as s:
-    s.serve_forever()
+port = int(sys.argv[1])
+srv = _mod.serve(sys.argv[2], port)
+print(f"fixtures ({sys.argv[2]}) on http://127.0.0.1:{port}  — ctrl-c to stop")
+try:
+    import time
+    while True:
+        time.sleep(3600)
+except KeyboardInterrupt:
+    srv.shutdown()

@@ -84,6 +84,16 @@ else
   no "cannot check viewer counter — product page did not load"
 fi
 
+# WP-05's address book is a rewrite endpoint. Rewrite rules live in an option,
+# so a deploy that copies theme files without re-activating leaves the account
+# menu pointing at a 404. Logged out, WooCommerce answers every account endpoint
+# with the login form and a 200 — so 404 here means the RULE is missing, which
+# is precisely the failure that is invisible until a customer taps it.
+AB="$(CODE "$BASE/my-account/address-book/")"
+if   [[ "$AB" == "200" ]]; then ok "/my-account/address-book/ → 200 (endpoint registered)"
+elif [[ "$AB" == "404" ]]; then no "/my-account/address-book/ → 404 — rewrite rules not flushed after deploy"
+else                            no "/my-account/address-book/ → $AB (could not verify the endpoint)"; fi
+
 ACC=$(FETCH "$BASE/my-account/")
 if GOT "$ACC"; then
   grep -q 'Inject JS step-switching' <<<"$ACC" && no "developer comment still leaking on /my-account/" || ok "no leaked source comment"

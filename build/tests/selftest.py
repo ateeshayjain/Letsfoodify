@@ -53,6 +53,10 @@ def pages(mode):
         "/cart/": HEAD + "<h1>Cart</h1>" + PAD + "<p>1 item in your cart</p>" + FOOT,
         "/checkout/": HEAD + "<h1>Checkout</h1>" + PAD + CHECKOUT_FORM + FOOT,
         "/my-account/": HEAD + "<h1>My account</h1>" + leak + PAD + FOOT,
+        # WP-05's address book is a rewrite endpoint. The "bad" fixture omits it
+        # so the 404 the gate must catch is a real 404, not an asserted string.
+        **({} if mode == "bad" else
+           {"/my-account/address-book/": HEAD + "<h1>Sign in</h1>" + PAD + FOOT}),
         "/robots.txt": "User-agent: *\nSitemap: /sitemap_index.xml\n",
         "/sitemap_index.xml": '<?xml version="1.0"?><sitemapindex></sitemapindex>',
     }
@@ -128,6 +132,7 @@ check("reports no fake viewer counter",   "PASS no fake viewer counter" in out)
 check("core sitemap retired",             "core sitemap retired" in out)
 check("billing fields within budget",     "billing fields: 8" in out)
 check("COD detected",                     "PASS COD offered" in out)
+check("address-book endpoint reachable",  "PASS /my-account/address-book/ \u2192 200" in out)
 check("exits 0",                          rc == 0)
 
 print("\n── Case 2 · site carrying the audit's defects ──")
@@ -135,6 +140,7 @@ s2 = serve("bad", 8972)
 out, rc = run(8972); s2.shutdown()
 check("leaked comment CAUGHT",  "developer comment still leaking" in out)
 check("fake counter CAUGHT",    "fake viewer counter still present" in out)
+check("missing address-book endpoint CAUGHT", "rewrite rules not flushed" in out)
 check("exits non-zero",         rc != 0)
 
 print("\n── Case 3 · unreachable site (the regression test) ──")
@@ -143,6 +149,8 @@ check("does NOT falsely clear the leaked comment",
       "PASS no leaked source comment" not in out)
 check("does NOT falsely clear the fake counter",
       "PASS no fake viewer counter" not in out)
+check("does NOT falsely clear the address-book endpoint",
+      "endpoint registered" not in out)
 check("says the page did not load", "did not load" in out)
 check("exits non-zero", rc != 0)
 

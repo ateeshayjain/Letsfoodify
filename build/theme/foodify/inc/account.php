@@ -131,3 +131,142 @@ add_action( 'wp_footer', static function (): void {
 			. 'rendering on this account page. WP-05 forbids it. Find it before shipping.</p>';
 	}
 }, 999 );
+
+/* -------------------------------------------------------------------------
+ * WP-05 — post-purchase account claim.
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Offer an account on the order-received page, not before it.
+ *
+ * A "create an account" checkbox at checkout is one more decision in front of
+ * the money. After the order is placed the customer has already typed
+ * everything an account needs, and the offer is a favour rather than a toll.
+ *
+ * WHAT IT DELIBERATELY DOES NOT DO
+ * --------------------------------
+ * It links THIS order and no others. Linking every past order with the same
+ * email address would be the more generous behaviour and it is a hole: the only
+ * thing proving who is standing here is the order key in the URL, which proves
+ * they placed *this* order and nothing about the rest. Someone forwarded a
+ * confirmation email would inherit a stranger's order history.
+ *
+ * Older orders come back when they sign in properly — WooCommerce links guest
+ * orders on login by email, which is a different trust decision made by
+ * WooCommerce and gated behind an actual password or OTP.
+ */
+add_action( 'woocommerce_thankyou', static function ( $order_id ): void {
+	$order = wc_get_order( $order_id );
+	if ( ! $order || is_user_logged_in() || $order->get_customer_id() ) {
+		return;
+	}
+	$email = $order->get_billing_email();
+	if ( ! $email ) {
+		return;
+	}
+
+	if ( email_exists( $email ) ) {
+		printf(
+			'<section class="fd-claim"><h2>%1$s</h2><p>%2$s</p><p><a class="wp-element-button" href="%3$s">%4$s</a></p></section>',
+			esc_html__( 'You already have an account', 'foodify' ),
+			esc_html__( 'Sign in and this order joins your history, ready to reorder in one tap.', 'foodify' ),
+			esc_url( wc_get_page_permalink( 'myaccount' ) ),
+			esc_html__( 'Sign in', 'foodify' )
+		);
+		return;
+	}
+
+	printf(
+		'<section class="fd-claim"><h2>%1$s</h2><p>%2$s</p>'
+		. '<form method="post" class="fd-claim__form">%3$s'
+		. '<input type="hidden" name="foodify_claim_order" value="%4$s">'
+		. '<button type="submit" class="wp-element-button">%5$s</button></form>'
+		. '<p class="fd-claim__note">%6$s</p></section>',
+		esc_html__( 'Save this for next time?', 'foodify' ),
+		esc_html__( 'We can keep this order and this address on your account, so your next one is a single tap.', 'foodify' ),
+		wp_nonce_field( 'foodify_claim_' . $order->get_id(), 'foodify_claim_nonce', true, false ),
+		esc_attr( (string) $order->get_id() ),
+		esc_html__( 'Create my account', 'foodify' ),
+		esc_html( sprintf(
+			/* translators: %s: customer email address */
+			__( 'We will use %s. No password to invent — you sign in with your mobile number.', 'foodify' ),
+			$email
+		) )
+	);
+} );
+
+/**
+ * Perform the claim.
+ *
+ * Three gates, all required: a nonce tied to this order id, an order key in the
+ * URL matching this order, and an order that is still unclaimed. The order key
+ * is the same secret WooCommerce uses to let a guest view their own receipt —
+ * without it, knowing an order NUMBER would be enough, and order numbers are
+ * sequential.
+ */
+add_action( 'template_redirect', static function (): void {
+	if ( empty( $_POST['foodify_claim_order'] ) || is_user_logged_in() ) {
+		return;
+	}
+	$order_id = absint( wp_unslash( $_POST['foodify_claim_order'] ) );
+	$nonce    = isset( $_POST['foodify_claim_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['foodify_claim_nonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'foodify_claim_' . $order_id ) ) {
+		return;
+	}
+
+	$order = wc_get_order( $order_id );
+	if ( ! $order || $order->get_customer_id() ) {
+		return;
+	}
+	$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
+	if ( ! hash_equals( (string) $order->get_order_key(), $key ) ) {
+		return;   // not the person who placed this order
+	}
+
+	$email = $order->get_billing_email();
+	if ( ! $email || email_exists( $email ) ) {
+		return;
+	}
+
+	$user_id = wc_create_new_customer(
+		$email,
+		'',                       // WooCommerce generates the username
+		wp_generate_password( 24 ),
+		[
+			'first_name' => $order->get_billing_first_name(),
+			'source'     => 'order-claim',
+		]
+	);
+	if ( is_wp_error( $user_id ) ) {
+		wc_add_notice( __( 'We could not create the account. Your order is safe — please try from the account page.', 'foodify' ), 'error' );
+		return;
+	}
+
+	$order->set_customer_id( $user_id );
+	$order->save();
+
+	// Seed the address book from what they just typed, so "Saved addresses" is
+	// not empty on the first visit.
+	if ( function_exists( 'foodify_address_seed_from_wc' ) && function_exists( 'foodify_save_address_book' ) ) {
+		$seed = foodify_address_seed_from_wc( [
+			'first_name' => $order->get_shipping_first_name() ?: $order->get_billing_first_name(),
+			'phone'      => $order->get_billing_phone(),
+			'address_1'  => $order->get_shipping_address_1() ?: $order->get_billing_address_1(),
+			'address_2'  => $order->get_shipping_address_2() ?: $order->get_billing_address_2(),
+			'city'       => $order->get_shipping_city() ?: $order->get_billing_city(),
+			'state'      => $order->get_shipping_state() ?: $order->get_billing_state(),
+			'postcode'   => $order->get_shipping_postcode() ?: $order->get_billing_postcode(),
+			'label'      => __( 'Delivery address', 'foodify' ),
+		], time() );
+		if ( $seed ) {
+			foodify_save_address_book( $user_id, $seed );
+		}
+	}
+
+	wp_set_current_user( $user_id );
+	wp_set_auth_cookie( $user_id, true );
+
+	wc_add_notice( __( 'Account created. Your order is saved — reorder it any time.', 'foodify' ), 'success' );
+	wp_safe_redirect( wc_get_account_endpoint_url( 'orders' ) );
+	exit;
+} );

@@ -270,17 +270,24 @@ def cart_or_checkout(which):
 <div class="fx-row"><span>GST</span><span class="fx-num">Included</span></div>
 <div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹558</span></div>
 <button class="wp-element-button fx-add fx-add--lg">Checkout</button></aside></div>'''
-    fields = [("Mobile number", "98••• ••210"), ("Email", "you@example.com"),
-              ("Full name", "Priya Sharma"), ("PIN code", "201304"), ("City", "Noida"),
-              ("State", "Uttar Pradesh"), ("Address", "Flat, house number, building"),
-              ("Address line 2 (optional)", "Area, street, landmark"), ("Order notes (optional)", "")]
+    # Rendered as a RETURNING customer sees it: the chooser above, and every
+    # field already carrying the default address. That is WP-05's acceptance
+    # ("zero address fields typed") made visible rather than asserted. A guest
+    # sees the same nine fields empty, with no chooser.
+    fields = [("Mobile number", "98••• ••210", 1), ("Email", "you@example.com", 1),
+              ("Full name", "Ateeshay Jain", 1), ("PIN code", "201304", 1), ("City", "Noida", 1),
+              ("State", "Uttar Pradesh", 1), ("Address", "N-7011 Parx Laureate", 1),
+              ("Address line 2 (optional)", "Sector 108", 1), ("Order notes (optional)", "", 0)]
     inputs = "".join(
         f'<label class="fx-field"><span>{html.escape(l)}</span>'
         + (f'<select><option>{html.escape(v)}</option></select>' if l == "State"
-           else f'<input placeholder="{html.escape(v)}">') + '</label>'
-        for l, v in fields)
+           else f'<input {"value" if filled and v else "placeholder"}="{html.escape(v)}">')
+        + '</label>'
+        for l, v, filled in fields)
     return f'''<div class="fx-checkout">
-<div><p class="fx-fieldcount">Nine fields. The audited site asked twenty-five.</p>{inputs}</div>
+<div>{address_chooser()}
+<p class="fx-fieldcount">Nine fields for a first order — the audited site asked twenty-five.
+A returning customer types none of them.</p>{inputs}</div>
 <aside class="fx-summary"><h2>Your order</h2>
 <div class="fx-row"><span>3 items</span><span class="fx-num">₹620</span></div>
 <div class="fx-row fx-disc"><span>Prepaid saving</span><span class="fx-num">−₹25</span></div>
@@ -292,6 +299,46 @@ def cart_or_checkout(which):
 
 
 SIGNED_IN = True   # flipped per screen by main()
+
+ADDRESSES = [
+    # (label, name, phone, line1, line2, city, state, pin, is_default)
+    ("Home", "Ateeshay Jain", "98••• ••210", "N-7011 Parx Laureate", "Sector 108",
+     "Noida", "UP", "201304", True),
+    ("Office", "Ateeshay Jain", "98••• ••210", "Tower C, 9th floor", "Sector 16",
+     "Noida", "UP", "201301", False),
+]
+
+
+def address_book():
+    """The fd-address markup inc/address-book.php emits. Same classes, same shape."""
+    cards = []
+    for label, name, phone, l1, l2, city, state, pin, is_def in ADDRESSES:
+        badge = '<span class="fd-address__default">Default</span>' if is_def else ''
+        verbs = '<a class="fd-secondary" href="#">Edit</a>'
+        if not is_def:
+            verbs += ('<form class="fd-address__verb"><button>Make default</button></form>'
+                      '<form class="fd-address__verb"><button class="fd-danger">Delete</button></form>')
+        cards.append(
+            f'<li class="fd-address{" is-default" if is_def else ""}">'
+            f'<div class="fd-address__head"><span class="fd-address__label">{label}</span>{badge}</div>'
+            f'<p class="fd-address__body">{name} · {phone}<br>{l1}, {l2}, {city}, {pin} {state}</p>'
+            f'<div class="fd-address__actions">{verbs}</div></li>')
+    return "<ul class=\"fd-address-list\">" + "".join(cards) + "</ul>"
+
+
+def address_chooser():
+    """The checkout chooser. Only renders for a signed-in customer with 2+ saved."""
+    opts = "".join(
+        f'<label class="fd-address-choose__option">'
+        f'<input type="radio" name="fx-addr"{" checked" if is_def else ""}>'
+        f'<span class="fd-address-choose__label">{label}</span>'
+        f'<span class="fd-address-choose__body">{l1}, {l2}, {city}, {pin}</span></label>'
+        for label, _n, _p, l1, l2, city, _s, pin, is_def in ADDRESSES)
+    return ('<form class="fd-address-choose"><fieldset><legend>Deliver to</legend>'
+            + opts
+            + '<a class="fd-address-choose__manage" href="#">Manage saved addresses</a>'
+            + '</fieldset></form>')
+
 
 ORDERS = [
     ("#1194", "22 Aug 2026", "Delivered", "₹805", "3 items"),
@@ -338,14 +385,14 @@ without a template change. Guest checkout stays the default path either way.</di
 </tr></thead><tbody>{rows}</tbody></table>
 
 <h2 style="margin-top:2.5rem">Saved addresses</h2>
-<p class="fd-account-lead">Your shipping address is the one checkout fills in. Change it here and your
-next order picks it up automatically.</p>
-<div class="woocommerce-Addresses">
-<div class="woocommerce-Address"><div class="woocommerce-Address-title"><h2>Shipping</h2></div>
-<address>Ateeshay Jain<br>N-7011 Parx Laureate, Sector 108<br>Noida 201304<br>+91 98••• ••210</address></div>
-<div class="woocommerce-Address"><div class="woocommerce-Address-title"><h2>Billing</h2></div>
-<address>Ateeshay Jain<br>N-7011 Parx Laureate, Sector 108<br>Noida 201304<br>care@example.com</address></div>
-</div>
+<p class="fd-account-lead">Save the places you order to. Checkout fills in your default address on its
+own — you only choose when it is going somewhere else.</p>
+{address_book()}
+<h3 class="fd-address-form__title">Add an address</h3>
+<div class="fx-note">WooCommerce stores one billing and one shipping address. WP-05 needs several with a
+default flag, so the book is the theme\u2019s own model — and the default is mirrored back into
+WooCommerce\u2019s fields on every save, so checkout, the admin screens, Razorpay and the courier
+payload all keep reading the meta they have always read.</div>
 </div></div>'''
 
 

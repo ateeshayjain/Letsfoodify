@@ -8,7 +8,7 @@ project.** The original ten-week plan assumed a pod of four or five. See
 `docs/SOLO-PLAN.md` for the re-sequenced version — it is 15 weeks, not 10.
 
 ```
-theme/foodify/          Blocksy child theme. Deploy this from git; never edit on the server.
+theme/foodify/          Standalone block theme. Deploy from git; never edit on the server.
   theme.json            ALL design tokens. Colour, type, spacing, radius. Single source of truth.
   style.css             Only what theme.json cannot express. Keep it short.
   inc/
@@ -18,8 +18,12 @@ theme/foodify/          Blocksy child theme. Deploy this from git; never edit on
     patterns.php             Pattern category registration
     product-attributes.php   Filter attributes, forced non-indexable (WP-02)
     shortcodes.php           Free-shipping progress + Google reviews
+    account.php              Account menu, reorder-first order rows, post-purchase claim
+    address-book.php         WP-05. Several saved addresses, exactly one default
+    otp-throttle.php         WP-05. 5/hour + 30s cooldown, pure, gateway-independent
   patterns/             Block patterns. Pages are assembled from these — no page builder.
-  templates/            Block templates: home, product, category, cart, checkout, page, 404
+  templates/            Block templates: home, product, category, cart, checkout,
+                        my-account, page, 404
   parts/                header.html, footer.html
 
 tools/

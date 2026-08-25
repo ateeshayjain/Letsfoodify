@@ -243,9 +243,65 @@ input:focus, select:focus, textarea:focus {
 .woocommerce-Address-title h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
 .woocommerce-Address address { font-style: normal; line-height: 1.6; color: var(--wp--preset--color--mute); }
 
+/* Address book — WP-05. Several saved addresses, exactly one default.
+   The default card is marked by BOTH a border and a word, never by colour
+   alone: which address checkout will use is not something to communicate in a
+   way a colour-blind customer cannot read. */
+.fd-address-list { list-style: none; margin: 0 0 var(--wp--preset--spacing--50); padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: var(--wp--preset--spacing--40); }
+.fd-address {
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--50);
+}
+.fd-address.is-default { border-color: var(--wp--preset--color--leaf); box-shadow: inset 0 0 0 1px var(--wp--preset--color--leaf); }
+.fd-address__head { display: flex; align-items: center; justify-content: space-between; gap: var(--wp--preset--spacing--20); }
+.fd-address__label { font-weight: 600; font-size: var(--wp--preset--font-size--md); }
+.fd-address__default {
+  font-size: var(--wp--preset--font-size--xs); text-transform: uppercase; letter-spacing: .04em;
+  color: var(--wp--preset--color--leaf-ink); background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--pill); padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+}
+.fd-address__body { margin: var(--wp--preset--spacing--20) 0 var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); line-height: 1.6; }
+.fd-address__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20); }
+.fd-address__verb { margin: 0; }
+.fd-address__verb button {
+  min-height: var(--wp--custom--tapTarget); background: none; border: 1px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control); padding: 0 var(--wp--preset--spacing--30);
+  font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--char); cursor: pointer;
+}
+.fd-address__verb .fd-danger { color: var(--wp--preset--color--flame-ink); }
+.fd-address-note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-address-form__title { font-size: var(--wp--preset--font-size--lg); margin: var(--wp--preset--spacing--60) 0 var(--wp--preset--spacing--30); }
+
+/* Checkout chooser — the whole point of the book is that this replaces typing. */
+.fd-address-choose fieldset {
+  border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--40); margin: 0 0 var(--wp--preset--spacing--50);
+}
+.fd-address-choose legend { font-weight: 600; padding: 0 var(--wp--preset--spacing--20); }
+.fd-address-choose__option {
+  display: grid; grid-template-columns: auto 1fr; column-gap: var(--wp--preset--spacing--30);
+  align-items: start; min-height: var(--wp--custom--tapTarget);
+  padding: var(--wp--preset--spacing--20) 0; cursor: pointer;
+}
+.fd-address-choose__option input { grid-row: span 2; margin-top: .2em; }
+.fd-address-choose__label { font-weight: 600; }
+.fd-address-choose__body { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-address-choose__manage { display: inline-block; margin-top: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
+
+/* Post-purchase account claim, on the order-received page. */
+.fd-claim {
+  margin: var(--wp--preset--spacing--60) 0; padding: var(--wp--preset--spacing--50);
+  background: var(--wp--preset--color--kraft-pale); border-radius: var(--wp--custom--radius--card);
+}
+.fd-claim h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
+.fd-claim__note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); margin-bottom: 0; }
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
   .woocommerce-orders-table tr { display: grid; gap: var(--wp--preset--spacing--10); padding: var(--wp--preset--spacing--40) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
   .woocommerce-orders-table td { border: 0; padding: 0; }
+  .fd-address-list { grid-template-columns: 1fr; }
 }

@@ -7,11 +7,15 @@ WordPress + WooCommerce storefront rebuild for **The Foodify Company** (Noida).
 CLAUDE.md              Project context. Read this first — it assumes you have not
                        read the handover PDF.
 build/                 The build kit
-  theme/foodify/       Blocksy child theme. theme.json is the only token source.
+  theme/foodify/       Standalone block theme. theme.json is the only token source.
   scripts/             bootstrap.sh (config as code), taxonomy-cleanup.php,
                        smoke-test.sh (blocking gate), clean-elementor-meta.php
-  tests/selftest.py    Proves smoke-test.sh catches what it claims
-  docs/                VERIFICATION (read first), REVIEW-NOTES, SOLO-PLAN, MIGRATION
+  tests/               150 assertions. selftest.py proves the blocking gate works;
+                       address-test.php and otp-test.php pin the WP-05 rules
+  tools/               render-preview.py — generates preview/storefront.html
+                       FROM the theme, so the mockup cannot drift from the code
+  docs/                VERIFICATION (read first), REVIEW-NOTES, WP-03/04/05 notes,
+                       SOLO-PLAN, MIGRATION
 planning/              Pre-engagement scope, the WP-01 runbook, and two design pages
 docs/HISTORY.md        The eight original commit messages — why each call was made
 ```

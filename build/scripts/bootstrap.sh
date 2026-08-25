@@ -223,20 +223,33 @@ if [[ "$PHASE" == "all" ]]; then
   ok "Elementor postmeta cleared"
 
   log "Phase 3 · Theme"
-  wp theme install blocksy --force
+  # Blocksy is NOT installed here. WP-03 made foodify a STANDALONE block theme
+  # (templates/index.html is what makes WordPress treat it as one), so there is
+  # no parent to install and no Blocksy Pro licence to renew — see
+  # docs/WP-03-DECISIONS.md §1.
   if command wp theme is-installed foodify >/dev/null 2>&1; then
     wp theme activate foodify
-    ok "Foodify child theme active"
+    ok "Foodify theme active"
+    # The address book (WP-05) is a rewrite endpoint registered on init. Rules
+    # are cached in an option, so activation must be followed by a flush.
+    wp rewrite flush
+  elif [[ $DRY -eq 1 ]]; then
+    echo "    [dry-run] wp theme activate foodify"
   else
-    wp theme activate blocksy
-    warn "foodify child theme not found in wp-content/themes — deploy it from git, then: wp theme activate foodify"
+    # Deliberately fatal. The old fallback activated Blocksy and carried on with
+    # a warning — which would leave the store rendering a completely different
+    # theme, without any of the WP-01/03 fixes, while every later phase reported
+    # success. A missing theme is a broken deploy, not a warning.
+    die "foodify theme not found in wp-content/themes. Deploy it from git and re-run. Nothing else in this phase has been applied."
   fi
 
   log "Phase 3 · Plugin set"
   for p in judgeme-product-reviews-woocommerce wp-mail-smtp; do
     wp plugin install "$p" --activate
   done
-  warn "Premium plugins install manually: Blocksy Pro, Rank Math Pro, Digits (OTP)"
+  # Blocksy Pro is no longer on this list — the standalone theme removed the need
+  # for it, and rule 5 says paid plugins are asked about, not assumed.
+  warn "Premium plugins install manually: Rank Math Pro, Digits (OTP — needs DLT registration first)"
 
   log "Phase 4 · Commerce configuration"
   wp option update woocommerce_currency INR
@@ -297,6 +310,25 @@ if [[ "$PHASE" == "all" ]]; then
     [[ -n "$PID" ]] && wp option update "${WC_OPTION[$slug]}" "$PID"
   done
   ok "Core pages present and wired to WooCommerce"
+
+  # The address book (WP-05) lives on a rewrite endpoint the theme registers on
+  # init. Rewrite rules are cached in an option, so a freshly deployed theme has
+  # a menu item pointing at a URL that 404s until they are rebuilt. The theme
+  # flushes on activation too; this covers a deploy that overwrites theme files
+  # without re-activating, which is what a git-based deploy actually does.
+  wp rewrite flush
+  ok "Rewrite rules flushed (address-book endpoint registered)"
+
+  # ASSERT it, do not assume it. A dead account link is invisible to everyone
+  # except the customer who taps it.
+  if [[ $DRY -eq 0 ]]; then
+    if command wp rewrite list --format=csv 2>/dev/null | grep -q 'address-book'; then
+      ok "address-book endpoint present in the rewrite table"
+    else
+      warn "address-book endpoint NOT in the rewrite table — /my-account/address-book/ will 404."
+      warn "Check the foodify theme is the active theme, then re-run: wp rewrite flush"
+    fi
+  fi
 
 fi
 

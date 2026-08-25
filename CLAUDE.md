@@ -154,6 +154,9 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/VERIFICATION-2026-08-25.md` | **Read first.** What was verified, what was wrong, what changed |
 | `tests/selftest.py` | Proves `smoke-test.sh` catches what it claims. Run before trusting the gate |
 | `scripts/clean-elementor-meta.php` | WP-03. Orphaned postmeta, dry-run by default |
+| `docs/WP-05-NOTES.md` | Address book, checkout chooser, account claim, OTP rule |
+| `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
+| `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |
 
 ### Work package index

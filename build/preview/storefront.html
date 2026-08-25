@@ -384,11 +384,67 @@ input:focus, select:focus, textarea:focus {
 .woocommerce-Address-title h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
 .woocommerce-Address address { font-style: normal; line-height: 1.6; color: var(--wp--preset--color--mute); }
 
+/* Address book — WP-05. Several saved addresses, exactly one default.
+   The default card is marked by BOTH a border and a word, never by colour
+   alone: which address checkout will use is not something to communicate in a
+   way a colour-blind customer cannot read. */
+.fd-address-list { list-style: none; margin: 0 0 var(--wp--preset--spacing--50); padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: var(--wp--preset--spacing--40); }
+.fd-address {
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--50);
+}
+.fd-address.is-default { border-color: var(--wp--preset--color--leaf); box-shadow: inset 0 0 0 1px var(--wp--preset--color--leaf); }
+.fd-address__head { display: flex; align-items: center; justify-content: space-between; gap: var(--wp--preset--spacing--20); }
+.fd-address__label { font-weight: 600; font-size: var(--wp--preset--font-size--md); }
+.fd-address__default {
+  font-size: var(--wp--preset--font-size--xs); text-transform: uppercase; letter-spacing: .04em;
+  color: var(--wp--preset--color--leaf-ink); background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--pill); padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+}
+.fd-address__body { margin: var(--wp--preset--spacing--20) 0 var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); line-height: 1.6; }
+.fd-address__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20); }
+.fd-address__verb { margin: 0; }
+.fd-address__verb button {
+  min-height: var(--wp--custom--tapTarget); background: none; border: 1px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control); padding: 0 var(--wp--preset--spacing--30);
+  font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--char); cursor: pointer;
+}
+.fd-address__verb .fd-danger { color: var(--wp--preset--color--flame-ink); }
+.fd-address-note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-address-form__title { font-size: var(--wp--preset--font-size--lg); margin: var(--wp--preset--spacing--60) 0 var(--wp--preset--spacing--30); }
+
+/* Checkout chooser — the whole point of the book is that this replaces typing. */
+.fd-address-choose fieldset {
+  border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--40); margin: 0 0 var(--wp--preset--spacing--50);
+}
+.fd-address-choose legend { font-weight: 600; padding: 0 var(--wp--preset--spacing--20); }
+.fd-address-choose__option {
+  display: grid; grid-template-columns: auto 1fr; column-gap: var(--wp--preset--spacing--30);
+  align-items: start; min-height: var(--wp--custom--tapTarget);
+  padding: var(--wp--preset--spacing--20) 0; cursor: pointer;
+}
+.fd-address-choose__option input { grid-row: span 2; margin-top: .2em; }
+.fd-address-choose__label { font-weight: 600; }
+.fd-address-choose__body { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-address-choose__manage { display: inline-block; margin-top: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
+
+/* Post-purchase account claim, on the order-received page. */
+.fd-claim {
+  margin: var(--wp--preset--spacing--60) 0; padding: var(--wp--preset--spacing--50);
+  background: var(--wp--preset--color--kraft-pale); border-radius: var(--wp--custom--radius--card);
+}
+.fd-claim h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
+.fd-claim__note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); margin-bottom: 0; }
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
   .woocommerce-orders-table tr { display: grid; gap: var(--wp--preset--spacing--10); padding: var(--wp--preset--spacing--40) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
   .woocommerce-orders-table td { border: 0; padding: 0; }
+  .fd-address-list { grid-template-columns: 1fr; }
 }
 
 
@@ -1339,7 +1395,9 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
 <h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
 <div class="fx-checkout">
-<div><p class="fx-fieldcount">Nine fields. The audited site asked twenty-five.</p><label class="fx-field"><span>Mobile number</span><input placeholder="98••• ••210"></label><label class="fx-field"><span>Email</span><input placeholder="you@example.com"></label><label class="fx-field"><span>Full name</span><input placeholder="Priya Sharma"></label><label class="fx-field"><span>PIN code</span><input placeholder="201304"></label><label class="fx-field"><span>City</span><input placeholder="Noida"></label><label class="fx-field"><span>State</span><select><option>Uttar Pradesh</option></select></label><label class="fx-field"><span>Address</span><input placeholder="Flat, house number, building"></label><label class="fx-field"><span>Address line 2 (optional)</span><input placeholder="Area, street, landmark"></label><label class="fx-field"><span>Order notes (optional)</span><input placeholder=""></label></div>
+<div><form class="fd-address-choose"><fieldset><legend>Deliver to</legend><label class="fd-address-choose__option"><input type="radio" name="fx-addr" checked><span class="fd-address-choose__label">Home</span><span class="fd-address-choose__body">N-7011 Parx Laureate, Sector 108, Noida, 201304</span></label><label class="fd-address-choose__option"><input type="radio" name="fx-addr"><span class="fd-address-choose__label">Office</span><span class="fd-address-choose__body">Tower C, 9th floor, Sector 16, Noida, 201301</span></label><a class="fd-address-choose__manage" href="#">Manage saved addresses</a></fieldset></form>
+<p class="fx-fieldcount">Nine fields for a first order — the audited site asked twenty-five.
+A returning customer types none of them.</p><label class="fx-field"><span>Mobile number</span><input value="98••• ••210"></label><label class="fx-field"><span>Email</span><input value="you@example.com"></label><label class="fx-field"><span>Full name</span><input value="Ateeshay Jain"></label><label class="fx-field"><span>PIN code</span><input value="201304"></label><label class="fx-field"><span>City</span><input value="Noida"></label><label class="fx-field"><span>State</span><select><option>Uttar Pradesh</option></select></label><label class="fx-field"><span>Address</span><input value="N-7011 Parx Laureate"></label><label class="fx-field"><span>Address line 2 (optional)</span><input value="Sector 108"></label><label class="fx-field"><span>Order notes (optional)</span><input placeholder=""></label></div>
 <aside class="fx-summary"><h2>Your order</h2>
 <div class="fx-row"><span>3 items</span><span class="fx-num">₹620</span></div>
 <div class="fx-row fx-disc"><span>Prepaid saving</span><span class="fx-num">−₹25</span></div>
@@ -1449,14 +1507,14 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </tr></thead><tbody><tr><td><strong>#1194</strong></td><td>22 Aug 2026</td><td>Delivered</td><td class="woocommerce-orders-table__cell-order-total">₹805<span class="fx-meta">3 items</span></td><td class="woocommerce-orders-table__cell-order-actions"><button class="wp-element-button fd-reorder">Reorder</button><button class="wp-element-button fd-secondary">Details</button></td></tr><tr><td><strong>#1121</strong></td><td>31 Jul 2026</td><td>Delivered</td><td class="woocommerce-orders-table__cell-order-total">₹560<span class="fx-meta">2 items</span></td><td class="woocommerce-orders-table__cell-order-actions"><button class="wp-element-button fd-reorder">Reorder</button><button class="wp-element-button fd-secondary">Details</button></td></tr><tr><td><strong>#1088</strong></td><td>09 Jul 2026</td><td>Delivered</td><td class="woocommerce-orders-table__cell-order-total">₹1,240<span class="fx-meta">6 items</span></td><td class="woocommerce-orders-table__cell-order-actions"><button class="wp-element-button fd-reorder">Reorder</button><button class="wp-element-button fd-secondary">Details</button></td></tr></tbody></table>
 
 <h2 style="margin-top:2.5rem">Saved addresses</h2>
-<p class="fd-account-lead">Your shipping address is the one checkout fills in. Change it here and your
-next order picks it up automatically.</p>
-<div class="woocommerce-Addresses">
-<div class="woocommerce-Address"><div class="woocommerce-Address-title"><h2>Shipping</h2></div>
-<address>Ateeshay Jain<br>N-7011 Parx Laureate, Sector 108<br>Noida 201304<br>+91 98••• ••210</address></div>
-<div class="woocommerce-Address"><div class="woocommerce-Address-title"><h2>Billing</h2></div>
-<address>Ateeshay Jain<br>N-7011 Parx Laureate, Sector 108<br>Noida 201304<br>care@example.com</address></div>
-</div>
+<p class="fd-account-lead">Save the places you order to. Checkout fills in your default address on its
+own — you only choose when it is going somewhere else.</p>
+<ul class="fd-address-list"><li class="fd-address is-default"><div class="fd-address__head"><span class="fd-address__label">Home</span><span class="fd-address__default">Default</span></div><p class="fd-address__body">Ateeshay Jain · 98••• ••210<br>N-7011 Parx Laureate, Sector 108, Noida, 201304 UP</p><div class="fd-address__actions"><a class="fd-secondary" href="#">Edit</a></div></li><li class="fd-address"><div class="fd-address__head"><span class="fd-address__label">Office</span></div><p class="fd-address__body">Ateeshay Jain · 98••• ••210<br>Tower C, 9th floor, Sector 16, Noida, 201301 UP</p><div class="fd-address__actions"><a class="fd-secondary" href="#">Edit</a><form class="fd-address__verb"><button>Make default</button></form><form class="fd-address__verb"><button class="fd-danger">Delete</button></form></div></li></ul>
+<h3 class="fd-address-form__title">Add an address</h3>
+<div class="fx-note">WooCommerce stores one billing and one shipping address. WP-05 needs several with a
+default flag, so the book is the theme’s own model — and the default is mirrored back into
+WooCommerce’s fields on every save, so checkout, the admin screens, Razorpay and the courier
+payload all keep reading the meta they have always read.</div>
 </div></div>
 </main>
 

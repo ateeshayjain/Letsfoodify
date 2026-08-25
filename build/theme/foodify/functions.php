@@ -233,3 +233,5 @@ require_once FOODIFY_DIR . '/inc/product-display.php';
 require_once FOODIFY_DIR . '/inc/patterns.php';
 require_once FOODIFY_DIR . '/inc/shortcodes.php';
 require_once FOODIFY_DIR . '/inc/account.php';
+require_once FOODIFY_DIR . '/inc/address-book.php';   // WP-05: several addresses, one default
+require_once FOODIFY_DIR . '/inc/otp-throttle.php';   // WP-05: the rule, ahead of the gateway
