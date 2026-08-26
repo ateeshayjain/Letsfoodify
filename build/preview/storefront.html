@@ -367,6 +367,10 @@ input:focus, select:focus, textarea:focus {
 .woocommerce-orders-table__cell-order-total { font-variant-numeric: tabular-nums; }
 .fd-reorder { /* inherits .wp-element-button */ }
 .fd-secondary {
+  /* HIG audit: this is Edit on every address card and Details on every order —
+     a ~20px link beside a 44px button. Same floor for both. */
+  min-height: var(--wp--custom--tapTarget);
+  display: inline-flex; align-items: center;
   background: transparent;
   color: var(--wp--preset--color--char);
   border-color: var(--wp--preset--color--line-strong);
@@ -429,7 +433,7 @@ input:focus, select:focus, textarea:focus {
 .fd-address-choose__option input { grid-row: span 2; margin-top: .2em; }
 .fd-address-choose__label { font-weight: 600; }
 .fd-address-choose__body { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
-.fd-address-choose__manage { display: inline-block; margin-top: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
+.fd-address-choose__manage { display: inline-flex; align-items: center; min-height: var(--wp--custom--tapTarget); margin-top: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
 
 /* Post-purchase account claim, on the order-received page. */
 .fd-claim {
@@ -437,7 +441,7 @@ input:focus, select:focus, textarea:focus {
   background: var(--wp--preset--color--kraft-pale); border-radius: var(--wp--custom--radius--card);
 }
 .fd-claim h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
-.fd-claim__note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); margin-bottom: 0; }
+.fd-claim__note { color: var(--wp--preset--color--kraft-deep); font-size: var(--wp--preset--font-size--sm); margin-bottom: 0; }   /* same band, same 4.98:1 fix */
 
 /* Checkout shell — WP-06. The audited site ran the full site chrome here and
    switched between boxes with injected JavaScript. This is one page, stripped:
@@ -472,6 +476,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--wp--preset--color--mute);
 }
 .woocommerce-form-coupon-toggle .woocommerce-info::before { content: none; }
+.woocommerce-form-coupon-toggle .showcoupon { display: inline-flex; align-items: center; min-height: var(--wp--custom--tapTarget); }
 .woocommerce-form-coupon {
   border: 1px solid var(--wp--preset--color--line);
   border-radius: var(--wp--custom--radius--card);
@@ -558,15 +563,18 @@ input:focus, select:focus, textarea:focus {
   width: 2rem; height: 2rem;
   display: grid; place-items: center;
   border-radius: var(--wp--custom--radius--pill);
-  background: var(--wp--preset--color--flame);
-  color: var(--wp--preset--color--flame-ink);
+  /* HIG audit 2026-08-26: flame-ink on flame measured 1.68:1 — dark orange on
+     mid orange, unreadable. Paper on flame-deep measures 5.77:1. The numeral is
+     the one thing this chip exists to show. */
+  background: var(--wp--preset--color--flame-deep);
+  color: var(--wp--preset--color--paper);
   font-family: var(--wp--preset--font-family--ui);
   font-size: var(--wp--preset--font-size--sm);
   font-weight: 700;
 }
 .fd-prep__body { display: flex; flex-direction: column; gap: var(--wp--preset--spacing--10); }
 .fd-prep__body strong { font-size: var(--wp--preset--font-size--md); }
-.fd-prep__body span { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); line-height: 1.55; }
+.fd-prep__body span { color: var(--wp--preset--color--kraft-deep); font-size: var(--wp--preset--font-size--sm); line-height: 1.55; }   /* kraft-deep, not mute: 4.98:1 on the kraft band vs mute's 3.97 */
 
 /* Two fact tables, side by side, weighted differently on purpose: what a buyer
    asks reads as content, what a regulator asks reads as a label. */
@@ -625,7 +633,7 @@ input:focus, select:focus, textarea:focus {
   .fd-prep__steps { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--40); }
   .fd-spec { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--60); }
   .fd-spec dl > div { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--10); }
-  .fd-spec dt { font-size: var(--wp--preset--font-size--xs); }
+  .fd-spec dt { font-size: var(--wp--preset--font-size--sm); }
 }
 
 @media (max-width: 900px) {
@@ -1130,7 +1138,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div>
 
 
-<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
 <p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
@@ -1270,7 +1278,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div>
 
 
-<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
 <p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
@@ -1455,7 +1463,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div>
 
 
-<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
 <p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
@@ -1565,7 +1573,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div>
 
 
-<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
 <p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
@@ -1732,7 +1740,7 @@ payload all keep reading the meta they have always read.</div>
 </div>
 
 
-<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
 <p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
@@ -1834,7 +1842,7 @@ without a template change. Guest checkout stays the default path either way.</di
 </div>
 
 
-<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
 <p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
@@ -1934,7 +1942,7 @@ without a template change. Guest checkout stays the default path either way.</di
 </div>
 
 
-<hr class="wp-block-separator has-text-color has-kraft-deep-color has-alpha-channel-opacity has-kraft-deep-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
 <p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>

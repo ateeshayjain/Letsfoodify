@@ -561,26 +561,27 @@ function foodify_address_form( ?array $a ): void {
 	echo '<input type="hidden" name="foodify_address_action" value="save">';
 	printf( '<input type="hidden" name="address_id" value="%s">', esc_attr( $a['id'] ) );
 
-	$text = static function ( string $name, string $label, string $value, bool $required, string $placeholder = '', string $autocomplete = '' ): void {
+	$text = static function ( string $name, string $label, string $value, bool $required, string $placeholder = '', string $autocomplete = '', string $inputmode = '' ): void {
 		printf(
 			'<p class="form-row form-row-wide"><label for="fd-%1$s">%2$s%3$s</label>'
-			. '<input type="text" class="input-text" name="%1$s" id="fd-%1$s" value="%4$s" placeholder="%5$s" autocomplete="%6$s"%7$s></p>',
+			. '<input type="text" class="input-text" name="%1$s" id="fd-%1$s" value="%4$s" placeholder="%5$s" autocomplete="%6$s"%7$s%8$s></p>',
 			esc_attr( $name ),
 			esc_html( $label ),
 			$required ? ' <abbr class="required" title="required">*</abbr>' : '',
 			esc_attr( $value ),
 			esc_attr( $placeholder ),
 			esc_attr( $autocomplete ),
+			'' !== $inputmode ? ' inputmode="' . esc_attr( $inputmode ) . '"' : '',
 			$required ? ' required' : ''
 		);
 	};
 
 	$text( 'label', __( 'Name this address', 'foodify' ), $a['label'], false, __( 'Home, Office…', 'foodify' ) );
 	$text( 'first_name', __( 'Full name', 'foodify' ), $a['first_name'], true, __( 'Priya Sharma', 'foodify' ), 'name' );
-	$text( 'phone', __( 'Mobile number', 'foodify' ), $a['phone'], true, '', 'tel' );
+	$text( 'phone', __( 'Mobile number', 'foodify' ), $a['phone'], true, '', 'tel', 'numeric' );
 	$text( 'address_1', __( 'Address', 'foodify' ), $a['address_1'], true, __( 'Flat, house number, building', 'foodify' ), 'address-line1' );
 	$text( 'address_2', __( 'Area, street, landmark', 'foodify' ), $a['address_2'], false, __( 'Optional', 'foodify' ), 'address-line2' );
-	$text( 'postcode', __( 'PIN code', 'foodify' ), $a['postcode'], true, '', 'postal-code' );
+	$text( 'postcode', __( 'PIN code', 'foodify' ), $a['postcode'], true, '', 'postal-code', 'numeric' );
 	$text( 'city', __( 'Town / City', 'foodify' ), $a['city'], true, '', 'address-level2' );
 
 	echo '<p class="form-row form-row-wide"><label for="fd-state">' . esc_html__( 'State', 'foodify' ) . ' <abbr class="required" title="required">*</abbr></label>';
@@ -679,8 +680,14 @@ add_action( 'woocommerce_before_checkout_form', static function (): void {
 	echo '<legend>' . esc_html__( 'Deliver to', 'foodify' ) . '</legend>';
 	wp_nonce_field( 'foodify_address_choose', 'foodify_address_nonce' );
 	foreach ( $book as $a ) {
+		// HIG audit 2026-08-26: this input carried onchange="this.form.submit()".
+		// With a keyboard, ARROWING between radio options fires change on the
+		// first keypress — the form submits, the page reloads, and the second
+		// address is unreachable (WCAG 3.2.2, a change of context on input).
+		// The explicit button below is the mechanism for everyone now; choosing
+		// is choosing, submitting is submitting.
 		printf(
-			'<label class="fd-address-choose__option"><input type="radio" name="foodify_choose_address" value="%1$s"%2$s onchange="this.form.submit()">'
+			'<label class="fd-address-choose__option"><input type="radio" name="foodify_choose_address" value="%1$s"%2$s>'
 			. '<span class="fd-address-choose__label">%3$s</span><span class="fd-address-choose__body">%4$s</span></label>',
 			esc_attr( $a['id'] ),
 			checked( $a['id'], $chosen, false ),
@@ -688,9 +695,7 @@ add_action( 'woocommerce_before_checkout_form', static function (): void {
 			esc_html( foodify_address_summary( $a ) )
 		);
 	}
-	// Works without JavaScript too — the onchange above is the convenience, not
-	// the mechanism.
-	printf( '<noscript><button type="submit" class="wp-element-button">%s</button></noscript>', esc_html__( 'Use this address', 'foodify' ) );
+	printf( '<button type="submit" class="wp-element-button">%s</button>', esc_html__( 'Use this address', 'foodify' ) );
 	printf(
 		'<a class="fd-address-choose__manage" href="%s">%s</a>',
 		esc_url( wc_get_account_endpoint_url( 'address-book' ) ),
