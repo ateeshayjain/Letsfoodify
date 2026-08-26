@@ -88,6 +88,23 @@ if GOT "$PDP"; then
     *) no "$NODES Product schema nodes on one page — WooCommerce and Rank Math are both emitting; disable one" ;;
   esac
 
+  # The product page must carry the Legal Metrology declarations (scope §8) and
+  # the thing this brand sells on — how you make it. Positive checks: each looks
+  # for a marker the theme emits, so a page that failed to load cannot report
+  # them as present.
+  grep -qi 'fd-prep__steps' <<<"$PDP" \
+    && ok "product page says how you make it" \
+    || no "product page has no preparation steps — the one question this brand exists to answer"
+  grep -qi 'fd-spec__group' <<<"$PDP" \
+    && ok "product page carries its structured declarations" \
+    || no "product page has no declarations block — Legal Metrology fields are missing"
+  # "Not provided" is deliberate and correct on a page whose data is incomplete —
+  # it is how a gap is made visible rather than hidden. It is a WARN so it names
+  # the work without blocking a deploy over data the client still owes.
+  if grep -qi 'fd-spec' <<<"$PDP" && grep -q 'Not provided' <<<"$PDP"; then
+    wr "product page shows 'Not provided' — a required declaration is missing on this product"
+  fi
+
   # The schema and the page must tell the same story about reviews. A rating in
   # structured data that the page cannot show is fabricated social proof in the
   # one format built to be trusted, and it is what manual actions are for. The

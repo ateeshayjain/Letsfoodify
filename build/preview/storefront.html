@@ -506,6 +506,128 @@ input:focus, select:focus, textarea:focus {
   color: var(--wp--preset--color--mute);
 }
 
+/* ===========================================================================
+   PRODUCT PAGE — design pass 2026-08-26
+   =========================================================================== */
+
+/* The buy column is a ladder, not a stack: each rung a little quieter than the
+   one above, so the eye lands on the price and then the button. Gaps are set
+   here rather than left to the block editor's default, which spaces a title and
+   a stock line identically. */
+.fd-pdp__buy > * { margin-block: 0 var(--wp--preset--spacing--30); }
+.fd-pdp__buy > h1 { margin-bottom: var(--wp--preset--spacing--20); }
+.fd-pdp__buy .wc-block-components-product-rating { margin-bottom: var(--wp--preset--spacing--30); }
+.fd-pdp__buy .wp-block-post-excerpt { color: var(--wp--preset--color--mute); line-height: 1.6; }
+.fd-pdp__buy form.cart { margin-top: var(--wp--preset--spacing--40); }
+
+/* Assurances: three short facts, not a paragraph in a grey box. A prose block
+   here gets skipped, and each of these is a separate objection being answered. */
+.fd-assure {
+  margin-top: var(--wp--preset--spacing--50);
+  padding-top: var(--wp--preset--spacing--40);
+  border-top: 1px solid var(--wp--preset--color--line);
+}
+.fd-assure__item { margin: 0 0 var(--wp--preset--spacing--20); padding-left: var(--wp--preset--spacing--50); position: relative; }
+.fd-assure__item::before {
+  content: "";
+  position: absolute; left: 0; top: .45em;
+  width: .55em; height: .3em;
+  border-left: 2px solid var(--wp--preset--color--leaf);
+  border-bottom: 2px solid var(--wp--preset--color--leaf);
+  transform: rotate(-45deg);
+}
+
+/* How you make it — the answer to the question this whole brand exists to
+   answer, given its own band across the page rather than a chip. */
+.fd-prep {
+  margin: var(--wp--preset--spacing--80) 0 var(--wp--preset--spacing--70);
+  padding: var(--wp--preset--spacing--60);
+  background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--card);
+}
+.fd-prep__title { font-size: var(--wp--preset--font-size--2xl); margin: 0 0 var(--wp--preset--spacing--50); }
+.fd-prep__steps {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--wp--preset--spacing--50);
+  counter-reset: none;
+}
+.fd-prep__step { display: flex; gap: var(--wp--preset--spacing--30); align-items: flex-start; }
+.fd-prep__n {
+  flex: 0 0 auto;
+  width: 2rem; height: 2rem;
+  display: grid; place-items: center;
+  border-radius: var(--wp--custom--radius--pill);
+  background: var(--wp--preset--color--flame);
+  color: var(--wp--preset--color--flame-ink);
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--sm);
+  font-weight: 700;
+}
+.fd-prep__body { display: flex; flex-direction: column; gap: var(--wp--preset--spacing--10); }
+.fd-prep__body strong { font-size: var(--wp--preset--font-size--md); }
+.fd-prep__body span { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); line-height: 1.55; }
+
+/* Two fact tables, side by side, weighted differently on purpose: what a buyer
+   asks reads as content, what a regulator asks reads as a label. */
+.fd-spec {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: var(--wp--preset--spacing--70);
+  margin: var(--wp--preset--spacing--70) 0;
+}
+.fd-spec__group h2 {
+  font-size: var(--wp--preset--font-size--lg);
+  margin: 0 0 var(--wp--preset--spacing--40);
+  padding-bottom: var(--wp--preset--spacing--20);
+  border-bottom: 1px solid var(--wp--preset--color--line-strong);
+}
+.fd-spec dl { margin: 0; }
+.fd-spec dl > div {
+  display: grid; grid-template-columns: 11rem 1fr;
+  gap: var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--30) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+}
+.fd-spec dt { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-spec dd { margin: 0; line-height: 1.55; }
+.fd-spec__group.is-label dd { font-size: var(--wp--preset--font-size--sm); }
+
+/* A declaration nobody supplied. Marked by a WORD as well as a colour — the
+   absence of an allergen declaration must never read as "contains none", and a
+   colour alone says nothing to a screen reader or a colour-blind reader. */
+.fd-spec dl > div.is-missing dd {
+  color: var(--wp--preset--color--flame-ink);
+  font-style: italic;
+}
+.fd-spec dl > div.is-missing dd::after {
+  content: " — ask us before ordering if this matters to you";
+  color: var(--wp--preset--color--mute);
+  font-style: normal;
+  font-size: var(--wp--preset--font-size--xs);
+}
+.fd-spec__note { margin-top: var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--xs); line-height: 1.6; }
+
+.fd-spec__nutrition-title {
+  font-size: var(--wp--preset--font-size--base);
+  margin: var(--wp--preset--spacing--50) 0 var(--wp--preset--spacing--30);
+}
+.fd-nutrition { width: 100%; border-collapse: collapse; }
+.fd-nutrition th, .fd-nutrition td {
+  text-align: left; padding: var(--wp--preset--spacing--20) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+  font-size: var(--wp--preset--font-size--sm); font-weight: 400;
+}
+.fd-nutrition th { color: var(--wp--preset--color--mute); }
+.fd-nutrition td { text-align: right; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 782px) {
+  .fd-prep__steps { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--40); }
+  .fd-spec { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--60); }
+  .fd-spec dl > div { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--10); }
+  .fd-spec dt { font-size: var(--wp--preset--font-size--xs); }
+}
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
@@ -556,6 +678,12 @@ input:focus, select:focus, textarea:focus {
 .fx-crumb{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
 .fx-crumb a{color:inherit}
 .fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
+.fx-shotlist{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--wp--preset--spacing--30);margin-top:var(--wp--preset--spacing--40)}
+.fx-shot{position:relative;background:var(--wp--preset--color--surface);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--30)}
+.fx-shot .fx-bowl{opacity:.28;max-width:100%;margin-bottom:var(--wp--preset--spacing--20)}
+.fx-shot__n{position:absolute;top:var(--wp--preset--spacing--30);left:var(--wp--preset--spacing--30);width:1.5rem;height:1.5rem;display:grid;place-items:center;border-radius:var(--wp--custom--radius--pill);background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);font-size:var(--wp--preset--font-size--xs);font-weight:700}
+.fx-shot strong{display:block;font-size:var(--wp--preset--font-size--sm)}
+.fx-shot em{display:block;font-style:normal;color:var(--wp--preset--color--mute);font-size:var(--wp--preset--font-size--xs);line-height:1.5;margin-top:var(--wp--preset--spacing--10)}
 .fx-thumbs{display:flex;gap:10px;justify-content:center;margin-top:18px}
 .fx-thumbs .fx-bowl{width:60px}
 .fx-ph{text-align:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
@@ -1185,36 +1313,39 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 </header>
 
-<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--80)">
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--80)">
 <p class="fx-crumb"><a href="#">Home</a> / <a href="#">Express</a> / Dal Fry</p>
 
 
-<div class="wp-block-columns alignwide" style="margin-top:var(--wp--preset--spacing--50)">
+<div class="wp-block-columns alignwide fd-pdp" style="margin-top:var(--wp--preset--spacing--40)">
 
-<div class="wp-block-column" style="flex-basis:52%">
-<div class="fx-gallery"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div><div class="fx-thumbs"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time"></span></div><div class="fx-bowl" style="--h:#C67A2A"><span class="fx-time"></span></div><div class="fx-bowl" style="--h:#B9702B"><span class="fx-time"></span></div><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time"></span></div></div><p class="fx-ph">Photography placeholder — pack shot, prepared bowl, ingredients, scale</p></div>
+<div class="wp-block-column fd-pdp__media" style="flex-basis:50%">
+<div class="fx-gallery"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div><div class="fx-shotlist"><div class="fx-shot"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time"></span></div><span class="fx-shot__n">1</span><strong>Pack, front</strong><em>Straight on, label legible. This is the Merchant Center image.</em></div><div class="fx-shot"><div class="fx-bowl" style="--h:#C67A2A"><span class="fx-time"></span></div><span class="fx-shot__n">2</span><strong>Prepared, in a bowl</strong><em>The actual portion, natural light, no styling props.</em></div><div class="fx-shot"><div class="fx-bowl" style="--h:#B9702B"><span class="fx-time"></span></div><span class="fx-shot__n">3</span><strong>Ingredients, laid out</strong><em>Proves it is food, not powder. Answers the real objection.</em></div><div class="fx-shot"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time"></span></div><span class="fx-shot__n">4</span><strong>In a hand or beside a mug</strong><em>Scale. 80 g means nothing without something next to it.</em></div></div><p class="fx-ph">No photography supplied yet. Four shots per product, in this order — shot 1 is what Google Shopping uses, so it is the one that cannot wait.</p></div>
 </div>
 
 
 
-<div class="wp-block-column">
+<div class="wp-block-column fd-pdp__buy">
 <h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
 <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">84 reviews</span></div>
-<p class="fx-price fx-price--lg has-2-xl-font-size"><s>₹210</s> ₹185 <span class="fx-off">12% off</span></p>
-
-<p class="has-mute-color has-text-color has-xs-font-size">MRP inclusive of all taxes. Per-serving price shown above.</p>
-
 <p class="has-md-font-size">Yellow moong and toor, tempered with cumin, tomato and a little ghee. Dried slowly so the tempering survives.</p>
+<p class="fx-price fx-price--lg has-2-xl-font-size"><s>₹210</s> ₹185 <span class="fx-off">12% off</span></p>
 <p class="fx-stock">In stock</p>
 <div class="fx-atc"><div class="fx-qty"><button>−</button><span>1</span><button>+</button></div><button class="wp-element-button fx-add fx-add--lg">Add to bag · ₹185</button></div>
 
 
-<div class="wp-block-group fd-delivery-estimate has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-radius:var(--wp--custom--radius--card);margin-top:var(--wp--preset--spacing--50);padding:var(--wp--preset--spacing--40)">
+<div class="wp-block-group fd-assure">
 
-<p class="has-sm-font-size" style="font-weight:600">Delivery &amp; payment</p>
+<p class="fd-assure__item has-sm-font-size">Free shipping over ₹599</p>
 
 
-<p class="has-mute-color has-text-color has-sm-font-size">Enter your PIN code at checkout for a delivery date and cash-on-delivery availability. Shipping and any handling are shown in the cart, before checkout — never added at the last screen.</p>
+<p class="fd-assure__item has-sm-font-size">Cash on delivery available</p>
+
+
+<p class="fd-assure__item has-sm-font-size">Shipping shown in the cart, not at the last screen</p>
+
+
+<p class="has-mute-color has-text-color has-xs-font-size">Enter your PIN code at checkout for a delivery date. MRP is inclusive of all taxes.</p>
 
 </div>
 
@@ -1223,7 +1354,27 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div>
 
 
-<section class="fx-spec"><h2>Pack &amp; label</h2><p class="fx-spec-note">Structured fields — the same data feeds the Google product feed.</p><dl><div><dt>Net quantity</dt><dd>80 g</dd></div><div><dt>Servings</dt><dd>2</dd></div><div><dt>Shelf life</dt><dd>12 months</dd></div><div><dt>Best before</dt><dd>14 Aug 2027</dd></div><div><dt>Veg / non-veg</dt><dd><span class="fx-veg">● Vegetarian</span></dd></div><div><dt>Allergens</dt><dd>Milk (ghee)</dd></div><div><dt>Country of origin</dt><dd>India</dd></div><div><dt>FSSAI licence</dt><dd>NOT CONFIGURED</dd></div><div><dt>Marketed by</dt><dd>AVAC Ventures, Noida 201304</dd></div><div><dt>Consumer care</dt><dd>care@letsfoodify.com</dd></div></dl></section>
+
+<div class="wp-block-group alignwide fd-pdp__body">
+<!-- HOW YOU MAKE IT and the two fact tables render here, from inc/product-spec.php,
+     on woocommerce_after_single_product_summary at priorities 6 and 12. They are
+     PHP rather than blocks because both are driven by per-product data — a
+     block template cannot ask a product what its prep method is. -->
+<section class="fd-prep"><h2 class="fd-prep__title">How you make it</h2><ol class="fd-prep__steps"><li class="fd-prep__step"><span class="fd-prep__n">1</span><span class="fd-prep__body"><strong>Tip it into a bowl</strong><span>The whole pack. No pan, no measuring.</span></span></li><li class="fd-prep__step"><span class="fd-prep__n">2</span><span class="fd-prep__body"><strong>Add boiling water</strong><span>To the line on the pack, and stir once.</span></span></li><li class="fd-prep__step"><span class="fd-prep__n">3</span><span class="fd-prep__body"><strong>Wait 6 minutes</strong><span>Cover it. Stir again and eat.</span></span></li></ol></section><div class="fd-spec"><section class="fd-spec__group is-contents"><h2>What&rsquo;s in it</h2><dl><div><dt>Ingredients</dt><dd>Split yellow lentils, onion, tomato, ghee, cumin, turmeric, coriander, ginger, garlic, salt, red chilli.</dd></div><div class="is-missing"><dt>Allergens</dt><dd>Not provided</dd></div><div><dt>Net quantity</dt><dd>80 g</dd></div><div><dt>Servings per pack</dt><dd>2</dd></div><div><dt>Veg / non-veg</dt><dd>● Vegetarian</dd></div><div><dt>Storage</dt><dd>Cool, dry place. Use within 3 days of opening.</dd></div></dl><h3 class="fd-spec__nutrition-title">Nutrition, per serving</h3><table class="fd-nutrition"><tbody><tr><th scope="row">Energy</th><td>312 kcal</td></tr><tr><th scope="row">Protein</th><td>14 g</td></tr><tr><th scope="row">Carbohydrate</th><td>44 g</td></tr><tr><th scope="row">of which sugars</th><td>3 g</td></tr><tr><th scope="row">Fat</th><td>8 g</td></tr><tr><th scope="row">Sodium</th><td>620 mg</td></tr></tbody></table></section><section class="fd-spec__group is-label"><h2>Pack &amp; label</h2><dl><div><dt>MRP</dt><dd>₹210.00 (incl. all taxes)</dd></div><div><dt>Best before</dt><dd>14 Aug 2027</dd></div><div><dt>Shelf life</dt><dd>12 months</dd></div><div><dt>Country of origin</dt><dd>India</dd></div><div class="is-missing"><dt>FSSAI licence</dt><dd>Not provided</dd></div><div><dt>Marketed by</dt><dd>AVAC Ventures, Noida 201304</dd></div><div><dt>Consumer care</dt><dd>care@letsfoodify.com</dd></div></dl><p class="fd-spec__note">These are the pack declarations. The same fields feed the Google product listing, so what you read here is what Google is told.</p></section></div>
+</div>
+
+
+
+<div class="wp-block-group alignwide fd-pdp__reviews" style="padding-top:var(--wp--preset--spacing--70)">
+
+<h2 class="wp-block-heading has-2-xl-font-size">What people said</h2>
+
+
+<p class="has-mute-color has-text-color has-sm-font-size">Only people who ordered this can review it.</p>
+
+<div class="fd-reviews"><figure class="fd-review"><blockquote>Took it to site for a week. Six minutes and it is actually dal, not soup.</blockquote><figcaption><span class="fd-stars">★★★★★</span> · Rakesh M. · <span class="fd-verified">Verified purchase</span></figcaption></figure><figure class="fd-review"><blockquote>My mother approved, which I did not expect.</blockquote><figcaption><span class="fd-stars">★★★★★</span> · Sneha T. · <span class="fd-verified">Verified purchase</span></figcaption></figure></div>
+</div>
+
 
 
 <div class="wp-block-group alignwide" style="padding-top:var(--wp--preset--spacing--80)">

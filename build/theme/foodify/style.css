@@ -365,6 +365,128 @@ input:focus, select:focus, textarea:focus {
   color: var(--wp--preset--color--mute);
 }
 
+/* ===========================================================================
+   PRODUCT PAGE — design pass 2026-08-26
+   =========================================================================== */
+
+/* The buy column is a ladder, not a stack: each rung a little quieter than the
+   one above, so the eye lands on the price and then the button. Gaps are set
+   here rather than left to the block editor's default, which spaces a title and
+   a stock line identically. */
+.fd-pdp__buy > * { margin-block: 0 var(--wp--preset--spacing--30); }
+.fd-pdp__buy > h1 { margin-bottom: var(--wp--preset--spacing--20); }
+.fd-pdp__buy .wc-block-components-product-rating { margin-bottom: var(--wp--preset--spacing--30); }
+.fd-pdp__buy .wp-block-post-excerpt { color: var(--wp--preset--color--mute); line-height: 1.6; }
+.fd-pdp__buy form.cart { margin-top: var(--wp--preset--spacing--40); }
+
+/* Assurances: three short facts, not a paragraph in a grey box. A prose block
+   here gets skipped, and each of these is a separate objection being answered. */
+.fd-assure {
+  margin-top: var(--wp--preset--spacing--50);
+  padding-top: var(--wp--preset--spacing--40);
+  border-top: 1px solid var(--wp--preset--color--line);
+}
+.fd-assure__item { margin: 0 0 var(--wp--preset--spacing--20); padding-left: var(--wp--preset--spacing--50); position: relative; }
+.fd-assure__item::before {
+  content: "";
+  position: absolute; left: 0; top: .45em;
+  width: .55em; height: .3em;
+  border-left: 2px solid var(--wp--preset--color--leaf);
+  border-bottom: 2px solid var(--wp--preset--color--leaf);
+  transform: rotate(-45deg);
+}
+
+/* How you make it — the answer to the question this whole brand exists to
+   answer, given its own band across the page rather than a chip. */
+.fd-prep {
+  margin: var(--wp--preset--spacing--80) 0 var(--wp--preset--spacing--70);
+  padding: var(--wp--preset--spacing--60);
+  background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--card);
+}
+.fd-prep__title { font-size: var(--wp--preset--font-size--2xl); margin: 0 0 var(--wp--preset--spacing--50); }
+.fd-prep__steps {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--wp--preset--spacing--50);
+  counter-reset: none;
+}
+.fd-prep__step { display: flex; gap: var(--wp--preset--spacing--30); align-items: flex-start; }
+.fd-prep__n {
+  flex: 0 0 auto;
+  width: 2rem; height: 2rem;
+  display: grid; place-items: center;
+  border-radius: var(--wp--custom--radius--pill);
+  background: var(--wp--preset--color--flame);
+  color: var(--wp--preset--color--flame-ink);
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--sm);
+  font-weight: 700;
+}
+.fd-prep__body { display: flex; flex-direction: column; gap: var(--wp--preset--spacing--10); }
+.fd-prep__body strong { font-size: var(--wp--preset--font-size--md); }
+.fd-prep__body span { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); line-height: 1.55; }
+
+/* Two fact tables, side by side, weighted differently on purpose: what a buyer
+   asks reads as content, what a regulator asks reads as a label. */
+.fd-spec {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: var(--wp--preset--spacing--70);
+  margin: var(--wp--preset--spacing--70) 0;
+}
+.fd-spec__group h2 {
+  font-size: var(--wp--preset--font-size--lg);
+  margin: 0 0 var(--wp--preset--spacing--40);
+  padding-bottom: var(--wp--preset--spacing--20);
+  border-bottom: 1px solid var(--wp--preset--color--line-strong);
+}
+.fd-spec dl { margin: 0; }
+.fd-spec dl > div {
+  display: grid; grid-template-columns: 11rem 1fr;
+  gap: var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--30) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+}
+.fd-spec dt { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-spec dd { margin: 0; line-height: 1.55; }
+.fd-spec__group.is-label dd { font-size: var(--wp--preset--font-size--sm); }
+
+/* A declaration nobody supplied. Marked by a WORD as well as a colour — the
+   absence of an allergen declaration must never read as "contains none", and a
+   colour alone says nothing to a screen reader or a colour-blind reader. */
+.fd-spec dl > div.is-missing dd {
+  color: var(--wp--preset--color--flame-ink);
+  font-style: italic;
+}
+.fd-spec dl > div.is-missing dd::after {
+  content: " — ask us before ordering if this matters to you";
+  color: var(--wp--preset--color--mute);
+  font-style: normal;
+  font-size: var(--wp--preset--font-size--xs);
+}
+.fd-spec__note { margin-top: var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--xs); line-height: 1.6; }
+
+.fd-spec__nutrition-title {
+  font-size: var(--wp--preset--font-size--base);
+  margin: var(--wp--preset--spacing--50) 0 var(--wp--preset--spacing--30);
+}
+.fd-nutrition { width: 100%; border-collapse: collapse; }
+.fd-nutrition th, .fd-nutrition td {
+  text-align: left; padding: var(--wp--preset--spacing--20) 0;
+  border-bottom: 1px solid var(--wp--preset--color--line);
+  font-size: var(--wp--preset--font-size--sm); font-weight: 400;
+}
+.fd-nutrition th { color: var(--wp--preset--color--mute); }
+.fd-nutrition td { text-align: right; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 782px) {
+  .fd-prep__steps { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--40); }
+  .fd-spec { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--60); }
+  .fd-spec dl > div { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--10); }
+  .fd-spec dt { font-size: var(--wp--preset--font-size--xs); }
+}
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }

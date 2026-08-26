@@ -67,7 +67,12 @@ def pages(mode):
     return {
         "/": HEAD_ + "<h1>A real meal in six minutes</h1>" + PAD +
              '<a href="/product/express-dal-fry/">Dal Fry</a>' + FOOT_,
-        "/product/express-dal-fry/": HEAD_ + "<h1>Express Dal Fry</h1>" + counter + PAD + FOOT_,
+        "/product/express-dal-fry/": HEAD_ + "<h1>Express Dal Fry</h1>" + counter
+            + ("" if mode == "bad" else
+               '<ol class="fd-prep__steps"><li>Tip it into a bowl</li></ol>'
+               '<section class="fd-spec__group is-contents"><dl><div><dt>Allergens</dt>'
+               "<dd>Milk (ghee)</dd></div></dl></section>")
+            + PAD + FOOT_,
         "/shop/": HEAD_ + "<h1>Shop</h1>" + PAD + '<a href="/?add-to-cart=42">Add</a>' + FOOT_,
         "/cart/": HEAD_ + "<h1>Cart</h1>" + PAD + "<p>1 item in your cart</p>" + FOOT_,
         # WP-06: the good build runs a stripped checkout header. The bad one
@@ -179,6 +184,10 @@ check("prepaid saving on the payment option",
 check("exactly one Product schema node",  "PASS exactly one Product schema node" in out)
 check("schema does not over-claim reviews",
       "PASS no reviews yet, and the schema does not claim any" in out)
+check("product page says how you make it",
+      "PASS product page says how you make it" in out)
+check("product page carries its declarations",
+      "PASS product page carries its structured declarations" in out)
 check("FSSAI licence configured",         "PASS FSSAI licence number is configured" in out)
 check("no placeholder licence",           "PASS no placeholder FSSAI licence number" in out)
 check("exits 0",                          rc == 0)
@@ -200,6 +209,8 @@ check("duplicate Product schema CAUGHT",
       "Product schema nodes on one page" in out)
 check("fabricated aggregateRating CAUGHT",
       "fabricated social proof" in out)
+check("missing prep steps CAUGHT",   "no preparation steps" in out)
+check("missing declarations CAUGHT", "Legal Metrology fields are missing" in out)
 check("placeholder FSSAI licence CAUGHT",
       "placeholder FSSAI licence 10012345678901 is live" in out)
 check("exits non-zero",         rc != 0)
@@ -222,6 +233,8 @@ check("does NOT falsely clear the FSSAI licence",
       "PASS no placeholder FSSAI licence number" not in out)
 check("does NOT falsely clear the schema",
       "PASS exactly one Product schema node" not in out)
+check("does NOT falsely clear the declarations",
+      "PASS product page carries its structured declarations" not in out)
 check("says the page did not load", "did not load" in out)
 check("exits non-zero", rc != 0)
 

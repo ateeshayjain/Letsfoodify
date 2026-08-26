@@ -196,10 +196,27 @@ def dynamic(name, attrs, inner):
     if name == "woocommerce/breadcrumbs":
         return '<p class="fx-crumb"><a href="#">Home</a> / <a href="#">Express</a> / Dal Fry</p>'
     if name == "woocommerce/product-image-gallery":
-        return ('<div class="fx-gallery">' + BOWL.format(hue="#D9822B", time="6 MIN") +
-                '<div class="fx-thumbs">' + "".join(
-                    BOWL.format(hue=h, time="") for h in ("#D9822B", "#C67A2A", "#B9702B", "#E0A03C")) +
-                '</div><p class="fx-ph">Photography placeholder — pack shot, prepared bowl, ingredients, scale</p></div>')
+        # There is no photography. Rather than a grey box, the placeholder states
+        # the brief — four shots, in order, with what each one has to prove. That
+        # is a deliverable the client can act on; "image goes here" is not.
+        shots = [
+            ("1", "Pack, front", "Straight on, label legible. This is the Merchant Center image."),
+            ("2", "Prepared, in a bowl", "The actual portion, natural light, no styling props."),
+            ("3", "Ingredients, laid out", "Proves it is food, not powder. Answers the real objection."),
+            ("4", "In a hand or beside a mug", "Scale. 80 g means nothing without something next to it."),
+        ]
+        thumbs = "".join(
+            f'<div class="fx-shot">{BOWL.format(hue=h, time="")}'
+            f'<span class="fx-shot__n">{n}</span><strong>{t}</strong><em>{d}</em></div>'
+            for (n, t, d), h in zip(shots, ("#D9822B", "#C67A2A", "#B9702B", "#E0A03C")))
+        return (
+            '<div class="fx-gallery">'
+            + BOWL.format(hue="#D9822B", time="6 MIN")
+            + '<div class="fx-shotlist">' + thumbs + '</div>'
+            + '<p class="fx-ph">No photography supplied yet. Four shots per product, in this '
+              'order — shot 1 is what Google Shopping uses, so it is the one that cannot wait.</p>'
+            + '</div>'
+        )
     if name == "woocommerce/product-rating":
         return f'<div class="fx-rating">{stars("4.7")} <span class="fx-rc">84 reviews</span></div>'
     if name == "woocommerce/product-price":
@@ -210,15 +227,73 @@ def dynamic(name, attrs, inner):
         return ('<div class="fx-atc"><div class="fx-qty"><button>−</button><span>1</span><button>+</button></div>'
                 '<button class="wp-element-button fx-add fx-add--lg">Add to bag · ₹185</button></div>')
     if name == "woocommerce/product-details":
-        rows = [("Net quantity", "80 g"), ("Servings", "2"), ("Shelf life", "12 months"),
-                ("Best before", "14 Aug 2027"), ("Veg / non-veg", '<span class="fx-veg">● Vegetarian</span>'),
-                ("Allergens", "Milk (ghee)"), ("Country of origin", "India"),
-                ("FSSAI licence", "NOT CONFIGURED"), ("Marketed by", "AVAC Ventures, Noida 201304"),
-                ("Consumer care", "care@letsfoodify.com")]
-        cells = "".join(f"<div><dt>{k}</dt><dd>{v}</dd></div>" for k, v in rows)
-        return (f'<section class="fx-spec"><h2>Pack &amp; label</h2>'
-                f'<p class="fx-spec-note">Structured fields — the same data feeds the Google product feed.</p>'
-                f'<dl>{cells}</dl></section>')
+        # In the theme these three render from inc/product-spec.php on
+        # woocommerce_after_single_product_summary (priorities 6 and 12), which
+        # is BEFORE this block in the page body. PHP hooks have no block comment
+        # to hang off, so the preview emits them here, in the order PHP would.
+        steps = [
+            (1, "Tip it into a bowl", "The whole pack. No pan, no measuring."),
+            (2, "Add boiling water", "To the line on the pack, and stir once."),
+            (3, "Wait 6 minutes", "Cover it. Stir again and eat."),
+        ]
+        prep = ('<section class="fd-prep"><h2 class="fd-prep__title">How you make it</h2>'
+                '<ol class="fd-prep__steps">' + "".join(
+                    f'<li class="fd-prep__step"><span class="fd-prep__n">{n}</span>'
+                    f'<span class="fd-prep__body"><strong>{t}</strong><span>{d}</span></span></li>'
+                    for n, t, d in steps) + "</ol></section>")
+
+        contents = [
+            ("Ingredients", "Split yellow lentils, onion, tomato, ghee, cumin, turmeric, "
+                            "coriander, ginger, garlic, salt, red chilli.", True),
+            ("Allergens", "", False),          # deliberately missing — see below
+            ("Net quantity", "80 g", True),
+            ("Servings per pack", "2", True),
+            ("Veg / non-veg", "● Vegetarian", True),
+            ("Storage", "Cool, dry place. Use within 3 days of opening.", True),
+        ]
+        label = [
+            ("MRP", "₹210.00 (incl. all taxes)", True),
+            ("Best before", "14 Aug 2027", True),
+            ("Shelf life", "12 months", True),
+            ("Country of origin", "India", True),
+            ("FSSAI licence", "", False),      # WP-08: not configured yet
+            ("Marketed by", "AVAC Ventures, Noida 201304", True),
+            ("Consumer care", "care@letsfoodify.com", True),
+        ]
+        nutrition = [("Energy", "312 kcal"), ("Protein", "14 g"), ("Carbohydrate", "44 g"),
+                     ("of which sugars", "3 g"), ("Fat", "8 g"), ("Sodium", "620 mg")]
+
+        def rows(items):
+            out = ""
+            for k, v, ok in items:
+                cls = "" if ok else ' class="is-missing"'
+                out += f"<div{cls}><dt>{k}</dt><dd>{v if ok else 'Not provided'}</dd></div>"
+            return out
+
+        nut = "".join(f"<tr><th scope=\"row\">{k}</th><td>{v}</td></tr>" for k, v in nutrition)
+
+        spec = (
+            '<div class="fd-spec">'
+            f'<section class="fd-spec__group is-contents"><h2>What&rsquo;s in it</h2><dl>{rows(contents)}</dl>'
+            f'<h3 class="fd-spec__nutrition-title">Nutrition, per serving</h3>'
+            f'<table class="fd-nutrition"><tbody>{nut}</tbody></table></section>'
+            f'<section class="fd-spec__group is-label"><h2>Pack &amp; label</h2><dl>{rows(label)}</dl>'
+            '<p class="fd-spec__note">These are the pack declarations. The same fields feed the Google '
+            'product listing, so what you read here is what Google is told.</p></section>'
+            "</div>")
+
+        return prep + spec
+
+    if name == "woocommerce/product-reviews":
+        cards = "".join(
+            f'<figure class="fd-review"><blockquote>{q}</blockquote>'
+            f'<figcaption><span class="fd-stars">{"★"*5}</span> · {who} · '
+            f'<span class="fd-verified">Verified purchase</span></figcaption></figure>'
+            for q, who in [
+                ("Took it to site for a week. Six minutes and it is actually dal, not soup.", "Rakesh M."),
+                ("My mother approved, which I did not expect.", "Sneha T."),
+            ])
+        return f'<div class="fd-reviews">{cards}</div>' 
     if name in ("woocommerce/product-best-sellers", "woocommerce/related-products"):
         cols = a.get("columns", 4); rows_ = a.get("rows", 1)
         return product_grid(cols * rows_, cols)
@@ -533,6 +608,12 @@ FIXTURE_CSS = """
 .fx-crumb{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
 .fx-crumb a{color:inherit}
 .fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
+.fx-shotlist{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--wp--preset--spacing--30);margin-top:var(--wp--preset--spacing--40)}
+.fx-shot{position:relative;background:var(--wp--preset--color--surface);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--30)}
+.fx-shot .fx-bowl{opacity:.28;max-width:100%;margin-bottom:var(--wp--preset--spacing--20)}
+.fx-shot__n{position:absolute;top:var(--wp--preset--spacing--30);left:var(--wp--preset--spacing--30);width:1.5rem;height:1.5rem;display:grid;place-items:center;border-radius:var(--wp--custom--radius--pill);background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);font-size:var(--wp--preset--font-size--xs);font-weight:700}
+.fx-shot strong{display:block;font-size:var(--wp--preset--font-size--sm)}
+.fx-shot em{display:block;font-style:normal;color:var(--wp--preset--color--mute);font-size:var(--wp--preset--font-size--xs);line-height:1.5;margin-top:var(--wp--preset--spacing--10)}
 .fx-thumbs{display:flex;gap:10px;justify-content:center;margin-top:18px}
 .fx-thumbs .fx-bowl{width:60px}
 .fx-ph{text-align:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;

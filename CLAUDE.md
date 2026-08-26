@@ -166,6 +166,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `tests/undefined-functions.php` | **Run this.** Called-but-never-defined. `php -l` cannot see it |
 | `docs/WP-10-NOTES.md` | Shop Staff role, the dashboard, and order-status email copy |
 | `tests/admin-test.php` | 58 assertions. Capability drift, and unmeasured ≠ zero |
+| `docs/PDP-DESIGN-PASS.md` | The product page redesign, and why a missing declaration is shown |
+| `tests/product-spec-test.php` | 44 assertions. Legal Metrology fields; prep steps refuse to guess |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |

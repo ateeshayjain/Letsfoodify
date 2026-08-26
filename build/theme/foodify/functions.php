@@ -247,6 +247,7 @@ require_once FOODIFY_DIR . '/inc/admin-dashboard.php';   // WP-10: the landing s
 require_once FOODIFY_DIR . '/inc/coupon-attribution.php';
 require_once FOODIFY_DIR . '/inc/product-attributes.php';   // must load BEFORE product-display
 require_once FOODIFY_DIR . '/inc/product-display.php';
+require_once FOODIFY_DIR . '/inc/product-spec.php';      // design pass: prep steps + declarations
 require_once FOODIFY_DIR . '/inc/patterns.php';
 require_once FOODIFY_DIR . '/inc/shortcodes.php';
 require_once FOODIFY_DIR . '/inc/account.php';
