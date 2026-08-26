@@ -22,6 +22,11 @@ theme/foodify/          Standalone block theme. Deploy from git; never edit on t
                              the token table. Publishes nothing half-built
     reviews.php              WP-08. Post-delivery review ask, verified-owner
                              reviews, rating counts
+    partner-ledger.php       WP-09. Attribution arithmetic + the custom table.
+                             Holds foodify_attributed_coupons(), which was
+                             called twice and defined nowhere
+    coupon-attribution.php   WP-09. Coupon owner UI, notification, Coupon
+                             Performance screen, CSV export
     product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
     patterns.php             Pattern category registration
     product-attributes.php   Filter attributes, forced non-indexable (WP-02)

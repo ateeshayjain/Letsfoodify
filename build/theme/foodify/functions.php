@@ -241,6 +241,7 @@ require_once FOODIFY_DIR . '/inc/checkout-flow.php';    // WP-06: the page aroun
 require_once FOODIFY_DIR . '/inc/payments.php';          // WP-07: prepaid saving, COD rules
 require_once FOODIFY_DIR . '/inc/business-profile.php';  // WP-08: NAP, licence, token table
 require_once FOODIFY_DIR . '/inc/reviews.php';           // WP-08: product reviews + the ask
+require_once FOODIFY_DIR . '/inc/partner-ledger.php';     // WP-09: must load BEFORE coupon-attribution
 require_once FOODIFY_DIR . '/inc/coupon-attribution.php';
 require_once FOODIFY_DIR . '/inc/product-attributes.php';   // must load BEFORE product-display
 require_once FOODIFY_DIR . '/inc/product-display.php';

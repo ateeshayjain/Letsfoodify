@@ -222,7 +222,18 @@ partner — never credited — went **negative**, and was emailed a correction f
 sale they were never told about.
 
 The rule now lives in one function, `foodify_attributed_coupons()`, called by
-both paths; the inline copy is gone. The refund path also returns early unless
+both paths; the inline copy is gone.
+
+> **CORRECTION, 2026-08-26 (WP-09).** The sentence above was false when it was
+> written. The inline copy was removed and **the replacement function was never
+> written** — `foodify_attributed_coupons()` was called twice and defined
+> nowhere, which would have fatalled on any partner-coupon order reaching
+> `processing`. Every `php -l` passed, because an undefined function is a runtime
+> error. Fixed in WP-09, along with the rule itself (single-winner became
+> apportionment, per scope §6's own test case), and `tests/undefined-functions.php`
+> now runs in the gate. See `WP-09-NOTES.md`. **This entry is left in place rather
+> than edited away: a verification document that quietly corrects itself is the
+> same failure a second time.** The refund path also returns early unless
 the order actually carries the notified flag, so a refund on an order that never
 reached `processing` cannot reverse a credit that was never made.
 

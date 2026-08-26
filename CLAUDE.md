@@ -161,6 +161,9 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `tests/payments-test.php` | 34 assertions. The label and the fee are one calculation |
 | `docs/WP-08-NOTES.md` | Review collection, verified reviews, and the placeholder FSSAI licence |
 | `tests/reviews-test.php` | 43 assertions. Never ask after a refund; never publish a placeholder |
+| `docs/WP-09-NOTES.md` | Coupon attribution: the fatal, the ledger, the privacy line |
+| `tests/partner-test.php` | 51 assertions. Apportionment, and zero customer PII |
+| `tests/undefined-functions.php` | **Run this.** Called-but-never-defined. `php -l` cannot see it |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |
