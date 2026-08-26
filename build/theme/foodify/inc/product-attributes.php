@@ -63,6 +63,31 @@ function foodify_attribute_map(): array {
 	];
 }
 
+/**
+ * The attribute slugs, WITHOUT touching a single translated string.
+ *
+ * FOUND BY BOOTING WORDPRESS, 2026-08-26. The filter registration below used to
+ * call foodify_attribute_map() at file-load time — which happens when
+ * functions.php requires this file, long before `init`. That map is full of
+ * `__()` calls, so loading the theme triggered WordPress 6.7's
+ * `_load_textdomain_just_in_time` notice: "Translation loading for the foodify
+ * domain was triggered too early."
+ *
+ * Two consequences, and the quiet one is worse. With WP_DEBUG on it is a notice
+ * on every single page load. With WP_DEBUG off it is silent — and the
+ * translations for this domain may simply not load, because they were asked for
+ * before WordPress was ready to provide them.
+ *
+ * `php -l` cannot see this. The pure tests cannot see it. It took an actual
+ * WordPress boot, which this project had never done until today.
+ *
+ * The registration only ever needed the SLUGS, so this is the list it reads and
+ * the translated map is left for the render path, where `init` has long passed.
+ */
+function foodify_attribute_slugs(): array {
+	return [ 'prep', 'dietary' ];
+}
+
 /** Attribute slug -> the `pa_` taxonomy WooCommerce registers for it. */
 function foodify_attribute_taxonomy( string $slug ): string {
 	return 'pa_' . $slug;
@@ -75,7 +100,7 @@ function foodify_attribute_taxonomy( string $slug ): string {
  * Setting public/publicly_queryable false means /pa_dietary/vegan/ 404s while
  * `?filter_dietary=vegan` on the shop page keeps working.
  */
-foreach ( array_keys( foodify_attribute_map() ) as $foodify_attr_slug ) {
+foreach ( foodify_attribute_slugs() as $foodify_attr_slug ) {
 	add_filter(
 		'woocommerce_taxonomy_args_' . foodify_attribute_taxonomy( $foodify_attr_slug ),
 		static function ( array $args ): array {

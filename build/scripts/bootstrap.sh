@@ -280,9 +280,64 @@ if [[ "$PHASE" == "all" ]]; then
   wp option update woocommerce_enable_ajax_add_to_cart yes
   ok "Commerce configured"
 
+  log "Phase 4 · Shipping zones"
+  # The free-shipping BAR on the cart reads its threshold from the method that
+  # would actually apply (inc/shortcodes.php) rather than from a constant. Until
+  # now no method was ever created, so the bar has been reading nothing.
+  #
+  # SAFE TO WRITE, unlike `wp option update`: a `wp wc` subcommand that does not
+  # exist FAILS with a non-zero exit. That is a positive failure surface, so a
+  # wrong command name is loud here in a way a wrong OPTION name never is.
+  if [[ $DRY -eq 0 ]]; then
+    ZID="$(command wp wc shipping_zone list --format=ids --user=1 2>/dev/null | head -1)"
+    if [[ -z "$ZID" ]]; then
+      ZID="$(command wp wc shipping_zone create --name="India" --order=1 --porcelain --user=1 2>/dev/null || echo '')"
+      [[ -n "$ZID" ]] && ok "created shipping zone India (#$ZID)" || warn "could not create the shipping zone — create it in wp-admin and re-run"
+    else
+      ok "shipping zone present (#$ZID)"
+    fi
+
+    if [[ -n "$ZID" ]]; then
+      # THE TRAP inc/shortcodes.php already documents and nothing ever set.
+      # WooCommerce compares free shipping's min_amount against the subtotal
+      # BEFORE discounts unless ignore_discounts is 'no'. Get it backwards and a
+      # coupon either falsely qualifies the customer for free shipping or falsely
+      # un-qualifies them — and they find out at the payment step, which is the
+      # exact "no surprises after the cart" promise this build is built on.
+      wp wc shipping_zone_method create "$ZID" --method_id=free_shipping --user=1 \
+        --settings='{"requires":"min_amount","min_amount":"599","ignore_discounts":"no"}' >/dev/null 2>&1 \
+        && ok "free shipping over ₹599 (compared AFTER discounts)" \
+        || warn "free-shipping method not created — check it by hand"
+
+      wp wc shipping_zone_method create "$ZID" --method_id=flat_rate --user=1 \
+        --settings='{"cost":"59"}' >/dev/null 2>&1 \
+        && ok "flat rate ₹59 below the threshold" \
+        || warn "flat-rate method not created — check it by hand"
+
+      # ASSERT, do not assume. A zone with no methods silently offers no shipping
+      # at all, and an empty checkout shipping section reads as a theme bug.
+      METHODS="$(command wp wc shipping_zone_method list "$ZID" --format=count --user=1 2>/dev/null || echo 0)"
+      if [[ "${METHODS:-0}" -ge 2 ]]; then
+        ok "zone has $METHODS shipping methods"
+      else
+        warn "zone has ${METHODS:-0} shipping methods — checkout will offer no delivery option"
+      fi
+    fi
+  else
+    echo "    [dry-run] wp wc shipping_zone create --name=India"
+    echo "    [dry-run] wp wc shipping_zone_method create <id> --method_id=free_shipping (ignore_discounts=no)"
+  fi
+
   log "Phase 4 · Cash on delivery"
   wp option update woocommerce_cod_settings '{"enabled":"yes","title":"Cash on delivery","description":"Pay in cash when your order arrives.","instructions":"Please keep exact change ready.","enable_for_methods":[],"enable_for_virtual":"no"}' --format=json
-  ok "COD enabled — cap and PIN allowlist are set in the Shiprocket step"
+  # WAS: "cap and PIN allowlist are set in the Shiprocket step". THERE WAS NO
+  # SHIPROCKET STEP — the same shape as the `wp foodify coupons reconcile`
+  # command WP-09 found promised and never written. Both now live in code:
+  # the COD cap in inc/payments.php (shipping uncapped by default — a commercial
+  # decision the client has not taken), and PIN serviceability in
+  # inc/fulfilment.php, where an EMPTY allowlist means everywhere rather than
+  # nowhere.
+  ok "COD enabled — cap: inc/payments.php · PIN serviceability: inc/fulfilment.php"
 
   log "Phase 5 · Roles"
   wp role create coupon_partner "Coupon Partner" 2>/dev/null || true

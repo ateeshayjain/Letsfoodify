@@ -21,6 +21,14 @@ define( 'ABSPATH', __DIR__ );
 
 require __DIR__ . '/../theme/foodify/inc/product-spec.php';
 
+// product-attributes.php registers filters at file-load time, so it needs a
+// couple of WordPress functions present before it will load.
+foreach ( [ 'add_filter', 'add_action', 'str_starts_with' ] as $fn ) {
+	if ( ! function_exists( $fn ) ) { eval( "function {$fn}() { return true; }" ); }
+}
+if ( ! function_exists( '__' ) ) { function __( $s, $d = '' ) { return $s; } }
+require __DIR__ . '/../theme/foodify/inc/product-attributes.php';
+
 $pass = 0; $fail = 0;
 function check( string $label, bool $ok ): void {
 	global $pass, $fail;
@@ -144,6 +152,18 @@ check( 'an empty method invents nothing',   [] === foodify_prep_steps( '' ) );
 check( 'the method match is case-insensitive', 3 === count( foodify_prep_steps( 'JUST ADD HOT WATER' ) ) );
 check( 'a default time is used when the product states none',
 	false !== strpos( foodify_prep_steps( 'hot water' )[2]['title'], '6 minutes' ) );
+
+echo "── the two attribute lists must not drift ──\n";
+
+// foodify_attribute_slugs() exists so the theme can register filters WITHOUT
+// touching a translated string before `init` — a real WordPress notice, found by
+// booting WordPress rather than by any static check. The cost of that split is
+// two lists that must agree, and two lists that must agree are exactly what this
+// project keeps finding out of step.
+check( 'the slug list matches the map exactly',
+	foodify_attribute_slugs() === array_keys( foodify_attribute_map() ) );
+check( 'and it is not empty, which would silently register nothing',
+	[] !== foodify_attribute_slugs() );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );
