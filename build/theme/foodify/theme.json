@@ -169,7 +169,7 @@
 				{
 					"slug": "xl",
 					"name": "XL 24",
-					"size": "1.5rem",
+					"size": "clamp(1.35rem, 1.1rem + 1.1vw, 1.5rem)",
 					"fluid": {
 						"min": "1.375rem",
 						"max": "1.5rem"
@@ -178,7 +178,7 @@
 				{
 					"slug": "2xl",
 					"name": "2XL 32",
-					"size": "2rem",
+					"size": "clamp(1.6rem, 1.25rem + 1.6vw, 2rem)",
 					"fluid": {
 						"min": "1.625rem",
 						"max": "2rem"
@@ -187,7 +187,7 @@
 				{
 					"slug": "3xl",
 					"name": "3XL 40",
-					"size": "2.5rem",
+					"size": "clamp(1.9rem, 1.4rem + 2.2vw, 2.5rem)",
 					"fluid": {
 						"min": "1.875rem",
 						"max": "2.5rem"
@@ -196,7 +196,7 @@
 				{
 					"slug": "4xl",
 					"name": "4XL 56",
-					"size": "3.5rem",
+					"size": "clamp(2.3rem, 1.7rem + 3.4vw, 3.5rem)",
 					"fluid": {
 						"min": "2.25rem",
 						"max": "3.5rem"

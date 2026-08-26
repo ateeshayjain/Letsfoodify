@@ -585,25 +585,38 @@ FIXTURE_CSS = """
   box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--h) 28%,#FFFDF8)}
 .fx-time{position:absolute;bottom:2%;right:-2%;background:var(--wp--preset--color--char);
   color:var(--wp--preset--color--paper);font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px}
-.fx-grid{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:var(--wp--preset--spacing--40)}
+.fx-grid{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));
+  gap:var(--wp--preset--spacing--50) var(--wp--preset--spacing--40)}
+/* Card rhythm (design review, 26 Aug): a uniform 8px gap between everything is
+   what made the cards read as cramped — no hierarchy. Now: the rating hugs the
+   name, the price gets air above via the flexible spacer, and the button is
+   separated from the money. The bowl sits on its own kraft tile at ~70% width
+   instead of pressing the card edges, and the chip sits ON the tile rather
+   than overlapping the bowl. */
 .fx-card{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
   border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--40);
-  display:flex;flex-direction:column;gap:var(--wp--preset--spacing--20)}
-.fx-media{position:relative;padding:4px 10px 0}
-.fx-chip{position:absolute;top:0;left:0;font-size:10px;font-weight:700;letter-spacing:.08em;
+  display:flex;flex-direction:column;gap:var(--wp--preset--spacing--10)}
+.fx-media{position:relative;background:var(--wp--preset--color--kraft-pale);
+  border-radius:var(--wp--custom--radius--control);
+  padding:var(--wp--preset--spacing--50) var(--wp--preset--spacing--40) var(--wp--preset--spacing--40);
+  margin-bottom:var(--wp--preset--spacing--30)}
+.fx-media .fx-bowl{width:70%;margin:0 auto}
+.fx-chip{position:absolute;top:var(--wp--preset--spacing--20);left:var(--wp--preset--spacing--20);
+  font-size:10px;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;padding:4px 9px;border-radius:999px;
   background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep)}
 .fx-chip--flavors{background:var(--wp--preset--color--leaf-wash);color:var(--wp--preset--color--leaf-ink)}
 .fx-chip--hot{background:#F3E3D4;color:var(--wp--preset--color--kraft-deep)}
-.fx-name{font-size:var(--wp--preset--font-size--md);margin:0}
-.fx-rating{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
+.fx-name{font-size:var(--wp--preset--font-size--md);margin:0;line-height:1.3;text-wrap:balance}
+.fx-rating{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);line-height:1.5}
 .fx-stars{color:var(--wp--preset--color--flame);letter-spacing:-1px}
-.fx-price{font-weight:700;margin:auto 0 0;font-variant-numeric:tabular-nums}
+.fx-price{font-weight:700;margin:auto 0 0;padding-top:var(--wp--preset--spacing--30);
+  font-size:var(--wp--preset--font-size--lg);font-variant-numeric:tabular-nums}
 .fx-price s{color:var(--wp--preset--color--mute);font-weight:400;margin-right:6px}
 .fx-price--lg{font-size:var(--wp--preset--font-size--2xl)}
 .fx-off{font-size:12px;background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep);
   padding:3px 8px;border-radius:3px;vertical-align:middle}
-.fx-add{width:100%}
+.fx-add{width:100%;margin-top:var(--wp--preset--spacing--30)}
 .fx-add--lg{width:auto;flex:1;min-height:52px}
 .fx-crumb{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
 .fx-crumb a{color:inherit}
@@ -677,12 +690,15 @@ FIXTURE_CSS = """
 .fd-signin h2{font-size:var(--wp--preset--font-size--2xl);margin:0 0 .3em}
 .fx-note{padding:10px 14px;background:var(--wp--preset--color--flame-wash);
   color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
+@media (max-width:781px){
+  /* Core's exact stacking rule and breakpoint — verified against
+     wp-includes/blocks/columns/style.css in the local WordPress clone. */
+  .wp-block-columns:not(.is-not-stacked-on-mobile)>.wp-block-column{flex-basis:100% !important}
+  .wp-block-columns.is-not-stacked-on-mobile>.wp-block-column{flex:1 1 45%}
+}
 @media (max-width:900px){
   .fx-grid{--cols:2 !important}
     .fx-cart,.fx-checkout{grid-template-columns:1fr}
-  .wp-block-columns{flex-direction:column}
-  .wp-block-columns.is-not-stacked-on-mobile{flex-direction:row;flex-wrap:wrap}
-  .wp-block-columns.is-not-stacked-on-mobile>.wp-block-column{flex:1 1 45%}
   .fx-spec dl{grid-template-columns:1fr}
   .fx-spec dl>div:nth-child(odd){border-right:0}
 }
@@ -746,6 +762,14 @@ def main():
 .proto-tag{{font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;
   font-family:var(--wp--preset--font-family--ui)}}
 .tabs{{display:flex;gap:3px;flex-wrap:wrap}}
+@media (max-width:781px){{
+  .proto-in{{flex-wrap:nowrap;padding:7px 12px;gap:10px}}
+  .proto-tag{{display:none}}
+  .tabs{{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}}
+  .tabs::-webkit-scrollbar{{display:none}}
+  .tab{{flex:none}}
+  .banner{{font-size:11px;padding:8px 12px}}
+}}
 .tab{{background:none;border:1px solid transparent;border-radius:999px;padding:5px 13px;
   font-size:12.5px;font-weight:600;color:#9DAEA6;cursor:pointer;font-family:var(--wp--preset--font-family--ui)}}
 .tab[aria-selected=true]{{background:var(--wp--preset--color--flame);border-color:var(--wp--preset--color--flame);color:#241703}}
