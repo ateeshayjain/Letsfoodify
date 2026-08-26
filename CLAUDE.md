@@ -173,6 +173,7 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `scripts/wp-boot-test.sh` | 28 assertions against a real WordPress. `php -l` cannot see what this sees |
 | `tests/wp11-test.php` | 51 assertions. Tax parts sum to the whole; COD collects the right amount |
 | `docs/WP-12-NOTES.md` | The product-data editor and the Merchant Center feed |
+| `docs/AUDIT-HIG-2026-08-26.md` | HIG audit: measured contrast, targets, keyboards. 2 P0, 4 P1 |
 | `tests/wp12-test.php` | 48 assertions. Sanitisers refuse; one ampersand cannot kill the feed |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
