@@ -733,7 +733,7 @@ def main():
              'family=Fraunces:opsz,wght@9..144,300..700&'
              'family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap">')
 
-    doc = f"""<title>Foodify Block Theme</title>
+    doc = f"""<title>Foodify Storefront</title>
 {fonts}
 <style>
 {token_css()}
