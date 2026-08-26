@@ -150,6 +150,152 @@ header>div,footer>div{padding-left:var(--wp--preset--spacing--40);padding-right:
 main{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40)}
 
 
+.fx-logo{font-size:var(--wp--preset--font-size--xl);font-weight:700;margin:0;letter-spacing:-.02em}
+.fx-logo span{color:var(--wp--preset--color--flame-ink)}
+.fx-nav{display:flex;gap:22px;flex-wrap:wrap}
+.fx-nav a{color:var(--wp--preset--color--char);text-decoration:none;font-size:var(--wp--preset--font-size--base)}
+.fx-nav a:hover{color:var(--wp--preset--color--flame-ink)}
+.fx-bag{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border:0;
+  border-radius:var(--wp--custom--radius--pill);padding:0 16px;height:40px;display:inline-flex;
+  align-items:center;gap:8px;font-weight:600;font-size:var(--wp--preset--font-size--sm);cursor:pointer}
+.fx-bagn{background:var(--wp--preset--color--flame);color:#241703;border-radius:999px;
+  min-width:19px;height:19px;display:grid;place-items:center;font-size:11px}
+.fx-acct{background:none;border:1px solid var(--wp--preset--color--line-strong);border-radius:999px;
+  width:40px;height:40px;cursor:pointer;color:var(--wp--preset--color--char)}
+.fx-bowl{position:relative;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--h) 22%,#fff) 0,transparent 42%),
+             radial-gradient(circle at 50% 50%,var(--h) 0,color-mix(in srgb,var(--h) 70%,#2A1B08) 76%);
+  box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--h) 28%,#FFFDF8)}
+.fx-time{position:absolute;bottom:2%;right:-2%;background:var(--wp--preset--color--char);
+  color:var(--wp--preset--color--paper);font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px}
+.fx-grid{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));
+  gap:var(--wp--preset--spacing--50) var(--wp--preset--spacing--40)}
+/* Card rhythm (design review, 26 Aug): a uniform 8px gap between everything is
+   what made the cards read as cramped — no hierarchy. Now: the rating hugs the
+   name, the price gets air above via the flexible spacer, and the button is
+   separated from the money. The bowl sits on its own kraft tile at ~70% width
+   instead of pressing the card edges, and the chip sits ON the tile rather
+   than overlapping the bowl. */
+.fx-card{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
+  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--40);
+  display:flex;flex-direction:column;gap:var(--wp--preset--spacing--10)}
+.fx-media{position:relative;background:var(--wp--preset--color--kraft-pale);
+  border-radius:var(--wp--custom--radius--control);
+  padding:var(--wp--preset--spacing--50) var(--wp--preset--spacing--40) var(--wp--preset--spacing--40);
+  margin-bottom:var(--wp--preset--spacing--30)}
+.fx-media .fx-bowl{width:70%;margin:0 auto}
+.fx-chip{position:absolute;top:var(--wp--preset--spacing--20);left:var(--wp--preset--spacing--20);
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:4px 9px;border-radius:999px;
+  background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep)}
+.fx-chip--flavors{background:var(--wp--preset--color--leaf-wash);color:var(--wp--preset--color--leaf-ink)}
+.fx-chip--hot{background:#F3E3D4;color:var(--wp--preset--color--kraft-deep)}
+.fx-name{font-size:var(--wp--preset--font-size--md);margin:0;line-height:1.3;text-wrap:balance}
+.fx-rating{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);line-height:1.5}
+.fx-stars{color:var(--wp--preset--color--flame);letter-spacing:-1px}
+.fx-price{font-weight:700;margin:auto 0 0;padding-top:var(--wp--preset--spacing--30);
+  font-size:var(--wp--preset--font-size--lg);font-variant-numeric:tabular-nums}
+.fx-price s{color:var(--wp--preset--color--mute);font-weight:400;margin-right:6px}
+.fx-price--lg{font-size:var(--wp--preset--font-size--2xl)}
+.fx-off{font-size:12px;background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep);
+  padding:3px 8px;border-radius:3px;vertical-align:middle}
+.fx-add{width:100%;margin-top:var(--wp--preset--spacing--30)}
+.fx-add--lg{width:auto;flex:1;min-height:52px}
+.fx-crumb{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
+.fx-crumb a{color:inherit}
+.fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
+.fx-shotlist{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--wp--preset--spacing--30);margin-top:var(--wp--preset--spacing--40)}
+.fx-shot{position:relative;background:var(--wp--preset--color--surface);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--30)}
+.fx-shot .fx-bowl{opacity:.28;max-width:100%;margin-bottom:var(--wp--preset--spacing--20)}
+.fx-shot__n{position:absolute;top:var(--wp--preset--spacing--30);left:var(--wp--preset--spacing--30);width:1.5rem;height:1.5rem;display:grid;place-items:center;border-radius:var(--wp--custom--radius--pill);background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);font-size:var(--wp--preset--font-size--xs);font-weight:700}
+.fx-shot strong{display:block;font-size:var(--wp--preset--font-size--sm)}
+.fx-shot em{display:block;font-style:normal;color:var(--wp--preset--color--mute);font-size:var(--wp--preset--font-size--xs);line-height:1.5;margin-top:var(--wp--preset--spacing--10)}
+.fx-thumbs{display:flex;gap:10px;justify-content:center;margin-top:18px}
+.fx-thumbs .fx-bowl{width:60px}
+.fx-ph{text-align:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--wp--preset--color--mute);margin-top:12px}
+.fx-stock{color:var(--wp--preset--color--leaf-ink);font-weight:600;font-size:var(--wp--preset--font-size--sm)}
+.fx-atc{display:flex;gap:12px;margin:var(--wp--preset--spacing--40) 0 0}
+.fx-qty{display:flex;align-items:center;border:1px solid var(--wp--preset--color--line-strong);
+  border-radius:var(--wp--custom--radius--pill);overflow:hidden}
+.fx-qty button{background:none;border:0;padding:0 16px;height:52px;font-size:17px;cursor:pointer;color:inherit}
+.fx-spec{border:1px solid var(--wp--preset--color--line);border-radius:var(--wp--custom--radius--card);
+  overflow:hidden;margin:var(--wp--preset--spacing--60) 0;background:var(--wp--preset--color--surface)}
+.fx-spec h2{font-size:var(--wp--preset--font-size--lg);margin:0;padding:16px 22px 4px}
+.fx-spec-note{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);padding:0 22px 14px;margin:0}
+.fx-spec dl{margin:0;display:grid;grid-template-columns:1fr 1fr}
+.fx-spec dl>div{padding:13px 22px;border-top:1px solid var(--wp--preset--color--line)}
+.fx-spec dl>div:nth-child(odd){border-right:1px solid var(--wp--preset--color--line)}
+.fx-spec dt{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--wp--preset--color--mute);margin-bottom:3px}
+.fx-spec dd{margin:0;font-size:var(--wp--preset--font-size--base)}
+.fx-veg{color:var(--wp--preset--color--leaf-ink);font-weight:600}
+.fx-filter{margin-bottom:var(--wp--preset--spacing--50)}
+.fx-filter h4{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--wp--preset--color--mute);margin:0 0 10px;font-family:var(--wp--preset--font-family--ui)}
+.fx-filter label{display:flex;gap:9px;align-items:center;font-size:var(--wp--preset--font-size--sm);
+  padding:5px 0;color:var(--wp--preset--color--char)}
+.fx-range{height:4px;background:var(--wp--preset--color--line);border-radius:999px;position:relative}
+.fx-range::after{content:"";position:absolute;left:10%;right:25%;top:0;bottom:0;
+  background:var(--wp--preset--color--flame-ink);border-radius:999px}
+.fx-rangev{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);margin-top:8px}
+.fx-sort,.fx-count{display:inline-block;font-size:var(--wp--preset--font-size--sm);
+  color:var(--wp--preset--color--mute);margin:0 18px var(--wp--preset--spacing--40) 0}
+.fx-pag{display:flex;gap:10px;justify-content:center;margin-top:var(--wp--preset--spacing--60)}
+.fx-pag a{padding:8px 14px;border:1px solid var(--wp--preset--color--line);border-radius:6px;
+  font-size:var(--wp--preset--font-size--sm);cursor:pointer}
+.fx-pag a.on{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-color:var(--wp--preset--color--char)}
+.fx-cart,.fx-checkout{display:grid;grid-template-columns:1.6fr 1fr;gap:var(--wp--preset--spacing--60);align-items:start}
+.fx-carttable{width:100%;border-collapse:collapse}
+.fx-carttable td{padding:16px 12px 16px 0;border-bottom:1px solid var(--wp--preset--color--line);vertical-align:middle}
+.fx-carttable .fx-bowl{width:64px}
+.fx-meta{display:block;font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
+.fx-qtycell button{background:none;border:1px solid var(--wp--preset--color--line-strong);
+  border-radius:6px;width:28px;height:28px;margin:0 6px;cursor:pointer}
+.fx-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.fx-summary{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
+  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)}
+.fx-summary h2{font-size:var(--wp--preset--font-size--lg);margin:0 0 16px}
+.fx-row{display:flex;justify-content:space-between;gap:14px;padding:7px 0;font-size:var(--wp--preset--font-size--base)}
+.fx-disc{color:var(--wp--preset--color--leaf-ink)}
+.fx-total{border-top:1px solid var(--wp--preset--color--line-strong);margin-top:8px;padding-top:14px;
+  font-family:var(--wp--preset--font-family--display);font-size:var(--wp--preset--font-size--lg);font-weight:700}
+.fx-field{display:block;margin-bottom:var(--wp--preset--spacing--30)}
+.fx-field span{display:block;font-size:var(--wp--preset--font-size--sm);margin-bottom:5px;font-weight:600}
+.fx-field input,.fx-field select{width:100%;padding:12px 14px;font-size:16px;
+  border:1.5px solid var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--control);
+  min-height:var(--wp--custom--tap-target);background:var(--wp--preset--color--surface);color:inherit;font-family:inherit}
+.fx-fieldcount{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--leaf-ink);
+  font-weight:600;margin-bottom:var(--wp--preset--spacing--40)}
+.fx-pay{margin:18px 0}
+.fx-pay label{display:flex;gap:9px;align-items:center;padding:9px 0;font-size:var(--wp--preset--font-size--sm)}
+.fd-signin{max-width:26rem}
+.fd-signin h2{font-size:var(--wp--preset--font-size--2xl);margin:0 0 .3em}
+.fx-note{padding:10px 14px;background:var(--wp--preset--color--flame-wash);
+  color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
+@media (max-width:781px){
+  /* Core's exact stacking rule and breakpoint — verified against
+     wp-includes/blocks/columns/style.css in the local WordPress clone. */
+  .wp-block-columns:not(.is-not-stacked-on-mobile)>.wp-block-column{flex-basis:100% !important}
+  .wp-block-columns.is-not-stacked-on-mobile>.wp-block-column{flex:1 1 45%}
+}
+@media (max-width:900px){
+  .fx-grid{--cols:2 !important}
+    .fx-cart,.fx-checkout{grid-template-columns:1fr}
+  .fx-spec dl{grid-template-columns:1fr}
+  .fx-spec dl>div:nth-child(odd){border-right:0}
+}
+@media (max-width:560px){
+  .fx-grid{--cols:2 !important;gap:var(--wp--preset--spacing--30)}
+  .fx-card{padding:var(--wp--preset--spacing--30)}
+  .fx-media{padding:var(--wp--preset--spacing--40) var(--wp--preset--spacing--30) var(--wp--preset--spacing--30)}
+  .fx-media .fx-bowl{width:78%}
+  .fx-name{font-size:var(--wp--preset--font-size--base)}
+  .fx-price{font-size:var(--wp--preset--font-size--md)}
+  .fx-nav{display:none}
+}
+
+
 
 /* Only rules that theme.json cannot express belong here. Keep this file short.
    Radius, the tap target, the motion curve and the progress track are all
@@ -636,6 +782,19 @@ input:focus, select:focus, textarea:focus {
   .fd-spec dt { font-size: var(--wp--preset--font-size--sm); }
 }
 
+/* Trust strip — four facts. It carried isStackedOnMobile:false, which is an
+   instruction to CRAM four columns onto a phone until the headings collide
+   (device review, 26 Aug — "No preservatives" overlapping "9-12 month life").
+   Full stacking makes a strip a tower, so: four across on desktop, 2x2 on
+   phones. The !important ties core's own stacking rule; winning by order is
+   how theme CSS is supposed to beat block CSS. */
+@media (max-width: 781px) {
+  .wp-block-columns.fd-trust > .wp-block-column {
+    flex-basis: calc(50% - var(--wp--preset--spacing--40)) !important;
+    flex-grow: 1;
+  }
+}
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
@@ -643,144 +802,6 @@ input:focus, select:focus, textarea:focus {
   .woocommerce-orders-table td { border: 0; padding: 0; }
   .fd-address-list { grid-template-columns: 1fr; }
 }
-
-
-.fx-logo{font-size:var(--wp--preset--font-size--xl);font-weight:700;margin:0;letter-spacing:-.02em}
-.fx-logo span{color:var(--wp--preset--color--flame-ink)}
-.fx-nav{display:flex;gap:22px;flex-wrap:wrap}
-.fx-nav a{color:var(--wp--preset--color--char);text-decoration:none;font-size:var(--wp--preset--font-size--base)}
-.fx-nav a:hover{color:var(--wp--preset--color--flame-ink)}
-.fx-bag{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border:0;
-  border-radius:var(--wp--custom--radius--pill);padding:0 16px;height:40px;display:inline-flex;
-  align-items:center;gap:8px;font-weight:600;font-size:var(--wp--preset--font-size--sm);cursor:pointer}
-.fx-bagn{background:var(--wp--preset--color--flame);color:#241703;border-radius:999px;
-  min-width:19px;height:19px;display:grid;place-items:center;font-size:11px}
-.fx-acct{background:none;border:1px solid var(--wp--preset--color--line-strong);border-radius:999px;
-  width:40px;height:40px;cursor:pointer;color:var(--wp--preset--color--char)}
-.fx-bowl{position:relative;aspect-ratio:1;border-radius:50%;
-  background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--h) 22%,#fff) 0,transparent 42%),
-             radial-gradient(circle at 50% 50%,var(--h) 0,color-mix(in srgb,var(--h) 70%,#2A1B08) 76%);
-  box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--h) 28%,#FFFDF8)}
-.fx-time{position:absolute;bottom:2%;right:-2%;background:var(--wp--preset--color--char);
-  color:var(--wp--preset--color--paper);font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px}
-.fx-grid{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));
-  gap:var(--wp--preset--spacing--50) var(--wp--preset--spacing--40)}
-/* Card rhythm (design review, 26 Aug): a uniform 8px gap between everything is
-   what made the cards read as cramped — no hierarchy. Now: the rating hugs the
-   name, the price gets air above via the flexible spacer, and the button is
-   separated from the money. The bowl sits on its own kraft tile at ~70% width
-   instead of pressing the card edges, and the chip sits ON the tile rather
-   than overlapping the bowl. */
-.fx-card{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
-  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--40);
-  display:flex;flex-direction:column;gap:var(--wp--preset--spacing--10)}
-.fx-media{position:relative;background:var(--wp--preset--color--kraft-pale);
-  border-radius:var(--wp--custom--radius--control);
-  padding:var(--wp--preset--spacing--50) var(--wp--preset--spacing--40) var(--wp--preset--spacing--40);
-  margin-bottom:var(--wp--preset--spacing--30)}
-.fx-media .fx-bowl{width:70%;margin:0 auto}
-.fx-chip{position:absolute;top:var(--wp--preset--spacing--20);left:var(--wp--preset--spacing--20);
-  font-size:10px;font-weight:700;letter-spacing:.08em;
-  text-transform:uppercase;padding:4px 9px;border-radius:999px;
-  background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep)}
-.fx-chip--flavors{background:var(--wp--preset--color--leaf-wash);color:var(--wp--preset--color--leaf-ink)}
-.fx-chip--hot{background:#F3E3D4;color:var(--wp--preset--color--kraft-deep)}
-.fx-name{font-size:var(--wp--preset--font-size--md);margin:0;line-height:1.3;text-wrap:balance}
-.fx-rating{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);line-height:1.5}
-.fx-stars{color:var(--wp--preset--color--flame);letter-spacing:-1px}
-.fx-price{font-weight:700;margin:auto 0 0;padding-top:var(--wp--preset--spacing--30);
-  font-size:var(--wp--preset--font-size--lg);font-variant-numeric:tabular-nums}
-.fx-price s{color:var(--wp--preset--color--mute);font-weight:400;margin-right:6px}
-.fx-price--lg{font-size:var(--wp--preset--font-size--2xl)}
-.fx-off{font-size:12px;background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep);
-  padding:3px 8px;border-radius:3px;vertical-align:middle}
-.fx-add{width:100%;margin-top:var(--wp--preset--spacing--30)}
-.fx-add--lg{width:auto;flex:1;min-height:52px}
-.fx-crumb{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
-.fx-crumb a{color:inherit}
-.fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
-.fx-shotlist{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--wp--preset--spacing--30);margin-top:var(--wp--preset--spacing--40)}
-.fx-shot{position:relative;background:var(--wp--preset--color--surface);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--30)}
-.fx-shot .fx-bowl{opacity:.28;max-width:100%;margin-bottom:var(--wp--preset--spacing--20)}
-.fx-shot__n{position:absolute;top:var(--wp--preset--spacing--30);left:var(--wp--preset--spacing--30);width:1.5rem;height:1.5rem;display:grid;place-items:center;border-radius:var(--wp--custom--radius--pill);background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);font-size:var(--wp--preset--font-size--xs);font-weight:700}
-.fx-shot strong{display:block;font-size:var(--wp--preset--font-size--sm)}
-.fx-shot em{display:block;font-style:normal;color:var(--wp--preset--color--mute);font-size:var(--wp--preset--font-size--xs);line-height:1.5;margin-top:var(--wp--preset--spacing--10)}
-.fx-thumbs{display:flex;gap:10px;justify-content:center;margin-top:18px}
-.fx-thumbs .fx-bowl{width:60px}
-.fx-ph{text-align:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--wp--preset--color--mute);margin-top:12px}
-.fx-stock{color:var(--wp--preset--color--leaf-ink);font-weight:600;font-size:var(--wp--preset--font-size--sm)}
-.fx-atc{display:flex;gap:12px;margin:var(--wp--preset--spacing--40) 0 0}
-.fx-qty{display:flex;align-items:center;border:1px solid var(--wp--preset--color--line-strong);
-  border-radius:var(--wp--custom--radius--pill);overflow:hidden}
-.fx-qty button{background:none;border:0;padding:0 16px;height:52px;font-size:17px;cursor:pointer;color:inherit}
-.fx-spec{border:1px solid var(--wp--preset--color--line);border-radius:var(--wp--custom--radius--card);
-  overflow:hidden;margin:var(--wp--preset--spacing--60) 0;background:var(--wp--preset--color--surface)}
-.fx-spec h2{font-size:var(--wp--preset--font-size--lg);margin:0;padding:16px 22px 4px}
-.fx-spec-note{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);padding:0 22px 14px;margin:0}
-.fx-spec dl{margin:0;display:grid;grid-template-columns:1fr 1fr}
-.fx-spec dl>div{padding:13px 22px;border-top:1px solid var(--wp--preset--color--line)}
-.fx-spec dl>div:nth-child(odd){border-right:1px solid var(--wp--preset--color--line)}
-.fx-spec dt{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--wp--preset--color--mute);margin-bottom:3px}
-.fx-spec dd{margin:0;font-size:var(--wp--preset--font-size--base)}
-.fx-veg{color:var(--wp--preset--color--leaf-ink);font-weight:600}
-.fx-filter{margin-bottom:var(--wp--preset--spacing--50)}
-.fx-filter h4{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
-  color:var(--wp--preset--color--mute);margin:0 0 10px;font-family:var(--wp--preset--font-family--ui)}
-.fx-filter label{display:flex;gap:9px;align-items:center;font-size:var(--wp--preset--font-size--sm);
-  padding:5px 0;color:var(--wp--preset--color--char)}
-.fx-range{height:4px;background:var(--wp--preset--color--line);border-radius:999px;position:relative}
-.fx-range::after{content:"";position:absolute;left:10%;right:25%;top:0;bottom:0;
-  background:var(--wp--preset--color--flame-ink);border-radius:999px}
-.fx-rangev{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);margin-top:8px}
-.fx-sort,.fx-count{display:inline-block;font-size:var(--wp--preset--font-size--sm);
-  color:var(--wp--preset--color--mute);margin:0 18px var(--wp--preset--spacing--40) 0}
-.fx-pag{display:flex;gap:10px;justify-content:center;margin-top:var(--wp--preset--spacing--60)}
-.fx-pag a{padding:8px 14px;border:1px solid var(--wp--preset--color--line);border-radius:6px;
-  font-size:var(--wp--preset--font-size--sm);cursor:pointer}
-.fx-pag a.on{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-color:var(--wp--preset--color--char)}
-.fx-cart,.fx-checkout{display:grid;grid-template-columns:1.6fr 1fr;gap:var(--wp--preset--spacing--60);align-items:start}
-.fx-carttable{width:100%;border-collapse:collapse}
-.fx-carttable td{padding:16px 12px 16px 0;border-bottom:1px solid var(--wp--preset--color--line);vertical-align:middle}
-.fx-carttable .fx-bowl{width:64px}
-.fx-meta{display:block;font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
-.fx-qtycell button{background:none;border:1px solid var(--wp--preset--color--line-strong);
-  border-radius:6px;width:28px;height:28px;margin:0 6px;cursor:pointer}
-.fx-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
-.fx-summary{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
-  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)}
-.fx-summary h2{font-size:var(--wp--preset--font-size--lg);margin:0 0 16px}
-.fx-row{display:flex;justify-content:space-between;gap:14px;padding:7px 0;font-size:var(--wp--preset--font-size--base)}
-.fx-disc{color:var(--wp--preset--color--leaf-ink)}
-.fx-total{border-top:1px solid var(--wp--preset--color--line-strong);margin-top:8px;padding-top:14px;
-  font-family:var(--wp--preset--font-family--display);font-size:var(--wp--preset--font-size--lg);font-weight:700}
-.fx-field{display:block;margin-bottom:var(--wp--preset--spacing--30)}
-.fx-field span{display:block;font-size:var(--wp--preset--font-size--sm);margin-bottom:5px;font-weight:600}
-.fx-field input,.fx-field select{width:100%;padding:12px 14px;font-size:16px;
-  border:1.5px solid var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--control);
-  min-height:var(--wp--custom--tap-target);background:var(--wp--preset--color--surface);color:inherit;font-family:inherit}
-.fx-fieldcount{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--leaf-ink);
-  font-weight:600;margin-bottom:var(--wp--preset--spacing--40)}
-.fx-pay{margin:18px 0}
-.fx-pay label{display:flex;gap:9px;align-items:center;padding:9px 0;font-size:var(--wp--preset--font-size--sm)}
-.fd-signin{max-width:26rem}
-.fd-signin h2{font-size:var(--wp--preset--font-size--2xl);margin:0 0 .3em}
-.fx-note{padding:10px 14px;background:var(--wp--preset--color--flame-wash);
-  color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
-@media (max-width:781px){
-  /* Core's exact stacking rule and breakpoint — verified against
-     wp-includes/blocks/columns/style.css in the local WordPress clone. */
-  .wp-block-columns:not(.is-not-stacked-on-mobile)>.wp-block-column{flex-basis:100% !important}
-  .wp-block-columns.is-not-stacked-on-mobile>.wp-block-column{flex:1 1 45%}
-}
-@media (max-width:900px){
-  .fx-grid{--cols:2 !important}
-    .fx-cart,.fx-checkout{grid-template-columns:1fr}
-  .fx-spec dl{grid-template-columns:1fr}
-  .fx-spec dl>div:nth-child(odd){border-right:0}
-}
-@media (max-width:560px){ .fx-grid{--cols:1 !important} .fx-nav{display:none} }
 
 .proto{position:sticky;top:0;z-index:99;background:#14201C;color:#F5F2EA;border-bottom:1px solid #23332D}
 .proto-in{max-width:1240px;margin:0 auto;padding:9px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
@@ -892,7 +913,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 <div class="wp-block-group alignwide has-border-color has-line-border-color" style="border-top-width:1px;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
 
-<div class="wp-block-columns is-not-stacked-on-mobile">
+<div class="wp-block-columns fd-trust">
 
 <div class="wp-block-column">
 <p class="has-display-font-family has-base-font-size" style="font-weight:600">No preservatives</p>
@@ -1635,7 +1656,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <div class="fx-checkout">
 <div><div class="woocommerce-form-coupon-toggle"><div class="woocommerce-info">Have a code from a
 partner or a creator? <a href="#" class="showcoupon">Enter it here</a></div></div>
-<form class="fd-address-choose"><fieldset><legend>Deliver to</legend><label class="fd-address-choose__option"><input type="radio" name="fx-addr" checked><span class="fd-address-choose__label">Home</span><span class="fd-address-choose__body">N-7011 Parx Laureate, Sector 108, Noida, 201304</span></label><label class="fd-address-choose__option"><input type="radio" name="fx-addr"><span class="fd-address-choose__label">Office</span><span class="fd-address-choose__body">Tower C, 9th floor, Sector 16, Noida, 201301</span></label><a class="fd-address-choose__manage" href="#">Manage saved addresses</a></fieldset></form>
+<form class="fd-address-choose"><fieldset><legend>Deliver to</legend><label class="fd-address-choose__option"><input type="radio" name="fx-addr" checked><span class="fd-address-choose__label">Home</span><span class="fd-address-choose__body">N-7011 Parx Laureate, Sector 108, Noida, 201304</span></label><label class="fd-address-choose__option"><input type="radio" name="fx-addr"><span class="fd-address-choose__label">Office</span><span class="fd-address-choose__body">Tower C, 9th floor, Sector 16, Noida, 201301</span></label><button type="button" class="wp-element-button">Use this address</button><a class="fd-address-choose__manage" href="#">Manage saved addresses</a></fieldset></form>
 <p class="fx-fieldcount">Nine fields for a first order — the audited site asked twenty-five.
 A returning customer types none of them.</p><label class="fx-field"><span>Mobile number</span><input value="98••• ••210"></label><label class="fx-field"><span>Email</span><input value="you@example.com"></label><label class="fx-field"><span>Full name</span><input value="Ateeshay Jain"></label><label class="fx-field"><span>PIN code</span><input value="201304"></label><label class="fx-field"><span>City</span><input value="Noida"></label><label class="fx-field"><span>State</span><select><option>Uttar Pradesh</option></select></label><label class="fx-field"><span>Address</span><input value="N-7011 Parx Laureate"></label><label class="fx-field"><span>Address line 2 (optional)</span><input value="Sector 108"></label><label class="fx-field"><span>Order notes (optional)</span><input placeholder=""></label></div>
 <aside class="fx-summary"><h2>Your order</h2>

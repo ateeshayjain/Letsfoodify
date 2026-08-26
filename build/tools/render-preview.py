@@ -417,6 +417,7 @@ def address_chooser():
         for label, _n, _p, l1, l2, city, _s, pin, is_def in ADDRESSES)
     return ('<form class="fd-address-choose"><fieldset><legend>Deliver to</legend>'
             + opts
+            + '<button type="button" class="wp-element-button">Use this address</button>'
             + '<a class="fd-address-choose__manage" href="#">Manage saved addresses</a>'
             + '</fieldset></form>')
 
@@ -702,7 +703,15 @@ FIXTURE_CSS = """
   .fx-spec dl{grid-template-columns:1fr}
   .fx-spec dl>div:nth-child(odd){border-right:0}
 }
-@media (max-width:560px){ .fx-grid{--cols:1 !important} .fx-nav{display:none} }
+@media (max-width:560px){
+  .fx-grid{--cols:2 !important;gap:var(--wp--preset--spacing--30)}
+  .fx-card{padding:var(--wp--preset--spacing--30)}
+  .fx-media{padding:var(--wp--preset--spacing--40) var(--wp--preset--spacing--30) var(--wp--preset--spacing--30)}
+  .fx-media .fx-bowl{width:78%}
+  .fx-name{font-size:var(--wp--preset--font-size--base)}
+  .fx-price{font-size:var(--wp--preset--font-size--md)}
+  .fx-nav{display:none}
+}
 """
 
 SCREENS = [
@@ -755,8 +764,8 @@ def main():
 {token_css()}
 {styles_css()}
 {layout}
-{theme_css}
 {FIXTURE_CSS}
+{theme_css}
 .proto{{position:sticky;top:0;z-index:99;background:#14201C;color:#F5F2EA;border-bottom:1px solid #23332D}}
 .proto-in{{max-width:1240px;margin:0 auto;padding:9px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}}
 .proto-tag{{font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;

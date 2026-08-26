@@ -495,6 +495,19 @@ input:focus, select:focus, textarea:focus {
   .fd-spec dt { font-size: var(--wp--preset--font-size--sm); }
 }
 
+/* Trust strip — four facts. It carried isStackedOnMobile:false, which is an
+   instruction to CRAM four columns onto a phone until the headings collide
+   (device review, 26 Aug — "No preservatives" overlapping "9-12 month life").
+   Full stacking makes a strip a tower, so: four across on desktop, 2x2 on
+   phones. The !important ties core's own stacking rule; winning by order is
+   how theme CSS is supposed to beat block CSS. */
+@media (max-width: 781px) {
+  .wp-block-columns.fd-trust > .wp-block-column {
+    flex-basis: calc(50% - var(--wp--preset--spacing--40)) !important;
+    flex-grow: 1;
+  }
+}
+
 @media (max-width: 900px) {
   .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
