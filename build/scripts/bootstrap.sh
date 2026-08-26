@@ -289,6 +289,55 @@ if [[ "$PHASE" == "all" ]]; then
   wp cap add coupon_partner read
   ok "coupon_partner role ready — sees only their own dashboard"
 
+  # WP-10's Shop Staff role is created and RECONCILED by the theme (inc/roles.php),
+  # not here. Deliberately: capabilities live in the wp_user_roles option, so
+  # `wp role create` is a no-op on a site where the role already exists — which
+  # means a tightened capability set would never reach a live site. The theme
+  # versions the set and syncs it. This step only VERIFIES the result.
+  if [[ $DRY -eq 0 ]]; then
+    if command wp role exists foodify_shop_staff >/dev/null 2>&1; then
+      ok "Shop Staff role present"
+      # A positive check for each capability that must be absent. Enumerated,
+      # because "does not have admin" is an absence claim and absence claims
+      # pass without being checked.
+      LEAKED=""
+      for CAP in manage_woocommerce install_plugins activate_plugins edit_users \
+                 promote_users export delete_shop_orders edit_products unfiltered_html; do
+        if command wp cap list foodify_shop_staff 2>/dev/null | grep -qx "$CAP"; then
+          LEAKED="$LEAKED $CAP"
+        fi
+      done
+      if [[ -n "$LEAKED" ]]; then
+        warn "Shop Staff holds capabilities it must never have:$LEAKED"
+        warn "Bump FOODIFY_ROLES_VERSION in inc/roles.php and reload any admin page to resync."
+      else
+        ok "Shop Staff holds no forbidden capability"
+      fi
+    else
+      warn "Shop Staff role missing — activate the foodify theme, then load any admin page once."
+    fi
+  fi
+
+  # Order-status email copy (WP-10). READ ONLY, on purpose.
+  #
+  # `wp option update` on a name nothing reads SUCCEEDS — that is how this project
+  # shipped invented Rank Math sub-keys. So rather than writing WooCommerce email
+  # settings from a name I could not verify offline, this REPORTS what is actually
+  # stored. If a line comes back empty, the option name is wrong or the email has
+  # never been customised, and either way you now know before pasting anything.
+  # The copy to paste is in build/docs/WP-10-NOTES.md.
+  if [[ $DRY -eq 0 ]]; then
+    log "Order-status email settings (read-only report)"
+    for E in customer_processing_order customer_completed_order customer_on_hold_order; do
+      SUBJ="$(command wp option get "woocommerce_${E}_settings" --format=json 2>/dev/null || echo '')"
+      if [[ -z "$SUBJ" ]]; then
+        warn "  woocommerce_${E}_settings — not stored (never customised, or the name is wrong)"
+      else
+        ok   "  woocommerce_${E}_settings — $SUBJ"
+      fi
+    done
+  fi
+
   log "Phase 5 · Pages"
   # Titles are explicit — "${slug^}" turns my-account into "My-account".
   # And a page WooCommerce does not know about is just a page: each one is wired

@@ -27,6 +27,9 @@ theme/foodify/          Standalone block theme. Deploy from git; never edit on t
                              called twice and defined nowhere
     coupon-attribution.php   WP-09. Coupon owner UI, notification, Coupon
                              Performance screen, CSV export
+    roles.php                WP-10. Shop Staff, least privilege, VERSIONED —
+                             add_role() is a no-op once the role exists
+    admin-dashboard.php      WP-10. The Today screen, low stock, inline stock set
     product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
     patterns.php             Pattern category registration
     product-attributes.php   Filter attributes, forced non-indexable (WP-02)
