@@ -280,7 +280,33 @@ for p in "/cart/" "/checkout/" "/my-account/"; do
   fi
 done
 
-hdr "6 · Performance budget (uncached HTML)"
+hdr "6 · The Merchant Center feed"
+# WP-12. The feed is the revenue surface, and Merchant Center fetches it on a
+# schedule — a feed that breaks after a deploy fails SILENTLY until listings
+# start expiring. Fetched and parsed, not just status-checked: HTTP 200 with a
+# half-written document is exactly the failure an unescaped ampersand causes,
+# and every item after that byte vanishes.
+FEED_BODY="$(FETCH "$BASE/?foodify-feed=1")"
+if [[ -z "$FEED_BODY" ]]; then
+  no "feed did not answer at /?foodify-feed=1 — Merchant Center's fetch will fail"
+elif ! grep -q 'xmlns:g="http://base.google.com/ns/1.0"' <<<"$FEED_BODY"; then
+  no "feed answered but is not a Merchant Center document (no g: namespace)"
+elif command -v xmllint >/dev/null 2>&1; then
+  if xmllint --noout - <<<"$FEED_BODY" 2>/dev/null; then
+    FEED_N="$(grep -o '<item>' <<<"$FEED_BODY" | wc -l | tr -d ' ')"
+    ok "feed parses as XML with $FEED_N items"
+    [[ "$FEED_N" -eq 0 ]] && wr "feed is VALID BUT EMPTY — every product is excluded (photos/descriptions missing?)"
+  else
+    no "feed does NOT parse as XML — one bad character is truncating the catalogue"
+  fi
+else
+  # xmllint may be absent on the host. Say the check is weaker, never that it passed.
+  grep -q '</rss>' <<<"$FEED_BODY" \
+    && ok "feed reaches its closing tag (xmllint absent — parse not fully verified)" \
+    || no "feed is TRUNCATED — it never reaches </rss>"
+fi
+
+hdr "7 · Performance budget (uncached HTML)"
 read -r TTFB TOTAL SIZE HTTPC < <(curl -s -o /dev/null \
   -w '%{time_starttransfer} %{time_total} %{size_download} %{http_code}' --max-time 30 "$PDP_URL")
 # 0 bytes in 0 seconds is not a fast page, it is a failed request.
@@ -301,7 +327,7 @@ else
   no "asset budget could not be measured — product page did not load"
 fi
 
-hdr "7 · Redirects"
+hdr "8 · Redirects"
 if [[ -n "$REDIRECTS" && -f "$REDIRECTS" ]]; then
   n=0; bad=0
   while IFS=, read -r src tgt typ note; do

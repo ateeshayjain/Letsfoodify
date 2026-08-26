@@ -172,6 +172,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/WP-BOOT.md` | **Read this.** How to run the theme in a real WordPress, and what it found |
 | `scripts/wp-boot-test.sh` | 28 assertions against a real WordPress. `php -l` cannot see what this sees |
 | `tests/wp11-test.php` | 51 assertions. Tax parts sum to the whole; COD collects the right amount |
+| `docs/WP-12-NOTES.md` | The product-data editor and the Merchant Center feed |
+| `tests/wp12-test.php` | 48 assertions. Sanitisers refuse; one ampersand cannot kill the feed |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |

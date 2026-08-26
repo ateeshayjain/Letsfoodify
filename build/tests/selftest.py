@@ -86,6 +86,16 @@ def pages(mode):
         # so the 404 the gate must catch is a real 404, not an asserted string.
         **({} if mode == "bad" else
            {"/my-account/address-book/": HEAD_ + "<h1>Sign in</h1>" + PAD + FOOT_}),
+        # WP-12: the Merchant Center feed. The bad fixture is truncated at an
+        # unescaped ampersand — the real failure, where every later item vanishes
+        # and the document never closes.
+        "/?foodify-feed=1":
+            ('<?xml version="1.0" encoding="UTF-8"?>\n'
+             '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>'
+             '<title>The Foodify Company</title><link>/</link><description>feed</description>'
+             + ("<item><g:id>FDY-42</g:id><g:title>Chai & Snacks" if mode == "bad" else
+                "<item><g:id>FDY-42</g:id><g:title>Chai &amp; Snacks</g:title>"
+                "<g:price>185.00 INR</g:price></item></channel></rss>")),
         "/robots.txt": "User-agent: *\nSitemap: /sitemap_index.xml\n",
         "/sitemap_index.xml": '<?xml version="1.0"?><sitemapindex></sitemapindex>',
     }
@@ -98,7 +108,13 @@ def serve(mode, port):
         protocol_version = "HTTP/1.1"
 
         def do_GET(self):
-            path = self.path.split("?")[0]
+            # The feed lives on a QUERY VAR precisely so rewrite rules cannot
+            # go stale — so the fixture must route by query string too, before
+            # the strip that serves every path-shaped page.
+            if "foodify-feed=1" in self.path:
+                path = "/?foodify-feed=1"
+            else:
+                path = self.path.split("?")[0]
             if path == "/wp-sitemap.xml":          # retired by Rank Math
                 self.send_error(404); return
             body = P.get(path)
@@ -188,6 +204,8 @@ check("product page says how you make it",
       "PASS product page says how you make it" in out)
 check("product page carries its declarations",
       "PASS product page carries its structured declarations" in out)
+check("feed parses with items",
+      "PASS feed parses as XML" in out or "PASS feed reaches its closing tag" in out)
 check("FSSAI licence configured",         "PASS FSSAI licence number is configured" in out)
 check("no placeholder licence",           "PASS no placeholder FSSAI licence number" in out)
 check("exits 0",                          rc == 0)
@@ -211,6 +229,8 @@ check("fabricated aggregateRating CAUGHT",
       "fabricated social proof" in out)
 check("missing prep steps CAUGHT",   "no preparation steps" in out)
 check("missing declarations CAUGHT", "Legal Metrology fields are missing" in out)
+check("truncated feed CAUGHT",
+      "does NOT parse as XML" in out or "feed is TRUNCATED" in out)
 check("placeholder FSSAI licence CAUGHT",
       "placeholder FSSAI licence 10012345678901 is live" in out)
 check("exits non-zero",         rc != 0)
@@ -235,6 +255,8 @@ check("does NOT falsely clear the schema",
       "PASS exactly one Product schema node" not in out)
 check("does NOT falsely clear the declarations",
       "PASS product page carries its structured declarations" not in out)
+check("does NOT falsely clear the feed",
+      "PASS feed parses as XML" not in out and "closing tag" not in out)
 check("says the page did not load", "did not load" in out)
 check("exits non-zero", rc != 0)
 

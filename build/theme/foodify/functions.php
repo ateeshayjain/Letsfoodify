@@ -250,6 +250,8 @@ require_once FOODIFY_DIR . '/inc/coupon-attribution.php';
 require_once FOODIFY_DIR . '/inc/product-attributes.php';   // must load BEFORE product-display
 require_once FOODIFY_DIR . '/inc/product-display.php';
 require_once FOODIFY_DIR . '/inc/product-spec.php';      // design pass: prep steps + declarations
+require_once FOODIFY_DIR . '/inc/product-editor.php';    // WP-12: the one screen where data is entered
+require_once FOODIFY_DIR . '/inc/product-feed.php';      // WP-12: the Merchant Center feed
 require_once FOODIFY_DIR . '/inc/patterns.php';
 require_once FOODIFY_DIR . '/inc/shortcodes.php';
 require_once FOODIFY_DIR . '/inc/account.php';

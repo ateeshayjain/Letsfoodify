@@ -30,6 +30,11 @@ theme/foodify/          Standalone block theme. Deploy from git; never edit on t
     roles.php                WP-10. Shop Staff, least privilege, VERSIONED —
                              add_role() is a no-op once the role exists
     admin-dashboard.php      WP-10. The Today screen, low stock, inline stock set
+    gst.php                  WP-11. CGST/SGST/IGST split (rate-agnostic), invoice title
+    fulfilment.php           WP-11. Courier manifest; COD amount derived, weight refused
+    product-spec.php         PDP declarations, prep steps, nutrition
+    product-editor.php       WP-12. One metabox for all per-product data; refuses typos
+    product-feed.php         WP-12. Merchant Center feed at /?foodify-feed=1
     product-display.php      Prep chip, per-serving price, honest stock, curated cross-sells
     patterns.php             Pattern category registration
     product-attributes.php   Filter attributes, forced non-indexable (WP-02)
