@@ -306,7 +306,30 @@ else
     || no "feed is TRUNCATED — it never reaches </rss>"
 fi
 
-hdr "7 · Performance budget (uncached HTML)"
+hdr "7 · Analytics — installed fully, or not at all"
+# WP-13. Half-installed analytics is the worst state because it LOOKS
+# installed: the gtag loader without events measures nothing, events without
+# the loader throw on every page. Coherence is asserted both ways. Fully OFF
+# is legitimate pre-launch (the measurement ID is client-supplied, like the
+# FSSAI number) — reported as a WARN naming the work, never silently passed.
+GTAG_HOME=0; grep -q 'googletagmanager.com/gtag/js' <<<"$HOME" && GTAG_HOME=1
+if [[ "$GTAG_HOME" == 1 ]]; then
+  ok "gtag loader present"
+  grep -q "view_item" <<<"$PDP" \
+    && ok "view_item fires on the product page" \
+    || no "gtag is loaded but view_item never fires — HALF-INSTALLED analytics"
+  if GOT "$CHK"; then
+    grep -q "begin_checkout" <<<"$CHK" \
+      && ok "begin_checkout fires on checkout" \
+      || no "gtag is loaded but begin_checkout never fires — HALF-INSTALLED analytics"
+  fi
+else
+  grep -q "gtag(" <<<"$PDP" \
+    && no "events are rendered but the gtag loader is absent — every page throws" \
+    || wr "analytics OFF (no measurement ID) — supply foodify_ga4_measurement_id before launch; then verify in DebugView per WP-13-NOTES"
+fi
+
+hdr "8 · Performance budget (uncached HTML)"
 read -r TTFB TOTAL SIZE HTTPC < <(curl -s -o /dev/null \
   -w '%{time_starttransfer} %{time_total} %{size_download} %{http_code}' --max-time 30 "$PDP_URL")
 # 0 bytes in 0 seconds is not a fast page, it is a failed request.
@@ -327,7 +350,7 @@ else
   no "asset budget could not be measured — product page did not load"
 fi
 
-hdr "8 · Redirects"
+hdr "9 · Redirects"
 if [[ -n "$REDIRECTS" && -f "$REDIRECTS" ]]; then
   n=0; bad=0
   while IFS=, read -r src tgt typ note; do

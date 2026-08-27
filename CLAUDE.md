@@ -175,6 +175,9 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/WP-12-NOTES.md` | The product-data editor and the Merchant Center feed |
 | `docs/AUDIT-HIG-2026-08-26.md` | HIG audit: measured contrast, targets, keyboards. 2 P0, 4 P1 |
 | `tests/wp12-test.php` | 48 assertions. Sanitisers refuse; one ampersand cannot kill the feed |
+| `docs/WP-13-NOTES.md` | GA4 instrumentation + the DebugView launch runbook |
+| `tests/wp13-test.php` | 24 assertions. Purchase fires once; item ids join the feed; zero PII |
+| `tools/mobile-sweep.js` | Every screen, both widths, real Chromium — overflow named by selector |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |

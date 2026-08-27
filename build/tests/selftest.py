@@ -53,7 +53,11 @@ def pages(mode):
     #          placeholder licence live on the page, and an aggregateRating the
     #          page cannot show, which is fabricated social proof.
     if mode == "bad":
+        # WP-13's worst state: the gtag loader present, no event ever rendered.
         head = HEAD.replace(
+            "</head>",
+            '<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXX11"></script></head>')
+        head = head.replace(
             "</head>",
             '<script type="application/ld+json">{"@type": "Product","name":"Express Dal Fry",'
             '"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","reviewCount":"312"}}'
@@ -204,6 +208,8 @@ check("product page says how you make it",
       "PASS product page says how you make it" in out)
 check("product page carries its declarations",
       "PASS product page carries its structured declarations" in out)
+check("analytics-off is REPORTED, not silently passed",
+      "analytics OFF" in out)
 check("feed parses with items",
       "PASS feed parses as XML" in out or "PASS feed reaches its closing tag" in out)
 check("FSSAI licence configured",         "PASS FSSAI licence number is configured" in out)
@@ -229,6 +235,8 @@ check("fabricated aggregateRating CAUGHT",
       "fabricated social proof" in out)
 check("missing prep steps CAUGHT",   "no preparation steps" in out)
 check("missing declarations CAUGHT", "Legal Metrology fields are missing" in out)
+check("half-installed analytics CAUGHT",
+      "HALF-INSTALLED analytics" in out)
 check("truncated feed CAUGHT",
       "does NOT parse as XML" in out or "feed is TRUNCATED" in out)
 check("placeholder FSSAI licence CAUGHT",
@@ -255,6 +263,8 @@ check("does NOT falsely clear the schema",
       "PASS exactly one Product schema node" not in out)
 check("does NOT falsely clear the declarations",
       "PASS product page carries its structured declarations" not in out)
+check("does NOT falsely clear analytics either way",
+      "HALF-INSTALLED" not in out and "gtag loader present" not in out)
 check("does NOT falsely clear the feed",
       "PASS feed parses as XML" not in out and "closing tag" not in out)
 check("says the page did not load", "did not load" in out)

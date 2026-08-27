@@ -242,6 +242,7 @@ require_once FOODIFY_DIR . '/inc/payments.php';          // WP-07: prepaid savin
 require_once FOODIFY_DIR . '/inc/gst.php';               // WP-11: the split, and the invoice title
 require_once FOODIFY_DIR . '/inc/fulfilment.php';        // WP-11: the courier manifest
 require_once FOODIFY_DIR . '/inc/business-profile.php';  // WP-08: NAP, licence, token table
+require_once FOODIFY_DIR . '/inc/analytics.php';         // WP-13: GA4 events, ships OFF
 require_once FOODIFY_DIR . '/inc/reviews.php';           // WP-08: product reviews + the ask
 require_once FOODIFY_DIR . '/inc/partner-ledger.php';     // WP-09: must load BEFORE coupon-attribution
 require_once FOODIFY_DIR . '/inc/roles.php';             // WP-10: Shop Staff, least privilege
