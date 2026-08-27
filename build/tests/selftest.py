@@ -53,9 +53,14 @@ def pages(mode):
     #          placeholder licence live on the page, and an aggregateRating the
     #          page cannot show, which is fabricated social proof.
     if mode == "bad":
+        # WP-14's catastrophe: the WordPress "discourage search engines"
+        # checkbox left on from staging — one meta tag, site-wide invisibility.
+        pass
+    if mode == "bad":
         # WP-13's worst state: the gtag loader present, no event ever rendered.
         head = HEAD.replace(
             "</head>",
+            '<meta name="robots" content="noindex, nofollow">'
             '<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXX11"></script></head>')
         head = head.replace(
             "</head>",
@@ -208,6 +213,8 @@ check("product page says how you make it",
       "PASS product page says how you make it" in out)
 check("product page carries its declarations",
       "PASS product page carries its structured declarations" in out)
+check("production is indexable",
+      "PASS site is indexable" in out)
 check("analytics-off is REPORTED, not silently passed",
       "analytics OFF" in out)
 check("feed parses with items",
@@ -235,6 +242,8 @@ check("fabricated aggregateRating CAUGHT",
       "fabricated social proof" in out)
 check("missing prep steps CAUGHT",   "no preparation steps" in out)
 check("missing declarations CAUGHT", "Legal Metrology fields are missing" in out)
+check("NOINDEX IN PRODUCTION CAUGHT — the classic launch catastrophe",
+      "THE SITE IS NOINDEXED IN PRODUCTION" in out)
 check("half-installed analytics CAUGHT",
       "HALF-INSTALLED analytics" in out)
 check("truncated feed CAUGHT",
@@ -263,12 +272,25 @@ check("does NOT falsely clear the schema",
       "PASS exactly one Product schema node" not in out)
 check("does NOT falsely clear the declarations",
       "PASS product page carries its structured declarations" not in out)
+check("does NOT falsely clear indexability",
+      "PASS site is indexable" not in out)
+check("says indexability could not be verified",
+      "indexability could NOT be verified" in out)
 check("does NOT falsely clear analytics either way",
       "HALF-INSTALLED" not in out and "gtag loader present" not in out)
 check("does NOT falsely clear the feed",
       "PASS feed parses as XML" not in out and "closing tag" not in out)
 check("says the page did not load", "did not load" in out)
 check("exits non-zero", rc != 0)
+
+print("\n── Case 4 · --staging against an INDEXABLE site (must refuse) ──")
+s4 = serve("good", 8974)
+env4 = dict(os.environ); env4.pop("HTTPS_PROXY", None); env4["NO_PROXY"] = "*"
+p4 = subprocess.run(["bash", GATE, "http://127.0.0.1:8974", "--staging"],
+                    capture_output=True, text=True, timeout=120, env=env4, cwd=KIT)
+out4 = ANSI.sub("", p4.stdout + p4.stderr); s4.shutdown()
+check("an indexable staging is CAUGHT", "STAGING IS INDEXABLE" in out4)
+check("and blocks", p4.returncode != 0)
 
 print(f"\n  {passed} passed · {failed} failed")
 sys.exit(1 if failed else 0)

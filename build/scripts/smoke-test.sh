@@ -14,6 +14,9 @@ BASE="${1:-}"; [[ -z "$BASE" ]] && { echo "Usage: $0 <base-url> [--redirects=fil
 BASE="${BASE%/}"; REDIRECTS=""
 for a in "${@:2}"; do [[ "$a" == --redirects=* ]] && REDIRECTS="${a#*=}"; done
 
+STAGING=0
+for a in "$@"; do [[ "$a" == "--staging" ]] && STAGING=1; done
+
 PASS=0; FAIL=0; WARN=0
 ok(){ printf '\033[32m  PASS\033[0m %s\n' "$1"; PASS=$((PASS+1)); }
 no(){ printf '\033[31m  FAIL\033[0m %s\n' "$1"; FAIL=$((FAIL+1)); }
@@ -350,7 +353,41 @@ else
   no "asset budget could not be measured — product page did not load"
 fi
 
-hdr "9 · Redirects"
+hdr "9 · Indexability — the classic launch catastrophe"
+# Scope §7, verbatim: "A noindex shipped to production is the classic launch
+# catastrophe. Explicit checklist item at cutover." It was a checklist item and
+# NOT a gate assertion — and a checklist is prose, and prose loses. Three ways
+# a site goes invisible, each checked: the robots meta tag (what WordPress
+# emits when Settings → Reading → "Discourage search engines" is ticked — one
+# checkbox, easily left on from staging), the X-Robots-Tag header, and a
+# Disallow: / in robots.txt.
+#
+# --staging INVERTS the assertion: staging MUST be noindexed (§7 again), or it
+# leaks into the index as duplicate content before cutover.
+ROBOTS_BODY="$(FETCH "$BASE/robots.txt")"
+HOME_HDRS="$(HEADERS "$BASE/")"
+if ! GOT "$HOME" || ! grep -qi '^HTTP/' <<<"$HOME_HDRS"; then
+  no "indexability could NOT be verified — homepage or its headers did not load"
+else
+  NOIDX=0
+  grep -qiE '<meta[^>]+robots[^>]+noindex' <<<"$HOME" && NOIDX=1
+  grep -qiE '^x-robots-tag:.*noindex' <<<"$HOME_HDRS" && NOIDX=1
+  # robots.txt: a bare "Disallow: /" (not "Disallow: /wp-admin/") blocks everything.
+  if [[ -n "$ROBOTS_BODY" ]] && grep -qiE '^disallow:[[:space:]]*/[[:space:]]*$' <<<"$ROBOTS_BODY"; then
+    NOIDX=1
+  fi
+  if [[ "$STAGING" == 1 ]]; then
+    [[ "$NOIDX" == 1 ]] \
+      && ok "staging is noindexed, as it must be" \
+      || no "STAGING IS INDEXABLE — it will enter the index as duplicate content before cutover"
+  else
+    [[ "$NOIDX" == 1 ]] \
+      && no "THE SITE IS NOINDEXED IN PRODUCTION — WordPress Settings → Reading, the robots header, or robots.txt. Do not launch." \
+      || ok "site is indexable (no robots noindex, no header, no Disallow: /)"
+  fi
+fi
+
+hdr "10 · Redirects"
 if [[ -n "$REDIRECTS" && -f "$REDIRECTS" ]]; then
   n=0; bad=0
   while IFS=, read -r src tgt typ note; do
@@ -358,7 +395,12 @@ if [[ -n "$REDIRECTS" && -f "$REDIRECTS" ]]; then
     n=$((n+1))
     hops=$(curl -s -o /dev/null -w '%{num_redirects}' -L --max-time 20 "$BASE$src")
     final=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 20 "$BASE$src")
+    first=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE$src")
     if   [[ "$final" != "200" ]]; then no "$src → final $final"; bad=$((bad+1))
+    elif [[ "$typ" == "301" && "$first" != "301" && "$first" != "308" ]]; then
+      # The map promised a permanent redirect. A 302 keeps the OLD URL in the
+      # index and passes no equity — invisible at cutover, expensive at week 6.
+      no "$src → first hop is $first, map says 301"; bad=$((bad+1))
     elif [[ "$hops" -gt 1 ]];    then wr "$src → $hops hops (chain)"
     fi
   done < "$REDIRECTS"

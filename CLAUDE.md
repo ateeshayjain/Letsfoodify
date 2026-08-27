@@ -178,6 +178,9 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/WP-13-NOTES.md` | GA4 instrumentation + the DebugView launch runbook |
 | `tests/wp13-test.php` | 24 assertions. Purchase fires once; item ids join the feed; zero PII |
 | `tools/mobile-sweep.js` | Every screen, both widths, real Chromium — overflow named by selector |
+| `docs/LAUNCH-RUNBOOK.md` | **Launch day.** Cutover, the noindex flip, rollback, hypercare |
+| `docs/WP-14-NOTES.md` | The gate's noindex hole, 301 strictness, run-all-tests |
+| `run-all-tests.sh` | 23 suites, one command. A suite that cannot run is a FAIL |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |
