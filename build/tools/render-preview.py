@@ -117,16 +117,26 @@ def styles_css():
 
 
 # ── fixtures for dynamic blocks ───────────────────────────────────────────────
+# (name, range, time, price, was, hue, rating, review count, servings, flags)
+# Flags exercise every card state the wireframe names: bestseller, new (with no
+# reviews yet — stars row hidden), sold out, Jain. The sale pair shows the SAVE
+# floor: 225→185 is 17% and gets a badge; 225→195 is 13% and does not.
 PRODUCTS = [
-    ("Express Dal Fry",        "Express",       "6 MIN", 185, 210, "#D9822B", "4.7", 84),
-    ("Idli Sambhar",           "Express",       "6 MIN", 195, 225, "#E0A03C", "4.8", 62),
-    ("Express Dal Khichdi",    "Express",       "6 MIN", 185, 0,   "#CE9126", "4.5", 41),
-    ("Aloo ka Mazaa",          "Express",       "5 MIN", 100, 0,   "#C98A34", "4.4", 28),
-    ("Super Millet Idli",      "Express",       "6 MIN", 210, 0,   "#B98D3E", "4.6", 33),   # nothing on the review page may outrun the claim
-    ("Pav Bhaji",              "Express",       "6 MIN", 185, 0,   "#C2571F", "4.7", 57),
-    ("Coconut Red Chutney",    "Flavors",       "1 MIN", 240, 0,   "#4E8B66", "4.5", 19),
-    ("Masala Chai",            "Hot & Fresh",   "3 MIN", 375, 0,   "#A6603A", "4.8", 71),
+    ("Express Dal Fry",        "Express",       "6 MIN", 185, 225, "#D9822B", "4.7", 84, 2, {"bestseller", "jain"}),
+    ("Idli Sambhar",           "Express",       "6 MIN", 195, 225, "#E0A03C", "4.8", 62, 2, {"bestseller"}),
+    ("Express Dal Khichdi",    "Express",       "6 MIN", 185, 0,   "#CE9126", "4.5", 41, 2, set()),
+    ("Aloo ka Mazaa",          "Express",       "5 MIN", 100, 0,   "#C98A34", "4.4", 28, 1, {"soldout"}),
+    ("Super Millet Idli",      "Express",       "6 MIN", 210, 0,   "#B98D3E", "0",   0,  2, {"new"}),   # nothing on the review page may outrun the claim
+    ("Pav Bhaji",              "Express",       "6 MIN", 185, 0,   "#C2571F", "4.7", 57, 2, set()),
+    ("Coconut Red Chutney",    "Flavors",       "1 MIN", 240, 0,   "#4E8B66", "4.5", 19, 4, {"jain"}),
+    ("Masala Chai",            "Hot & Fresh",   "3 MIN", 375, 0,   "#A6603A", "4.8", 71, 1, set()),
 ]
+
+
+def badge_state(p):
+    f = p[9]
+    return {"in_stock": "soldout" not in f, "bestseller": "bestseller" in f,
+            "new": "new" in f, "dietary": ["jain"] if "jain" in f else []}
 BOWL = ('<div class="fx-bowl" style="--h:{hue}"><span class="fx-time">{time}</span></div>')
 
 
@@ -155,11 +165,41 @@ def prep_chip(p):
 
 
 def price_html(p, size_cls=""):
-    """WooCommerce's price markup: <del> old, <ins> current, when on sale."""
+    """WooCommerce's price markup: <del> old, <ins> current, when on sale — plus
+    the theme's SAVE badge, decided by the theme's own floor."""
     _n, _r, _t, price, was, *_ = p
     amt = lambda v: f'<span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>{v}</bdi></span>'
     inner = f'<del aria-hidden="true">{amt(was)}</del> <ins>{amt(price)}</ins>' if was else amt(price)
+    save = php("echo foodify_save_badge((float)$a[0], (float)$a[1])", was, price) if was else ""
+    if save:
+        inner += f' <span class="fd-save">{html.escape(save)}</span>'
     return f'<div class="wc-block-components-product-price wp-block-woocommerce-product-price {size_cls}">{inner}</div>'
+
+
+def card_yield(p):
+    line = php("echo foodify_card_yield($a[0])", {"servings": str(p[8]), "prep_minutes": p[2].split()[0]})
+    return f'<p class="fd-yield">{html.escape(line)}</p>' if line else ""
+
+
+# The product page's fixture data, in the shape the theme's own functions take.
+# Allergens and the FSSAI licence are deliberately EMPTY: the page must show
+# "Not provided" for both, and the preview showing a plausible value is how
+# the placeholder licence got into four templates in the first place.
+PDP_VALUES = {
+    "ingredients": "Split yellow lentils, onion, tomato, ghee, cumin, turmeric, coriander, ginger, garlic, salt, red chilli.",
+    "allergens": "", "net_quantity": "80 g", "servings": "2", "cooked_weight": "260 g", "diet": "Vegetarian",
+    "storage": "Cool, dry place. Use within 3 days of opening.", "prep_minutes": "6",
+    "mrp": "₹225.00 (incl. all taxes)", "best_before": "14 Aug 2027", "shelf_life": "12 months",
+    "origin": "India", "fssai": "", "marketed_by": "AVAC Ventures, Noida 201304", "care": "care@letsfoodify.com",
+}
+PDP_NUTRITION = {"energy": "312 kcal", "protein": "14 g", "carbs": "44 g", "sugars": "3 g", "fat": "8 g", "sodium": "620 mg"}
+PDP_ABOUT = ("<p>The dal you would make on a Tuesday if you had the hour: yellow moong and toor, tempered with "
+             "cumin, tomato and a little ghee, then dried slowly so the tempering survives.</p>"
+             "<p>Built for the places a stove is not — a train berth, a hostel drawer, a hotel kettle, a desk at "
+             "nine at night. One pack is dinner for two, or a very good lunch for one.</p>")
+PDP_FAQ = ("Q: Does it need a stove?\nA: No. Boiling water from a kettle is enough.\n"
+           "Q: How long does an opened pack keep?\nA: Three days, sealed, in a cool dry place.\n"
+           "Q: Is it Jain?\nA: This one is — no onion, no garlic. Look for the Jain badge on other packs.")
 
 
 def loop_card(inner_markup, p, i):
@@ -202,8 +242,8 @@ def dynamic(name, attrs, inner):
     if name == "post-title":
         lvl = a.get("level", 2)
         if CUR and a.get("__woocommerceNamespace"):
-            return (prep_chip(CUR)
-                    + f'<h{lvl} class="wp-block-post-title {cls_for(a)}"><a href="#">{html.escape(CUR[0])}</a></h{lvl}>')
+            return (f'<h{lvl} class="wp-block-post-title {cls_for(a)}"><a href="#">{html.escape(CUR[0])}</a></h{lvl}>'
+                    + card_yield(CUR))
         return f'<h{lvl} class="fx-posttitle {cls_for(a)}">Express Dal Fry</h{lvl}>'
     if name == "query-title":
         return f'<h1 class="{cls_for(a)}">Foodify Express</h1>'
@@ -238,10 +278,12 @@ def dynamic(name, attrs, inner):
                 'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'
                 '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a></div>')
     if name == "woocommerce/product-image" and CUR:
-        return f'<div class="wc-block-components-product-image"><a href="#">{BOWL.format(hue=CUR[5], time=CUR[2])}</a></div>'
+        badges = php("echo foodify_render_badges(foodify_card_badges($a[0]))", badge_state(CUR))
+        return f'<div class="wc-block-components-product-image"><a href="#">{BOWL.format(hue=CUR[5], time=CUR[2])}</a>{badges}</div>'
     if name == "woocommerce/product-button" and CUR:
+        label = "Sold out" if "soldout" in CUR[9] else "Add to cart"
         return ('<div class="wp-block-button wc-block-components-product-button">'
-                '<a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>')
+                f'<a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">{label}</a></div>')
     if name == "woocommerce/breadcrumbs":
         return '<p class="fx-crumb"><a href="#">Home</a> / <a href="#">Express</a> / Dal Fry</p>'
     if name == "woocommerce/product-image-gallery":
@@ -268,75 +310,35 @@ def dynamic(name, attrs, inner):
         )
     if name == "woocommerce/product-rating":
         if CUR:
+            if CUR[7] == 0:
+                return ""   # the theme hides the row at zero reviews (product-display.php)
             return (f'<div class="wc-block-components-product-rating">{stars(CUR[6])} '
                     f'<span class="fd-rating-count">{CUR[7]} reviews</span></div>')
         return f'<div class="fx-rating">{stars("4.7")} <span class="fx-rc">84 reviews</span></div>'
     if name == "woocommerce/product-price":
         if CUR:
             return price_html(CUR, cls_for(a))
-        return f'<p class="fx-price fx-price--lg {cls_for(a)}"><s>₹210</s> ₹185 <span class="fx-off">12% off</span></p>'
+        # The product page: the price, then the yield strip the theme appends.
+        parts = json.loads(php("echo json_encode(foodify_yield_parts($a[0]))", PDP_VALUES))
+        strip = "".join(f"<span>{html.escape(x)}</span>" for x in parts)
+        return price_html(PRODUCTS[0], "fx-price--lg " + cls_for(a)) + f'<p class="fd-yield-strip">{strip}</p>'
     if name == "woocommerce/product-stock-indicator":
         return '<p class="fx-stock">In stock</p>'
     if name == "woocommerce/add-to-cart-form":
-        return ('<div class="fx-atc"><div class="fx-qty"><button>−</button><span>1</span><button>+</button></div>'
-                '<button class="wp-element-button fx-add fx-add--lg">Add to bag · ₹185</button></div>')
+        # WooCommerce's form: a number input for quantity and the real button.
+        # A <form class="cart"> so the theme's sticky bar can watch it here too.
+        return ('<form class="cart fx-atc"><div class="quantity"><label class="screen-reader-text" for="fx-qty">Quantity</label>'
+                '<input type="number" id="fx-qty" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div>'
+                '<button type="button" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">Add to cart</button></form>')
     if name == "woocommerce/product-details":
-        # In the theme these three render from inc/product-spec.php on
-        # woocommerce_after_single_product_summary (priorities 6 and 12), which
-        # is BEFORE this block in the page body. PHP hooks have no block comment
-        # to hang off, so the preview emits them here, in the order PHP would.
-        steps = [
-            (1, "Tip it into a bowl", "The whole pack. No pan, no measuring."),
-            (2, "Add boiling water", "To the line on the pack, and stir once."),
-            (3, "Wait 6 minutes", "Cover it. Stir again and eat."),
-        ]
-        prep = ('<section class="fd-prep"><h2 class="fd-prep__title">How you make it</h2>'
-                '<ol class="fd-prep__steps">' + "".join(
-                    f'<li class="fd-prep__step"><span class="fd-prep__n">{n}</span>'
-                    f'<span class="fd-prep__body"><strong>{t}</strong><span>{d}</span></span></li>'
-                    for n, t, d in steps) + "</ol></section>")
-
-        contents = [
-            ("Ingredients", "Split yellow lentils, onion, tomato, ghee, cumin, turmeric, "
-                            "coriander, ginger, garlic, salt, red chilli.", True),
-            ("Allergens", "", False),          # deliberately missing — see below
-            ("Net quantity", "80 g", True),
-            ("Servings per pack", "2", True),
-            ("Veg / non-veg", "● Vegetarian", True),
-            ("Storage", "Cool, dry place. Use within 3 days of opening.", True),
-        ]
-        label = [
-            ("MRP", "₹210.00 (incl. all taxes)", True),
-            ("Best before", "14 Aug 2027", True),
-            ("Shelf life", "12 months", True),
-            ("Country of origin", "India", True),
-            ("FSSAI licence", "", False),      # WP-08: not configured yet
-            ("Marketed by", "AVAC Ventures, Noida 201304", True),
-            ("Consumer care", "care@letsfoodify.com", True),
-        ]
-        nutrition = [("Energy", "312 kcal"), ("Protein", "14 g"), ("Carbohydrate", "44 g"),
-                     ("of which sugars", "3 g"), ("Fat", "8 g"), ("Sodium", "620 mg")]
-
-        def rows(items):
-            out = ""
-            for k, v, ok in items:
-                cls = "" if ok else ' class="is-missing"'
-                out += f"<div{cls}><dt>{k}</dt><dd>{v if ok else 'Not provided'}</dd></div>"
-            return out
-
-        nut = "".join(f"<tr><th scope=\"row\">{k}</th><td>{v}</td></tr>" for k, v in nutrition)
-
-        spec = (
-            '<div class="fd-spec">'
-            f'<section class="fd-spec__group is-contents"><h2>What&rsquo;s in it</h2><dl>{rows(contents)}</dl>'
-            f'<h3 class="fd-spec__nutrition-title">Nutrition, per serving</h3>'
-            f'<table class="fd-nutrition"><tbody>{nut}</tbody></table></section>'
-            f'<section class="fd-spec__group is-label"><h2>Pack &amp; label</h2><dl>{rows(label)}</dl>'
-            '<p class="fd-spec__note">These are the pack declarations. The same fields feed the Google '
-            'product listing, so what you read here is what Google is told.</p></section>'
-            "</div>")
-
-        return prep + spec
+        # The theme renders the tabbed body from inc/product-spec.php on
+        # woocommerce_after_single_product_summary — BEFORE this block in the
+        # page body. The preview calls the SAME renderer with fixture data.
+        return php(
+            "echo foodify_render_pdp_body(['about'=>$a[0],'taste'=>foodify_taste_chips($a[1]),"
+            "'groups'=>foodify_spec_model($a[2]),'nutrition'=>foodify_nutrition_rows($a[3]),"
+            "'steps'=>foodify_prep_steps('hot water','6'),'faq'=>foodify_faq_pairs($a[4])])",
+            PDP_ABOUT, "Savoury, Mildly spicy, Tangy", PDP_VALUES, PDP_NUTRITION, PDP_FAQ)
 
     if name == "woocommerce/product-reviews":
         cards = "".join(
@@ -894,6 +896,26 @@ BODY_CLASS = {
 }
 
 
+def php(expr, *args):
+    """Evaluate one PHP expression against the theme's PURE halves and return its
+    output. The card badges, yield lines, SAVE badge and the whole tabbed PDP
+    body are rendered by the theme's own functions with fixture data — the
+    preview cannot drift from the theme because it does not reimplement it.
+    `args` are passed as JSON in $argv and decoded into $a[0], $a[1], ..."""
+    import subprocess
+    inc = os.path.join(THEME, "inc")
+    prelude = (
+        "define('ABSPATH', __DIR__);"
+        f"require '{inc}/product-spec.php'; require '{inc}/business-profile.php';"
+        "$a = array_map(fn($j) => json_decode($j, true), array_slice($argv, 1));"
+    )
+    r = subprocess.run(["php", "-r", prelude + expr + ";"] + [json.dumps(x) for x in args],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        raise SystemExit(f"php bridge failed for {expr}:\n{r.stderr}")
+    return r.stdout
+
+
 def tagline_from_bootstrap():
     src = open(os.path.join(KIT, "scripts", "bootstrap.sh")).read()
     m = re.search(r'wp option update blogdescription "([^"]+)"', src)
@@ -901,6 +923,9 @@ def tagline_from_bootstrap():
 
 
 TAGLINE = tagline_from_bootstrap()
+DELIVERY = php("echo foodify_delivery_promise()")
+CLAIM_MINUTES = php("echo foodify_claim_minutes()")
+PDP_SCRIPT = php("echo foodify_pdp_script()")
 
 
 def main():
@@ -929,6 +954,16 @@ def main():
         # The tagline is the WordPress site description, which bootstrap.sh sets.
         # Read from that line, so the preview's hero says what the site's will.
         body = body.replace("<!--FOODIFY_TAGLINE-->", TAGLINE)
+        body = body.replace("<!--FOODIFY_DELIVERY-->", DELIVERY)
+        body = body.replace("<!--FOODIFY_CLAIM_MINUTES-->", CLAIM_MINUTES)
+        if sid == "product":
+            # What inc/product-display.php prints in wp_footer on a product page:
+            # the sticky bar (hidden until the real button scrolls away) and the
+            # page's one script, embedded verbatim from the theme.
+            body += ('<div class="fd-sticky-atc" data-unit="185" hidden><div class="fd-sticky-atc__price">'
+                     '<strong class="fd-sticky-atc__total">₹185</strong><span class="fd-sticky-atc__qty">1 pack</span></div>'
+                     '<button type="button" class="wp-element-button">Add to cart</button></div>'
+                     f'<script>{PDP_SCRIPT}</script>')
         tabs.append(f'<button class="tab" role="tab" aria-selected="{str(i == 0).lower()}" data-s="{sid}">{label}</button>')
         panels.append(f'<div class="fx-shell {BODY_CLASS.get(sid, "")}" id="s-{sid}"{"" if i == 0 else " hidden"}>{body}</div>')
 

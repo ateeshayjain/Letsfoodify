@@ -142,3 +142,52 @@ and subscriptions (paid — rule 5), a PDP pincode checker (sends every browser'
 PIN to a third party pre-purchase, and a delivery date needs the WP-11 courier
 API). "Fresh" was declined as a word: for a dehydrated product it is a claim the
 site would have to argue; "ghar ka khana" is one it makes good on.
+
+## Round 4, same day — the card and the product page (wireframes 01–03)
+
+The client's own wireframes, built. What landed: two badges at most on a card
+(commercial left — Sold out beats Bestseller beats New; dietary right), a
+second line that says "Serves 2 · 6 min", a SAVE badge that only appears at
+15% or more, stars hidden entirely at zero reviews, and "Sold out" on the
+button instead of "Add to cart". On the product page: a delivery-promise pill
+under the title, a yield strip under the price (Net · Makes · servings · Ready
+in), five assurances directly under the button, a tabbed body on desktop that
+is the SAME markup a phone reads as accordions, Pack & label always open after
+the tabs, and a sticky add-to-cart bar on the phone that appears only once the
+real button has scrolled away.
+
+Three of these were wrong in the first build and were caught by looking at the
+rendered page, which is the only reason they are not in the repo:
+
+**The tab strip drew every title on top of every other.**
+`grid-template-columns: repeat(auto-fit, minmax(0, max-content))` is invalid —
+auto-repeat needs a definite track size — so the whole declaration was dropped
+and four 12px boxes tiled while their labels painted through each other. It is
+now a wrapping flex row: titles size to their text, the open panel is 100% wide
+and wraps below them, with no column count to keep in sync.
+
+**The sticky bar never hid.** The script sets `bar.hidden = true`, and
+`.fd-sticky-atc { display: flex }` outranks the browser's own bare
+`[hidden] { display: none }`. The attribute flipped and nothing moved, so the
+bar sat over the page permanently — including while the real button was on
+screen.
+
+**The Jain badge was pushed off the card.** A four-up card's image is ~140px,
+narrower than "Bestseller" and "Jain" side by side; `space-between` does not
+shrink a nowrap badge, it pushes the second one out. Badges now wrap.
+
+All three are invisible to a page-overflow check, which is what the browser
+sweep was. It now also fails on a box narrower than the text inside it (what a
+dropped grid track actually looks like) and on an element escaping the box it
+is overlaid on. Both were proven by running them against the broken build
+before the fix.
+
+Two duplications went with the wave: the contents table and the Pack & label
+table are one renderer and one set of CSS rules (they were two copies, and the
+copy the label table used had lost its layout when the old side-by-side wrapper
+was deleted), and the quantity box is one rule for the cart and the product
+page rather than a cart-scoped copy.
+
+Still client-gated, unchanged from round 3: pack-of-3/5 pricing, bundle
+pairings, a same-day NCR promise, the FSSAI number, and the per-SKU taste,
+cooked-weight and FAQ copy the new fields are waiting for.

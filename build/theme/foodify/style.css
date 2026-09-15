@@ -387,7 +387,14 @@ input:focus, select:focus, textarea:focus {
 .fd-pdp__buy > h1 { margin-bottom: var(--wp--preset--spacing--20); }
 .fd-pdp__buy .wc-block-components-product-rating { margin-bottom: var(--wp--preset--spacing--30); }
 .fd-pdp__buy .wp-block-post-excerpt { color: var(--wp--preset--color--mute); line-height: 1.6; }
-.fd-pdp__buy form.cart { margin-top: var(--wp--preset--spacing--40); }
+/* Quantity and Add to cart are one row, and the quantity box is sized for the
+   number it holds — a full-width input beside the button reads as the primary
+   field, which it is not. */
+.fd-pdp__buy form.cart {
+  display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--wp--preset--spacing--30);
+  margin-top: var(--wp--preset--spacing--40);
+}
+.fd-pdp__buy form.cart .single_add_to_cart_button { flex: 1 1 12rem; }
 
 /* Assurances: three short facts, not a paragraph in a grey box. A prose block
    here gets skipped, and each of these is a separate objection being answered. */
@@ -440,44 +447,19 @@ input:focus, select:focus, textarea:focus {
 .fd-prep__body strong { font-size: var(--wp--preset--font-size--md); }
 .fd-prep__body span { color: var(--wp--preset--color--kraft-deep); font-size: var(--wp--preset--font-size--sm); line-height: 1.55; }   /* kraft-deep, not mute: 4.98:1 on the kraft band vs mute's 3.97 */
 
-/* Two fact tables, side by side, weighted differently on purpose: what a buyer
-   asks reads as content, what a regulator asks reads as a label. */
-.fd-spec {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: var(--wp--preset--spacing--70);
-  margin: var(--wp--preset--spacing--70) 0;
-}
+/* Fact tables. There is ONE set of table rules, keyed on .fd-spec__list, used
+   by the contents table inside the Ingredients tab and by the always-open Pack
+   & label table after the tabs — see the block at the end of this file. The
+   side-by-side .fd-spec wrapper the old PDP used is gone with the layout that
+   needed it; its table rules were a second copy of the same declarations, and
+   this file is not going to carry two definitions of one table again. */
 .fd-spec__group h2 {
   font-size: var(--wp--preset--font-size--lg);
   margin: 0 0 var(--wp--preset--spacing--40);
   padding-bottom: var(--wp--preset--spacing--20);
   border-bottom: 1px solid var(--wp--preset--color--line-strong);
 }
-.fd-spec dl { margin: 0; }
-.fd-spec dl > div {
-  display: grid; grid-template-columns: 11rem 1fr;
-  gap: var(--wp--preset--spacing--30);
-  padding: var(--wp--preset--spacing--30) 0;
-  border-bottom: 1px solid var(--wp--preset--color--line);
-}
-.fd-spec dt { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
-.fd-spec dd { margin: 0; line-height: 1.55; }
 .fd-spec__group.is-label dd { font-size: var(--wp--preset--font-size--sm); }
-
-/* A declaration nobody supplied. Marked by a WORD as well as a colour — the
-   absence of an allergen declaration must never read as "contains none", and a
-   colour alone says nothing to a screen reader or a colour-blind reader. */
-.fd-spec dl > div.is-missing dd {
-  color: var(--wp--preset--color--flame-ink);
-  font-style: italic;
-}
-.fd-spec dl > div.is-missing dd::after {
-  content: " — ask us before ordering if this matters to you";
-  color: var(--wp--preset--color--mute);
-  font-style: normal;
-  font-size: var(--wp--preset--font-size--xs);
-}
 .fd-spec__note { margin-top: var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--xs); line-height: 1.6; }
 
 .fd-spec__nutrition-title {
@@ -493,11 +475,10 @@ input:focus, select:focus, textarea:focus {
 .fd-nutrition th { color: var(--wp--preset--color--mute); }
 .fd-nutrition td { text-align: right; font-variant-numeric: tabular-nums; }
 
-@media (max-width: 782px) {
+/* 781, not 782: core's own column breakpoint is min-width 782, so a max-width
+   782 rule fires on the same pixel as the desktop layout it contradicts. */
+@media (max-width: 781px) {
   .fd-prep__steps { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--40); }
-  .fd-spec { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--60); }
-  .fd-spec dl > div { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--10); }
-  .fd-spec dt { font-size: var(--wp--preset--font-size--sm); }
 }
 
 /* Trust strip — four facts. It carried isStackedOnMobile:false, which is an
@@ -724,8 +705,11 @@ input:focus, select:focus, textarea:focus {
 .woocommerce-cart table.shop_table td.product-subtotal {
   text-align: right; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums;
 }
-.woocommerce-cart .quantity { display: inline-flex; }
-.woocommerce-cart .quantity input.qty {
+/* One quantity box, wherever WooCommerce prints one — the cart row and the
+   product page's add-to-cart form use the same control, so they get the same
+   rule rather than a second copy scoped to the cart. */
+.quantity { display: inline-flex; }
+.quantity input.qty {
   width: 4.5rem; text-align: center; font-weight: 600;
   padding: 0 var(--wp--preset--spacing--20);
 }
@@ -799,6 +783,12 @@ input:focus, select:focus, textarea:focus {
      giving up the colour dot and half its padding, not by truncating. */
   .fd-products .fd-chip { padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20); gap: 0; white-space: nowrap; max-width: 100%; }
   .fd-products .fd-chip::before { display: none; }
+  /* Same arithmetic for the button: "Add to cart" broken across two lines in a
+     150px card reads as a squeezed layout, and the words are the one thing on
+     the card that must not look uncertain. It gives up side padding instead. */
+  .fd-products .wc-block-components-product-button .wp-block-button__link {
+    padding-inline: var(--wp--preset--spacing--20); white-space: nowrap;
+  }
 
   /* The filter control. */
   .fd-shop__filters { margin-bottom: var(--wp--preset--spacing--40); }
@@ -873,3 +863,167 @@ input:focus, select:focus, textarea:focus {
   .woocommerce-cart .cart_totals table.shop_table_responsive td { width: auto; flex: 0 0 auto; }
   .woocommerce-cart .cart_totals table.shop_table_responsive td::before { display: none; }
 }
+
+/* ===========================================================================
+   WIREFRAMES 01–03 (design playbook §4, 2026-09-15) — card anatomy, PDP body
+   =========================================================================== */
+
+/* Card badges over the image: left commercial, right dietary, never more. */
+.fd-products .wc-block-components-product-image { position: relative; }
+/* Commercial badge left, dietary badge right — and they WRAP. A four-up card's
+   image is about 140px wide, narrower than "Bestseller" and "Jain" side by
+   side, and flex does not shrink a nowrap badge: space-between pushes the
+   second one clean out of the picture and off the card, with no page overflow
+   for a sweep to notice. Wrapped, the dietary badge drops to a second line and
+   keeps its right edge (margin-left:auto still applies when it is alone). */
+.fd-badges {
+  position: absolute; top: var(--wp--preset--spacing--20); left: var(--wp--preset--spacing--20); right: var(--wp--preset--spacing--20);
+  display: flex; flex-wrap: wrap; justify-content: space-between;
+  row-gap: var(--wp--preset--spacing--10); pointer-events: none;
+}
+.fd-badge {
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+  border-radius: var(--wp--custom--radius--pill);
+}
+.fd-badge--leaf { background: var(--wp--preset--color--leaf-wash); color: var(--wp--preset--color--leaf-ink); margin-left: auto; }
+.fd-badge--out  { background: var(--wp--preset--color--char); color: var(--wp--preset--color--paper); }
+
+/* The card's second line. */
+.fd-products .fd-yield { margin: 0; font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute); }
+
+/* SAVE — only ever rendered at the floor or above (foodify_save_badge). */
+.fd-save {
+  display: inline-block; vertical-align: middle;
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  background: var(--wp--preset--color--flame-wash); color: var(--wp--preset--color--flame-deep);
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+  border-radius: var(--wp--custom--radius--pill);
+  margin-left: var(--wp--preset--spacing--10);
+}
+
+/* Product page: the promise pill under the title, the yield strip under the price. */
+.fd-promise {
+  display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--20);
+  font-family: var(--wp--preset--font-family--ui); font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--wp--preset--color--leaf-ink); background: var(--wp--preset--color--leaf-wash);
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--30);
+  border-radius: var(--wp--custom--radius--pill);
+}
+.fd-promise::before { content: ""; width: var(--wp--preset--spacing--20); height: var(--wp--preset--spacing--20); border-radius: 50%; background: var(--wp--preset--color--leaf); }
+.fd-yield-strip {
+  display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--10) 0;
+  margin: var(--wp--preset--spacing--30) 0 0;
+  font-size: var(--wp--preset--font-size--sm); font-weight: 600; line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.fd-yield-strip span { padding: 0 var(--wp--preset--spacing--30); border-left: 1px solid var(--wp--preset--color--line-strong); }
+.fd-yield-strip span:first-child { padding-left: 0; border-left: 0; }
+
+/* The five assurances, one line each, as a list not a paragraph pile. */
+.fd-assure { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--wp--preset--spacing--40); }
+.fd-assure > :last-child { grid-column: 1 / -1; margin-top: var(--wp--preset--spacing--20); }
+
+/* The tabbed body. Tabs on desktop: sections become their title button in
+   row one and their panel in row two, via display:contents on the section.
+   Accordions on a phone: sections stack, each button toggles its own panel. */
+.fd-tabs { margin: var(--wp--preset--spacing--70) 0; }
+.fd-tab__title { margin: 0; font-family: var(--wp--preset--font-family--ui); font-size: var(--wp--preset--font-size--base); }
+.fd-tab__button {
+  width: 100%; text-align: left;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--wp--preset--spacing--30);
+  min-height: var(--wp--custom--tap-target);
+  padding: var(--wp--preset--spacing--30) 0;
+  background: none; border: 0; border-bottom: 1px solid var(--wp--preset--color--line);
+  font: inherit; font-weight: 600; color: var(--wp--preset--color--char); cursor: pointer;
+}
+.fd-tab__button::after {
+  content: ""; flex: 0 0 auto; width: .5em; height: .5em;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: translateY(-25%) rotate(45deg);
+}
+.fd-tab.is-open > .fd-tab__title > .fd-tab__button::after { transform: translateY(25%) rotate(-135deg); }
+.fd-tab__panel { padding: var(--wp--preset--spacing--40) 0 var(--wp--preset--spacing--50); line-height: 1.6; }
+.fd-tab__panel > :first-child { margin-top: 0; }
+.fd-spec__list { margin: 0; }
+.fd-spec__list > div {
+  display: grid; grid-template-columns: 11rem 1fr; gap: var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--30) 0; border-bottom: 1px solid var(--wp--preset--color--line);
+}
+.fd-spec__list dt { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-spec__list dd { margin: 0; line-height: 1.55; }
+.fd-spec__list > div.is-missing dd { color: var(--wp--preset--color--flame-ink); font-style: italic; }
+.fd-spec__list > div.is-missing dd::after {
+  content: " — ask us before ordering if this matters to you";
+  color: var(--wp--preset--color--mute); font-style: normal; font-size: var(--wp--preset--font-size--xs);
+}
+.fd-tab__panel .fd-prep__steps { grid-template-columns: repeat(3, 1fr); }
+.fd-taste { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20); margin: var(--wp--preset--spacing--40) 0 0; }
+.fd-taste__label { font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute); margin-right: var(--wp--preset--spacing--10); }
+.fd-taste__chip {
+  font-size: var(--wp--preset--font-size--sm); font-weight: 600;
+  background: var(--wp--preset--color--kraft-pale); color: var(--wp--preset--color--kraft-deep);
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--30); border-radius: var(--wp--custom--radius--pill);
+}
+.fd-faq { margin: 0; }
+.fd-faq > div { padding: var(--wp--preset--spacing--30) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
+.fd-faq dt { font-weight: 600; margin-bottom: var(--wp--preset--spacing--10); }
+.fd-faq dd { margin: 0; color: var(--wp--preset--color--mute); }
+/* Pack & label, always open, after the tabs. */
+.fd-label { margin: var(--wp--preset--spacing--70) 0 0; max-width: 40rem; }
+
+@media (min-width: 782px) {
+  /* Tabs, from the same markup the phone reads as accordions: the sections are
+     display:contents, so their titles and panels become siblings in one flex
+     row. The titles size to their text; the open panel is 100% wide, so it
+     WRAPS to the next line and every title stays on the first — with any
+     number of tabs, and without a column count anyone has to keep in sync.
+     (A grid with repeat(auto-fit, minmax(0, max-content)) looks like it does
+     this and does not: auto-repeat needs a definite track size, so the whole
+     declaration is invalid and every title lands in one cell, on top of the
+     others. It shipped that way to the preview and was caught by eye.) */
+  .fd-tabs { display: flex; flex-wrap: wrap; column-gap: var(--wp--preset--spacing--60); }
+  .fd-tab { display: contents; }
+  .fd-tab__title { order: 1; }
+  .fd-tab__button { border-bottom: 2px solid transparent; padding: var(--wp--preset--spacing--30) 0; color: var(--wp--preset--color--mute); white-space: nowrap; }
+  .fd-tab__button::after { display: none; }
+  .fd-tab.is-open > .fd-tab__title > .fd-tab__button { color: var(--wp--preset--color--char); border-bottom-color: var(--wp--preset--color--flame-ink); }
+  .fd-tab__panel { order: 2; width: 100%; border-top: 1px solid var(--wp--preset--color--line); padding-top: var(--wp--preset--spacing--50); }
+}
+@media (max-width: 781px) {
+  .fd-assure { grid-template-columns: 1fr; }
+  /* Four facts do not fit one phone line, and a wrapped divider leaves a bar
+     hanging at the start of line two — the divider belongs BETWEEN facts, and
+     CSS cannot tell which span begins a line. Two columns, no dividers. */
+  .fd-yield-strip {
+    display: grid; grid-template-columns: repeat(2, minmax(0, max-content));
+    column-gap: var(--wp--preset--spacing--50); row-gap: var(--wp--preset--spacing--10);
+  }
+  .fd-yield-strip span { padding: 0; border-left: 0; }
+  .fd-tab__panel .fd-prep__steps { grid-template-columns: 1fr; }
+  .fd-spec__list > div { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--10); }
+}
+
+/* The sticky bar. Appears only when the real button has scrolled away (the
+   script decides); its button presses the real one. Clears the phone's
+   home-indicator inset. */
+.fd-sticky-atc {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--40) calc(var(--wp--preset--spacing--30) + env(safe-area-inset-bottom, 0px));
+  background: var(--wp--preset--color--char); color: var(--wp--preset--color--paper);
+}
+/* The script hides this bar with el.hidden — and the browser's own
+   [hidden]{display:none} is a bare attribute selector, which the class rule
+   above outranks. Without this line the bar sits over the page permanently,
+   including while the real Add to cart button is on screen: the attribute
+   flips, nothing moves. Any class rule that sets display on an element the
+   script toggles needs its own [hidden] escape. */
+.fd-sticky-atc[hidden] { display: none; }
+.fd-sticky-atc__price { display: flex; flex-direction: column; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.fd-sticky-atc__total { font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); }
+.fd-sticky-atc__qty { font-size: var(--wp--preset--font-size--xs); opacity: .8; }
+.fd-sticky-atc .wp-element-button { flex: 0 0 auto; }
+@media (min-width: 782px) { .fd-sticky-atc { display: none; } }

@@ -111,8 +111,128 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 		return $html;
 	}
 
-	return foodify_prep_chip_html( $product ) . $html;
+	// Wireframe 01, rule 3: the card is two lines — name, then "Serves 2 · 6 min".
+	// The prep chip moved to the product page; on a two-up phone card the yield
+	// line answers the two questions a card gets asked in the space a chip took.
+	$yield = foodify_card_yield( [
+		'servings'     => (string) $product->get_meta( '_foodify_servings' ),
+		'prep_minutes' => (string) $product->get_meta( '_foodify_prep_minutes' ),
+	] );
+	return $html . ( '' !== $yield ? '<p class="fd-yield">' . esc_html( $yield ) . '</p>' : '' );
 }, 10, 2 );
+
+/* -------------------------------------------------------------------------
+ * Wireframes 01–03 (design playbook §4). Pure rules live in product-spec.php;
+ * these are the hooks that read the product and call them.
+ * ---------------------------------------------------------------------- */
+
+/** Product ids in the top eight by sales. Cached; the badge is not worth a query per card. */
+function foodify_bestseller_ids(): array {
+	$ids = get_transient( 'foodify_bestsellers' );
+	if ( ! is_array( $ids ) ) {
+		$ids = function_exists( 'wc_get_products' )
+			? array_map( 'intval', (array) wc_get_products( [ 'limit' => 8, 'orderby' => 'popularity', 'status' => 'publish', 'return' => 'ids' ] ) )
+			: [];
+		set_transient( 'foodify_bestsellers', $ids, 12 * HOUR_IN_SECONDS );
+	}
+	return $ids;
+}
+
+/** The badge inputs for one product, as foodify_card_badges() wants them. */
+function foodify_badge_state( WC_Product $product ): array {
+	$created = $product->get_date_created();
+	return [
+		'in_stock'   => $product->is_in_stock(),
+		'bestseller' => in_array( $product->get_id(), foodify_bestseller_ids(), true ),
+		'new'        => $created instanceof WC_DateTime && $created->getTimestamp() > time() - 30 * DAY_IN_SECONDS,
+		'dietary'    => (array) wc_get_product_terms( $product->get_id(), foodify_attribute_taxonomy( 'dietary' ), [ 'fields' => 'slugs' ] ),
+	];
+}
+
+/** Wireframe 01, rule 2: badges over the card image. Max two, fixed positions. */
+add_filter( 'render_block_woocommerce/product-image', static function ( string $html, array $block ): string {
+	if ( '' === $html || empty( $block['attrs']['isDescendentOfQueryLoop'] ) || ! function_exists( 'wc_get_product' ) ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
+	if ( ! $product instanceof WC_Product ) {
+		return $html;
+	}
+	$badges = foodify_render_badges( foodify_card_badges( foodify_badge_state( $product ) ) );
+	if ( '' === $badges ) {
+		return $html;
+	}
+	// Inside the wrapper, after the image, so the wrapper's position anchors them.
+	$pos = strrpos( $html, '</div>' );
+	return false === $pos ? $html . $badges : substr( $html, 0, $pos ) . $badges . substr( $html, $pos );
+}, 10, 2 );
+
+/** Wireframe 02, rule 5: the yield strip directly under the price, product page only. */
+add_filter( 'render_block_woocommerce/product-price', static function ( string $html, array $block ): string {
+	if ( '' === $html || ! empty( $block['attrs']['isDescendentOfQueryLoop'] ) || ! function_exists( 'is_product' ) || ! is_product() ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
+	if ( ! $product instanceof WC_Product ) {
+		return $html;
+	}
+	$meta  = static fn( string $k ): string => (string) $product->get_meta( '_foodify_' . $k );
+	$parts = foodify_yield_parts( [
+		'net_quantity'  => $meta( 'net_quantity' ),
+		'cooked_weight' => $meta( 'cooked_weight' ),
+		'servings'      => $meta( 'servings' ),
+		'prep_minutes'  => $meta( 'prep_minutes' ),
+	] );
+	if ( ! $parts ) {
+		return $html;
+	}
+	return $html . '<p class="fd-yield-strip">' . implode( '', array_map( static fn( $p ): string => '<span>' . esc_html( $p ) . '</span>', $parts ) ) . '</p>';
+}, 10, 2 );
+
+/** Wireframe 01/02, rule 5: SAVE badge only at or above the floor; below it, the price alone. */
+add_filter( 'woocommerce_get_price_html', static function ( string $html, WC_Product $product ): string {
+	if ( is_admin() && ! wp_doing_ajax() ) {
+		return $html;
+	}
+	if ( ! $product->is_on_sale() || $product->is_type( 'variable' ) ) {
+		return $html;
+	}
+	$badge = foodify_save_badge( (float) $product->get_regular_price(), (float) $product->get_sale_price() );
+	return '' === $badge ? $html : $html . ' <span class="fd-save">' . esc_html( $badge ) . '</span>';
+}, 20, 2 );
+
+/**
+ * Sold out is sold out. WooCommerce's loop button for an out-of-stock product
+ * says "Read more" and links to the page, which is a door to a wall. The
+ * wireframe asks for NOTIFY ME; that needs a back-in-stock mechanism the
+ * store does not have yet, and a button that promises a notification it will
+ * never send is the fake-viewer-counter class. So: the plain truth, until the
+ * mechanism exists.
+ */
+add_filter( 'woocommerce_product_add_to_cart_text', static function ( string $text, WC_Product $product ): string {
+	return $product->is_in_stock() ? $text : __( 'Sold out', 'foodify' );
+}, 10, 2 );
+
+/**
+ * Wireframe 03: the sticky add-to-cart bar, plus the page's one script.
+ * The bar is hidden until the real button leaves the viewport, carries the
+ * live total for the chosen quantity, and its button presses the real one.
+ */
+add_action( 'wp_footer', static function (): void {
+	if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+		return;
+	}
+	$product = wc_get_product( get_the_ID() );
+	if ( $product instanceof WC_Product && $product->is_in_stock() && $product->is_purchasable() ) {
+		printf(
+			'<div class="fd-sticky-atc" data-unit="%1$s" hidden><div class="fd-sticky-atc__price"><strong class="fd-sticky-atc__total">%2$s</strong><span class="fd-sticky-atc__qty">1 pack</span></div><button type="button" class="wp-element-button">%3$s</button></div>',
+			esc_attr( (string) wc_get_price_to_display( $product ) ),
+			wp_kses_post( wc_price( wc_get_price_to_display( $product ) ) ),
+			esc_html__( 'Add to cart', 'foodify' )
+		);
+	}
+	echo '<script>' . foodify_pdp_script() . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- static script, no data.
+} );
 
 /**
  * Sort options that read as options. The toolbar puts a visible "Sort by"
@@ -207,11 +327,10 @@ add_filter( 'woocommerce_get_availability_text', static function ( string $text,
  * "nobody bought this" rather than "this is new".
  */
 add_filter( 'woocommerce_product_get_rating_html', static function ( string $html, $rating, int $count ): string {
-	if ( $html || ( ! is_shop() && ! is_product_category() ) ) {
-		return $html;
-	}
-
-	return '<span class="fd-rating fd-rating--empty">' . esc_html__( 'No reviews yet', 'foodify' ) . '</span>';
+	// Wireframe 01, rule 4: at zero reviews the row is HIDDEN — no empty grey
+	// stars, and no "No reviews yet" either, which read as a verdict. The
+	// count is what makes stars honest, and a row with no count says nothing.
+	return $count > 0 ? $html : '';
 }, 10, 3 );
 
 /** Curated cross-sells beat tag-matched "related products" — a gravy should suggest rice. */

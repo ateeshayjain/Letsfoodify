@@ -170,10 +170,23 @@ function foodify_prep_exceeds_claim( string $minutes ): bool {
 	return (int) $m[0] > foodify_claim_minutes();
 }
 
+/**
+ * The delivery promise, once. The announcement bar and the product page's
+ * promise pill both render it, so it cannot say 3–5 days in one place and
+ * something else in another. Filterable for the day a courier API can make
+ * it pincode-specific.
+ */
+function foodify_delivery_promise(): string {
+	$default = 'Ships across India in 3–5 days';
+	return function_exists( 'apply_filters' ) ? (string) apply_filters( 'foodify_delivery_promise', $default ) : $default;
+}
+
 function foodify_content_tokens( array $p, string $year, string $tagline = '' ): array {
 	$fssai = trim( (string) ( $p['fssai'] ?? '' ) );
 	return [
-		'<!--FOODIFY_YEAR-->'    => $year,
+		'<!--FOODIFY_YEAR-->'          => $year,
+		'<!--FOODIFY_DELIVERY-->'      => foodify_delivery_promise(),
+		'<!--FOODIFY_CLAIM_MINUTES-->' => (string) foodify_claim_minutes(),
 		// The site tagline (Settings → General), set by bootstrap.sh. The hero's
 		// H1 reads it, so the claim lives in ONE option, not in a template.
 		'<!--FOODIFY_TAGLINE-->' => '' !== trim( $tagline ) ? trim( $tagline ) : 'TAGLINE NOT CONFIGURED',

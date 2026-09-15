@@ -62,6 +62,7 @@ function foodify_spec_fields(): array {
 		'allergens'    => [ 'label' => 'Allergens',          'group' => 'contents', 'required' => true  ],
 		'net_quantity' => [ 'label' => 'Net quantity',       'group' => 'contents', 'required' => true  ],
 		'servings'     => [ 'label' => 'Servings per pack',  'group' => 'contents', 'required' => false ],
+		'cooked_weight'=> [ 'label' => 'Makes (cooked)',     'group' => 'contents', 'required' => false ],
 		'diet'         => [ 'label' => 'Veg / non-veg',      'group' => 'contents', 'required' => true  ],
 		'storage'      => [ 'label' => 'Storage',            'group' => 'contents', 'required' => false ],
 
@@ -197,6 +198,291 @@ function foodify_prep_steps( string $method, string $minutes = '' ): array {
 }
 
 /* -------------------------------------------------------------------------
+ * Wireframe 01–03 (design playbook §4, 2026-09-15): the yield line, the save
+ * badge, the card badges, the tabbed body. All pure; all rendered by the
+ * preview through PHP so the review page cannot drift from the theme.
+ * ---------------------------------------------------------------------- */
+
+/**
+ * The yield line — "Net 80 g · Makes 260 g cooked · 2 servings · Ready in 6 min".
+ * Kills the "80 g is nothing" objection before it forms. Parts nobody supplied
+ * are omitted, never invented; a strip with one fact is still a strip.
+ *
+ * @param array<string,string> $v net_quantity, cooked_weight, servings, prep_minutes
+ * @return array<int,string>
+ */
+function foodify_yield_parts( array $v ): array {
+	$t = static fn( string $k ): string => trim( (string) ( $v[ $k ] ?? '' ) );
+	$parts = [];
+	if ( '' !== $t( 'net_quantity' ) ) {
+		$parts[] = 'Net ' . $t( 'net_quantity' );
+	}
+	if ( '' !== $t( 'cooked_weight' ) ) {
+		$parts[] = 'Makes ' . $t( 'cooked_weight' ) . ' cooked';
+	}
+	if ( '' !== $t( 'servings' ) ) {
+		$n       = (int) $t( 'servings' );
+		$parts[] = $n > 0 ? ( 1 === $n ? '1 serving' : $n . ' servings' ) : $t( 'servings' ) . ' servings';
+	}
+	if ( '' !== $t( 'prep_minutes' ) ) {
+		$parts[] = 'Ready in ' . foodify_minutes_label( $t( 'prep_minutes' ) );
+	}
+	return $parts;
+}
+
+/** "6", "6 minutes", "6 min" -> "6 min". Keeps a non-numeric value as typed. */
+function foodify_minutes_label( string $raw ): string {
+	return preg_match( '/^\s*(\d+)/', $raw, $m ) ? $m[1] . ' min' : trim( $raw );
+}
+
+/** The card's second line: "Serves 2 · 6 min". Two questions, one line. */
+function foodify_card_yield( array $v ): string {
+	$bits = [];
+	$s = (int) trim( (string) ( $v['servings'] ?? '' ) );
+	if ( $s > 0 ) {
+		$bits[] = 'Serves ' . $s;
+	}
+	$m = trim( (string) ( $v['prep_minutes'] ?? '' ) );
+	if ( '' !== $m ) {
+		$bits[] = foodify_minutes_label( $m );
+	}
+	return implode( ' · ', $bits );
+}
+
+/** Below this a SAVE badge reads as noise and teaches the eye that the strike is fake. */
+function foodify_save_badge_min(): int {
+	return 15;
+}
+
+function foodify_save_percent( float $regular, float $sale ): int {
+	if ( $regular <= 0 || $sale <= 0 || $sale >= $regular ) {
+		return 0;
+	}
+	return (int) floor( ( $regular - $sale ) / $regular * 100 );
+}
+
+/** 'Save 18%' at or above the floor; '' below it. Never rounds up to the floor. */
+function foodify_save_badge( float $regular, float $sale ): string {
+	$pct = foodify_save_percent( $regular, $sale );
+	return $pct >= foodify_save_badge_min() ? 'Save ' . $pct . '%' : '';
+}
+
+/**
+ * Card badges. At most two: left = commercial, right = dietary.
+ * Sold out outranks everything — a bestseller you cannot buy is a sold-out
+ * product. New outranks nothing.
+ *
+ * @param array{in_stock?:bool,bestseller?:bool,new?:bool,dietary?:array<int,string>} $s
+ * @return array{commercial:string,dietary:string}
+ */
+function foodify_card_badges( array $s ): array {
+	$commercial = '';
+	if ( isset( $s['in_stock'] ) && ! $s['in_stock'] ) {
+		$commercial = 'Sold out';
+	} elseif ( ! empty( $s['bestseller'] ) ) {
+		$commercial = 'Bestseller';
+	} elseif ( ! empty( $s['new'] ) ) {
+		$commercial = 'New';
+	}
+	$dietary = in_array( 'jain', array_map( 'strval', (array) ( $s['dietary'] ?? [] ) ), true ) ? 'Jain' : '';
+	return [ 'commercial' => $commercial, 'dietary' => $dietary ];
+}
+
+function foodify_render_badges( array $badges ): string {
+	$out = '';
+	if ( '' !== $badges['commercial'] ) {
+		$mod  = 'Sold out' === $badges['commercial'] ? 'fd-badge--out' : 'fd-badge--flame';
+		$out .= '<span class="fd-badge ' . $mod . '">' . htmlspecialchars( $badges['commercial'], ENT_QUOTES ) . '</span>';
+	}
+	if ( '' !== $badges['dietary'] ) {
+		$out .= '<span class="fd-badge fd-badge--leaf">' . htmlspecialchars( $badges['dietary'], ENT_QUOTES ) . '</span>';
+	}
+	return '' === $out ? '' : '<span class="fd-badges">' . $out . '</span>';
+}
+
+/** "Savoury, Mildly spicy, Tangy" -> at most four chips. */
+function foodify_taste_chips( string $raw ): array {
+	$chips = array_values( array_filter( array_map( 'trim', explode( ',', $raw ) ), static fn( $c ): bool => '' !== $c ) );
+	return array_slice( $chips, 0, 4 );
+}
+
+/**
+ * FAQ, typed as alternating "Q: …" / "A: …" lines. A question with no answer
+ * is dropped — an unanswered FAQ is worse than none.
+ *
+ * @return array<int,array{q:string,a:string}>
+ */
+function foodify_faq_pairs( string $raw ): array {
+	$pairs = [];
+	$q     = null;
+	foreach ( preg_split( '/\r?\n/', $raw ) as $line ) {
+		$line = trim( $line );
+		if ( preg_match( '/^q\s*[:.)-]\s*(.+)$/i', $line, $m ) ) {
+			$q = $m[1];
+		} elseif ( null !== $q && preg_match( '/^a\s*[:.)-]\s*(.+)$/i', $line, $m ) ) {
+			$pairs[] = [ 'q' => $q, 'a' => $m[1] ];
+			$q       = null;
+		}
+	}
+	return $pairs;
+}
+
+/**
+ * The tabbed body: About · Ingredients & nutrition · How to cook · FAQ.
+ * Tabs on desktop, accordions on a phone, ONE content source. A section with
+ * nothing in it is not a tab. Pack & label is deliberately NOT a tab — it is
+ * rendered after them, always open: a legal declaration behind a collapsed
+ * control is a declaration the regulator will say was hidden.
+ *
+ * @param array{about?:string,taste?:array,groups:array,nutrition:array,steps:array,faq?:array} $d
+ * @return array<int,array{id:string,title:string,html:string}>
+ */
+function foodify_pdp_sections( array $d ): array {
+	$e = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
+	$sections = [];
+
+	$about = trim( (string) ( $d['about'] ?? '' ) );
+	$taste = (array) ( $d['taste'] ?? [] );
+	if ( '' !== $about || $taste ) {
+		$html = $about;   // post content: already filtered HTML from the_content
+		if ( $taste ) {
+			$html .= '<p class="fd-taste"><span class="fd-taste__label">Taste profile</span>'
+				. implode( '', array_map( static fn( $c ): string => '<span class="fd-taste__chip">' . $e( (string) $c ) . '</span>', $taste ) )
+				. '</p>';
+		}
+		$sections[] = [ 'id' => 'about', 'title' => 'About', 'html' => $html ];
+	}
+
+	$contents = $d['groups']['contents']['rows'] ?? [];
+	if ( $contents || $d['nutrition'] ) {
+		$html = $contents ? foodify_spec_rows_html( $contents ) : '';
+		if ( $d['nutrition'] ) {
+			$html .= '<h3 class="fd-spec__nutrition-title">Nutrition, per serving</h3><table class="fd-nutrition"><tbody>';
+			foreach ( $d['nutrition'] as $row ) {
+				$html .= sprintf( '<tr><th scope="row">%1$s</th><td>%2$s</td></tr>', $e( $row['label'] ), $e( $row['value'] ) );
+			}
+			$html .= '</tbody></table>';
+		}
+		$sections[] = [ 'id' => 'ingredients', 'title' => 'Ingredients & nutrition', 'html' => $html ];
+	}
+
+	if ( $d['steps'] ) {
+		$html = '<ol class="fd-prep__steps">';
+		foreach ( $d['steps'] as $step ) {
+			$html .= sprintf(
+				'<li class="fd-prep__step"><span class="fd-prep__n">%1$d</span><span class="fd-prep__body"><strong>%2$s</strong><span>%3$s</span></span></li>',
+				(int) $step['n'],
+				$e( $step['title'] ),
+				$e( $step['detail'] )
+			);
+		}
+		$sections[] = [ 'id' => 'cook', 'title' => 'How to cook', 'html' => $html . '</ol>' ];
+	}
+
+	$faq = (array) ( $d['faq'] ?? [] );
+	if ( $faq ) {
+		$html = '<dl class="fd-faq">';
+		foreach ( $faq as $pair ) {
+			$html .= '<div><dt>' . $e( (string) $pair['q'] ) . '</dt><dd>' . $e( (string) $pair['a'] ) . '</dd></div>';
+		}
+		$sections[] = [ 'id' => 'faq', 'title' => 'FAQ', 'html' => $html . '</dl>' ];
+	}
+
+	return $sections;
+}
+
+/**
+ * One fact table, rendered once. Both tables on the page — what's in it, and
+ * what the pack declares — are the same object with different rows, so they
+ * are the same markup and the same .fd-spec__list rules in style.css. When
+ * they were two copies, one of them silently lost its layout.
+ *
+ * @param array<int,array{label:string,value:string,provided:bool}> $rows
+ */
+function foodify_spec_rows_html( array $rows ): string {
+	$e    = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
+	$html = '<dl class="fd-spec__list">';
+	foreach ( $rows as $row ) {
+		$html .= sprintf(
+			'<div%1$s><dt>%2$s</dt><dd>%3$s</dd></div>',
+			$row['provided'] ? '' : ' class="is-missing"',
+			$e( $row['label'] ),
+			$e( $row['value'] )
+		);
+	}
+	return $html . '</dl>';
+}
+
+/** The body markup: tab bar + panels, then the always-open label table. */
+function foodify_render_pdp_body( array $d ): string {
+	$e        = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
+	$sections = foodify_pdp_sections( $d );
+	$out      = '';
+
+	if ( $sections ) {
+		$out .= '<div class="fd-tabs" data-fd-tabs>';
+		foreach ( $sections as $i => $s ) {
+			$open = 0 === $i;
+			$out .= sprintf(
+				'<section class="fd-tab%1$s" id="fd-tab-%2$s">'
+				. '<h2 class="fd-tab__title"><button type="button" class="fd-tab__button" aria-expanded="%3$s" aria-controls="fd-panel-%2$s" id="fd-tabbtn-%2$s">%4$s</button></h2>'
+				. '<div class="fd-tab__panel" id="fd-panel-%2$s" role="region" aria-labelledby="fd-tabbtn-%2$s"%5$s>%6$s</div>'
+				. '</section>',
+				$open ? ' is-open' : '',
+				$e( $s['id'] ),
+				$open ? 'true' : 'false',
+				$e( $s['title'] ),
+				$open ? '' : ' hidden',
+				$s['html']
+			);
+		}
+		$out .= '</div>';
+	}
+
+	$label = $d['groups']['label']['rows'] ?? [];
+	if ( $label ) {
+		$out .= '<section class="fd-spec__group is-label fd-label"><h2>Pack &amp; label</h2>';
+		$out .= foodify_spec_rows_html( $label );
+		$out .= '<p class="fd-spec__note">These are the pack declarations. The same fields feed the Google product listing, so what you read here is what Google is told.</p></section>';
+	}
+	return $out;
+}
+
+/**
+ * The page's one script: tabs on desktop (one panel open), accordions on a
+ * phone (any number open), and the sticky add-to-cart bar that appears when
+ * the real button leaves the viewport. Without it: every panel open, no bar.
+ * Returned as a string so the preview embeds the SAME script.
+ */
+function foodify_pdp_script(): string {
+	return <<<'JS'
+(function(){
+  var wide=matchMedia('(min-width:782px)');
+  var tabs=document.querySelector('[data-fd-tabs]');
+  if(tabs){
+    var secs=[].slice.call(tabs.querySelectorAll('.fd-tab'));
+    function set(sec,open){sec.classList.toggle('is-open',open);sec.querySelector('.fd-tab__button').setAttribute('aria-expanded',String(open));sec.querySelector('.fd-tab__panel').hidden=!open;}
+    secs.forEach(function(sec){sec.querySelector('.fd-tab__button').addEventListener('click',function(){
+      var isOpen=sec.classList.contains('is-open');
+      if(wide.matches){secs.forEach(function(s){set(s,s===sec);});}
+      else{set(sec,!isOpen);}
+    });});
+    wide.addEventListener('change',function(){if(wide.matches&&!secs.some(function(s){return s.classList.contains('is-open');})){set(secs[0],true);}});
+  }
+  var bar=document.querySelector('.fd-sticky-atc');var form=document.querySelector('form.cart');
+  if(bar&&form&&'IntersectionObserver'in window){
+    var qty=form.querySelector('input.qty');var unit=parseFloat(bar.getAttribute('data-unit')||'0');var total=bar.querySelector('.fd-sticky-atc__total');
+    function fmt(n){try{return new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(n);}catch(e){return String(Math.round(n));}}
+    function update(){var q=qty?parseInt(qty.value,10)||1:1;total.textContent='₹'+fmt(unit*q);bar.querySelector('.fd-sticky-atc__qty').textContent=q+(q===1?' pack':' packs');}
+    if(qty){qty.addEventListener('input',update);qty.addEventListener('change',update);}update();
+    new IntersectionObserver(function(en){bar.hidden=en[0].isIntersecting;},{threshold:0}).observe(form);
+    bar.querySelector('button').addEventListener('click',function(){var b=form.querySelector('button[type=submit],.single_add_to_cart_button');if(b){b.click();}else{form.scrollIntoView({behavior:'smooth',block:'center'});}});
+  }
+})();
+JS;
+}
+
+/* -------------------------------------------------------------------------
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
 
@@ -216,6 +502,7 @@ function foodify_product_spec_values( WC_Product $product ): array {
 		'allergens'    => $meta( 'allergens' ),
 		'net_quantity' => $meta( 'net_quantity' ),
 		'servings'     => $meta( 'servings' ),
+		'cooked_weight'=> $meta( 'cooked_weight' ),
 		'diet'         => $meta( 'diet' ),
 		'storage'      => $meta( 'storage' ),
 		'mrp'          => $product->get_regular_price() ? wp_strip_all_tags( wc_price( (float) $product->get_regular_price() ) ) . ' (incl. all taxes)' : '',
@@ -242,75 +529,32 @@ function foodify_product_nutrition_values( WC_Product $product ): array {
 	return (array) apply_filters( 'foodify_product_nutrition_values', $n, $product );
 }
 
-/** "How you make it" — directly under the buy box, where the question is asked. */
-add_action( 'woocommerce_after_single_product_summary', static function (): void {
-	global $product;
-	if ( ! $product instanceof WC_Product ) {
-		return;
-	}
+/** Everything the body needs, from one product. */
+function foodify_pdp_data( WC_Product $product ): array {
 	$method = function_exists( 'foodify_prep_method' ) ? foodify_prep_method( $product ) : '';
-	$steps  = foodify_prep_steps( $method, (string) $product->get_meta( '_foodify_prep_minutes' ) );
-	if ( ! $steps ) {
-		return;
-	}
+	$meta   = static fn( string $k ): string => (string) $product->get_meta( '_foodify_' . $k );
+	return [
+		'about'     => (string) apply_filters( 'the_content', $product->get_description() ),
+		'taste'     => foodify_taste_chips( $meta( 'taste' ) ),
+		'groups'    => foodify_spec_model( foodify_product_spec_values( $product ) ),
+		'nutrition' => foodify_nutrition_rows( foodify_product_nutrition_values( $product ) ),
+		'steps'     => foodify_prep_steps( $method, $meta( 'prep_minutes' ) ),
+		'faq'       => foodify_faq_pairs( $meta( 'faq' ) ),
+	];
+}
 
-	echo '<section class="fd-prep"><h2 class="fd-prep__title">' . esc_html__( 'How you make it', 'foodify' ) . '</h2><ol class="fd-prep__steps">';
-	foreach ( $steps as $step ) {
-		printf(
-			'<li class="fd-prep__step"><span class="fd-prep__n">%1$d</span>'
-			. '<span class="fd-prep__body"><strong>%2$s</strong><span>%3$s</span></span></li>',
-			(int) $step['n'],
-			esc_html( $step['title'] ),
-			esc_html( $step['detail'] )
-		);
-	}
-	echo '</ol></section>';
-}, 6 );
-
-/** The two fact tables, plus nutrition. */
+/**
+ * The body — tabs, then the label table — under the buy box, where the
+ * questions are asked. One hook, one renderer, the same renderer the preview
+ * calls with fixture data.
+ */
 add_action( 'woocommerce_after_single_product_summary', static function (): void {
 	global $product;
 	if ( ! $product instanceof WC_Product ) {
 		return;
 	}
-	$groups    = foodify_spec_model( foodify_product_spec_values( $product ) );
-	$nutrition = foodify_nutrition_rows( foodify_product_nutrition_values( $product ) );
-
-	echo '<div class="fd-spec">';
-
-	foreach ( $groups as $key => $group ) {
-		if ( ! $group['rows'] ) {
-			continue;
-		}
-		printf( '<section class="fd-spec__group is-%1$s"><h2>%2$s</h2><dl>', esc_attr( $key ), esc_html( $group['title'] ) );
-		foreach ( $group['rows'] as $row ) {
-			printf(
-				'<div%1$s><dt>%2$s</dt><dd>%3$s</dd></div>',
-				$row['provided'] ? '' : ' class="is-missing"',
-				esc_html( $row['label'] ),
-				esc_html( $row['value'] )
-			);
-		}
-		echo '</dl>';
-
-		if ( 'contents' === $key && $nutrition ) {
-			echo '<h3 class="fd-spec__nutrition-title">' . esc_html__( 'Nutrition, per serving', 'foodify' ) . '</h3>';
-			echo '<table class="fd-nutrition"><tbody>';
-			foreach ( $nutrition as $row ) {
-				printf( '<tr><th scope="row">%1$s</th><td>%2$s</td></tr>', esc_html( $row['label'] ), esc_html( $row['value'] ) );
-			}
-			echo '</tbody></table>';
-		}
-		if ( 'label' === $key ) {
-			printf(
-				'<p class="fd-spec__note">%s</p>',
-				esc_html__( 'These are the pack declarations. The same fields feed the Google product listing, so what you read here is what Google is told.', 'foodify' )
-			);
-		}
-		echo '</section>';
-	}
-	echo '</div>';
-}, 12 );
+	echo foodify_render_pdp_body( foodify_pdp_data( $product ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the renderer; `about` is the_content output.
+}, 6 );
 
 /**
  * Tell the shop, in the admin, which products are not legally complete.

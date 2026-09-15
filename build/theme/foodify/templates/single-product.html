@@ -14,6 +14,9 @@
 <!-- wp:column {"className":"fd-pdp__buy"} -->
 <div class="wp-block-column fd-pdp__buy">
 <!-- wp:post-title {"level":1,"fontSize":"3xl"} /-->
+<!-- wp:paragraph {"className":"fd-promise","fontSize":"xs"} -->
+<p class="fd-promise has-xs-font-size"><!--FOODIFY_DELIVERY--></p>
+<!-- /wp:paragraph -->
 <!-- wp:woocommerce/product-rating /-->
 <!-- wp:post-excerpt {"fontSize":"md","excerptLength":36} /-->
 <!-- wp:woocommerce/product-price {"fontSize":"2xl"} /-->
@@ -22,17 +25,26 @@
 
 <!-- wp:group {"className":"fd-assure","layout":{"type":"constrained"}} -->
 <div class="wp-block-group fd-assure">
+<!-- Wireframe 02, rule 8: exactly five, directly under the button, one line
+     each, the same five on every product page. Only facts the site already
+     stands behind elsewhere: the claim, the trust strip, the checkout. -->
 <!-- wp:paragraph {"fontSize":"sm","className":"fd-assure__item"} -->
-<p class="fd-assure__item has-sm-font-size">Free shipping over ₹599</p>
+<p class="fd-assure__item has-sm-font-size">Ready in <!--FOODIFY_CLAIM_MINUTES--> minutes</p>
+<!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"sm","className":"fd-assure__item"} -->
+<p class="fd-assure__item has-sm-font-size">No preservatives</p>
+<!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"sm","className":"fd-assure__item"} -->
+<p class="fd-assure__item has-sm-font-size">9–12 month shelf life</p>
 <!-- /wp:paragraph -->
 <!-- wp:paragraph {"fontSize":"sm","className":"fd-assure__item"} -->
 <p class="fd-assure__item has-sm-font-size">Cash on delivery available</p>
 <!-- /wp:paragraph -->
 <!-- wp:paragraph {"fontSize":"sm","className":"fd-assure__item"} -->
-<p class="fd-assure__item has-sm-font-size">Shipping shown in the cart, not at the last screen</p>
+<p class="fd-assure__item has-sm-font-size">Free shipping over ₹599</p>
 <!-- /wp:paragraph -->
 <!-- wp:paragraph {"fontSize":"xs","textColor":"mute"} -->
-<p class="has-mute-color has-text-color has-xs-font-size">Enter your PIN code at checkout for a delivery date. MRP is inclusive of all taxes.</p>
+<p class="has-mute-color has-text-color has-xs-font-size">Shipping is shown in the cart, not at the last screen. MRP is inclusive of all taxes.</p>
 <!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
@@ -43,10 +55,11 @@
 
 <!-- wp:group {"align":"wide","className":"fd-pdp__body","layout":{"type":"constrained"}} -->
 <div class="wp-block-group alignwide fd-pdp__body">
-<!-- HOW YOU MAKE IT and the two fact tables render here, from inc/product-spec.php,
-     on woocommerce_after_single_product_summary at priorities 6 and 12. They are
-     PHP rather than blocks because both are driven by per-product data — a
-     block template cannot ask a product what its prep method is. -->
+<!-- The tabbed body (About · Ingredients & nutrition · How to cook · FAQ) and
+     the always-open Pack & label table render here, from inc/product-spec.php
+     on woocommerce_after_single_product_summary. PHP rather than blocks
+     because every section is driven by per-product data — a block template
+     cannot ask a product what its prep method is. -->
 <!-- wp:woocommerce/product-details {"align":"wide"} /-->
 </div>
 <!-- /wp:group -->

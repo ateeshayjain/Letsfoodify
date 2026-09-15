@@ -42,6 +42,7 @@ function complete(): array {
 		'allergens'    => 'Milk (ghee)',
 		'net_quantity' => '80 g',
 		'servings'     => '2',
+		'cooked_weight'=> '260 g',
 		'diet'         => 'Vegetarian',
 		'storage'      => 'Cool, dry place.',
 		'mrp'          => '₹210.00 (incl. all taxes)',
@@ -69,9 +70,10 @@ foreach ( [ 'ingredients', 'allergens', 'net_quantity', 'diet', 'mrp', 'best_bef
 	check( "'$key' is required", in_array( $key, foodify_spec_missing( $without ), true ) );
 }
 $opt = complete();
-$opt['servings'] = '';
-$opt['storage']  = '';
-check( 'servings and storage are optional', [] === foodify_spec_missing( $opt ) );
+$opt['servings']      = '';
+$opt['storage']       = '';
+$opt['cooked_weight'] = '';
+check( 'servings, storage and cooked weight are optional', [] === foodify_spec_missing( $opt ) );
 check( 'whitespace is not a declaration',
 	in_array( 'allergens', foodify_spec_missing( array_merge( complete(), [ 'allergens' => "  \n " ] ) ), true ) );
 
