@@ -114,7 +114,7 @@ function foodify_editor_fields(): array {
 		'storage'      => [ 'label' => 'Storage',                'type' => 'text' ],
 		'best_before'  => [ 'label' => 'Best before',            'type' => 'text', 'hint' => 'Any date format; stored as "14 Aug 2027". Refused if not a date.' ],
 		'shelf_life'   => [ 'label' => 'Shelf life',             'type' => 'text', 'hint' => 'e.g. 12 months' ],
-		'prep_minutes' => [ 'label' => 'Prep time',              'type' => 'text', 'hint' => 'e.g. 6 minutes — used by "How you make it"' ],
+		'prep_minutes' => [ 'label' => 'Prep time',              'type' => 'text', 'hint' => 'e.g. 6 minutes — used by "How you make it" and the card chip. The site promises 6; anything slower is flagged below.' ],
 		'hsn'          => [ 'label' => 'HSN code',               'type' => 'text', 'hint' => '4, 6 or 8 digits, from your CA. Anything else is refused.' ],
 		'gst_rate'     => [ 'label' => 'GST rate %',             'type' => 'text', 'hint' => '0, 0.25, 3, 5, 12, 18 or 28 — from your CA. Anything else is refused. 0 is a real rate; empty means "not set".' ],
 		'nutrition_energy'  => [ 'label' => 'Energy / serving',  'type' => 'text', 'hint' => 'e.g. 312 kcal' ],
@@ -194,6 +194,21 @@ function foodify_render_product_editor( WP_Post $post ): void {
 		}
 		if ( ! empty( $field['hint'] ) ) {
 			printf( '<p class="description">%s</p>', esc_html( $field['hint'] ) );
+		}
+		// The homepage promises one number for every meal. A product that takes
+		// longer is not refused — it may be true — but it is said out loud here,
+		// where the person typing it can decide whether the pack or the claim is
+		// wrong. Silence is how "70 people are viewing" happened.
+		if ( 'prep_minutes' === $key && foodify_prep_exceeds_claim( $value ) ) {
+			printf(
+				'<p class="description" style="color:#b32d2e"><strong>%s</strong> %s</p>',
+				esc_html__( 'Slower than the site claims.', 'foodify' ),
+				esc_html( sprintf(
+					/* translators: %d: the site-wide claim in minutes */
+					__( 'The homepage promises every meal in %d minutes. Either this product needs a different time on the pack, or the claim needs revisiting — it must not stay quietly untrue.', 'foodify' ),
+					foodify_claim_minutes()
+				) )
+			);
 		}
 		echo '</td></tr>';
 	}

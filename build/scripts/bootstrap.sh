@@ -176,7 +176,10 @@ if [[ "$PHASE" == "1" || "$PHASE" == "all" ]]; then
   if [[ $DRY -eq 0 ]]; then
     command wp option get blogdescription > "../backups/blogdescription-$(date +%Y%m%d-%H%M%S).txt" || true
   fi
-  wp option update blogdescription "Instant home-style Indian meals, ready in 6 minutes"
+  # THE claim. The hero H1 renders this option through <!--FOODIFY_TAGLINE-->,
+  # so the number the whole site restates lives here and nowhere else.
+  # tests/claim-test.py reads this exact line.
+  wp option update blogdescription "6 minute mein ghar ka khana ready!"
 
   # Deliberately NOT changing permalink structure here. Phase 1 runs against the live
   # store, and altering the structure rewrites every URL on the site at once.

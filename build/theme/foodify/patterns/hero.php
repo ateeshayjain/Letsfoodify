@@ -15,10 +15,10 @@
 <!-- wp:column {"verticalAlignment":"center","width":"55%"} -->
 <div class="wp-block-column is-vertically-aligned-center" style="flex-basis:55%">
 <!-- wp:heading {"level":1,"fontSize":"4xl"} -->
-<h1 class="wp-block-heading has-4-xl-font-size">Home-style Indian meals, ready in 6 minutes</h1>
+<h1 class="wp-block-heading has-4-xl-font-size"><!--FOODIFY_TAGLINE--></h1>
 <!-- /wp:heading -->
 <!-- wp:paragraph {"fontSize":"md","textColor":"mute"} -->
-<p class="has-mute-color has-text-color has-md-font-size">No cooking. No preservatives. 12-month shelf life. Just add hot water.</p>
+<p class="has-mute-color has-text-color has-md-font-size">Home-style Indian meals — no cooking, no preservatives, 12-month shelf life. Just add hot water.</p>
 <!-- /wp:paragraph -->
 <!-- wp:buttons -->
 <div class="wp-block-buttons">

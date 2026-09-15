@@ -151,11 +151,33 @@ function foodify_local_business_schema( array $p ): ?array {
  * template with nothing replacing it — which is exactly how the copyright year
  * shipped as an invisible HTML comment.
  */
-function foodify_content_tokens( array $p, string $year ): array {
+/**
+ * THE claim. "6 minute mein ghar ka khana ready!" is the one number the whole
+ * site restates — hero, steps, chips, tagline — and this is the only place it
+ * is a number. Copy elsewhere may say six; nothing may say more.
+ * tests/claim-test.py fails the build if static copy claims a longer time,
+ * and the product editor warns when a product's own prep time exceeds it.
+ */
+function foodify_claim_minutes(): int {
+	return 6;
+}
+
+/** True when a product's prep time contradicts the site-wide claim. */
+function foodify_prep_exceeds_claim( string $minutes ): bool {
+	if ( ! preg_match( '/\d+/', $minutes, $m ) ) {
+		return false;   // no number, nothing to contradict
+	}
+	return (int) $m[0] > foodify_claim_minutes();
+}
+
+function foodify_content_tokens( array $p, string $year, string $tagline = '' ): array {
 	$fssai = trim( (string) ( $p['fssai'] ?? '' ) );
 	return [
-		'<!--FOODIFY_YEAR-->'  => $year,
-		'<!--FOODIFY_FSSAI-->' => foodify_is_valid_fssai( $fssai )
+		'<!--FOODIFY_YEAR-->'    => $year,
+		// The site tagline (Settings → General), set by bootstrap.sh. The hero's
+		// H1 reads it, so the claim lives in ONE option, not in a template.
+		'<!--FOODIFY_TAGLINE-->' => '' !== trim( $tagline ) ? trim( $tagline ) : 'TAGLINE NOT CONFIGURED',
+		'<!--FOODIFY_FSSAI-->'   => foodify_is_valid_fssai( $fssai )
 			? $fssai
 			// Deliberately shouty and deliberately not a number. A blank would
 			// read as a layout bug; a plausible number is what got us here.
@@ -204,7 +226,7 @@ add_filter( 'render_block', static function ( $html ) {
 	if ( ! is_string( $html ) || false === strpos( $html, '<!--FOODIFY_' ) ) {
 		return $html;   // cheap guard — runs for every block on every page
 	}
-	$tokens = foodify_content_tokens( foodify_business_profile(), wp_date( 'Y' ) );
+	$tokens = foodify_content_tokens( foodify_business_profile(), wp_date( 'Y' ), (string) get_bloginfo( 'description' ) );
 	return str_replace( array_keys( $tokens ), array_map( 'esc_html', $tokens ), $html );
 } );
 

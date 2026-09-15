@@ -122,7 +122,7 @@ PRODUCTS = [
     ("Idli Sambhar",           "Express",       "6 MIN", 195, 225, "#E0A03C", "4.8", 62),
     ("Express Dal Khichdi",    "Express",       "6 MIN", 185, 0,   "#CE9126", "4.5", 41),
     ("Aloo ka Mazaa",          "Express",       "5 MIN", 100, 0,   "#C98A34", "4.4", 28),
-    ("Super Millet Idli",      "Express",       "7 MIN", 210, 0,   "#B98D3E", "4.6", 33),
+    ("Super Millet Idli",      "Express",       "6 MIN", 210, 0,   "#B98D3E", "4.6", 33),   # nothing on the review page may outrun the claim
     ("Pav Bhaji",              "Express",       "6 MIN", 185, 0,   "#C2571F", "4.7", 57),
     ("Coconut Red Chutney",    "Flavors",       "1 MIN", 240, 0,   "#4E8B66", "4.5", 19),
     ("Masala Chai",            "Hot & Fresh",   "3 MIN", 375, 0,   "#A6603A", "4.8", 71),
@@ -894,6 +894,15 @@ BODY_CLASS = {
 }
 
 
+def tagline_from_bootstrap():
+    src = open(os.path.join(KIT, "scripts", "bootstrap.sh")).read()
+    m = re.search(r'wp option update blogdescription "([^"]+)"', src)
+    return m.group(1) if m else "TAGLINE NOT CONFIGURED"
+
+
+TAGLINE = tagline_from_bootstrap()
+
+
 def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     layout = (LAYOUT_CSS
@@ -917,6 +926,9 @@ def main():
         # dummy got into four templates in the first place.
         body = body.replace("<!--FOODIFY_YEAR-->", str(datetime.date.today().year))
         body = body.replace("<!--FOODIFY_FSSAI-->", "NOT CONFIGURED")
+        # The tagline is the WordPress site description, which bootstrap.sh sets.
+        # Read from that line, so the preview's hero says what the site's will.
+        body = body.replace("<!--FOODIFY_TAGLINE-->", TAGLINE)
         tabs.append(f'<button class="tab" role="tab" aria-selected="{str(i == 0).lower()}" data-s="{sid}">{label}</button>')
         panels.append(f'<div class="fx-shell {BODY_CLASS.get(sid, "")}" id="s-{sid}"{"" if i == 0 else " hidden"}>{body}</div>')
 

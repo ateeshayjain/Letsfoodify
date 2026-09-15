@@ -101,3 +101,44 @@ left is the bowl standing in for photography.
 - The chip on the product page itself still hangs off
   `woocommerce_single_product_summary`. The PDP is block-built too; if the chip
   is absent there on staging, the same `render_block` route is the fix.
+
+## Round 3, same day — bands, borders, columns, and the claim
+
+Three more client screenshots and a competitor teardown (spiceupfood.in).
+
+**Bands.** The reviews band and the trust strip had top and bottom padding
+only; content sat flush against the edge. Core 7.1 no longer pads a group
+with a background on its own. Both now carry spacing-50 on all sides.
+
+**Borders.** Every border in the theme was a width without a style. The style
+engine maps `border.style` to `border-style` and nothing else — a width alone
+draws NOTHING in WordPress. The preview had invented `border-style: solid` on
+the colour class, which is why the borders showed there and why the trust
+strip grew 3px sides where only top and bottom had a width. Twelve borders now
+declare `"style":"solid"`; the preview emits `border-color` only, as
+theme.json's preset classes do. Without the client's tablet screenshot this
+would have shipped as an invisible header rule, invisible trust-strip rules and
+invisible card borders across three patterns.
+
+**Columns.** The preview let columns wrap at every width; core forces one row
+above 782px. A 55% + 45% pair plus its gap wrapped, so the hero image sat under
+the title on every desktop render — and I read that as the intended layout in
+my own screenshots twice. Now nowrap above 782px, as core.
+
+**The claim.** The teardown's real lesson: Spice Up's site is one number
+restated everywhere. Ours is now "6 minute mein ghar ka khana ready!" and it
+lives in exactly one place — the `blogdescription` line in `bootstrap.sh`
+(rule 2). The hero H1 renders it through `<!--FOODIFY_TAGLINE-->`; the preview
+reads the same line so it cannot drift. `foodify_claim_minutes()` is the only
+place the number is a number; the product editor flags any prep time slower
+than it — not refused, because the pack may be right and the claim wrong, but
+never quietly untrue. `tests/claim-test.py` fails the build if any static copy
+or preview fixture claims a longer time. The one fixture that did (a 7-minute
+idli) was on the page the client was signing off.
+
+Not adopted from the teardown without a client decision: pack-of-3/5 variants
+(needs their pack pricing), occasion categories (needs the SKU list), OTPless
+and subscriptions (paid — rule 5), a PDP pincode checker (sends every browser's
+PIN to a third party pre-purchase, and a delivery date needs the WP-11 courier
+API). "Fresh" was declined as a word: for a dehydrated product it is a claim the
+site would have to argue; "ghar ka khana" is one it makes good on.
