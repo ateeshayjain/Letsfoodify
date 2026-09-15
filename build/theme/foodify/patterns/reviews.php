@@ -6,8 +6,8 @@
  * Description: Google Business Profile reviews. Replaces three testimonials attributed to the same name.
  */
 ?>
-<!-- wp:group {"align":"wide","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","bottom":"var:preset|spacing|80"}}},"backgroundColor":"kraft-pale","layout":{"type":"constrained"}} -->
-<div class="wp-block-group alignwide has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80)">
+<!-- wp:group {"align":"wide","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","bottom":"var:preset|spacing|80","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}},"backgroundColor":"kraft-pale","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignwide has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80);padding-left:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--50)">
 <!-- wp:heading {"fontSize":"2xl"} -->
 <h2 class="wp-block-heading has-2-xl-font-size">What customers say</h2>
 <!-- /wp:heading -->

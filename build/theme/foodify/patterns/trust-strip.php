@@ -6,8 +6,8 @@
  * Description: Four facts, stated plainly. Replaces the invented urgency counter.
  */
 ?>
-<!-- wp:group {"align":"wide","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}},"border":{"top":{"width":"1px"},"bottom":{"width":"1px"}}},"borderColor":"line","layout":{"type":"constrained"}} -->
-<div class="wp-block-group alignwide has-border-color has-line-border-color" style="border-top-width:1px;border-bottom-width:1px;padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
+<!-- wp:group {"align":"wide","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"top":{"width":"1px","style":"solid"},"bottom":{"width":"1px","style":"solid"}}},"borderColor":"line","layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignwide has-border-color has-line-border-color" style="border-top-width:1px;border-top-style:solid;border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--50)">
 <!-- wp:columns {"className":"fd-trust","style":{"spacing":{"blockGap":{"left":"var:preset|spacing|40"}}}} -->
 <div class="wp-block-columns fd-trust">
 <!-- wp:column -->

@@ -63,7 +63,12 @@ def token_css():
     for c in S["color"]["palette"]:
         out.append(f".has-{c['slug']}-color{{color:var(--wp--preset--color--{c['slug']})}}")
         out.append(f".has-{c['slug']}-background-color{{background-color:var(--wp--preset--color--{c['slug']})}}")
-        out.append(f".has-{c['slug']}-border-color{{border-color:var(--wp--preset--color--{c['slug']});border-style:solid}}")
+        # border-color ONLY, as theme.json's preset classes emit it. The style
+        # comes from the block's own inline border-*-style — a width with no
+        # style draws nothing in WordPress, and the preview used to invent a
+        # solid style here, which also drew 3px sides where only top and
+        # bottom had a width.
+        out.append(f".has-{c['slug']}-border-color{{border-color:var(--wp--preset--color--{c['slug']})}}")
     for f in S["typography"]["fontSizes"]:
         cls = re.sub(r"(\d)([a-z])", r"\1-\2", f["slug"])   # 4xl -> 4-xl, as WP does
         out.append(f".has-{cls}-font-size{{font-size:var(--wp--preset--font-size--{f['slug']})}}")
@@ -714,6 +719,10 @@ main>.wp-block-group,main>section,main>div{margin:0}
 .wp-block-cover__inner-container>*{max-width:__CONTENT__;margin-left:auto;margin-right:auto}
 .wp-block-cover__inner-container>.alignwide{max-width:__WIDE__}
 .wp-block-columns{display:flex;gap:var(--wp--preset--spacing--50);flex-wrap:wrap;align-items:flex-start}
+/* core columns/style.css: one row above 782px, whatever the bases add up to.
+   Without this a 55% + 45% pair plus its gap wrapped, and the hero image sat
+   under the title on every desktop render. */
+@media (min-width:782px){.wp-block-columns{flex-wrap:nowrap}}
 .wp-block-columns.are-vertically-aligned-center{align-items:center}
 .wp-block-column{flex:1 1 0;min-width:0}
 /* core columns/style.css: a column given a width keeps it (flex-grow:0) —
