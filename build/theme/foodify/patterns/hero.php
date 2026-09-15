@@ -10,8 +10,8 @@
 <div class="wp-block-cover alignfull" style="padding-top:var(--wp--preset--spacing--70);padding-bottom:var(--wp--preset--spacing--70);min-height:420px">
 <span aria-hidden="true" class="wp-block-cover__background has-kraft-pale-background-color has-background-dim-0 has-background-dim"></span>
 <div class="wp-block-cover__inner-container">
-<!-- wp:columns {"verticalAlignment":"center"} -->
-<div class="wp-block-columns are-vertically-aligned-center">
+<!-- wp:columns {"verticalAlignment":"center","align":"wide"} -->
+<div class="wp-block-columns alignwide are-vertically-aligned-center">
 <!-- wp:column {"verticalAlignment":"center","width":"55%"} -->
 <div class="wp-block-column is-vertically-aligned-center" style="flex-basis:55%">
 <!-- wp:heading {"level":1,"fontSize":"4xl"} -->

@@ -257,6 +257,10 @@ if [[ "$PHASE" == "all" ]]; then
   wp option update woocommerce_price_thousand_sep ','
   wp option update woocommerce_price_decimal_sep '.'
   wp option update woocommerce_price_num_decimals 2
+  # The shop's default order is what a first-time visitor sees before touching
+  # "Sort by". Popularity puts the reorder favourites first; menu_order is
+  # whatever the importer happened to number.
+  wp option update woocommerce_default_catalog_orderby popularity
   # Store base address drives the GST intra/inter-state split. The client is at
   # Parx Laureate, Noida 201304 — Uttar Pradesh. 'IN:HR' (Haryana) was in the kit and
   # would invert the split on every order. CONFIRM against the GST registration

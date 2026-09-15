@@ -183,6 +183,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `run-all-tests.sh` | 23 suites, one command. A suite that cannot run is a FAIL |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
+| `docs/DESIGN-REVIEW-2026-09-15.md` | Client review round 2: the cart, filter + sort, and the three preview lies it exposed |
+| `tests/shop-test.php` | Filter attribute ids resolve per install; a template never carries a numeric id |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |
 
 ### Work package index

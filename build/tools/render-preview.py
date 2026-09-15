@@ -84,6 +84,9 @@ def styles_css():
     for k, prop in (("fontFamily", "font-family"), ("fontSize", "font-size"), ("lineHeight", "line-height")):
         if k in ty: body.append(f"{prop}:{ty[k]}")
     out.append("body{" + ";".join(body) + "}")
+    # styles.spacing.blockGap -> the variable WordPress's flex layouts read for gap.
+    gap = st.get("spacing", {}).get("blockGap", "1.5rem")
+    out.append(f":root{{--wp--style--block-gap:{gap}}}")
 
     el = st.get("elements", {})
     for name, sel in (("heading", "h1,h2,h3,h4"), ("h1", "h1"), ("h2", "h2"), ("h3", "h3"), ("link", "a")):
@@ -127,21 +130,40 @@ def stars(r):
     return '<span class="fx-stars">' + "★" * full + "☆" * (5 - full) + f'</span> <span class="fx-rc">{r}</span>'
 
 
-def product_card(p):
-    name, rng, time, price, was, hue, rating, count = p
-    sale = f'<s>₹{was}</s> ' if was else ""
-    return f'''<article class="fx-card">
-  <div class="fx-media">{BOWL.format(hue=hue, time=time)}<span class="fx-chip fx-chip--{rng.split()[0].lower()}">{html.escape(rng)}</span></div>
-  <h3 class="fx-name">{html.escape(name)}</h3>
-  <div class="fx-rating">{stars(rating)} <span class="fd-rating-count">{count} reviews</span></div>
-  <p class="fx-price">{sale}₹{price}</p>
-  <button class="wp-element-button fx-add">Add to bag</button>
-</article>'''
+# The product the loop is currently rendering, or None outside a loop. The
+# inner blocks of a Product Query (title, image, price, rating, button) read
+# it, exactly as WordPress sets up post data per item.
+CUR = None
+LOOP_N = 8
+
+# What inc/product-display.php prepends to a product title inside a loop.
+CHIP = {
+    "Express":     ("fd-chip--hot",  "Hot water"),
+    "Hot & Fresh": ("fd-chip--cook", "Cooking"),
+    "Flavors":     ("",              "Drinking water"),
+}
 
 
-def product_grid(n, cols=4):
-    items = "".join(product_card(PRODUCTS[i % len(PRODUCTS)]) for i in range(n))
-    return f'<div class="fx-grid" style="--cols:{cols}">{items}</div>'
+def prep_chip(p):
+    mod, label = CHIP[p[1]]
+    return f'<span class="fd-chip {mod}">{label} · {p[2].split()[0]} min</span>'
+
+
+def price_html(p, size_cls=""):
+    """WooCommerce's price markup: <del> old, <ins> current, when on sale."""
+    _n, _r, _t, price, was, *_ = p
+    amt = lambda v: f'<span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>{v}</bdi></span>'
+    inner = f'<del aria-hidden="true">{amt(was)}</del> <ins>{amt(price)}</ins>' if was else amt(price)
+    return f'<div class="wc-block-components-product-price wp-block-woocommerce-product-price {size_cls}">{inner}</div>'
+
+
+def loop_card(inner_markup, p, i):
+    """One <li> of a Product Query loop — WordPress's post-template item."""
+    global CUR
+    CUR = p
+    body = render(inner_markup, 1)
+    CUR = None
+    return f'<li class="wp-block-post post-{100 + i} product type-product status-publish">{body}</li>'
 
 
 REVIEWS = [
@@ -174,6 +196,9 @@ def dynamic(name, attrs, inner):
         return '<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>'
     if name == "post-title":
         lvl = a.get("level", 2)
+        if CUR and a.get("__woocommerceNamespace"):
+            return (prep_chip(CUR)
+                    + f'<h{lvl} class="wp-block-post-title {cls_for(a)}"><a href="#">{html.escape(CUR[0])}</a></h{lvl}>')
         return f'<h{lvl} class="fx-posttitle {cls_for(a)}">Express Dal Fry</h{lvl}>'
     if name == "query-title":
         return f'<h1 class="{cls_for(a)}">Foodify Express</h1>'
@@ -190,9 +215,28 @@ def dynamic(name, attrs, inner):
         items = ["Express", "Hot &amp; Fresh", "Flavors", "Combos", "How it works"]
         return '<nav class="fx-nav">' + "".join(f'<a href="#">{i}</a>' for i in items) + "</nav>"
     if name == "woocommerce/mini-cart":
-        return '<button class="fx-bag">Bag <span class="fx-bagn">3</span></button>'
+        # WooCommerce's Mini-Cart button markup: amount, then icon + count badge.
+        # The theme reorders them with CSS; the classes are Woo's, not fixtures.
+        return ('<div class="wc-block-mini-cart wp-block-woocommerce-mini-cart">'
+                '<button class="wc-block-mini-cart__button" aria-label="3 items in cart, total price of ₹620">'
+                '<span class="wc-block-mini-cart__amount">₹620</span>'
+                '<span class="wc-block-mini-cart__quantity-badge">'
+                '<svg class="wc-block-mini-cart__icon" viewBox="0 0 24 24" width="24" height="24" fill="none" '
+                'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+                '<path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6.2"/>'
+                '<circle cx="9.5" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>'
+                '<span class="wc-block-mini-cart__badge">3</span></span></button></div>')
     if name == "woocommerce/customer-account":
-        return '<button class="fx-acct" aria-label="Account">◍</button>'
+        return ('<div class="wc-block-customer-account wp-block-woocommerce-customer-account">'
+                '<a class="wc-block-customer-account__account-link" href="#" aria-label="Account">'
+                '<svg class="wc-block-customer-account__account-icon" viewBox="0 0 24 24" fill="none" '
+                'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'
+                '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a></div>')
+    if name == "woocommerce/product-image" and CUR:
+        return f'<div class="wc-block-components-product-image"><a href="#">{BOWL.format(hue=CUR[5], time=CUR[2])}</a></div>'
+    if name == "woocommerce/product-button" and CUR:
+        return ('<div class="wp-block-button wc-block-components-product-button">'
+                '<a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>')
     if name == "woocommerce/breadcrumbs":
         return '<p class="fx-crumb"><a href="#">Home</a> / <a href="#">Express</a> / Dal Fry</p>'
     if name == "woocommerce/product-image-gallery":
@@ -218,8 +262,13 @@ def dynamic(name, attrs, inner):
             + '</div>'
         )
     if name == "woocommerce/product-rating":
+        if CUR:
+            return (f'<div class="wc-block-components-product-rating">{stars(CUR[6])} '
+                    f'<span class="fd-rating-count">{CUR[7]} reviews</span></div>')
         return f'<div class="fx-rating">{stars("4.7")} <span class="fx-rc">84 reviews</span></div>'
     if name == "woocommerce/product-price":
+        if CUR:
+            return price_html(CUR, cls_for(a))
         return f'<p class="fx-price fx-price--lg {cls_for(a)}"><s>₹210</s> ₹185 <span class="fx-off">12% off</span></p>'
     if name == "woocommerce/product-stock-indicator":
         return '<p class="fx-stock">In stock</p>'
@@ -294,28 +343,38 @@ def dynamic(name, attrs, inner):
                 ("My mother approved, which I did not expect.", "Sneha T."),
             ])
         return f'<div class="fd-reviews">{cards}</div>' 
-    if name in ("woocommerce/product-best-sellers", "woocommerce/related-products"):
-        cols = a.get("columns", 4); rows_ = a.get("rows", 1)
-        return product_grid(cols * rows_, cols)
     if name == "woocommerce/catalog-sorting":
-        return '<div class="fx-sort">Sort: <strong>Bestselling</strong></div>'
+        # WooCommerce's ordering form; option labels are the theme's shortened set.
+        opts = "".join(f'<option{" selected" if i == 1 else ""}>{o}</option>' for i, o in enumerate(
+            ["Featured", "Most popular", "Best rated", "Newest", "Price: low to high", "Price: high to low"]))
+        return ('<div class="wp-block-woocommerce-catalog-sorting"><form class="woocommerce-ordering" method="get">'
+                f'<select name="orderby" class="orderby" aria-label="Shop order">{opts}</select></form></div>')
     if name == "woocommerce/product-results-count":
-        return '<div class="fx-count">Showing 1–12 of 14</div>'
-    if name.startswith("woocommerce/") and "filter" in name:
-        if a.get("heading") == "Price":
-            return '<div class="fx-filter"><h4>Price</h4><div class="fx-range"></div><p class="fx-rangev">₹100 — ₹1,800</p></div>'
-        opts = {"Prep method": ["Just add hot water (14)", "Stir with drinking water (7)", "Requires cooking (11)"],
-                "Dietary": ["Vegan (9)", "Gluten free (12)", "Jain (6)", "Millet based (5)", "High protein (7)"]}
+        return '<p class="woocommerce-result-count wp-block-woocommerce-product-results-count">Showing 1–12 of 14 results</p>'
+    if name == "woocommerce/price-filter":
+        return ('<div class="wp-block-woocommerce-price-filter"><h3 class="wc-block-price-filter__title">Price</h3>'
+                '<div class="wc-block-price-filter__range-input-wrapper"><div class="fx-range"></div></div>'
+                '<div class="wc-block-price-filter__controls"><span>₹100</span><span>₹1,800</span></div></div>')
+    if name == "woocommerce/attribute-filter":
+        # Woo's checkbox-list markup. In WordPress this block hydrates client-side;
+        # the server sends the same classes with the list rendered from the
+        # attribute the theme resolves from `foodifyAttribute` at render time.
+        opts = {"prep":    [("Just add hot water", 14), ("Stir with drinking water", 7), ("Requires cooking", 11)],
+                "dietary": [("Vegan", 9), ("Gluten free", 12), ("Jain", 6), ("Millet based", 5), ("High protein", 7)]}
         h = a.get("heading", "Filter")
-        lis = "".join(f'<label><input type="checkbox">{o}</label>' for o in opts.get(h, []))
-        return f'<div class="fx-filter"><h4>{h}</h4>{lis}</div>'
+        lis = "".join(
+            '<li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label>'
+            '<input type="checkbox" class="wc-block-components-checkbox__input">'
+            f'<span class="wc-block-components-checkbox__label">{o} '
+            f'<span class="wc-filter-element-label-list-count">({n})</span></span></label></div></li>'
+            for o, n in opts.get(a.get("foodifyAttribute", ""), []))
+        return (f'<div class="wp-block-woocommerce-attribute-filter"><h3 class="wc-block-attribute-filter__title">{h}</h3>'
+                f'<ul class="wc-block-checkbox-list">{lis}</ul></div>')
     if name == "woocommerce/classic-shortcode":
         sc = a.get("shortcode", "cart")
         if sc == "my_account":
             return my_account(SIGNED_IN)
         return cart_or_checkout(sc)
-    if name.startswith("query-pagination"):
-        return '' if name != "query-pagination" else '<nav class="fx-pag"><a>1</a><a class="on">2</a><a>Next →</a></nav>'
     return inner or ""
 
 
@@ -332,20 +391,45 @@ def cls_for(a):
 
 def cart_or_checkout(which):
     if which == "cart":
+        # [woocommerce_cart]'s own markup — shop_table_responsive with data-title
+        # cells, the quantity as WooCommerce's number input, the totals table.
+        # The theme styles these classes; nothing here is a fixture class except
+        # the bowl standing in for the thumbnail image.
+        amt = lambda v: f'<span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>{v}</bdi></span>'
         lines = "".join(
-            f'<tr><td>{BOWL.format(hue=p[5], time="")}</td><td><strong>{html.escape(p[0])}</strong>'
-            f'<span class="fx-meta">{p[1]} · {p[2]}</span></td>'
-            f'<td class="fx-qtycell"><button>−</button>1<button>+</button></td>'
-            f'<td class="fx-num">₹{p[3]}</td></tr>' for p in PRODUCTS[:3])
-        return f'''<div class="fx-cart"><table class="fx-carttable"><tbody>{lines}</tbody></table>
-<aside class="fx-summary"><h2>Summary</h2>
-<div class="fx-row"><span>Subtotal</span><span class="fx-num">₹620</span></div>
-<div class="fx-row fx-disc"><span>NALIN10 · 10%</span><span class="fx-num">−₹62</span></div>
-<div class="fx-row"><span>Shipping</span><span class="fx-num">Free</span></div>
-<div class="fx-row"><span>GST</span><span class="fx-num">Included</span></div>
-<div class="fx-row fx-total"><span>Total</span><span class="fx-num">₹558</span></div>
-<p class="fd-cart-promise is-estimate">Shipping is calculated from your PIN code at the next step. Nothing else is added.</p>
-<button class="wp-element-button fx-add fx-add--lg">Checkout</button></aside></div>'''
+            '<tr class="woocommerce-cart-form__cart-item cart_item">'
+            f'<td class="product-remove"><a href="#" class="remove" aria-label="Remove {html.escape(p[0])} from cart">×</a></td>'
+            f'<td class="product-thumbnail"><a href="#">{BOWL.format(hue=p[5], time="")}</a></td>'
+            f'<td class="product-name" data-title="Product"><a href="#">{html.escape(p[0])}</a></td>'
+            f'<td class="product-price" data-title="Price">{amt(p[3])}</td>'
+            '<td class="product-quantity" data-title="Quantity"><div class="quantity">'
+            f'<label class="screen-reader-text" for="qty-{i}">Quantity</label>'
+            f'<input type="number" id="qty-{i}" class="input-text qty text" value="1" min="0" step="1" inputmode="numeric"></div></td>'
+            f'<td class="product-subtotal" data-title="Subtotal">{amt(p[3])}</td></tr>'
+            for i, p in enumerate(PRODUCTS[:3]))
+        return f'''<div class="woocommerce">
+<form class="woocommerce-cart-form">
+<table class="shop_table shop_table_responsive cart woocommerce-cart-form__contents">
+<thead><tr><th class="product-remove"><span class="screen-reader-text">Remove item</span></th>
+<th class="product-thumbnail"><span class="screen-reader-text">Thumbnail image</span></th>
+<th class="product-name">Product</th><th class="product-price">Price</th>
+<th class="product-quantity">Quantity</th><th class="product-subtotal">Subtotal</th></tr></thead>
+<tbody>{lines}
+<tr><td class="actions" colspan="6"><div class="coupon"><label for="coupon_code" class="screen-reader-text">Coupon:</label>
+<input type="text" id="coupon_code" class="input-text" placeholder="Partner or creator code">
+<button type="button" class="button wp-element-button">Apply</button></div>
+<button type="button" class="button wp-element-button" disabled>Update cart</button></td></tr>
+</tbody></table></form>
+<div class="cart-collaterals"><div class="cart_totals"><h2>Cart totals</h2>
+<table class="shop_table shop_table_responsive"><tbody>
+<tr class="cart-subtotal"><th>Subtotal</th><td data-title="Subtotal">{amt(620)}</td></tr>
+<tr class="cart-discount coupon-nalin10"><th>Coupon NALIN10</th><td data-title="Coupon">−{amt(62)}</td></tr>
+<tr class="woocommerce-shipping-totals shipping"><th>Shipping</th><td data-title="Shipping">Free shipping</td></tr>
+<tr class="order-total"><th>Total</th><td data-title="Total">{amt(558)}</td></tr>
+</tbody></table>
+<p class="fd-cart-promise is-estimate">GST is included. Shipping is confirmed from your PIN code at the next step. Nothing else is added.</p>
+<div class="wc-proceed-to-checkout"><a href="#" class="checkout-button button alt wc-forward wp-element-button">Proceed to checkout</a></div>
+</div></div></div>'''
     # Rendered as a RETURNING customer sees it: the chooser above, and every
     # field already carrying the default address. That is WP-05's acceptance
     # ("zero address fields typed") made visible rather than asserted. A guest
@@ -491,16 +575,95 @@ def load_pattern(slug):
     return src.split("?>", 1)[1] if "?>" in src else src
 
 
+def find_close(markup, name, start):
+    """(open_of_close, end_of_close) for the closing comment matching a block
+    opened just before `start`, honouring nested blocks of the same name."""
+    depth = 1
+    for m in BLOCK.finditer(markup, start):
+        if m.group(2) != name or m.group(4):
+            continue
+        depth += -1 if m.group(1) else 1
+        if depth == 0:
+            return m.start(), m.end()
+    return len(markup), len(markup)
+
+
 def render(markup, depth=0):
+    global LOOP_N
     if depth > 8:
         return markup
     out, pos = [], 0
+    skip_to = 0
     for m in BLOCK.finditer(markup):
+        if m.start() < skip_to:
+            continue
         out.append(markup[pos:m.start()])
         pos = m.end()
         closing, name, attrs, selfclose = m.group(1), m.group(2), m.group(3), m.group(4)
         a = json.loads(attrs) if attrs else {}
         if closing:
+            continue
+        # Flex layouts. WordPress turns layout:{type:flex} into a generated
+        # container class; the preview never did, so every flex group (the
+        # header, the shop toolbar) rendered as a stack — which is how the
+        # account icon and the cart came to sit one under the other in the
+        # client's review. The style is injected onto the block's own wrapper.
+        lay = a.get("layout", {})
+        if name == "group" and not selfclose and lay.get("type") == "flex":
+            pos_map = {"left": "flex-start", "center": "center", "right": "flex-end",
+                       "space-between": "space-between", "stretch": "stretch"}
+            jc = pos_map.get(lay.get("justifyContent", "left"), "flex-start")
+            wrap = "nowrap" if lay.get("flexWrap") == "nowrap" else "wrap"
+            if lay.get("orientation") == "vertical":
+                # Core maps justifyContent to the cross axis for a column.
+                style = f'display:flex;flex-direction:column;align-items:{jc};'
+            else:
+                va = {"top": "flex-start", "center": "center", "bottom": "flex-end",
+                      "stretch": "stretch"}.get(lay.get("verticalAlignment", "center"), "center")
+                style = f'display:flex;flex-direction:row;flex-wrap:{wrap};align-items:{va};justify-content:{jc};'
+            style += 'gap:var(--wp--style--block-gap)'
+            tail = markup[pos:]
+            tail = re.sub(r'<div\s+class="', f'<div style="{style}" class="is-layout-flex ', tail, count=1)
+            markup = markup[:pos] + tail
+            # finditer holds the old string; re-scan from here on the patched one.
+            return "".join(out) + render(markup[pos:], depth)
+        if name == "navigation" and not selfclose:
+            # The Navigation block's HTML is generated from its link children,
+            # which are self-closing and rendered nothing — so no preview ever
+            # showed the menu. On a phone core renders a hamburger; the preview
+            # hides the row below 560px and does not draw the overlay.
+            cs, ce = find_close(markup, name, pos)
+            labels = re.findall(r'wp:navigation-link\s*(\{.*?\})', markup[pos:cs])
+            items = "".join(f'<a href="#" class="wp-block-navigation-item__content">'
+                            f'{json.loads(l).get("label", "")}</a>' for l in labels)
+            out.append(f'<nav class="wp-block-navigation fx-nav">{items}</nav>')
+            pos = skip_to = ce
+            continue
+        # A Product Query loop. WordPress renders post-template's inner blocks
+        # once per result; this did not, so the shop screen showed one half-card
+        # and the no-results paragraph — which is what the client reviewed.
+        if name in ("query", "woocommerce/related-products") and not selfclose:
+            LOOP_N = int(a.get("query", {}).get("perPage", 8))
+            continue
+        if name == "post-template" and not selfclose:
+            cs, ce = find_close(markup, name, pos)
+            inner = markup[pos:cs]
+            cols = a.get("layout", {}).get("columnCount", 3)
+            cls = a.get("className", "")
+            items = "".join(loop_card(inner, PRODUCTS[i % len(PRODUCTS)], i) for i in range(min(LOOP_N, 12)))
+            out.append(f'<ul class="wp-block-post-template {cls} is-layout-grid columns-{cols} '
+                       f'wp-block-post-template-is-layout-grid">{items}</ul>')
+            pos = skip_to = ce
+            continue
+        if name == "query-no-results" and not selfclose:
+            # Only rendered by WordPress when the loop is empty. The fixture loop never is.
+            _cs, ce = find_close(markup, name, pos)
+            pos = skip_to = ce
+            continue
+        if name == "query-pagination" and not selfclose:
+            _cs, ce = find_close(markup, name, pos)
+            out.append('<nav class="fx-pag"><a>1</a><a class="on">2</a><a>Next →</a></nav>')
+            pos = skip_to = ce
             continue
         if name == "template-part":
             p = os.path.join(THEME, "parts", a.get("slug", "") + ".html")
@@ -540,8 +703,22 @@ img{max-width:100%}
 .wp-site-blocks>*{margin:0}
 main>.wp-block-group,main>section,main>div{margin:0}
 .wp-block-group.has-background,.wp-block-group[style*=background]{width:100%}
+/* Flex layouts (injected inline by render()); children are not block-wide. */
+.is-layout-flex>*{width:auto;margin:0}
+/* Cover: full-bleed, centred inner container that is itself a constrained layout. */
+.fx-shell main>.alignfull{max-width:none;margin-left:calc(-1 * var(--wp--preset--spacing--40));margin-right:calc(-1 * var(--wp--preset--spacing--40))}
+.wp-block-cover{display:flex;align-items:center;justify-content:center;position:relative;padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40)}
+.wp-block-cover__background{position:absolute;inset:0;z-index:0}
+.wp-block-cover__background.has-background-dim-0{opacity:0}
+.wp-block-cover__inner-container{position:relative;width:100%}
+.wp-block-cover__inner-container>*{max-width:__CONTENT__;margin-left:auto;margin-right:auto}
+.wp-block-cover__inner-container>.alignwide{max-width:__WIDE__}
 .wp-block-columns{display:flex;gap:var(--wp--preset--spacing--50);flex-wrap:wrap;align-items:flex-start}
+.wp-block-columns.are-vertically-aligned-center{align-items:center}
 .wp-block-column{flex:1 1 0;min-width:0}
+/* core columns/style.css: a column given a width keeps it (flex-grow:0) —
+   without this the 232px filter column grew to half the shop. */
+.wp-block-columns>.wp-block-column[style*=flex-basis]{flex-grow:0}
 .wp-block-columns.is-not-stacked-on-mobile{flex-wrap:nowrap}
 .wp-block-buttons{display:flex;gap:var(--wp--preset--spacing--30);flex-wrap:wrap}
 .wp-block-button__link,.wp-element-button{display:inline-flex;align-items:center;justify-content:center;
@@ -556,6 +733,20 @@ main>.wp-block-group,main>section,main>div{margin:0}
 .wp-block-list.is-style-plain li{padding:4px 0}
 .wp-block-list.is-style-plain a{color:inherit;text-decoration:none;opacity:.85}
 .wp-block-list.is-style-plain a:hover{opacity:1;text-decoration:underline}
+/* Post-template grid, as core's post-template/style.css + layout support emit it:
+   one column by default, columns-N above 600px, and the max-width:600px rule at
+   (0,3,0) that the theme's two-up phone rule has to tie and beat by order. */
+.wp-block-post-template{list-style:none;padding:0;margin:0}
+.wp-block-post-template.is-layout-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:1.25em}
+@media (min-width:600px){
+  .wp-block-post-template.is-layout-grid.columns-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wp-block-post-template.is-layout-grid.columns-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .wp-block-post-template.is-layout-grid.columns-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (max-width:600px){
+  .wp-block-post-template-is-layout-grid[class*=columns-]:not(.has-native-responsive-grid){grid-template-columns:1fr}
+}
+.wp-block-details summary{cursor:pointer}
 h1,h2,h3{margin:0 0 .4em}
 p{margin:0 0 1em}
 /* constrained layout, as theme.json declares it */
@@ -573,42 +764,18 @@ FIXTURE_CSS = """
 .fx-nav{display:flex;gap:22px;flex-wrap:wrap}
 .fx-nav a{color:var(--wp--preset--color--char);text-decoration:none;font-size:var(--wp--preset--font-size--base)}
 .fx-nav a:hover{color:var(--wp--preset--color--flame-ink)}
-.fx-bag{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border:0;
-  border-radius:var(--wp--custom--radius--pill);padding:0 16px;height:40px;display:inline-flex;
-  align-items:center;gap:8px;font-weight:600;font-size:var(--wp--preset--font-size--sm);cursor:pointer}
-.fx-bagn{background:var(--wp--preset--color--flame);color:#241703;border-radius:999px;
-  min-width:19px;height:19px;display:grid;place-items:center;font-size:11px}
-.fx-acct{background:none;border:1px solid var(--wp--preset--color--line-strong);border-radius:999px;
-  width:40px;height:40px;cursor:pointer;color:var(--wp--preset--color--char)}
 .fx-bowl{position:relative;aspect-ratio:1;border-radius:50%;
   background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--h) 22%,#fff) 0,transparent 42%),
              radial-gradient(circle at 50% 50%,var(--h) 0,color-mix(in srgb,var(--h) 70%,#2A1B08) 76%);
   box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--h) 28%,#FFFDF8)}
 .fx-time{position:absolute;bottom:2%;right:-2%;background:var(--wp--preset--color--char);
   color:var(--wp--preset--color--paper);font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px}
-.fx-grid{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));
-  gap:var(--wp--preset--spacing--50) var(--wp--preset--spacing--40)}
-/* Card rhythm (design review, 26 Aug): a uniform 8px gap between everything is
-   what made the cards read as cramped — no hierarchy. Now: the rating hugs the
-   name, the price gets air above via the flexible spacer, and the button is
-   separated from the money. The bowl sits on its own kraft tile at ~70% width
-   instead of pressing the card edges, and the chip sits ON the tile rather
-   than overlapping the bowl. */
-.fx-card{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
-  border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--40);
-  display:flex;flex-direction:column;gap:var(--wp--preset--spacing--10)}
-.fx-media{position:relative;background:var(--wp--preset--color--kraft-pale);
-  border-radius:var(--wp--custom--radius--control);
-  padding:var(--wp--preset--spacing--50) var(--wp--preset--spacing--40) var(--wp--preset--spacing--40);
-  margin-bottom:var(--wp--preset--spacing--30)}
-.fx-media .fx-bowl{width:70%;margin:0 auto}
-.fx-chip{position:absolute;top:var(--wp--preset--spacing--20);left:var(--wp--preset--spacing--20);
-  font-size:10px;font-weight:700;letter-spacing:.08em;
-  text-transform:uppercase;padding:4px 9px;border-radius:999px;
-  background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep)}
-.fx-chip--flavors{background:var(--wp--preset--color--leaf-wash);color:var(--wp--preset--color--leaf-ink)}
-.fx-chip--hot{background:#F3E3D4;color:var(--wp--preset--color--kraft-deep)}
-.fx-name{font-size:var(--wp--preset--font-size--md);margin:0;line-height:1.3;text-wrap:balance}
+/* Card rhythm (design review, 26 Aug) moved into the THEME on 15 Sep — it was
+   fixture CSS here, so the preview showed cards the site would never render.
+   style.css now styles the loop's own classes; the bowl below merely stands in
+   for the product image inside Woo's image wrapper. */
+.wc-block-components-product-image .fx-bowl{width:70%;margin:0 auto}
+.product-thumbnail .fx-bowl{width:4rem}
 .fx-rating{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);line-height:1.5}
 .fx-stars{color:var(--wp--preset--color--flame);letter-spacing:-1px}
 .fx-price{font-weight:700;margin:auto 0 0;padding-top:var(--wp--preset--spacing--30);
@@ -648,28 +815,16 @@ FIXTURE_CSS = """
   color:var(--wp--preset--color--mute);margin-bottom:3px}
 .fx-spec dd{margin:0;font-size:var(--wp--preset--font-size--base)}
 .fx-veg{color:var(--wp--preset--color--leaf-ink);font-weight:600}
-.fx-filter{margin-bottom:var(--wp--preset--spacing--50)}
-.fx-filter h4{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
-  color:var(--wp--preset--color--mute);margin:0 0 10px;font-family:var(--wp--preset--font-family--ui)}
-.fx-filter label{display:flex;gap:9px;align-items:center;font-size:var(--wp--preset--font-size--sm);
-  padding:5px 0;color:var(--wp--preset--color--char)}
-.fx-range{height:4px;background:var(--wp--preset--color--line);border-radius:999px;position:relative}
+.fx-range{height:4px;background:var(--wp--preset--color--line);border-radius:999px;position:relative;margin-top:8px}
 .fx-range::after{content:"";position:absolute;left:10%;right:25%;top:0;bottom:0;
   background:var(--wp--preset--color--flame-ink);border-radius:999px}
-.fx-rangev{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute);margin-top:8px}
-.fx-sort,.fx-count{display:inline-block;font-size:var(--wp--preset--font-size--sm);
-  color:var(--wp--preset--color--mute);margin:0 18px var(--wp--preset--spacing--40) 0}
 .fx-pag{display:flex;gap:10px;justify-content:center;margin-top:var(--wp--preset--spacing--60)}
 .fx-pag a{padding:8px 14px;border:1px solid var(--wp--preset--color--line);border-radius:6px;
   font-size:var(--wp--preset--font-size--sm);cursor:pointer}
 .fx-pag a.on{background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-color:var(--wp--preset--color--char)}
-.fx-cart,.fx-checkout{display:grid;grid-template-columns:1.6fr 1fr;gap:var(--wp--preset--spacing--60);align-items:start}
-.fx-carttable{width:100%;border-collapse:collapse}
-.fx-carttable td{padding:16px 12px 16px 0;border-bottom:1px solid var(--wp--preset--color--line);vertical-align:middle}
-.fx-carttable .fx-bowl{width:64px}
+.fx-checkout{display:grid;grid-template-columns:1.6fr 1fr;gap:var(--wp--preset--spacing--60);align-items:start}
 .fx-meta{display:block;font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
-.fx-qtycell button{background:none;border:1px solid var(--wp--preset--color--line-strong);
-  border-radius:6px;width:28px;height:28px;margin:0 6px;cursor:pointer}
+.screen-reader-text{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 .fx-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
 .fx-summary{background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
   border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)}
@@ -698,18 +853,12 @@ FIXTURE_CSS = """
   .wp-block-columns.is-not-stacked-on-mobile>.wp-block-column{flex:1 1 45%}
 }
 @media (max-width:900px){
-  .fx-grid{--cols:2 !important}
-    .fx-cart,.fx-checkout{grid-template-columns:1fr}
+  .fx-checkout{grid-template-columns:1fr}
   .fx-spec dl{grid-template-columns:1fr}
   .fx-spec dl>div:nth-child(odd){border-right:0}
 }
 @media (max-width:560px){
-  .fx-grid{--cols:2 !important;gap:var(--wp--preset--spacing--30)}
-  .fx-card{padding:var(--wp--preset--spacing--30)}
-  .fx-media{padding:var(--wp--preset--spacing--40) var(--wp--preset--spacing--30) var(--wp--preset--spacing--30)}
-  .fx-media .fx-bowl{width:78%}
-  .fx-name{font-size:var(--wp--preset--font-size--base)}
-  .fx-price{font-size:var(--wp--preset--font-size--md)}
+  .wc-block-components-product-image .fx-bowl{width:78%}
   .fx-nav{display:none}
 }
 """
@@ -724,6 +873,16 @@ SCREENS = [
     ("signin",   "Sign in",          "page-my-account.html"),
     ("notfound", "404",              "404.html"),
 ]
+
+# The body classes WordPress/WooCommerce put on each of these pages. The theme
+# scopes the cart and account rules by them, so the preview shell carries them.
+BODY_CLASS = {
+    "shop": "post-type-archive-product woocommerce",
+    "cart": "woocommerce-cart woocommerce-page",
+    "checkout": "woocommerce-checkout woocommerce-page",
+    "account": "woocommerce-account woocommerce-page",
+    "signin": "woocommerce-account woocommerce-page",
+}
 
 
 def main():
@@ -750,7 +909,7 @@ def main():
         body = body.replace("<!--FOODIFY_YEAR-->", str(datetime.date.today().year))
         body = body.replace("<!--FOODIFY_FSSAI-->", "NOT CONFIGURED")
         tabs.append(f'<button class="tab" role="tab" aria-selected="{str(i == 0).lower()}" data-s="{sid}">{label}</button>')
-        panels.append(f'<div class="fx-shell" id="s-{sid}"{"" if i == 0 else " hidden"}>{body}</div>')
+        panels.append(f'<div class="fx-shell {BODY_CLASS.get(sid, "")}" id="s-{sid}"{"" if i == 0 else " hidden"}>{body}</div>')
 
     fonts = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
              '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
@@ -807,6 +966,9 @@ document.addEventListener('click', function (e) {{
   }});
   window.scrollTo(0, 0);
 }});
+// What inc/product-display.php prints in wp_footer on the shop: filters start
+// closed on a phone. Same line, so the preview closes what the site closes.
+if(matchMedia('(max-width:781px)').matches){{document.querySelectorAll('details.fd-filters[open]').forEach(function(d){{d.removeAttribute('open')}})}}
 </script>"""
     open(OUT, "w").write(doc)
     print(f"rendered {len(SCREENS)} screens -> {OUT}  ({len(doc):,} bytes)")

@@ -90,11 +90,13 @@ hierarchy and responsive behaviour on it. Judge behaviour on staging.
 - **Photography.** Every food image is a CSS placeholder. This is the week-3
   shoot, and it is the single biggest visual difference between the preview and
   the real thing.
-- **`archive-product.html` filter blocks carry `attributeId: 0`** — a placeholder.
-  WooCommerce needs the real attribute IDs, which only exist once
-  `tags-to-attributes.php` has created them on a live install. Set them in the
-  Site Editor after the WP-02 migration, then export the template back to the
-  theme.
+- ~~**`archive-product.html` filter blocks carry `attributeId: 0`** — a placeholder~~
+  — **resolved at render time** (15 Sep 2026). The blocks carry
+  `foodifyAttribute: "prep"` / `"dietary"` and `inc/product-attributes.php` maps
+  the slug to whatever id THIS install assigned, on `render_block_data`. A
+  numeric id in a template is install-specific — exported from staging it
+  filters nothing on production — so the template never carries one. Pinned in
+  `tests/shop-test.php`.
 
 
 ---

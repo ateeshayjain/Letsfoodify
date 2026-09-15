@@ -15,7 +15,17 @@
 <!-- wp:paragraph {"textColor":"mute","fontSize":"md","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|50"}}}} -->
 <p class="has-mute-color has-text-color has-md-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">Eight best sellers. The full catalogue lives on <a href="/shop/">the shop page</a> — this page is not a wall of 140 products.</p>
 <!-- /wp:paragraph -->
-<!-- wp:woocommerce/product-best-sellers {"columns":4,"rows":2,"align":"wide"} /-->
+<!-- wp:query {"queryId":1,"query":{"perPage":8,"pages":0,"offset":0,"postType":"product","order":"desc","orderBy":"popularity","inherit":false},"namespace":"woocommerce/product-query","align":"wide","layout":{"type":"default"}} -->
+<div class="wp-block-query alignwide">
+<!-- wp:post-template {"className":"fd-products","layout":{"type":"grid","columnCount":4}} -->
+<!-- wp:woocommerce/product-image {"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
+<!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
+<!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
+<!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->
+<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true,"fontSize":"sm"} /-->
+<!-- /wp:post-template -->
+</div>
+<!-- /wp:query -->
 </div>
 <!-- /wp:group -->
 

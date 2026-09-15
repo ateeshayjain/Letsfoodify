@@ -32,7 +32,7 @@ run "bash-syntax"     bash -c 'for f in scripts/*.sh run-all-tests.sh; do bash -
 run "theme.json"      python3 -c "import json;json.load(open('theme/foodify/theme.json'));print('valid')"
 
 echo "── pure suites ──"
-for t in perf shortcode otp address checkout payments reviews partner admin product-spec wp11 wp12 wp13; do
+for t in perf shortcode otp address checkout payments reviews partner admin product-spec wp11 wp12 wp13 shop; do
   run "$t" php "tests/$t-test.php"
 done
 run "undefined-functions" php tests/undefined-functions.php

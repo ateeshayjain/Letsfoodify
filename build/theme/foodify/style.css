@@ -63,23 +63,28 @@ a, button, .fd-card {
   border-radius: var(--wp--custom--radius--card);
 }
 
-/* Prep-method chip — the brand's core attribute, shown above the product name */
-.fd-prep {
+/* Prep-method chip — the brand's core attribute, shown above the product name.
+   Named fd-chip: it was fd-prep until 2026-09-15, the same class as the product
+   page's "How you make it" band below, whose band-sized margin and padding
+   cascaded onto every card chip. */
+.fd-chip {
   display: inline-flex; align-items: center;
   gap: var(--wp--preset--spacing--20);
-  font-size: var(--wp--preset--font-size--sm); font-weight: 600;
+  font-size: var(--wp--preset--font-size--xs); font-weight: 600; line-height: 1.25;
+  font-family: var(--wp--preset--font-family--ui);
+  color: var(--wp--preset--color--char);
   background: var(--wp--preset--color--surface);
   border: 1px solid var(--wp--preset--color--line);
   border-radius: var(--wp--custom--radius--pill);
-  padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--30);
 }
-.fd-prep::before {
+.fd-chip::before {
   content: ""; border-radius: 50%;
   width: var(--wp--preset--spacing--20); height: var(--wp--preset--spacing--20);
   background: var(--wp--preset--color--leaf);
 }
-.fd-prep--hot::before  { background: var(--wp--preset--color--flame); }
-.fd-prep--cook::before { background: var(--wp--preset--color--kraft-deep); }
+.fd-chip--hot::before  { background: var(--wp--preset--color--flame); }
+.fd-chip--cook::before { background: var(--wp--preset--color--kraft-deep); }
 
 /* Per-serving price — reframes ₹210 against a delivery order */
 .fd-per-serving {
@@ -514,4 +519,357 @@ input:focus, select:focus, textarea:focus {
   .woocommerce-orders-table tr { display: grid; gap: var(--wp--preset--spacing--10); padding: var(--wp--preset--spacing--40) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
   .woocommerce-orders-table td { border: 0; padding: 0; }
   .fd-address-list { grid-template-columns: 1fr; }
+}
+
+/* ===========================================================================
+   DESIGN REVIEW 2026-09-15 — the cart, the filters, the sort, the grid
+   Client feedback on the preview: "Cart design is not clearly visible" and
+   "Filter and Sort design not visible". Every rule below targets WooCommerce's
+   OWN markup, so the preview styles the same classes the site will render.
+   =========================================================================== */
+
+/* Header actions — account and cart, both 44px, the cart a filled pill. */
+.fd-header__actions { align-items: center; gap: var(--wp--preset--spacing--20); }
+.wc-block-customer-account .wc-block-customer-account__account-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  border: 1px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--pill);
+  color: var(--wp--preset--color--char);
+}
+.wc-block-customer-account .wc-block-customer-account__account-icon { width: 1.25rem; height: 1.25rem; }
+
+/* The cart. An outline icon in the margin is what the client could not find;
+   a charcoal pill carrying the icon, the count and the amount is a control. */
+.wc-block-mini-cart .wc-block-mini-cart__button {
+  display: inline-flex; align-items: center;
+  gap: var(--wp--preset--spacing--20);
+  min-height: var(--wp--custom--tap-target);
+  padding: 0 var(--wp--preset--spacing--40) 0 var(--wp--preset--spacing--30);
+  background: var(--wp--preset--color--char);
+  color: var(--wp--preset--color--paper);
+  border: 0; border-radius: var(--wp--custom--radius--pill);
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--base); font-weight: 600;
+  cursor: pointer;
+}
+.wc-block-mini-cart .wc-block-mini-cart__button:hover,
+.wc-block-mini-cart .wc-block-mini-cart__button:focus-visible {
+  background: var(--wp--preset--color--flame-ink);
+  color: var(--wp--preset--color--paper);
+}
+.wc-block-mini-cart .wc-block-mini-cart__quantity-badge {
+  display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--10);
+  order: -1;   /* icon and count first, amount after */
+}
+.wc-block-mini-cart .wc-block-mini-cart__icon { width: 1.35rem; height: 1.35rem; }
+.wc-block-mini-cart .wc-block-mini-cart__badge {
+  position: static; transform: none;
+  min-width: 1.35rem; height: 1.35rem; padding: 0 var(--wp--preset--spacing--10);
+  display: inline-grid; place-items: center;
+  border: 0; border-radius: var(--wp--custom--radius--pill);
+  background: var(--wp--preset--color--flame-deep);
+  color: var(--wp--preset--color--paper);
+  font-size: var(--wp--preset--font-size--xs); font-weight: 700; line-height: 1;
+}
+.wc-block-mini-cart .wc-block-mini-cart__amount { font-variant-numeric: tabular-nums; }
+
+/* Shop toolbar: the count on the left, "Sort by" + a real select on the right. */
+.fd-shop__toolbar {
+  align-items: center;
+  gap: var(--wp--preset--spacing--30) var(--wp--preset--spacing--50);
+  margin-bottom: var(--wp--preset--spacing--50);
+}
+.fd-shop__toolbar .woocommerce-result-count {
+  margin: 0; color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm);
+}
+.fd-sort { align-items: center; gap: var(--wp--preset--spacing--20); }
+.fd-sort__label { margin: 0; font-weight: 600; white-space: nowrap; }
+.fd-sort .woocommerce-ordering { margin: 0; position: relative; }
+.fd-sort select.orderby {
+  appearance: none; -webkit-appearance: none;
+  padding: 0 var(--wp--preset--spacing--60) 0 var(--wp--preset--spacing--40);
+  background: var(--wp--preset--color--surface);
+  color: var(--wp--preset--color--char);
+  font-family: var(--wp--preset--font-family--ui); font-weight: 600;
+  cursor: pointer;
+}
+/* The caret is drawn, not an image: an SVG data URI would need a hardcoded stroke colour. */
+.fd-sort .woocommerce-ordering::after {
+  content: ""; position: absolute; pointer-events: none;
+  right: var(--wp--preset--spacing--40); top: 50%;
+  width: .5em; height: .5em;
+  border-right: 2px solid var(--wp--preset--color--char);
+  border-bottom: 2px solid var(--wp--preset--color--char);
+  transform: translateY(-70%) rotate(45deg);
+}
+
+/* Filters. On desktop the details element is open and its summary hidden, so
+   the sidebar is simply present. Below core's stacking breakpoint the summary
+   becomes a 44px "Filter" control and the script in product-display.php closes
+   the element on load. */
+.fd-filters > summary { display: none; list-style: none; }
+.fd-filters > summary::-webkit-details-marker { display: none; }
+.wp-block-woocommerce-filter-wrapper { margin-bottom: var(--wp--preset--spacing--50); }
+.wc-block-attribute-filter__title, .wc-block-price-filter__title,
+.wp-block-woocommerce-filter-wrapper h3 {
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--xs); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--wp--preset--color--mute);
+  margin: 0 0 var(--wp--preset--spacing--20);
+}
+.wc-block-checkbox-list { list-style: none; margin: 0; padding: 0; }
+.wc-block-checkbox-list__item { margin: 0; }
+.wc-block-components-checkbox label {
+  display: flex; align-items: center; gap: var(--wp--preset--spacing--30);
+  min-height: var(--wp--custom--tap-target);
+  font-size: var(--wp--preset--font-size--base); cursor: pointer;
+}
+.wc-block-components-checkbox .wc-block-components-checkbox__input {
+  width: 1.25rem; height: 1.25rem; margin: 0; flex: 0 0 auto;
+  accent-color: var(--wp--preset--color--flame-ink);
+  border: 1.5px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control);
+}
+.wc-filter-element-label-list-count { color: var(--wp--preset--color--mute); }
+.wc-block-price-filter__controls {
+  display: flex; justify-content: space-between;
+  font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute);
+  margin-top: var(--wp--preset--spacing--20);
+}
+
+/* Product cards — the Product Query loop's own list items. Home, shop,
+   category and "Complete the meal" all use this one grid. */
+.wp-block-post-template.fd-products { gap: var(--wp--preset--spacing--50) var(--wp--preset--spacing--40); }
+.fd-products > .wp-block-post {
+  display: flex; flex-direction: column; gap: var(--wp--preset--spacing--10);
+  margin: 0;
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--40);
+}
+.fd-products .wc-block-components-product-image {
+  margin: 0 0 var(--wp--preset--spacing--30);
+  background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--control);
+  padding: var(--wp--preset--spacing--50) var(--wp--preset--spacing--40) var(--wp--preset--spacing--40);
+}
+.fd-products .wc-block-components-product-image img {
+  display: block; width: 100%; aspect-ratio: 1; object-fit: cover;
+  border-radius: var(--wp--custom--radius--control);
+  background: transparent;
+}
+.fd-products .fd-chip { align-self: flex-start; margin-bottom: var(--wp--preset--spacing--10); }
+.fd-products .wp-block-post-title {
+  margin: 0; font-size: var(--wp--preset--font-size--md); line-height: 1.3; text-wrap: balance;
+}
+.fd-products .wp-block-post-title a { color: inherit; text-decoration: none; }
+.fd-products .wp-block-post-title a:hover { color: var(--wp--preset--color--flame-ink); }
+.fd-products .wc-block-components-product-rating {
+  margin: 0; font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute);
+}
+.fd-products .wc-block-components-product-price {
+  margin: auto 0 0; padding-top: var(--wp--preset--spacing--30);
+  font-size: var(--wp--preset--font-size--lg); font-weight: 700;
+}
+.fd-products .wc-block-components-product-price del {
+  color: var(--wp--preset--color--mute); font-weight: 400; margin-right: var(--wp--preset--spacing--20);
+}
+.fd-products .wc-block-components-product-price ins { text-decoration: none; }
+.fd-products .wc-block-components-product-button { margin: var(--wp--preset--spacing--30) 0 0; }
+.fd-products .wc-block-components-product-button .wp-block-button__link { width: 100%; }
+
+/* Cart — WooCommerce's classic cart markup: two columns, the totals a card. */
+.woocommerce-cart .woocommerce {
+  display: grid; grid-template-columns: 1.6fr 1fr;
+  gap: var(--wp--preset--spacing--60); align-items: start;
+}
+.woocommerce-cart .woocommerce > .woocommerce-notices-wrapper { grid-column: 1 / -1; }
+.woocommerce-cart .woocommerce-cart-form, .woocommerce-cart .cart-collaterals { float: none; width: auto; }
+.woocommerce-cart table.shop_table { border: 0; border-collapse: collapse; margin: 0; }
+.woocommerce-cart table.shop_table th {
+  text-align: left; font-weight: 700;
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--xs); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--wp--preset--color--mute);
+  padding: 0 var(--wp--preset--spacing--30) var(--wp--preset--spacing--20) 0;
+  border: 0; border-bottom: 1px solid var(--wp--preset--color--line-strong);
+}
+.woocommerce-cart table.shop_table td {
+  padding: var(--wp--preset--spacing--40) var(--wp--preset--spacing--30) var(--wp--preset--spacing--40) 0;
+  border: 0; border-bottom: 1px solid var(--wp--preset--color--line);
+  vertical-align: middle; background: transparent;
+}
+/* The name takes whatever width the money and the controls leave. */
+.woocommerce-cart table.shop_table td.product-remove,
+.woocommerce-cart table.shop_table td.product-thumbnail,
+.woocommerce-cart table.shop_table td.product-price,
+.woocommerce-cart table.shop_table td.product-quantity,
+.woocommerce-cart table.shop_table td.product-subtotal { width: 1%; white-space: nowrap; }
+.woocommerce-cart table.shop_table td.product-thumbnail { padding-right: var(--wp--preset--spacing--40); }
+.woocommerce-cart table.shop_table td.product-thumbnail img {
+  display: block; width: 4rem; height: 4rem; object-fit: cover;
+  border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--kraft-pale);
+}
+.woocommerce-cart table.shop_table td.product-name { font-weight: 600; font-size: var(--wp--preset--font-size--md); }
+.woocommerce-cart table.shop_table td.product-name a { color: inherit; text-decoration: none; }
+.woocommerce-cart table.shop_table td.product-name .variation {
+  display: block; margin: 0; font-weight: 400;
+  font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute);
+}
+.woocommerce-cart table.shop_table td.product-price,
+.woocommerce-cart table.shop_table td.product-subtotal {
+  text-align: right; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.woocommerce-cart .quantity { display: inline-flex; }
+.woocommerce-cart .quantity input.qty {
+  width: 4.5rem; text-align: center; font-weight: 600;
+  padding: 0 var(--wp--preset--spacing--20);
+}
+/* WooCommerce paints this red with !important; the theme's own red is reserved
+   for errors, and removing a line is not one. Same weapon, on purpose. */
+.woocommerce-cart td.product-remove a.remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  border-radius: var(--wp--custom--radius--pill); text-decoration: none;
+  color: var(--wp--preset--color--mute) !important;
+  font-size: var(--wp--preset--font-size--lg); line-height: 1;
+}
+.woocommerce-cart td.product-remove a.remove:hover,
+.woocommerce-cart td.product-remove a.remove:focus-visible {
+  color: var(--wp--preset--color--flame-deep) !important;   /* on the wash, ink is 4.27:1 — the gate said so */
+  background: var(--wp--preset--color--flame-wash);
+}
+/* The actions row: a partner-code field, not a prompt to hunt for a discount. */
+.woocommerce-cart td.actions { padding: var(--wp--preset--spacing--40) 0 0; border: 0; }
+.woocommerce-cart td.actions .coupon {
+  float: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20);
+}
+.woocommerce-cart td.actions .coupon input#coupon_code { width: 12rem; }
+.woocommerce-cart td.actions .button {
+  float: none; background: transparent; color: var(--wp--preset--color--char);
+  border: 1px solid var(--wp--preset--color--line-strong);
+}
+.woocommerce-cart td.actions > .button { margin-top: var(--wp--preset--spacing--30); }
+.woocommerce-cart .cart_totals {
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--50);
+}
+.woocommerce-cart .cart_totals h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--30); }
+.woocommerce-cart .cart_totals table.shop_table th,
+.woocommerce-cart .cart_totals table.shop_table td {
+  padding: var(--wp--preset--spacing--20) 0; border: 0;
+  font-family: inherit; font-size: var(--wp--preset--font-size--base);
+  letter-spacing: 0; text-transform: none; width: auto;
+}
+.woocommerce-cart .cart_totals table.shop_table th { font-weight: 400; color: var(--wp--preset--color--char); padding-right: var(--wp--preset--spacing--30); }
+.woocommerce-cart .cart_totals table.shop_table td { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
+.woocommerce-cart .cart_totals tr.cart-discount { color: var(--wp--preset--color--leaf-ink); }
+.woocommerce-cart .cart_totals tr.order-total th,
+.woocommerce-cart .cart_totals tr.order-total td {
+  border-top: 1px solid var(--wp--preset--color--line-strong);
+  padding-top: var(--wp--preset--spacing--40);
+  font-family: var(--wp--preset--font-family--display);
+  font-size: var(--wp--preset--font-size--lg); font-weight: 700;
+}
+.woocommerce-cart .wc-proceed-to-checkout { padding: 0; margin-top: var(--wp--preset--spacing--40); }
+.woocommerce-cart .wc-proceed-to-checkout a.checkout-button {
+  display: flex; width: 100%; margin: 0; font-size: var(--wp--preset--font-size--base);
+}
+
+@media (max-width: 781px) {
+  /* Two cards across on a phone. Core's own rule for grids at this width is
+     one column, at (0,3,0) — matched here and beaten by order. */
+  .wp-block-post-template.fd-products.is-layout-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wp--preset--spacing--30);
+  }
+  .fd-products > .wp-block-post { padding: var(--wp--preset--spacing--30); }
+  .fd-products .wc-block-components-product-image {
+    padding: var(--wp--preset--spacing--40) var(--wp--preset--spacing--30) var(--wp--preset--spacing--30);
+  }
+  .fd-products .wp-block-post-title { font-size: var(--wp--preset--font-size--base); }
+  .fd-products .wc-block-components-product-price { font-size: var(--wp--preset--font-size--md); }
+  /* A two-up card is ~150px inside; the chip keeps its words on one line by
+     giving up the colour dot and half its padding, not by truncating. */
+  .fd-products .fd-chip { padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20); gap: 0; white-space: nowrap; max-width: 100%; }
+  .fd-products .fd-chip::before { display: none; }
+
+  /* The filter control. */
+  .fd-shop__filters { margin-bottom: var(--wp--preset--spacing--40); }
+  .fd-filters > summary {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: var(--wp--custom--tap-target);
+    padding: 0 var(--wp--preset--spacing--40);
+    background: var(--wp--preset--color--surface);
+    border: 1.5px solid var(--wp--preset--color--line-strong);
+    border-radius: var(--wp--custom--radius--control);
+    font-weight: 600; cursor: pointer;
+  }
+  .fd-filters > summary::after {
+    content: ""; width: .5em; height: .5em;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: translateY(-25%) rotate(45deg);
+  }
+  .fd-filters[open] {
+    border: 1.5px solid var(--wp--preset--color--line-strong);
+    border-radius: var(--wp--custom--radius--control);
+    padding: 0 var(--wp--preset--spacing--40) var(--wp--preset--spacing--20);
+  }
+  .fd-filters[open] > summary {
+    border: 0; border-bottom: 1px solid var(--wp--preset--color--line); border-radius: 0;
+    margin: 0 calc(-1 * var(--wp--preset--spacing--40)) var(--wp--preset--spacing--40);
+  }
+  .fd-filters[open] > summary::after { transform: translateY(25%) rotate(-135deg); }
+
+  /* Sort takes the full row under the count. */
+  .fd-shop__toolbar .fd-sort { width: 100%; }
+  .fd-sort .woocommerce-ordering { flex: 1; }
+  .fd-sort select.orderby { width: 100%; }
+}
+
+@media (max-width: 900px) {
+  .woocommerce-cart .woocommerce { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  /* WooCommerce's small-screen sheet turns every cell into a labelled block
+     ("Price: ₹185", "Quantity: 1"). A cart line is three facts — what, how
+     many, how much — and reads as one row. Its text-align carries !important,
+     so this does too. */
+  .woocommerce-cart table.shop_table_responsive thead { display: none; }
+  /* Out of table layout entirely, or the table keeps its column-derived width
+     under the grid rows and the page scrolls sideways by 80px. */
+  .woocommerce-cart .woocommerce-cart-form table.shop_table_responsive,
+  .woocommerce-cart .woocommerce-cart-form table.shop_table_responsive tbody,
+  .woocommerce-cart .woocommerce-cart-form table.shop_table_responsive tr:not(.cart_item) { display: block; width: 100%; }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    grid-template-areas: "thumb name remove" "thumb qty subtotal";
+    column-gap: var(--wp--preset--spacing--30); row-gap: var(--wp--preset--spacing--20);
+    align-items: center;
+    padding: var(--wp--preset--spacing--40) 0;
+    border-bottom: 1px solid var(--wp--preset--color--line);
+  }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item td {
+    display: block; padding: 0; border: 0; text-align: left !important;
+    width: auto; white-space: normal;   /* the desktop 1% columns would clip the × and the total */
+  }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item td::before { display: none; }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-thumbnail { grid-area: thumb; }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-name { grid-area: name; font-size: var(--wp--preset--font-size--base); }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-remove { grid-area: remove; justify-self: end; }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-quantity { grid-area: qty; }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-subtotal { grid-area: subtotal; justify-self: end; text-align: right !important; }
+  .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-price { display: none; }
+  .woocommerce-cart table.shop_table_responsive td.actions { display: block; padding: var(--wp--preset--spacing--40) 0 0; }
+  .woocommerce-cart .cart_totals table.shop_table_responsive tr { display: flex; justify-content: space-between; gap: var(--wp--preset--spacing--30); }
+  .woocommerce-cart .cart_totals table.shop_table_responsive th,
+  .woocommerce-cart .cart_totals table.shop_table_responsive td { width: auto; flex: 0 0 auto; }
+  .woocommerce-cart .cart_totals table.shop_table_responsive td::before { display: none; }
 }

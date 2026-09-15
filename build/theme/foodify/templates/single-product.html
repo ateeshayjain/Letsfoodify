@@ -68,7 +68,17 @@
 <!-- wp:heading {"fontSize":"2xl"} -->
 <h2 class="wp-block-heading has-2-xl-font-size">Complete the meal</h2>
 <!-- /wp:heading -->
-<!-- wp:woocommerce/related-products {"columns":4,"rows":1} /-->
+<!-- wp:woocommerce/related-products {"query":{"perPage":4,"pages":0,"offset":0,"postType":"product","order":"desc","orderBy":"date","inherit":false},"align":"wide"} -->
+<div class="wp-block-woocommerce-related-products alignwide">
+<!-- wp:post-template {"className":"fd-products","layout":{"type":"grid","columnCount":4}} -->
+<!-- wp:woocommerce/product-image {"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
+<!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
+<!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
+<!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->
+<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true,"fontSize":"sm"} /-->
+<!-- /wp:post-template -->
+</div>
+<!-- /wp:woocommerce/related-products -->
 </div>
 <!-- /wp:group -->
 </main>

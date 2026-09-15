@@ -131,6 +131,43 @@ add_filter( 'rank_math/frontend/robots', static function ( array $robots ): arra
 } );
 
 /**
+ * Resolve the shop filters' attribute ids at render time.
+ *
+ * The Attribute Filter block stores a numeric `attributeId`, and WooCommerce
+ * assigns that number when the attribute is created — so it differs between
+ * staging and production, and a template exported from one install filters
+ * nothing on the other. The templates therefore carry `foodifyAttribute`, the
+ * slug, and this maps it to whatever id THIS install gave it. A slug that does
+ * not exist here leaves the block as it was (it renders nothing), which is
+ * honest: there is no attribute to filter by until tags-to-attributes.php has
+ * run. Pure mapping in foodify_resolve_filter_attribute() so it can be tested.
+ */
+function foodify_resolve_filter_attribute( array $block, callable $id_by_slug ): array {
+	if ( ( $block['blockName'] ?? '' ) !== 'woocommerce/attribute-filter' ) {
+		return $block;
+	}
+	$slug = (string) ( $block['attrs']['foodifyAttribute'] ?? '' );
+	if ( '' === $slug || ! in_array( $slug, foodify_attribute_slugs(), true ) ) {
+		return $block;
+	}
+	if ( ! empty( $block['attrs']['attributeId'] ) ) {
+		return $block;   // set by hand in the Site Editor; respect it.
+	}
+	$id = (int) $id_by_slug( $slug );
+	if ( $id > 0 ) {
+		$block['attrs']['attributeId'] = $id;
+	}
+	return $block;
+}
+
+add_filter( 'render_block_data', static function ( array $block ): array {
+	if ( ! function_exists( 'wc_attribute_taxonomy_id_by_name' ) ) {
+		return $block;
+	}
+	return foodify_resolve_filter_attribute( $block, 'wc_attribute_taxonomy_id_by_name' );
+} );
+
+/**
  * ONE source of truth for prep method.
  *
  * `product-display.php` reads `_foodify_prep_method` post meta to render the

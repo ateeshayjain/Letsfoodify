@@ -39,10 +39,14 @@ function foodify_prep_chip_parts( WC_Product $product ): ?array {
 		: (string) $product->get_meta( '_foodify_prep_method' );
 	$minutes = (int) $product->get_meta( '_foodify_prep_minutes' );
 
+	// The class is fd-chip, not fd-prep. `.fd-prep` is the product page's
+	// "How you make it" band (inc/product-spec.php), and the two shared a name
+	// for a month: the band's margin and padding rules cascaded onto every
+	// card's chip, which only a real render would have shown.
 	$map = [
-		'hot_water'      => [ __( 'Hot water', 'foodify' ), 'fd-prep--hot' ],
+		'hot_water'      => [ __( 'Hot water', 'foodify' ), 'fd-chip--hot' ],
 		'drinking_water' => [ __( 'Drinking water', 'foodify' ), '' ],
-		'cooking'        => [ __( 'Requires cooking', 'foodify' ), 'fd-prep--cook' ],
+		'cooking'        => [ __( 'Cooking', 'foodify' ), 'fd-chip--cook' ],   // "Requires cooking · 5 min" wraps a two-up card
 	];
 
 	if ( ! isset( $map[ $method ] ) ) {
@@ -59,27 +63,92 @@ function foodify_prep_chip_parts( WC_Product $product ): ?array {
 	];
 }
 
+/** The chip's markup, or '' when the product has no prep method recorded. */
+function foodify_prep_chip_html( WC_Product $product ): string {
+	$chip = foodify_prep_chip_parts( $product );
+	if ( ! $chip ) {
+		return '';
+	}
+
+	return sprintf(
+		'<span class="fd-chip %s">%s</span>',
+		esc_attr( $chip['modifier'] ),
+		esc_html( $chip['label'] )
+	);
+}
+
 /** Chip above the product title, on cards and on the single product page. */
 function foodify_render_prep_chip(): void {
 	global $product;
 	if ( ! $product instanceof WC_Product ) {
 		return;
 	}
-
-	$chip = foodify_prep_chip_parts( $product );
-	if ( ! $chip ) {
-		return;
-	}
-
-	printf(
-		'<span class="fd-prep %s">%s</span>',
-		esc_attr( $chip['modifier'] ),
-		esc_html( $chip['label'] )
-	);
+	echo foodify_prep_chip_html( $product ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the builder.
 }
 
 add_action( 'woocommerce_before_shop_loop_item_title', 'foodify_render_prep_chip', 9 );
 add_action( 'woocommerce_single_product_summary', 'foodify_render_prep_chip', 4 );
+
+/**
+ * The same chip on the block-built grids.
+ *
+ * `woocommerce_before_shop_loop_item_title` is a CLASSIC-loop hook. The shop,
+ * category and home grids are Product Query loops, which never fire it — so
+ * on the three screens where "six minutes is the product" matters most, the
+ * chip was hooked to a template that never runs. The product title block
+ * inside those loops carries WooCommerce's namespace attribute, which is the
+ * one reliable signal that this title belongs to a product card.
+ */
+add_filter( 'render_block_core/post-title', static function ( string $html, array $block ): string {
+	if ( '' === $html || empty( $block['attrs']['__woocommerceNamespace'] ) ) {
+		return $html;
+	}
+	if ( ! function_exists( 'wc_get_product' ) ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
+	if ( ! $product instanceof WC_Product ) {
+		return $html;
+	}
+
+	return foodify_prep_chip_html( $product ) . $html;
+}, 10, 2 );
+
+/**
+ * Sort options that read as options. The toolbar puts a visible "Sort by"
+ * beside the select, so WooCommerce's own labels would render as
+ * "Sort by  Sort by popularity". These are the same keys, shortened.
+ */
+add_filter( 'woocommerce_catalog_orderby', static function ( array $options ): array {
+	$short = [
+		'menu_order' => __( 'Featured', 'foodify' ),
+		'popularity' => __( 'Most popular', 'foodify' ),
+		'rating'     => __( 'Best rated', 'foodify' ),
+		'date'       => __( 'Newest', 'foodify' ),
+		'price'      => __( 'Price: low to high', 'foodify' ),
+		'price-desc' => __( 'Price: high to low', 'foodify' ),
+	];
+	foreach ( $short as $key => $label ) {
+		if ( isset( $options[ $key ] ) ) {
+			$options[ $key ] = $label;
+		}
+	}
+	return $options;
+} );
+
+/**
+ * On a phone the filters start CLOSED. The details block ships `open` so that
+ * on desktop, where its summary is hidden, the sidebar is simply there — CSS
+ * can hide a summary but cannot close a details element, so the one line of
+ * script does that, and only below the breakpoint core stacks columns at.
+ * Without JavaScript the filters are open, which is the safe failure.
+ */
+add_action( 'wp_footer', static function (): void {
+	if ( ! function_exists( 'is_shop' ) || ! ( is_shop() || is_product_taxonomy() ) ) {
+		return;
+	}
+	echo "<script>if(matchMedia('(max-width:781px)').matches){document.querySelectorAll('details.fd-filters[open]').forEach(function(d){d.removeAttribute('open')})}</script>\n";
+} );
 
 /** Per-serving maths under the price. ₹210 reads differently as ₹105 a head. */
 add_filter( 'woocommerce_get_price_html', static function ( string $html, WC_Product $product ): string {
