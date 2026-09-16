@@ -387,6 +387,17 @@ input:focus, select:focus, textarea:focus {
 .fd-pdp__buy > h1 { margin-bottom: var(--wp--preset--spacing--20); }
 .fd-pdp__buy .wc-block-components-product-rating { margin-bottom: var(--wp--preset--spacing--30); }
 .fd-pdp__buy .wp-block-post-excerpt { color: var(--wp--preset--color--mute); line-height: 1.6; }
+/* A wide-rail intro paragraph. alignwide puts its LEFT edge on the rail with
+   the grid it introduces; this keeps the LINE LENGTH readable, which is what
+   the content width was doing for it before. Left edge and measure are two
+   different jobs and the rail should not be doing both. */
+/* An intro paragraph's LINE LENGTH. Its left edge is not this rule's job —
+   that comes from the wide, default-layout group it sits in. Capping the
+   measure on an .alignwide element instead does not work: the rail is made of
+   auto margins, so a narrower max-width just re-centres it, and zeroing the
+   left margin drops it to the container edge rather than the rail. */
+.fd-lede { max-width: 46rem; }   /* measure only — its left edge comes from the wide group it sits in */
+
 /* Quantity and Add to cart are one row, and the quantity box is sized for the
    number it holds — a full-width input beside the button reads as the primary
    field, which it is not. */

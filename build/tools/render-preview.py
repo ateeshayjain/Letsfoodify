@@ -121,6 +121,22 @@ def styles_css():
 # Flags exercise every card state the wireframe names: bestseller, new (with no
 # reviews yet — stars row hidden), sold out, Jain. The sale pair shows the SAVE
 # floor: 225→185 is 17% and gets a badge; 225→195 is 13% and does not.
+# ── FIXTURE-ONLY PLACEHOLDERS ────────────────────────────────────────────────
+# Values the client has not supplied yet, invented HERE so the preview shows a
+# finished page instead of four gaps. They exist in this file and nowhere else:
+# tests/fixture-leak-test.py fails the build if any of them appears in the
+# theme, the patterns, the templates or bootstrap.sh. That is not paranoia — a
+# plausible-looking FSSAI number got into four templates once already, and an
+# invented licence number on a live food site is a legal claim, not a mock-up.
+#
+# Each one is a QUESTION FOR NALIN, listed in docs/DESIGN-REVIEW-2026-09-15.md.
+FIXTURE_FSSAI    = "10012345000001"   # licence: 14 digits, real format, invented number
+FIXTURE_DELIVERY = "Same-day dispatch in Delhi NCR · 3–5 days pan-India"   # NOT yet promised
+# "Complete the meal" is a CURATED pairing in WP-03, not "four more products".
+# These indices into PRODUCTS stand in for the pairing Nalin has to choose:
+# a chutney, a chai and two meals — never the product being viewed.
+FIXTURE_PAIRINGS = [6, 7, 1, 5]
+
 PRODUCTS = [
     ("Express Dal Fry",        "Express",       "6 MIN", 185, 225, "#D9822B", "4.7", 84, 2, {"bestseller", "jain"}),
     ("Idli Sambhar",           "Express",       "6 MIN", 195, 225, "#E0A03C", "4.8", 62, 2, {"bestseller"}),
@@ -150,6 +166,7 @@ def stars(r):
 # it, exactly as WordPress sets up post data per item.
 CUR = None
 LOOP_N = 8
+LOOP_PICK = None
 
 # What inc/product-display.php prepends to a product title inside a loop.
 CHIP = {
@@ -285,7 +302,8 @@ def dynamic(name, attrs, inner):
         return ('<div class="wp-block-button wc-block-components-product-button">'
                 f'<a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">{label}</a></div>')
     if name == "woocommerce/breadcrumbs":
-        return '<p class="fx-crumb"><a href="#">Home</a> / <a href="#">Express</a> / Dal Fry</p>'
+        return ('<p class="fx-crumb ' + cls_for(a) + '"><a href="#">Home</a> / '
+                '<a href="#">Express</a> / Dal Fry</p>')
     if name == "woocommerce/product-image-gallery":
         # There is no photography. Rather than a grey box, the placeholder states
         # the brief — four shots, in order, with what each one has to prove. That
@@ -386,7 +404,18 @@ def dynamic(name, attrs, inner):
 
 
 def cls_for(a):
+    """The classes WordPress puts on a dynamic block, from its attributes.
+
+    align and className were missing, so a block that carries {"align":"wide"}
+    in the template rendered at content width in the preview and on the wide
+    rail in WordPress — the preview showing a misalignment the theme did not
+    have, and (worse) hiding the one it did.
+    """
     out = []
+    if a.get("align"):
+        out.append("align" + a["align"])
+    if a.get("className"):
+        out.append(a["className"])
     if "fontSize" in a:
         out.append("has-" + re.sub(r"(\d)([a-z])", r"\1-\2", a["fontSize"]) + "-font-size")
     if "textColor" in a:
@@ -651,13 +680,19 @@ def render(markup, depth=0):
         # and the no-results paragraph — which is what the client reviewed.
         if name in ("query", "woocommerce/related-products") and not selfclose:
             LOOP_N = int(a.get("query", {}).get("perPage", 8))
+            # WooCommerce never lists the product you are looking at among its
+            # related products. The fixture loop always started at PRODUCTS[0],
+            # so "Complete the meal" offered Express Dal Fry on the Express Dal
+            # Fry page — a fixture artefact that reads as a bug.
+            globals()["LOOP_PICK"] = FIXTURE_PAIRINGS if name.endswith("related-products") else None
             continue
         if name == "post-template" and not selfclose:
             cs, ce = find_close(markup, name, pos)
             inner = markup[pos:cs]
             cols = a.get("layout", {}).get("columnCount", 3)
             cls = a.get("className", "")
-            items = "".join(loop_card(inner, PRODUCTS[i % len(PRODUCTS)], i) for i in range(min(LOOP_N, 12)))
+            pick = LOOP_PICK or list(range(len(PRODUCTS)))
+            items = "".join(loop_card(inner, PRODUCTS[pick[i % len(pick)]], i) for i in range(min(LOOP_N, 12)))
             out.append(f'<ul class="wp-block-post-template {cls} is-layout-grid columns-{cols} '
                        f'wp-block-post-template-is-layout-grid">{items}</ul>')
             pos = skip_to = ce
@@ -946,15 +981,17 @@ def main():
         # exactly how <!--FOODIFY_YEAR--> reached the live footer as an invisible
         # comment while the preview showed a year the site could never render.
         #
-        # FSSAI shows NOT CONFIGURED here on purpose: the client has not supplied
-        # the licence number, and the preview showing a plausible one is how the
-        # dummy got into four templates in the first place.
+        # FSSAI and the delivery promise are FIXTURE values (see the block by
+        # PRODUCTS). The theme itself still prints NOT CONFIGURED for an unset
+        # licence and still promises only what bootstrap.sh configures — the
+        # dummies live in this renderer, are named in the banner above, and
+        # fixture-leak-test.py fails the build if one reaches the theme.
         body = body.replace("<!--FOODIFY_YEAR-->", str(datetime.date.today().year))
-        body = body.replace("<!--FOODIFY_FSSAI-->", "NOT CONFIGURED")
+        body = body.replace("<!--FOODIFY_FSSAI-->", FIXTURE_FSSAI)
         # The tagline is the WordPress site description, which bootstrap.sh sets.
         # Read from that line, so the preview's hero says what the site's will.
         body = body.replace("<!--FOODIFY_TAGLINE-->", TAGLINE)
-        body = body.replace("<!--FOODIFY_DELIVERY-->", DELIVERY)
+        body = body.replace("<!--FOODIFY_DELIVERY-->", FIXTURE_DELIVERY)
         body = body.replace("<!--FOODIFY_CLAIM_MINUTES-->", CLAIM_MINUTES)
         if sid == "product":
             # What inc/product-display.php prints in wp_footer on a product page:
@@ -1009,7 +1046,11 @@ def main():
 <div class="banner"><b>This page is generated from the real theme</b> — <code>theme.json</code> tokens,
 <code>templates/*.html</code>, <code>parts/*.html</code> and <code>patterns/*.php</code>. Edit the theme and this
 changes with it. Food imagery is a CSS placeholder pending the week-3 shoot; product data is fixture data.
-It approximates WordPress's block renderer — judge layout, type and hierarchy here, behaviour on staging.</div>
+It approximates WordPress's block renderer — judge layout, type and hierarchy here, behaviour on staging.
+<br><b>Invented for this mock-up, awaiting your word:</b> the FSSAI licence number ({FIXTURE_FSSAI}), the
+same-day NCR dispatch promise, the "Complete the meal" pairing, and each product's taste notes, cooked
+weight and FAQ. The site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
+live until you confirm it.</div>
 {''.join(panels)}
 <script>
 document.addEventListener('click', function (e) {{

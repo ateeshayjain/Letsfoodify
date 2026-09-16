@@ -31,7 +31,10 @@ const INSIDE = ['.fd-badges > *', '.fd-chip', '.fd-save'];
   const file = 'file://' + path.resolve(__dirname, '../preview/storefront.html');
   let failures = 0;
 
-  for (const [label, w, h] of [['phone', 390, 844], ['desktop', 1280, 900]]) {
+  // 1920 is not vanity: the content rail stops growing at 1200, so every
+  // alignment mistake that is 20px at 1280 is 220px on the screen the client
+  // actually reviews on.
+  for (const [label, w, h] of [['phone', 390, 844], ['desktop', 1280, 900], ['wide', 1920, 1000]]) {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
     await page.goto(file);
     const tabs = await page.$$('[role=tablist] .tab');
@@ -88,6 +91,29 @@ const INSIDE = ['.fd-badges > *', '.fd-chip', '.fd-save'];
             const cls = el.className && typeof el.className === 'string'
               ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
             bad.push(`${el.tagName.toLowerCase()}${id}${cls} overhang ${Math.round(Math.max(r.right - vw, -r.left))}px`);
+          }
+        }
+        // A heading must not sit on a narrower rail than the content it
+        // titles. Core gives a constrained block the content width and an
+        // alignwide block the wide width, so a title left constrained above a
+        // wide grid is indented from its own products — invisible at 1280,
+        // 220px of drift at 1920, and exactly what "not aligned for full
+        // screen" looks like.
+        if (vw >= 1280) {
+          for (const h of document.querySelectorAll('main h1, main h2')) {
+            const hr = h.getBoundingClientRect();
+            if (!hr.width) continue;
+            // The widest thing the heading introduces, not merely the next
+            // one: a heading is usually followed by its own narrow intro
+            // paragraph, and comparing against that hides the drift.
+            let body = null;
+            for (let sib = h.nextElementSibling; sib; sib = sib.nextElementSibling) {
+              const r = sib.getBoundingClientRect();
+              if (r.width > 300 && (!body || r.left < body.left)) body = r;
+            }
+            if (body && hr.left > body.left + 2) {
+              hits.push(`heading "${h.textContent.trim().slice(0, 22)}" is indented ${Math.round(hr.left - body.left)}px from the content it titles`);
+            }
           }
         }
         for (const sel of INSIDE) {

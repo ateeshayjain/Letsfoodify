@@ -191,3 +191,45 @@ page rather than a cart-scoped copy.
 Still client-gated, unchanged from round 3: pack-of-3/5 pricing, bundle
 pairings, a same-day NCR promise, the FSSAI number, and the per-SKU taste,
 cooked-weight and FAQ copy the new fields are waiting for.
+
+## Round 5, 16 Sep — one left edge, and the gaps filled with named dummies
+
+**"Is it aligned to screen?"** Not everywhere, and the wider the screen the
+worse it read. Core caps the content rail at 760px and the wide rail at
+1200px, so a page whose title is a constrained block above an alignwide grid
+has two left edges: 20px apart at 1280, **220px apart at 1920**. That was the
+shop ("Foodify Express" indented from its own products), the cart title, the
+product breadcrumb, and the home best-sellers section — where the wrapper
+group was constrained, so the four-up grid inside it rendered into a 760px box
+while the shop grid used the full 1200.
+
+Every page now has ONE left edge. The mechanism matters, because the obvious
+fix does not work: capping an alignwide paragraph's width just re-centres it
+(the rail is made of auto margins), and zeroing its left margin drops it to the
+container edge rather than the rail. The title and intro therefore sit in a
+wide **default-layout** group — a constrained one would re-centre each child —
+and `.fd-lede` caps the line length only.
+
+The preview was lying about part of this: `cls_for()` never emitted `align` or
+`className`, so a dynamic block carrying `{"align":"wide"}` rendered at content
+width here and wide in WordPress. It now emits both. The browser sweep gained
+the check that would have caught the whole class — a heading indented from the
+widest thing it introduces — and a third width, **1920**, because every rail
+mistake is ten times larger there than at 1280. Both were proven against the
+broken build before the fix.
+
+**The gaps are filled with dummies, and the dummies cannot escape.** The
+preview now shows an FSSAI licence number, a same-day-NCR dispatch promise, a
+curated "Complete the meal" pairing (which no longer offers you the product you
+are already looking at), and per-product taste notes, cooked weight and FAQ.
+All of it is invented, declared in one block at the top of
+`tools/render-preview.py`, and named in the preview's own banner.
+`tests/fixture-leak-test.py` fails the build if any of those strings appears in
+the theme, a pattern, a template or `bootstrap.sh`. That is not ceremony: an
+invented licence number on a live food site is a false statement to a regulator,
+and a plausible-looking one reached four templates in this project once already.
+The theme still prints NOT CONFIGURED for a licence it has not been given.
+
+**Still Nalin's call** — the dummies are the questions, in visible form: the
+real FSSAI number, whether same-day NCR dispatch can be promised, which
+products actually pair, and the per-SKU copy.

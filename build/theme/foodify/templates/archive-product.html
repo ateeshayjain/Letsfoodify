@@ -1,8 +1,18 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 <!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<!-- The title and the intro sit on the WIDE rail, like the grid below them.
+     Constrained, they render at content width and the page has two left
+     edges — 20px apart at 1280 and 220px apart at 1920. .fd-lede keeps the
+     intro to a readable measure. The wrapper is a DEFAULT-layout group,
+     not a constrained one: constrained would re-centre each child at the
+     content width, which is the drift being fixed. -->
+<!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
+<div class="wp-block-group alignwide">
 <!-- wp:query-title {"type":"archive","fontSize":"3xl"} /-->
-<!-- wp:term-description {"textColor":"mute","fontSize":"md","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|60"}}}} /-->
+<!-- wp:term-description {"className":"fd-lede","textColor":"mute","fontSize":"md","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|60"}}}} /-->
+</div>
+<!-- /wp:group -->
 
 <!-- wp:columns {"align":"wide","className":"fd-shop","style":{"spacing":{"blockGap":{"left":"var:preset|spacing|60"}}}} -->
 <div class="wp-block-columns alignwide fd-shop">

@@ -665,6 +665,17 @@ input:focus, select:focus, textarea:focus {
 .fd-pdp__buy > h1 { margin-bottom: var(--wp--preset--spacing--20); }
 .fd-pdp__buy .wc-block-components-product-rating { margin-bottom: var(--wp--preset--spacing--30); }
 .fd-pdp__buy .wp-block-post-excerpt { color: var(--wp--preset--color--mute); line-height: 1.6; }
+/* A wide-rail intro paragraph. alignwide puts its LEFT edge on the rail with
+   the grid it introduces; this keeps the LINE LENGTH readable, which is what
+   the content width was doing for it before. Left edge and measure are two
+   different jobs and the rail should not be doing both. */
+/* An intro paragraph's LINE LENGTH. Its left edge is not this rule's job —
+   that comes from the wide, default-layout group it sits in. Capping the
+   measure on an .alignwide element instead does not work: the rail is made of
+   auto margins, so a narrower max-width just re-centres it, and zeroing the
+   left margin drops it to the container edge rather than the rail. */
+.fd-lede { max-width: 46rem; }   /* measure only — its left edge comes from the wide group it sits in */
+
 /* Quantity and Add to cart are one row, and the quantity box is sized for the
    number it holds — a full-width input beside the button reads as the primary
    field, which it is not. */
@@ -1334,11 +1345,15 @@ input:focus, select:focus, textarea:focus {
 <div class="banner"><b>This page is generated from the real theme</b> — <code>theme.json</code> tokens,
 <code>templates/*.html</code>, <code>parts/*.html</code> and <code>patterns/*.php</code>. Edit the theme and this
 changes with it. Food imagery is a CSS placeholder pending the week-3 shoot; product data is fixture data.
-It approximates WordPress's block renderer — judge layout, type and hierarchy here, behaviour on staging.</div>
+It approximates WordPress's block renderer — judge layout, type and hierarchy here, behaviour on staging.
+<br><b>Invented for this mock-up, awaiting your word:</b> the FSSAI licence number (10012345000001), the
+same-day NCR dispatch promise, the "Complete the meal" pairing, and each product's taste notes, cooked
+weight and FAQ. The site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
+live until you confirm it.</div>
 <div class="fx-shell " id="s-home"><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
 
 </div>
 
@@ -1426,7 +1441,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 <div class="wp-block-column">
 <p class="has-display-font-family has-base-font-size" style="font-weight:600">FSSAI licensed</p>
-<p class="has-mute-color has-text-color has-sm-font-size">NOT CONFIGURED, on pack and on invoice.</p>
+<p class="has-mute-color has-text-color has-sm-font-size">10012345000001, on pack and on invoice.</p>
 </div>
 
 
@@ -1557,13 +1572,18 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 
 
+<!-- The section is alignwide, not just the grid inside it. A constrained
+     group is capped at the CONTENT width by main's own layout, and an
+     alignwide child cannot grow past a parent that is only 760px wide —
+     so the best sellers rendered four cards into a 760px box while the
+     shop grid used the full 1200. -->
 
-<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80)">
+<div class="wp-block-group alignwide" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80)">
 
 <h2 class="wp-block-heading has-2-xl-font-size">What people reorder</h2>
 
 
-<p class="has-mute-color has-text-color has-md-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">Eight best sellers. The full catalogue lives on <a href="/shop/">the shop page</a> — this page is not a wall of 140 products.</p>
+<p class="fd-lede has-mute-color has-text-color has-md-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">Eight best sellers. The full catalogue lives on <a href="/shop/">the shop page</a> — this page is not a wall of 140 products.</p>
 
 
 <div class="wp-block-query alignwide">
@@ -1687,7 +1707,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1698,7 +1718,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div><div class="fx-shell post-type-archive-product woocommerce" id="s-shop" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
 
 </div>
 
@@ -1722,8 +1742,18 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </header>
 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<!-- The title and the intro sit on the WIDE rail, like the grid below them.
+     Constrained, they render at content width and the page has two left
+     edges — 20px apart at 1280 and 220px apart at 1920. .fd-lede keeps the
+     intro to a readable measure. The wrapper is a DEFAULT-layout group,
+     not a constrained one: constrained would re-centre each child at the
+     content width, which is the drift being fixed. -->
+
+<div class="wp-block-group alignwide">
 <h1 class="has-3-xl-font-size">Foodify Express</h1>
-<p class="has-md-font-size has-mute-color has-text-color">Add hot water, wait six minutes, eat. The Express range is built for trains, hostels and hotel kettles — fourteen home-style meals that need no cooking at all, with a nine to twelve month shelf life and no preservatives.</p>
+<p class="fd-lede has-md-font-size has-mute-color has-text-color">Add hot water, wait six minutes, eat. The Express range is built for trains, hostels and hotel kettles — fourteen home-style meals that need no cooking at all, with a nine to twelve month shelf life and no preservatives.</p>
+</div>
+
 
 
 <div class="wp-block-columns alignwide fd-shop">
@@ -1898,7 +1928,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -1909,7 +1939,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </div><div class="fx-shell " id="s-product" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
 
 </div>
 
@@ -1933,7 +1963,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </header>
 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--80)">
-<p class="fx-crumb"><a href="#">Home</a> / <a href="#">Express</a> / Dal Fry</p>
+<p class="fx-crumb alignwide has-sm-font-size"><a href="#">Home</a> / <a href="#">Express</a> / Dal Fry</p>
 
 
 <div class="wp-block-columns alignwide fd-pdp" style="margin-top:var(--wp--preset--spacing--40)">
@@ -1947,7 +1977,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <div class="wp-block-column fd-pdp__buy">
 <h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
 
-<p class="fd-promise has-xs-font-size">Ships across India in 3–5 days</p>
+<p class="fd-promise has-xs-font-size">Same-day dispatch in Delhi NCR · 3–5 days pan-India</p>
 
 <div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fx-rc">84 reviews</span></div>
 <p class="has-md-font-size">Yellow moong and toor, tempered with cumin, tomato and a little ghee. Dried slowly so the tempering survives.</p>
@@ -2016,29 +2046,29 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 
 <div class="wp-block-woocommerce-related-products alignwide">
 <ul class="wp-block-post-template fd-products is-layout-grid columns-4 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish">
-<div class="wc-block-components-product-image"><a href="#"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
-<h3 class="wp-block-post-title has-md-font-size"><a href="#">Express Dal Fry</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
-<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">84 reviews</span></div>
-<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></ins> <span class="fd-save">Save 17%</span></div>
+<div class="wc-block-components-product-image"><a href="#"><div class="fx-bowl" style="--h:#4E8B66"><span class="fx-time">1 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#">Coconut Red Chutney</a></h3><p class="fd-yield">Serves 4 · 1 min</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">19 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>240</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
 </li><li class="wp-block-post post-101 product type-product status-publish">
+<div class="wc-block-components-product-image"><a href="#"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div></a></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#">Masala Chai</a></h3><p class="fd-yield">Serves 1 · 3 min</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">71 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>375</bdi></span></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li><li class="wp-block-post post-102 product type-product status-publish">
 <div class="wc-block-components-product-image"><a href="#"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#">Idli Sambhar</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">62 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></ins></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-102 product type-product status-publish">
-<div class="wc-block-components-product-image"><a href="#"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div></a></div>
-<h3 class="wp-block-post-title has-md-font-size"><a href="#">Express Dal Khichdi</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
-<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">41 reviews</span></div>
+</li><li class="wp-block-post post-103 product type-product status-publish">
+<div class="wc-block-components-product-image"><a href="#"><div class="fx-bowl" style="--h:#C2571F"><span class="fx-time">6 MIN</span></div></a></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#">Pav Bhaji</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">57 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-103 product type-product status-publish">
-<div class="wc-block-components-product-image"><a href="#"><div class="fx-bowl" style="--h:#C98A34"><span class="fx-time">5 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--out">Sold out</span></span></div>
-<h3 class="wp-block-post-title has-md-font-size"><a href="#">Aloo ka Mazaa</a></h3><p class="fd-yield">Serves 1 · 5 min</p>
-<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fd-rating-count">28 reviews</span></div>
-<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>100</bdi></span></div>
-<div class="wp-block-button wc-block-components-product-button"><a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Sold out</a></div>
 </li></ul>
 </div>
 
@@ -2094,7 +2124,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -2127,7 +2157,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 })();</script></div><div class="fx-shell woocommerce-cart woocommerce-page" id="s-cart" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
 
 </div>
 
@@ -2151,10 +2181,10 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 </header>
 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
-<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+<h1 class="fx-posttitle alignwide has-3-xl-font-size">Express Dal Fry</h1>
 
 
-<div class="wp-block-group has-border-color has-line-border-color has-leaf-wash-background-color has-background" style="border-width:1px;border-style:solid;border-radius:var(--wp--custom--radius--card);margin-bottom:var(--wp--preset--spacing--50);padding:var(--wp--preset--spacing--40)">
+<div class="wp-block-group alignwide has-border-color has-line-border-color has-leaf-wash-background-color has-background" style="border-width:1px;border-style:solid;border-radius:var(--wp--custom--radius--card);margin-bottom:var(--wp--preset--spacing--50);padding:var(--wp--preset--spacing--40)">
 <div class="fd-shipping-progress"><p class="fd-ship"><strong>₹106</strong> away from free shipping.</p><div class="fd-progress" role="progressbar" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100" aria-label="Progress toward free shipping"><i style="width:82%"></i></div></div>
 
 
@@ -2238,7 +2268,7 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 <hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -2295,7 +2325,7 @@ convenience or platform fee is added.</p>
 <p class="fd-checkout-help has-text-align-center has-mute-color has-text-color has-sm-font-size">Stuck? <a href="/contact-us/">Talk to us</a> · <a href="/shipping/">Shipping</a> · <a href="/returns/">Returns</a> · <a href="/privacy-policy/">Privacy</a> · <a href="/terms/">Terms</a></p>
 
 
-<p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED</p>
+<p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001</p>
 
 
 <p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -2306,7 +2336,7 @@ convenience or platform fee is added.</p>
 </div><div class="fx-shell woocommerce-account woocommerce-page" id="s-account" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
 
 </div>
 
@@ -2399,7 +2429,7 @@ payload all keep reading the meta they have always read.</div>
 <hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -2410,7 +2440,7 @@ payload all keep reading the meta they have always read.</div>
 </div><div class="fx-shell woocommerce-account woocommerce-page" id="s-signin" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
 
 </div>
 
@@ -2495,7 +2525,7 @@ without a template change. Guest checkout stays the default path either way.</di
 <hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
@@ -2506,7 +2536,7 @@ without a template change. Guest checkout stays the default path either way.</di
 </div><div class="fx-shell " id="s-notfound" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Ships across India in 3–5 days · FSSAI NOT CONFIGURED</p>
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
 
 </div>
 
@@ -2589,7 +2619,7 @@ without a template change. Guest checkout stays the default path either way.</di
 <hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 
 
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence NOT CONFIGURED · care@letsfoodify.com</p>
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
 
 
 <p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
