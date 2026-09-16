@@ -218,6 +218,14 @@ main{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset-
 .fx-add--lg{width:auto;flex:1;min-height:52px}
 .fx-crumb{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
 .fx-crumb a{color:inherit}
+/* The mock's own toast: what a click with no door SAYS instead of doing nothing. */
+.fx-toast{position:fixed;left:50%;bottom:calc(var(--wp--preset--spacing--50) + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:120;
+  max-width:min(34rem,calc(100vw - 2rem));padding:var(--wp--preset--spacing--30) var(--wp--preset--spacing--50);
+  background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-radius:var(--wp--custom--radius--pill);
+  font-size:var(--wp--preset--font-size--sm);line-height:1.4;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.fx-toast[hidden]{display:none}
+.fx-empty{padding:var(--wp--preset--spacing--60) 0;font-size:var(--wp--preset--font-size--md)}
+.fd-cart-back a{color:var(--wp--preset--color--mute)}
 .fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
 .fx-shotlist{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--wp--preset--spacing--30);margin-top:var(--wp--preset--spacing--40)}
 .fx-shot{position:relative;background:var(--wp--preset--color--surface);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--30)}
@@ -272,8 +280,6 @@ main{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset-
   font-weight:600;margin-bottom:var(--wp--preset--spacing--40)}
 .fx-pay{margin:18px 0}
 .fx-pay label{display:flex;gap:9px;align-items:center;padding:9px 0;font-size:var(--wp--preset--font-size--sm)}
-.fd-signin{max-width:26rem}
-.fd-signin h2{font-size:var(--wp--preset--font-size--2xl);margin:0 0 .3em}
 .fx-note{padding:10px 14px;background:var(--wp--preset--color--flame-wash);
   color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
 @media (max-width:781px){
@@ -317,13 +323,17 @@ li.product a.woocommerce-LoopProduct-link,
 .wc-block-grid__product-link {
   min-height: var(--wp--custom--tap-target);
 }
-/* Buttons need the height to actually centre their label. */
+/* Buttons need the height to actually centre their label. So do nav links:
+   inside the nav's flex row each link is a flex item, so the 44px floor above
+   applies — and the text then sat at the TOP of a 44px box, nine pixels above
+   the logo and the cart it shares a row with. */
 button, [role="button"], input[type="submit"], input[type="button"],
 .wp-element-button, .wc-block-components-button, .woocommerce a.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
+.wp-block-navigation-item__content { display: inline-flex; align-items: center; }
 
 body { font-size: var(--wp--preset--font-size--base); }   /* 16px floor, never smaller */
 :focus-visible { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
@@ -464,10 +474,32 @@ input:focus, select:focus, textarea:focus {
 .fd-stars { color: var(--wp--preset--color--flame-deep); letter-spacing: -1px; }
 .fd-verified { color: var(--wp--preset--color--leaf-ink); }
 
+/* Signed-out account page: WooCommerce's login form as one centred column —
+   title included. A 26rem form left-aligned in a 760px rail reads as a
+   layout that lost its other half. WordPress adds `logged-in` to <body> only
+   for a signed-in visitor, so the signed-out page is the account page without
+   it. The OTP plugin (WP-05) replaces the form's fields, not its box. */
+.woocommerce-account:not(.logged-in) main > .wp-block-post-title, .woocommerce-account:not(.logged-in) main > .fx-posttitle { text-align: center; }
+.woocommerce-form-login {
+  max-width: 26rem; margin-inline: auto;
+  padding: var(--wp--preset--spacing--50);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+}
+.woocommerce-form-login h2 { font-size: var(--wp--preset--font-size--2xl); margin: 0 0 var(--wp--preset--spacing--20); }
+.woocommerce-form-login .woocommerce-form-row { margin: 0 0 var(--wp--preset--spacing--40); }
+.woocommerce-form-login label { display: block; font-weight: 600; font-size: var(--wp--preset--font-size--sm); margin-bottom: var(--wp--preset--spacing--10); }
+.woocommerce-form-login .input-text { width: 100%; padding: 0 var(--wp--preset--spacing--30); }
+.woocommerce-form-login .wp-element-button { width: 100%; }
+
 /* Account — WooCommerce's my-account markup, styled to the token set.
    Two columns on desktop, stacked on mobile; the nav is a real list of links,
    not a sidebar widget. */
-.woocommerce-account .woocommerce {
+/* Signed-in only. WordPress adds `logged-in` to <body> for a signed-in
+   visitor; without the scope the signed-out page got the same grid and its
+   sign-in form was placed in the 15rem column meant for the account nav. */
+.woocommerce-account.logged-in .woocommerce {
   display: grid;
   grid-template-columns: 15rem 1fr;
   gap: var(--wp--preset--spacing--60);
@@ -517,7 +549,7 @@ input:focus, select:focus, textarea:focus {
 .fd-secondary {
   /* HIG audit: this is Edit on every address card and Details on every order —
      a ~20px link beside a 44px button. Same floor for both. */
-  min-height: var(--wp--custom--tapTarget);
+  min-height: var(--wp--custom--tap-target);
   display: inline-flex; align-items: center;
   background: transparent;
   color: var(--wp--preset--color--char);
@@ -559,7 +591,7 @@ input:focus, select:focus, textarea:focus {
 .fd-address__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20); }
 .fd-address__verb { margin: 0; }
 .fd-address__verb button {
-  min-height: var(--wp--custom--tapTarget); background: none; border: 1px solid var(--wp--preset--color--line-strong);
+  min-height: var(--wp--custom--tap-target); background: none; border: 1px solid var(--wp--preset--color--line-strong);
   border-radius: var(--wp--custom--radius--control); padding: 0 var(--wp--preset--spacing--30);
   font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--char); cursor: pointer;
 }
@@ -575,13 +607,19 @@ input:focus, select:focus, textarea:focus {
 .fd-address-choose legend { font-weight: 600; padding: 0 var(--wp--preset--spacing--20); }
 .fd-address-choose__option {
   display: grid; grid-template-columns: auto 1fr; column-gap: var(--wp--preset--spacing--30);
-  align-items: start; min-height: var(--wp--custom--tapTarget);
+  align-items: start; min-height: var(--wp--custom--tap-target);
   padding: var(--wp--preset--spacing--20) 0; cursor: pointer;
 }
 .fd-address-choose__option input { grid-row: span 2; margin-top: .2em; }
 .fd-address-choose__label { font-weight: 600; }
 .fd-address-choose__body { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
-.fd-address-choose__manage { display: inline-flex; align-items: center; min-height: var(--wp--custom--tapTarget); margin-top: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
+/* The button and the manage link are siblings the PHP prints one after the
+   other. They need a row with a gap, and the link needs a real tap height —
+   it asked for the custom key by its camelCase name (tapTarget), which does not exist: theme.json's
+   custom keys reach CSS kebab-cased (--wp--custom--tap-target), so the
+   min-height was silently invalid and the link sat flush against the button. */
+.fd-address-choose fieldset > .wp-element-button { margin-top: var(--wp--preset--spacing--30); margin-right: var(--wp--preset--spacing--40); }
+.fd-address-choose__manage { display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); margin-top: var(--wp--preset--spacing--30); font-size: var(--wp--preset--font-size--sm); }
 
 /* Post-purchase account claim, on the order-received page. */
 .fd-claim {
@@ -594,7 +632,7 @@ input:focus, select:focus, textarea:focus {
 /* Checkout shell — WP-06. The audited site ran the full site chrome here and
    switched between boxes with injected JavaScript. This is one page, stripped:
    every navigation link on a checkout page is an exit. */
-.fd-checkout-back a { text-decoration: none; min-height: var(--wp--custom--tapTarget); display: inline-flex; align-items: center; }
+.fd-checkout-back a { text-decoration: none; min-height: var(--wp--custom--tap-target); display: inline-flex; align-items: center; }
 .fd-checkout-help a { color: inherit; }
 
 /* The cart's total promise. Rendered from state, never hardcoded — see
@@ -624,7 +662,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--wp--preset--color--mute);
 }
 .woocommerce-form-coupon-toggle .woocommerce-info::before { content: none; }
-.woocommerce-form-coupon-toggle .showcoupon { display: inline-flex; align-items: center; min-height: var(--wp--custom--tapTarget); }
+.woocommerce-form-coupon-toggle .showcoupon { display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); }
 .woocommerce-form-coupon {
   border: 1px solid var(--wp--preset--color--line);
   border-radius: var(--wp--custom--radius--card);
@@ -648,7 +686,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--wp--custom--radius--pill);
   padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
 }
-.wc_payment_methods li { min-height: var(--wp--custom--tapTarget); }
+.wc_payment_methods li { min-height: var(--wp--custom--tap-target); }
 
 /* Review count beside a listing's stars — WP-08. "★★★★★" from one review reads
    as established and is not, which is the fake-viewer-counter failure in a
@@ -790,7 +828,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 @media (max-width: 900px) {
-  .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
+  .woocommerce-account.logged-in .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
   .woocommerce-orders-table tr { display: grid; gap: var(--wp--preset--spacing--10); padding: var(--wp--preset--spacing--40) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
   .woocommerce-orders-table td { border: 0; padding: 0; }
@@ -1204,6 +1242,19 @@ input:focus, select:focus, textarea:focus {
 .fd-badge--leaf { background: var(--wp--preset--color--leaf-wash); color: var(--wp--preset--color--leaf-ink); margin-left: auto; }
 .fd-badge--out  { background: var(--wp--preset--color--char); color: var(--wp--preset--color--paper); }
 
+/* A sold-out card reads as unavailable before the eye reaches the button.
+   WooCommerce puts `outofstock` on the loop item (wc_product_post_class), so
+   this is the site's own signal, not a class the theme has to compute. The
+   badge stays at full strength — it is the message — and the button becomes a
+   flat label: `line` behind `char` clears AA, and pointer-events:none makes it
+   as unclickable as the stock. */
+.fd-products > .wp-block-post.outofstock .wc-block-components-product-image { filter: grayscale(1); opacity: .55; }
+.fd-products > .wp-block-post.outofstock .wp-block-post-title,
+.fd-products > .wp-block-post.outofstock .wc-block-components-product-price { color: var(--wp--preset--color--mute); }
+.fd-products > .wp-block-post.outofstock .wc-block-components-product-button .wp-block-button__link {
+  background: var(--wp--preset--color--line); color: var(--wp--preset--color--char);
+  pointer-events: none; cursor: not-allowed;
+}
 /* The card's second line. */
 .fd-products .fd-yield { margin: 0; font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute); }
 
@@ -1618,49 +1669,49 @@ live until you confirm it.</div>
 
 
 <div class="wp-block-query alignwide">
-<ul class="wp-block-post-template fd-products is-layout-grid columns-4 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish">
+<ul class="wp-block-post-template fd-products is-layout-grid columns-4 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Express Dal Fry</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">84 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></ins> <span class="fd-save">Save 17%</span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-101 product type-product status-publish">
+</li><li class="wp-block-post post-101 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Idli Sambhar</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">62 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></ins></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-102 product type-product status-publish">
+</li><li class="wp-block-post post-102 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Express Dal Khichdi</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">41 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-103 product type-product status-publish">
+</li><li class="wp-block-post post-103 product type-product status-publish outofstock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#C98A34"><span class="fx-time">5 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--out">Sold out</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Aloo ka Mazaa</a></h3><p class="fd-yield">Serves 1 · 5 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fd-rating-count">28 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>100</bdi></span></div>
-<div class="wp-block-button wc-block-components-product-button"><a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Sold out</a></div>
-</li><li class="wp-block-post post-104 product type-product status-publish">
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-note="Out of stock — the card is showing that state on purpose." class="wp-block-button__link wp-element-button add_to_cart_button">Sold out</a></div>
+</li><li class="wp-block-post post-104 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#B98D3E"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">New</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Super Millet Idli</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>210</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-105 product type-product status-publish">
+</li><li class="wp-block-post post-105 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#C2571F"><span class="fx-time">6 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Pav Bhaji</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">57 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-106 product type-product status-publish">
+</li><li class="wp-block-post post-106 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#4E8B66"><span class="fx-time">1 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Coconut Red Chutney</a></h3><p class="fd-yield">Serves 4 · 1 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">19 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>240</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-107 product type-product status-publish">
+</li><li class="wp-block-post post-107 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Masala Chai</a></h3><p class="fd-yield">Serves 1 · 3 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">71 reviews</span></div>
@@ -1832,80 +1883,80 @@ live until you confirm it.</div>
 
 
 <div class="wp-block-query">
-<ul class="wp-block-post-template fd-products is-layout-grid columns-3 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish">
+<ul class="wp-block-post-template fd-products is-layout-grid columns-3 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Express Dal Fry</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">84 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></ins> <span class="fd-save">Save 17%</span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-101 product type-product status-publish">
+</li><li class="wp-block-post post-101 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Idli Sambhar</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">62 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></ins></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-102 product type-product status-publish">
+</li><li class="wp-block-post post-102 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Express Dal Khichdi</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">41 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-103 product type-product status-publish">
+</li><li class="wp-block-post post-103 product type-product status-publish outofstock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#C98A34"><span class="fx-time">5 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--out">Sold out</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Aloo ka Mazaa</a></h3><p class="fd-yield">Serves 1 · 5 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fd-rating-count">28 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>100</bdi></span></div>
-<div class="wp-block-button wc-block-components-product-button"><a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Sold out</a></div>
-</li><li class="wp-block-post post-104 product type-product status-publish">
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-note="Out of stock — the card is showing that state on purpose." class="wp-block-button__link wp-element-button add_to_cart_button">Sold out</a></div>
+</li><li class="wp-block-post post-104 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#B98D3E"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">New</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Super Millet Idli</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>210</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-105 product type-product status-publish">
+</li><li class="wp-block-post post-105 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#C2571F"><span class="fx-time">6 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Pav Bhaji</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">57 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-106 product type-product status-publish">
+</li><li class="wp-block-post post-106 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#4E8B66"><span class="fx-time">1 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Coconut Red Chutney</a></h3><p class="fd-yield">Serves 4 · 1 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">19 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>240</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-107 product type-product status-publish">
+</li><li class="wp-block-post post-107 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Masala Chai</a></h3><p class="fd-yield">Serves 1 · 3 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">71 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>375</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-108 product type-product status-publish">
+</li><li class="wp-block-post post-108 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Express Dal Fry</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">84 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></ins> <span class="fd-save">Save 17%</span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-109 product type-product status-publish">
+</li><li class="wp-block-post post-109 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Idli Sambhar</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">62 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></ins></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-110 product type-product status-publish">
+</li><li class="wp-block-post post-110 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Express Dal Khichdi</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">41 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-111 product type-product status-publish">
+</li><li class="wp-block-post post-111 product type-product status-publish outofstock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#C98A34"><span class="fx-time">5 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--out">Sold out</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Aloo ka Mazaa</a></h3><p class="fd-yield">Serves 1 · 5 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.4</span> <span class="fd-rating-count">28 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>100</bdi></span></div>
-<div class="wp-block-button wc-block-components-product-button"><a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">Sold out</a></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-note="Out of stock — the card is showing that state on purpose." class="wp-block-button__link wp-element-button add_to_cart_button">Sold out</a></div>
 </li></ul>
-<nav class="fx-pag"><a>1</a><a class="on">2</a><a>Next →</a></nav>
+<nav class="fx-pag" data-note="Paging is live on the site; the mock shows one page of 12."><a>1</a><a class="on">2</a><a>Next →</a></nav>
 
 </div>
 
@@ -2022,7 +2073,7 @@ live until you confirm it.</div>
 <p class="has-md-font-size">Yellow moong and toor, tempered with cumin, tomato and a little ghee. Dried slowly so the tempering survives.</p>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price fx-price--lg has-2-xl-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></ins> <span class="fd-save">Save 17%</span></div><p class="fd-yield-strip"><span>Net 80 g</span><span>Makes 260 g cooked</span><span>2 servings</span><span>Ready in 6 min</span></p>
 <p class="fx-stock">In stock</p>
-<form class="cart fx-atc"><div class="quantity"><label class="screen-reader-text" for="fx-qty">Quantity</label><input type="number" id="fx-qty" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div><button type="button" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">Add to cart</button></form>
+<form class="cart fx-atc"><div class="quantity"><label class="screen-reader-text" for="fx-qty">Quantity</label><input type="number" id="fx-qty" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div><button type="button" data-s="cart" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">Add to cart</button></form>
 
 
 <div class="wp-block-group fd-assure">
@@ -2084,25 +2135,25 @@ live until you confirm it.</div>
 
 
 <div class="wp-block-woocommerce-related-products alignwide">
-<ul class="wp-block-post-template fd-products is-layout-grid columns-4 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish">
+<ul class="wp-block-post-template fd-products is-layout-grid columns-4 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#4E8B66"><span class="fx-time">1 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Coconut Red Chutney</a></h3><p class="fd-yield">Serves 4 · 1 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">19 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>240</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-101 product type-product status-publish">
+</li><li class="wp-block-post post-101 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Masala Chai</a></h3><p class="fd-yield">Serves 1 · 3 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">71 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>375</bdi></span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-102 product type-product status-publish">
+</li><li class="wp-block-post post-102 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span></span></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Idli Sambhar</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">62 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></ins></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
-</li><li class="wp-block-post post-103 product type-product status-publish">
+</li><li class="wp-block-post post-103 product type-product status-publish instock">
 <div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#C2571F"><span class="fx-time">6 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Pav Bhaji</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">57 reviews</span></div>
@@ -2234,6 +2285,11 @@ live until you confirm it.</div>
 </div>
 
 
+<!-- A way back that is not the browser button. The classic cart shortcode
+     offers none once the cart has something in it. -->
+
+<p class="alignwide fd-cart-back has-sm-font-size"><a href="/shop/" data-s="shop">← Continue shopping</a></p>
+
 
 <div class="wp-block-group alignwide">
 <div class="woocommerce">
@@ -2243,10 +2299,10 @@ live until you confirm it.</div>
 <th class="product-thumbnail"><span class="screen-reader-text">Thumbnail image</span></th>
 <th class="product-name">Product</th><th class="product-price">Price</th>
 <th class="product-quantity">Quantity</th><th class="product-subtotal">Subtotal</th></tr></thead>
-<tbody><tr class="woocommerce-cart-form__cart-item cart_item"><td class="product-remove"><a href="#" class="remove" aria-label="Remove Express Dal Fry from cart">×</a></td><td class="product-thumbnail"><a href="#"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time"></span></div></a></td><td class="product-name" data-title="Product"><a href="#">Express Dal Fry</a></td><td class="product-price" data-title="Price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></td><td class="product-quantity" data-title="Quantity"><div class="quantity"><label class="screen-reader-text" for="qty-0">Quantity</label><input type="number" id="qty-0" class="input-text qty text" value="1" min="0" step="1" inputmode="numeric"></div></td><td class="product-subtotal" data-title="Subtotal"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></td></tr><tr class="woocommerce-cart-form__cart-item cart_item"><td class="product-remove"><a href="#" class="remove" aria-label="Remove Idli Sambhar from cart">×</a></td><td class="product-thumbnail"><a href="#"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time"></span></div></a></td><td class="product-name" data-title="Product"><a href="#">Idli Sambhar</a></td><td class="product-price" data-title="Price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></td><td class="product-quantity" data-title="Quantity"><div class="quantity"><label class="screen-reader-text" for="qty-1">Quantity</label><input type="number" id="qty-1" class="input-text qty text" value="1" min="0" step="1" inputmode="numeric"></div></td><td class="product-subtotal" data-title="Subtotal"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></td></tr><tr class="woocommerce-cart-form__cart-item cart_item"><td class="product-remove"><a href="#" class="remove" aria-label="Remove Express Dal Khichdi from cart">×</a></td><td class="product-thumbnail"><a href="#"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time"></span></div></a></td><td class="product-name" data-title="Product"><a href="#">Express Dal Khichdi</a></td><td class="product-price" data-title="Price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></td><td class="product-quantity" data-title="Quantity"><div class="quantity"><label class="screen-reader-text" for="qty-2">Quantity</label><input type="number" id="qty-2" class="input-text qty text" value="1" min="0" step="1" inputmode="numeric"></div></td><td class="product-subtotal" data-title="Subtotal"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></td></tr>
+<tbody><tr class="woocommerce-cart-form__cart-item cart_item" data-unit="185"><td class="product-remove"><a href="#" class="remove" aria-label="Remove Express Dal Fry from cart">×</a></td><td class="product-thumbnail"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time"></span></div></a></td><td class="product-name" data-title="Product"><a href="#" data-s="product">Express Dal Fry</a></td><td class="product-price" data-title="Price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></td><td class="product-quantity" data-title="Quantity"><div class="quantity"><label class="screen-reader-text" for="qty-0">Quantity</label><input type="number" id="qty-0" class="input-text qty text" value="1" min="0" step="1" inputmode="numeric"></div></td><td class="product-subtotal" data-title="Subtotal"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></td></tr><tr class="woocommerce-cart-form__cart-item cart_item" data-unit="195"><td class="product-remove"><a href="#" class="remove" aria-label="Remove Idli Sambhar from cart">×</a></td><td class="product-thumbnail"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time"></span></div></a></td><td class="product-name" data-title="Product"><a href="#" data-s="product">Idli Sambhar</a></td><td class="product-price" data-title="Price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></td><td class="product-quantity" data-title="Quantity"><div class="quantity"><label class="screen-reader-text" for="qty-1">Quantity</label><input type="number" id="qty-1" class="input-text qty text" value="1" min="0" step="1" inputmode="numeric"></div></td><td class="product-subtotal" data-title="Subtotal"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></td></tr><tr class="woocommerce-cart-form__cart-item cart_item" data-unit="185"><td class="product-remove"><a href="#" class="remove" aria-label="Remove Express Dal Khichdi from cart">×</a></td><td class="product-thumbnail"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time"></span></div></a></td><td class="product-name" data-title="Product"><a href="#" data-s="product">Express Dal Khichdi</a></td><td class="product-price" data-title="Price"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></td><td class="product-quantity" data-title="Quantity"><div class="quantity"><label class="screen-reader-text" for="qty-2">Quantity</label><input type="number" id="qty-2" class="input-text qty text" value="1" min="0" step="1" inputmode="numeric"></div></td><td class="product-subtotal" data-title="Subtotal"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></td></tr>
 <tr><td class="actions" colspan="6"><div class="coupon"><label for="coupon_code" class="screen-reader-text">Coupon:</label>
 <input type="text" id="coupon_code" class="input-text" placeholder="Partner or creator code">
-<button type="button" class="button wp-element-button">Apply</button></div>
+<button type="button" class="button wp-element-button" data-note="Coupon codes are checked by WooCommerce on the site — the NALIN10 line below shows how one looks.">Apply</button></div>
 <button type="button" class="button wp-element-button" disabled>Update cart</button></td></tr>
 </tbody></table></form>
 <div class="cart-collaterals"><div class="cart_totals"><h2>Cart totals</h2>
@@ -2257,7 +2313,7 @@ live until you confirm it.</div>
 <tr class="order-total"><th>Total</th><td data-title="Total"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>558</bdi></span></td></tr>
 </tbody></table>
 <p class="fd-cart-promise is-estimate">GST is included. Shipping is confirmed from your PIN code at the next step. Nothing else is added.</p>
-<div class="wc-proceed-to-checkout"><a href="#" class="checkout-button button alt wc-forward wp-element-button">Proceed to checkout</a></div>
+<div class="wc-proceed-to-checkout"><a href="#" data-s="checkout" class="checkout-button button alt wc-forward wp-element-button">Proceed to checkout</a></div>
 </div></div></div>
 </div>
 
@@ -2359,7 +2415,7 @@ convenience or platform fee is added.</p>
 <div class="fx-pay"><label><input type="radio" checked> Pay now
 <span class="fd-pay-saving">Save ₹25</span></label>
 <label><input type="radio"> Cash on delivery</label></div>
-<button class="wp-element-button fx-add fx-add--lg">Place order</button></aside></div>
+<button class="wp-element-button fx-add fx-add--lg" data-note="Placing the order runs Razorpay or cash-on-delivery on the site. Not part of this mock.">Place order</button></aside></div>
 </main>
 
 <footer>
@@ -2376,7 +2432,7 @@ convenience or platform fee is added.</p>
 </div>
 
 </footer>
-</div><div class="fx-shell woocommerce-account woocommerce-page" id="s-account" hidden><header>
+</div><div class="fx-shell woocommerce-account woocommerce-page logged-in" id="s-account" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
 <p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
@@ -2515,17 +2571,18 @@ payload all keep reading the meta they have always read.</div>
 </header>
 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
-<h1 class="fx-posttitle has-3-xl-font-size">Sign in</h1>
-<div class="woocommerce"><div class="fd-signin">
+<h1 class="fx-posttitle has-3-xl-font-size">My account</h1>
+<div class="woocommerce"><form class="woocommerce-form woocommerce-form-login login">
 <h2>Sign in</h2>
 <p class="fd-account-lead">Your saved addresses come back automatically, so checkout is four taps.</p>
-<label class="fx-field"><span>Mobile number</span><input placeholder="98••• ••210"></label>
-<button class="wp-element-button">Send code</button>
+<p class="woocommerce-form-row form-row"><label for="fx-mobile">Mobile number</label>
+<input type="tel" id="fx-mobile" class="woocommerce-Input input-text" placeholder="98••• ••210" inputmode="numeric"></p>
+<button type="button" class="woocommerce-button button woocommerce-form-login__submit wp-element-button" data-s="account">Send code</button>
 <p class="fd-account-lead" style="margin-top:1rem">No password. We send a six-digit code to your phone.</p>
 <div class="fx-note">WP-05 · week 11 — mobile-OTP login replaces this form once the SMS gateway
 is DLT-registered. The theme renders WooCommerce’s form so the OTP plugin can take it over
 without a template change. Guest checkout stays the default path either way.</div>
-</div></div>
+</form></div>
 </main>
 
 <footer>
@@ -2684,21 +2741,82 @@ without a template change. Guest checkout stays the default path either way.</di
 </footer>
 </div>
 <script>
-document.addEventListener('click', function (e) {
-  var t = e.target.closest('[data-s]'); if (!t || !t.dataset.s) return;
-  // These carry the theme's real hrefs (/shop/, /cart/, …). Following one
-  // leaves this single file for a page that does not exist here, which
-  // looks exactly like a dead click.
-  e.preventDefault();
-  ["home", "shop", "product", "cart", "checkout", "account", "signin", "notfound"].forEach(function (s) {
-    document.getElementById('s-' + s).hidden = (s !== t.dataset.s);
+(function () {
+  var SCREENS = ["home", "shop", "product", "cart", "checkout", "account", "signin", "notfound"];
+  var TABS = document.querySelectorAll('.tab');
+  function show(id, push) {
+    if (SCREENS.indexOf(id) < 0) return;
+    SCREENS.forEach(function (s) { document.getElementById('s-' + s).hidden = (s !== id); });
+    TABS.forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.s === id)); });
+    window.scrollTo(0, 0);
+    // The browser's own Back button works between screens.
+    if (push !== false) history.pushState({ s: id }, '', '#' + id);
+  }
+  window.addEventListener('popstate', function (e) {
+    show((e.state && e.state.s) || location.hash.slice(1) || 'home', false);
   });
-  document.querySelectorAll('.tab').forEach(function (b) {
-    b.setAttribute('aria-selected', String(b.dataset.s === t.dataset.s));
+  var first = location.hash.slice(1);
+  if (SCREENS.indexOf(first) >= 0) show(first, false);
+  history.replaceState({ s: SCREENS.indexOf(first) >= 0 ? first : 'home' }, '');
+
+  // Anything clickable that has no door in the mock SAYS SO instead of doing
+  // nothing — silence reads as a broken build.
+  var toast = document.createElement('div'); toast.className = 'fx-toast'; toast.hidden = true;
+  document.body.appendChild(toast); var tt;
+  function say(msg) { toast.textContent = msg; toast.hidden = false; clearTimeout(tt); tt = setTimeout(function () { toast.hidden = true; }, 3200); }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-s]');
+    if (t && t.dataset.s) {
+      // Theme links carry real hrefs (/shop/, /cart/ …); following one leaves
+      // this single file for a page that does not exist here.
+      e.preventDefault(); show(t.dataset.s); return;
+    }
+    var rm = e.target.closest('.woocommerce-cart a.remove');
+    if (rm) { e.preventDefault(); rm.closest('tr').remove(); recalc(); return; }
+    var c = e.target.closest('a, button, input[type=submit], [data-note]');
+    if (!c || c.closest('.proto')) return;
+    if (c.matches('.fd-tab__button, .fd-sticky-atc button, summary') || c.closest('form.cart')) return;  // live in the mock
+    if (c.tagName === 'A' && (c.getAttribute('href') || '#').charAt(0) === '#' && !c.dataset.note && c.getAttribute('href').length > 1) return;  // in-page anchor
+    e.preventDefault();
+    var noted = e.target.closest('[data-note]');
+    say(noted ? noted.dataset.note : 'Not built into this mock — it works on the site. The pages here are the eight in the strip above.');
   });
-  window.scrollTo(0, 0);
-});
-// What inc/product-display.php prints in wp_footer on the shop: filters start
-// closed on a phone. Same line, so the preview closes what the site closes.
-if(matchMedia('(max-width:781px)').matches){document.querySelectorAll('details.fd-filters[open]').forEach(function(d){d.removeAttribute('open')})}
+
+  // The cart adds up. Remove a line or change a quantity and the subtotal,
+  // the 10% partner coupon, the total, the free-shipping bar and the header
+  // pill all follow — the arithmetic WooCommerce does on the site, so a
+  // reviewer can test the design of a two-item cart, not only a three-item one.
+  function money(n) { try { return '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n); } catch (e) { return '₹' + Math.round(n); } }
+  function setAmt(cell, n) { if (!cell) return; var b = cell.querySelector('bdi') || cell; b.innerHTML = '<span class="woocommerce-Price-currencySymbol">₹</span>' + new Intl.NumberFormat('en-IN').format(n); }
+  function recalc() {
+    var rows = document.querySelectorAll('.woocommerce-cart tr.cart_item');
+    var sub = 0, count = 0;
+    rows.forEach(function (tr) {
+      var unit = parseFloat(tr.dataset.unit || '0'), q = parseInt((tr.querySelector('input.qty') || {}).value, 10) || 0;
+      sub += unit * q; count += q; setAmt(tr.querySelector('.product-subtotal'), unit * q);
+    });
+    var off = Math.round(sub * 0.10), total = sub - off, THRESHOLD = 599;
+    setAmt(document.querySelector('.cart-subtotal td'), sub);
+    var disc = document.querySelector('.cart-discount td'); if (disc) disc.innerHTML = '−' + money(off);
+    setAmt(document.querySelector('.order-total td'), total);
+    var ship = document.querySelector('.fd-ship'), bar = document.querySelector('.fd-progress > i');
+    if (ship) ship.innerHTML = total >= THRESHOLD ? '<strong>Free shipping</strong> unlocked.' : '<strong>' + money(THRESHOLD - total) + '</strong> away from free shipping.';
+    if (bar) bar.style.width = Math.min(100, Math.round(total / THRESHOLD * 100)) + '%';
+    document.querySelectorAll('.wc-block-mini-cart__amount').forEach(function (a) { a.textContent = money(total); });
+    document.querySelectorAll('.wc-block-mini-cart__badge').forEach(function (b) { b.textContent = String(count); });
+    var empty = document.querySelector('.woocommerce-cart .fx-empty');
+    if (!rows.length && !empty) {
+      var form = document.querySelector('.woocommerce-cart-form');
+      form.insertAdjacentHTML('beforebegin', '<p class="fx-empty">Your cart is empty. <a href="/shop/" data-s="shop">Back to the shop →</a></p>');
+      form.hidden = true; document.querySelector('.cart-collaterals').hidden = true;
+    }
+  }
+  document.addEventListener('input', function (e) { if (e.target.matches('.woocommerce-cart input.qty')) recalc(); });
+  document.addEventListener('change', function (e) { if (e.target.matches('.woocommerce-cart input.qty')) recalc(); });
+
+  // What inc/product-display.php prints in wp_footer on the shop: filters start
+  // closed on a phone. Same line, so the preview closes what the site closes.
+  if (matchMedia('(max-width:781px)').matches) { document.querySelectorAll('details.fd-filters[open]').forEach(function (d) { d.removeAttribute('open'); }); }
+})();
 </script>

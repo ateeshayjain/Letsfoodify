@@ -22,7 +22,7 @@ has orders staging has never seen. Configuration moves via
   - [ ] GA4 measurement ID — gate reports "gtag loader present", not "analytics OFF"
   - [ ] Photography loaded — feed exclusion notice reads zero products
   - [ ] Product weights — no order shows "Not dispatchable"
-- [ ] `build/run-all-tests.sh` — **ALL GREEN, 28 suites**. Anything red stops the clock.
+- [ ] `build/run-all-tests.sh` — **ALL GREEN, 29 suites**. Anything red stops the clock.
 - [ ] **URL inventory → `redirects.csv`** finalised from the WP-01 crawl.
       `wp02-verify.sh` static analysis clean: no chains, no loops, no duplicates.
 - [ ] **Baseline captured and filed**: GSC queries/pages/impressions export, GA4

@@ -286,3 +286,52 @@ exist. It is a blocking suite in `run-all-tests.sh` — 28 suites now.
 Sold out stays inert on purpose. On the live site Add to cart opens the
 mini-cart drawer rather than the cart page; the mock has no drawer, so it opens
 the cart screen instead.
+
+## Round 8, 16 Sep — "what did you even make?"
+
+A fair question, and the honest answer first: **a preview of the theme, not a
+store.** Everything in the portal is generated from the real theme files —
+tokens, templates, patterns, the PHP that renders cards and product pages — so
+what you see is what WordPress will draw. What it is *not* is WordPress: there
+is no WooCommerce behind it yet, so nothing genuinely adds to a cart, takes an
+order, or sends an OTP. Nothing in this kit has run against a live WordPress
+except the boot test. Until staging exists, the portal is for judging layout,
+type and hierarchy — and, from this round, for clicking through.
+
+Because a reviewer clicks, the mock now behaves like a store as far as a static
+file can: every door opens the screen it names; the browser's Back button
+returns (screens push history); the cart re-adds itself when a line is removed
+or a quantity changed — subtotal, the 10% partner coupon, total, the
+free-shipping bar and the header pill all follow, and an emptied cart says so
+with a way back; and any click that has no screen here says so in a toast
+rather than doing nothing. `tests/preview-doors.js` asserts all of it in a real
+browser, 15 checks, blocking.
+
+Six things the click-through surfaced, all in the THEME, all fixed:
+
+1. **No way back from the cart.** The classic cart offers none once it holds
+   something. It has a "← Continue shopping" link now.
+2. **A sold-out card looked buyable.** WooCommerce marks the loop item
+   `outofstock`; the theme now greys the image, mutes the name and price and
+   flattens the button on that class. The badge stays loud — it is the message.
+3. **"Use this address" and "Manage saved addresses" were flush.** Siblings the
+   PHP prints back to back, with no gap — and the link's tap height was asking
+   for `--wp--custom--tapTarget`, a token that does not exist.
+4. **That token was wrong in six places.** theme.json's custom keys reach CSS
+   kebab-cased (`--wp--custom--tap-target`), so every camelCase use was a
+   silently invalid declaration. `tests/token-test.py` now checks that every
+   token the theme uses exists — rule 4, as arithmetic rather than a sentence.
+5. **The sign-in page sat in the wrong column.** The signed-in account page's
+   two-column grid also applied to the signed-out page and put the login form
+   in the 15rem nav column, headed "Sign in" twice. The grid is scoped to
+   `logged-in` (which WordPress sets on `<body>`), the form is a centred card
+   with WooCommerce's own classes, and the page is headed "My account" once.
+6. **Nav links rode nine pixels high.** The 44px tap floor made each link a
+   44px box inside the nav's flex row, with its text at the top. They centre now.
+
+**Invoices and receipts** (asked this round): not today. WooCommerce sends the
+order email — that is the receipt — and the account's Details page shows the
+order, but nothing generates a downloadable GST invoice. The free "PDF Invoices
+& Packing Slips" plugin would, styled to the tokens and carrying GSTIN and the
+FSSAI number; it costs nothing, so rule 5 does not bite, but it is a scope
+addition and needs a yes.

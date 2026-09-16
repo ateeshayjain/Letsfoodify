@@ -3,6 +3,11 @@
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
 <!-- wp:post-title {"level":1,"align":"wide","fontSize":"3xl"} /-->
 <!-- wp:pattern {"slug":"foodify/free-shipping-progress"} /-->
+<!-- A way back that is not the browser button. The classic cart shortcode
+     offers none once the cart has something in it. -->
+<!-- wp:paragraph {"align":"wide","className":"fd-cart-back","fontSize":"sm"} -->
+<p class="alignwide fd-cart-back has-sm-font-size"><a href="/shop/">← Continue shopping</a></p>
+<!-- /wp:paragraph -->
 <!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
 <div class="wp-block-group alignwide">
 <!-- wp:woocommerce/classic-shortcode {"shortcode":"cart"} /-->

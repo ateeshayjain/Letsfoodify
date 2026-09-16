@@ -226,7 +226,10 @@ def loop_card(inner_markup, p, i):
     CUR = p
     body = render(inner_markup, 1)
     CUR = None
-    return f'<li class="wp-block-post post-{100 + i} product type-product status-publish">{body}</li>'
+    # WooCommerce adds the stock status to the loop item's classes; the theme
+    # greys a sold-out card on it, so the fixture has to carry it too.
+    stock = "outofstock" if "soldout" in p[9] else "instock"
+    return f'<li class="wp-block-post post-{100 + i} product type-product status-publish {stock}">{body}</li>'
 
 
 REVIEWS = [
@@ -267,7 +270,7 @@ def dynamic(name, attrs, inner):
         # screen was headed with a product name — a fixture artefact that reads
         # as a bug in a client review.
         titles = {"cart": "Cart", "checkout": "Checkout", "account": "My account",
-                  "signin": "Sign in", "notfound": "Page not found"}
+                  "signin": "My account", "notfound": "Page not found"}
         return (f'<h{lvl} class="fx-posttitle {cls_for(a)}">'
                 f'{titles.get(SCREEN_ID, "Express Dal Fry")}</h{lvl}>')
     if name == "query-title":
@@ -313,7 +316,7 @@ def dynamic(name, attrs, inner):
         # to the cart and opens the mini-cart drawer, and a button that does
         # nothing at all is what a reviewer reports as broken. Sold out stays
         # inert, because it is.
-        door = "" if sold_out else ' data-s="cart"'
+        door = ' data-note="Out of stock — the card is showing that state on purpose."' if sold_out else ' data-s="cart"'
         return ('<div class="wp-block-button wc-block-components-product-button">'
                 f'<a href="#"{door} class="wp-block-button__link wp-element-button '
                 f'add_to_cart_button">{label}</a></div>')
@@ -363,7 +366,7 @@ def dynamic(name, attrs, inner):
         # A <form class="cart"> so the theme's sticky bar can watch it here too.
         return ('<form class="cart fx-atc"><div class="quantity"><label class="screen-reader-text" for="fx-qty">Quantity</label>'
                 '<input type="number" id="fx-qty" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div>'
-                '<button type="button" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">Add to cart</button></form>')
+                '<button type="button" data-s="cart" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">Add to cart</button></form>')
     if name == "woocommerce/product-details":
         # The theme renders the tabbed body from inc/product-spec.php on
         # woocommerce_after_single_product_summary — BEFORE this block in the
@@ -449,10 +452,10 @@ def cart_or_checkout(which):
         # the bowl standing in for the thumbnail image.
         amt = lambda v: f'<span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>{v}</bdi></span>'
         lines = "".join(
-            '<tr class="woocommerce-cart-form__cart-item cart_item">'
+            f'<tr class="woocommerce-cart-form__cart-item cart_item" data-unit="{p[3]}">'
             f'<td class="product-remove"><a href="#" class="remove" aria-label="Remove {html.escape(p[0])} from cart">×</a></td>'
-            f'<td class="product-thumbnail"><a href="#">{BOWL.format(hue=p[5], time="")}</a></td>'
-            f'<td class="product-name" data-title="Product"><a href="#">{html.escape(p[0])}</a></td>'
+            f'<td class="product-thumbnail"><a href="#" data-s="product">{BOWL.format(hue=p[5], time="")}</a></td>'
+            f'<td class="product-name" data-title="Product"><a href="#" data-s="product">{html.escape(p[0])}</a></td>'
             f'<td class="product-price" data-title="Price">{amt(p[3])}</td>'
             '<td class="product-quantity" data-title="Quantity"><div class="quantity">'
             f'<label class="screen-reader-text" for="qty-{i}">Quantity</label>'
@@ -469,7 +472,7 @@ def cart_or_checkout(which):
 <tbody>{lines}
 <tr><td class="actions" colspan="6"><div class="coupon"><label for="coupon_code" class="screen-reader-text">Coupon:</label>
 <input type="text" id="coupon_code" class="input-text" placeholder="Partner or creator code">
-<button type="button" class="button wp-element-button">Apply</button></div>
+<button type="button" class="button wp-element-button" data-note="Coupon codes are checked by WooCommerce on the site — the NALIN10 line below shows how one looks.">Apply</button></div>
 <button type="button" class="button wp-element-button" disabled>Update cart</button></td></tr>
 </tbody></table></form>
 <div class="cart-collaterals"><div class="cart_totals"><h2>Cart totals</h2>
@@ -480,7 +483,7 @@ def cart_or_checkout(which):
 <tr class="order-total"><th>Total</th><td data-title="Total">{amt(558)}</td></tr>
 </tbody></table>
 <p class="fd-cart-promise is-estimate">GST is included. Shipping is confirmed from your PIN code at the next step. Nothing else is added.</p>
-<div class="wc-proceed-to-checkout"><a href="#" class="checkout-button button alt wc-forward wp-element-button">Proceed to checkout</a></div>
+<div class="wc-proceed-to-checkout"><a href="#" data-s="checkout" class="checkout-button button alt wc-forward wp-element-button">Proceed to checkout</a></div>
 </div></div></div>'''
     # Rendered as a RETURNING customer sees it: the chooser above, and every
     # field already carrying the default address. That is WP-05's acceptance
@@ -512,7 +515,7 @@ convenience or platform fee is added.</p>
 <div class="fx-pay"><label><input type="radio" checked> Pay now
 <span class="fd-pay-saving">Save ₹25</span></label>
 <label><input type="radio"> Cash on delivery</label></div>
-<button class="wp-element-button fx-add fx-add--lg">Place order</button></aside></div>'''
+<button class="wp-element-button fx-add fx-add--lg" data-note="Placing the order runs Razorpay or cash-on-delivery on the site. Not part of this mock.">Place order</button></aside></div>'''
 
 
 SIGNED_IN = True   # flipped per screen by main()
@@ -570,16 +573,17 @@ def my_account(signed_in):
     if not signed_in:
         # WooCommerce's own login form. WP-05's OTP plugin replaces exactly this,
         # which is why the theme does not render a form of its own.
-        return '''<div class="woocommerce"><div class="fd-signin">
+        return '''<div class="woocommerce"><form class="woocommerce-form woocommerce-form-login login">
 <h2>Sign in</h2>
 <p class="fd-account-lead">Your saved addresses come back automatically, so checkout is four taps.</p>
-<label class="fx-field"><span>Mobile number</span><input placeholder="98••• ••210"></label>
-<button class="wp-element-button">Send code</button>
+<p class="woocommerce-form-row form-row"><label for="fx-mobile">Mobile number</label>
+<input type="tel" id="fx-mobile" class="woocommerce-Input input-text" placeholder="98••• ••210" inputmode="numeric"></p>
+<button type="button" class="woocommerce-button button woocommerce-form-login__submit wp-element-button" data-s="account">Send code</button>
 <p class="fd-account-lead" style="margin-top:1rem">No password. We send a six-digit code to your phone.</p>
 <div class="fx-note">WP-05 · week 11 — mobile-OTP login replaces this form once the SMS gateway
 is DLT-registered. The theme renders WooCommerce\u2019s form so the OTP plugin can take it over
 without a template change. Guest checkout stays the default path either way.</div>
-</div></div>'''
+</form></div>'''
 
     nav = "".join(
         f'<li class="woocommerce-MyAccount-navigation-link{" is-active" if i == 0 else ""}">'
@@ -638,6 +642,88 @@ def find_close(markup, name, start):
         if depth == 0:
             return m.start(), m.end()
     return len(markup), len(markup)
+
+
+MOCK_SCRIPT = r'''<script>
+(function () {
+  var SCREENS = __SCREENS__;
+  var TABS = document.querySelectorAll('.tab');
+  function show(id, push) {
+    if (SCREENS.indexOf(id) < 0) return;
+    SCREENS.forEach(function (s) { document.getElementById('s-' + s).hidden = (s !== id); });
+    TABS.forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.s === id)); });
+    window.scrollTo(0, 0);
+    // The browser's own Back button works between screens.
+    if (push !== false) history.pushState({ s: id }, '', '#' + id);
+  }
+  window.addEventListener('popstate', function (e) {
+    show((e.state && e.state.s) || location.hash.slice(1) || 'home', false);
+  });
+  var first = location.hash.slice(1);
+  if (SCREENS.indexOf(first) >= 0) show(first, false);
+  history.replaceState({ s: SCREENS.indexOf(first) >= 0 ? first : 'home' }, '');
+
+  // Anything clickable that has no door in the mock SAYS SO instead of doing
+  // nothing — silence reads as a broken build.
+  var toast = document.createElement('div'); toast.className = 'fx-toast'; toast.hidden = true;
+  document.body.appendChild(toast); var tt;
+  function say(msg) { toast.textContent = msg; toast.hidden = false; clearTimeout(tt); tt = setTimeout(function () { toast.hidden = true; }, 3200); }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-s]');
+    if (t && t.dataset.s) {
+      // Theme links carry real hrefs (/shop/, /cart/ …); following one leaves
+      // this single file for a page that does not exist here.
+      e.preventDefault(); show(t.dataset.s); return;
+    }
+    var rm = e.target.closest('.woocommerce-cart a.remove');
+    if (rm) { e.preventDefault(); rm.closest('tr').remove(); recalc(); return; }
+    var c = e.target.closest('a, button, input[type=submit], [data-note]');
+    if (!c || c.closest('.proto')) return;
+    if (c.matches('.fd-tab__button, .fd-sticky-atc button, summary') || c.closest('form.cart')) return;  // live in the mock
+    if (c.tagName === 'A' && (c.getAttribute('href') || '#').charAt(0) === '#' && !c.dataset.note && c.getAttribute('href').length > 1) return;  // in-page anchor
+    e.preventDefault();
+    var noted = e.target.closest('[data-note]');
+    say(noted ? noted.dataset.note : 'Not built into this mock — it works on the site. The pages here are the eight in the strip above.');
+  });
+
+  // The cart adds up. Remove a line or change a quantity and the subtotal,
+  // the 10% partner coupon, the total, the free-shipping bar and the header
+  // pill all follow — the arithmetic WooCommerce does on the site, so a
+  // reviewer can test the design of a two-item cart, not only a three-item one.
+  function money(n) { try { return '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n); } catch (e) { return '₹' + Math.round(n); } }
+  function setAmt(cell, n) { if (!cell) return; var b = cell.querySelector('bdi') || cell; b.innerHTML = '<span class="woocommerce-Price-currencySymbol">₹</span>' + new Intl.NumberFormat('en-IN').format(n); }
+  function recalc() {
+    var rows = document.querySelectorAll('.woocommerce-cart tr.cart_item');
+    var sub = 0, count = 0;
+    rows.forEach(function (tr) {
+      var unit = parseFloat(tr.dataset.unit || '0'), q = parseInt((tr.querySelector('input.qty') || {}).value, 10) || 0;
+      sub += unit * q; count += q; setAmt(tr.querySelector('.product-subtotal'), unit * q);
+    });
+    var off = Math.round(sub * 0.10), total = sub - off, THRESHOLD = 599;
+    setAmt(document.querySelector('.cart-subtotal td'), sub);
+    var disc = document.querySelector('.cart-discount td'); if (disc) disc.innerHTML = '−' + money(off);
+    setAmt(document.querySelector('.order-total td'), total);
+    var ship = document.querySelector('.fd-ship'), bar = document.querySelector('.fd-progress > i');
+    if (ship) ship.innerHTML = total >= THRESHOLD ? '<strong>Free shipping</strong> unlocked.' : '<strong>' + money(THRESHOLD - total) + '</strong> away from free shipping.';
+    if (bar) bar.style.width = Math.min(100, Math.round(total / THRESHOLD * 100)) + '%';
+    document.querySelectorAll('.wc-block-mini-cart__amount').forEach(function (a) { a.textContent = money(total); });
+    document.querySelectorAll('.wc-block-mini-cart__badge').forEach(function (b) { b.textContent = String(count); });
+    var empty = document.querySelector('.woocommerce-cart .fx-empty');
+    if (!rows.length && !empty) {
+      var form = document.querySelector('.woocommerce-cart-form');
+      form.insertAdjacentHTML('beforebegin', '<p class="fx-empty">Your cart is empty. <a href="/shop/" data-s="shop">Back to the shop →</a></p>');
+      form.hidden = true; document.querySelector('.cart-collaterals').hidden = true;
+    }
+  }
+  document.addEventListener('input', function (e) { if (e.target.matches('.woocommerce-cart input.qty')) recalc(); });
+  document.addEventListener('change', function (e) { if (e.target.matches('.woocommerce-cart input.qty')) recalc(); });
+
+  // What inc/product-display.php prints in wp_footer on the shop: filters start
+  // closed on a phone. Same line, so the preview closes what the site closes.
+  if (matchMedia('(max-width:781px)').matches) { document.querySelectorAll('details.fd-filters[open]').forEach(function (d) { d.removeAttribute('open'); }); }
+})();
+</script>'''
 
 
 def wire_links(body):
@@ -761,7 +847,8 @@ def render(markup, depth=0):
             continue
         if name == "query-pagination" and not selfclose:
             _cs, ce = find_close(markup, name, pos)
-            out.append('<nav class="fx-pag"><a>1</a><a class="on">2</a><a>Next →</a></nav>')
+            out.append('<nav class="fx-pag" data-note="Paging is live on the site; the mock shows one page of 12.">'
+                       '<a>1</a><a class="on">2</a><a>Next →</a></nav>')
             pos = skip_to = ce
             continue
         if name == "template-part":
@@ -897,6 +984,14 @@ FIXTURE_CSS = """
 .fx-add--lg{width:auto;flex:1;min-height:52px}
 .fx-crumb{font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
 .fx-crumb a{color:inherit}
+/* The mock's own toast: what a click with no door SAYS instead of doing nothing. */
+.fx-toast{position:fixed;left:50%;bottom:calc(var(--wp--preset--spacing--50) + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:120;
+  max-width:min(34rem,calc(100vw - 2rem));padding:var(--wp--preset--spacing--30) var(--wp--preset--spacing--50);
+  background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-radius:var(--wp--custom--radius--pill);
+  font-size:var(--wp--preset--font-size--sm);line-height:1.4;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.fx-toast[hidden]{display:none}
+.fx-empty{padding:var(--wp--preset--spacing--60) 0;font-size:var(--wp--preset--font-size--md)}
+.fd-cart-back a{color:var(--wp--preset--color--mute)}
 .fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
 .fx-shotlist{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--wp--preset--spacing--30);margin-top:var(--wp--preset--spacing--40)}
 .fx-shot{position:relative;background:var(--wp--preset--color--surface);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--30)}
@@ -951,8 +1046,6 @@ FIXTURE_CSS = """
   font-weight:600;margin-bottom:var(--wp--preset--spacing--40)}
 .fx-pay{margin:18px 0}
 .fx-pay label{display:flex;gap:9px;align-items:center;padding:9px 0;font-size:var(--wp--preset--font-size--sm)}
-.fd-signin{max-width:26rem}
-.fd-signin h2{font-size:var(--wp--preset--font-size--2xl);margin:0 0 .3em}
 .fx-note{padding:10px 14px;background:var(--wp--preset--color--flame-wash);
   color:var(--wp--preset--color--flame-deep);border-radius:6px;font-size:13px}
 @media (max-width:781px){
@@ -989,7 +1082,7 @@ BODY_CLASS = {
     "shop": "post-type-archive-product woocommerce",
     "cart": "woocommerce-cart woocommerce-page",
     "checkout": "woocommerce-checkout woocommerce-page",
-    "account": "woocommerce-account woocommerce-page",
+    "account": "woocommerce-account woocommerce-page logged-in",   # WordPress adds logged-in for a signed-in visitor
     "signin": "woocommerce-account woocommerce-page",
 }
 
@@ -1118,25 +1211,7 @@ same-day NCR dispatch promise, the "Complete the meal" pairing, and each product
 weight and FAQ. The site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
 live until you confirm it.</div>
 {''.join(panels)}
-<script>
-document.addEventListener('click', function (e) {{
-  var t = e.target.closest('[data-s]'); if (!t || !t.dataset.s) return;
-  // These carry the theme's real hrefs (/shop/, /cart/, …). Following one
-  // leaves this single file for a page that does not exist here, which
-  // looks exactly like a dead click.
-  e.preventDefault();
-  {json.dumps([s[0] for s in SCREENS])}.forEach(function (s) {{
-    document.getElementById('s-' + s).hidden = (s !== t.dataset.s);
-  }});
-  document.querySelectorAll('.tab').forEach(function (b) {{
-    b.setAttribute('aria-selected', String(b.dataset.s === t.dataset.s));
-  }});
-  window.scrollTo(0, 0);
-}});
-// What inc/product-display.php prints in wp_footer on the shop: filters start
-// closed on a phone. Same line, so the preview closes what the site closes.
-if(matchMedia('(max-width:781px)').matches){{document.querySelectorAll('details.fd-filters[open]').forEach(function(d){{d.removeAttribute('open')}})}}
-</script>"""
+{MOCK_SCRIPT.replace('__SCREENS__', json.dumps([s[0] for s in SCREENS]))}"""
     open(OUT, "w").write(doc)
     print(f"rendered {len(SCREENS)} screens -> {OUT}  ({len(doc):,} bytes)")
 

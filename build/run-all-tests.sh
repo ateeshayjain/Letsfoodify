@@ -39,6 +39,7 @@ run "undefined-functions" php tests/undefined-functions.php
 run "contrast"            python3 tests/contrast-test.py
 run "claim"               python3 tests/claim-test.py
 run "fixture-leak"        python3 tests/fixture-leak-test.py
+run "tokens"              python3 tests/token-test.py
 run "gate-selftest"       python3 tests/selftest.py
 run "wp01-selftest"       python3 tests/wp01-selftest.py
 run "wp02-map-selftest"   bash tests/wp02-map-selftest.sh

@@ -33,13 +33,17 @@ li.product a.woocommerce-LoopProduct-link,
 .wc-block-grid__product-link {
   min-height: var(--wp--custom--tap-target);
 }
-/* Buttons need the height to actually centre their label. */
+/* Buttons need the height to actually centre their label. So do nav links:
+   inside the nav's flex row each link is a flex item, so the 44px floor above
+   applies — and the text then sat at the TOP of a 44px box, nine pixels above
+   the logo and the cart it shares a row with. */
 button, [role="button"], input[type="submit"], input[type="button"],
 .wp-element-button, .wc-block-components-button, .woocommerce a.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
+.wp-block-navigation-item__content { display: inline-flex; align-items: center; }
 
 body { font-size: var(--wp--preset--font-size--base); }   /* 16px floor, never smaller */
 :focus-visible { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
@@ -180,10 +184,32 @@ input:focus, select:focus, textarea:focus {
 .fd-stars { color: var(--wp--preset--color--flame-deep); letter-spacing: -1px; }
 .fd-verified { color: var(--wp--preset--color--leaf-ink); }
 
+/* Signed-out account page: WooCommerce's login form as one centred column —
+   title included. A 26rem form left-aligned in a 760px rail reads as a
+   layout that lost its other half. WordPress adds `logged-in` to <body> only
+   for a signed-in visitor, so the signed-out page is the account page without
+   it. The OTP plugin (WP-05) replaces the form's fields, not its box. */
+.woocommerce-account:not(.logged-in) main > .wp-block-post-title, .woocommerce-account:not(.logged-in) main > .fx-posttitle { text-align: center; }
+.woocommerce-form-login {
+  max-width: 26rem; margin-inline: auto;
+  padding: var(--wp--preset--spacing--50);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+}
+.woocommerce-form-login h2 { font-size: var(--wp--preset--font-size--2xl); margin: 0 0 var(--wp--preset--spacing--20); }
+.woocommerce-form-login .woocommerce-form-row { margin: 0 0 var(--wp--preset--spacing--40); }
+.woocommerce-form-login label { display: block; font-weight: 600; font-size: var(--wp--preset--font-size--sm); margin-bottom: var(--wp--preset--spacing--10); }
+.woocommerce-form-login .input-text { width: 100%; padding: 0 var(--wp--preset--spacing--30); }
+.woocommerce-form-login .wp-element-button { width: 100%; }
+
 /* Account — WooCommerce's my-account markup, styled to the token set.
    Two columns on desktop, stacked on mobile; the nav is a real list of links,
    not a sidebar widget. */
-.woocommerce-account .woocommerce {
+/* Signed-in only. WordPress adds `logged-in` to <body> for a signed-in
+   visitor; without the scope the signed-out page got the same grid and its
+   sign-in form was placed in the 15rem column meant for the account nav. */
+.woocommerce-account.logged-in .woocommerce {
   display: grid;
   grid-template-columns: 15rem 1fr;
   gap: var(--wp--preset--spacing--60);
@@ -233,7 +259,7 @@ input:focus, select:focus, textarea:focus {
 .fd-secondary {
   /* HIG audit: this is Edit on every address card and Details on every order —
      a ~20px link beside a 44px button. Same floor for both. */
-  min-height: var(--wp--custom--tapTarget);
+  min-height: var(--wp--custom--tap-target);
   display: inline-flex; align-items: center;
   background: transparent;
   color: var(--wp--preset--color--char);
@@ -275,7 +301,7 @@ input:focus, select:focus, textarea:focus {
 .fd-address__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20); }
 .fd-address__verb { margin: 0; }
 .fd-address__verb button {
-  min-height: var(--wp--custom--tapTarget); background: none; border: 1px solid var(--wp--preset--color--line-strong);
+  min-height: var(--wp--custom--tap-target); background: none; border: 1px solid var(--wp--preset--color--line-strong);
   border-radius: var(--wp--custom--radius--control); padding: 0 var(--wp--preset--spacing--30);
   font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--char); cursor: pointer;
 }
@@ -291,13 +317,19 @@ input:focus, select:focus, textarea:focus {
 .fd-address-choose legend { font-weight: 600; padding: 0 var(--wp--preset--spacing--20); }
 .fd-address-choose__option {
   display: grid; grid-template-columns: auto 1fr; column-gap: var(--wp--preset--spacing--30);
-  align-items: start; min-height: var(--wp--custom--tapTarget);
+  align-items: start; min-height: var(--wp--custom--tap-target);
   padding: var(--wp--preset--spacing--20) 0; cursor: pointer;
 }
 .fd-address-choose__option input { grid-row: span 2; margin-top: .2em; }
 .fd-address-choose__label { font-weight: 600; }
 .fd-address-choose__body { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
-.fd-address-choose__manage { display: inline-flex; align-items: center; min-height: var(--wp--custom--tapTarget); margin-top: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
+/* The button and the manage link are siblings the PHP prints one after the
+   other. They need a row with a gap, and the link needs a real tap height —
+   it asked for the custom key by its camelCase name (tapTarget), which does not exist: theme.json's
+   custom keys reach CSS kebab-cased (--wp--custom--tap-target), so the
+   min-height was silently invalid and the link sat flush against the button. */
+.fd-address-choose fieldset > .wp-element-button { margin-top: var(--wp--preset--spacing--30); margin-right: var(--wp--preset--spacing--40); }
+.fd-address-choose__manage { display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); margin-top: var(--wp--preset--spacing--30); font-size: var(--wp--preset--font-size--sm); }
 
 /* Post-purchase account claim, on the order-received page. */
 .fd-claim {
@@ -310,7 +342,7 @@ input:focus, select:focus, textarea:focus {
 /* Checkout shell — WP-06. The audited site ran the full site chrome here and
    switched between boxes with injected JavaScript. This is one page, stripped:
    every navigation link on a checkout page is an exit. */
-.fd-checkout-back a { text-decoration: none; min-height: var(--wp--custom--tapTarget); display: inline-flex; align-items: center; }
+.fd-checkout-back a { text-decoration: none; min-height: var(--wp--custom--tap-target); display: inline-flex; align-items: center; }
 .fd-checkout-help a { color: inherit; }
 
 /* The cart's total promise. Rendered from state, never hardcoded — see
@@ -340,7 +372,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--wp--preset--color--mute);
 }
 .woocommerce-form-coupon-toggle .woocommerce-info::before { content: none; }
-.woocommerce-form-coupon-toggle .showcoupon { display: inline-flex; align-items: center; min-height: var(--wp--custom--tapTarget); }
+.woocommerce-form-coupon-toggle .showcoupon { display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); }
 .woocommerce-form-coupon {
   border: 1px solid var(--wp--preset--color--line);
   border-radius: var(--wp--custom--radius--card);
@@ -364,7 +396,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--wp--custom--radius--pill);
   padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
 }
-.wc_payment_methods li { min-height: var(--wp--custom--tapTarget); }
+.wc_payment_methods li { min-height: var(--wp--custom--tap-target); }
 
 /* Review count beside a listing's stars — WP-08. "★★★★★" from one review reads
    as established and is not, which is the fake-viewer-counter failure in a
@@ -506,7 +538,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 @media (max-width: 900px) {
-  .woocommerce-account .woocommerce { grid-template-columns: 1fr; }
+  .woocommerce-account.logged-in .woocommerce { grid-template-columns: 1fr; }
   .woocommerce-orders-table thead { display: none; }
   .woocommerce-orders-table tr { display: grid; gap: var(--wp--preset--spacing--10); padding: var(--wp--preset--spacing--40) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
   .woocommerce-orders-table td { border: 0; padding: 0; }
@@ -920,6 +952,19 @@ input:focus, select:focus, textarea:focus {
 .fd-badge--leaf { background: var(--wp--preset--color--leaf-wash); color: var(--wp--preset--color--leaf-ink); margin-left: auto; }
 .fd-badge--out  { background: var(--wp--preset--color--char); color: var(--wp--preset--color--paper); }
 
+/* A sold-out card reads as unavailable before the eye reaches the button.
+   WooCommerce puts `outofstock` on the loop item (wc_product_post_class), so
+   this is the site's own signal, not a class the theme has to compute. The
+   badge stays at full strength — it is the message — and the button becomes a
+   flat label: `line` behind `char` clears AA, and pointer-events:none makes it
+   as unclickable as the stock. */
+.fd-products > .wp-block-post.outofstock .wc-block-components-product-image { filter: grayscale(1); opacity: .55; }
+.fd-products > .wp-block-post.outofstock .wp-block-post-title,
+.fd-products > .wp-block-post.outofstock .wc-block-components-product-price { color: var(--wp--preset--color--mute); }
+.fd-products > .wp-block-post.outofstock .wc-block-components-product-button .wp-block-button__link {
+  background: var(--wp--preset--color--line); color: var(--wp--preset--color--char);
+  pointer-events: none; cursor: not-allowed;
+}
 /* The card's second line. */
 .fd-products .fd-yield { margin: 0; font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute); }
 
