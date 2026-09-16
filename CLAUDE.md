@@ -180,12 +180,13 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `tools/mobile-sweep.js` | Every screen, both widths, real Chromium — overflow, squeezed boxes and badges escaping their image, each named by selector |
 | `docs/LAUNCH-RUNBOOK.md` | **Launch day.** Cutover, the noindex flip, rollback, hypercare |
 | `docs/WP-14-NOTES.md` | The gate's noindex hole, 301 strictness, run-all-tests |
-| `run-all-tests.sh` | 27 suites, one command. A suite that cannot run is a FAIL |
+| `run-all-tests.sh` | 28 suites, one command. A suite that cannot run is a FAIL |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/DESIGN-REVIEW-2026-09-15.md` | Client review round 2: the cart, filter + sort, and the three preview lies it exposed |
 | `tests/shop-test.php` | Filter attribute ids resolve per install; a template never carries a numeric id |
 | `tests/claim-test.py` | **The one number.** "6 minute mein ghar ka khana ready!" lives in bootstrap's blogdescription; the hero renders it by token; no copy or fixture may outrun it |
+| `tests/preview-doors.js` | The mock must be clickable: every door (cart pill, account, nav, card, Add to cart) opens the screen it claims, in a real browser |
 | `tests/fixture-leak-test.py` | **Invented data stays in the renderer that invents it.** The preview's dummy FSSAI licence and dispatch promise may not appear in the theme, a pattern, a template or bootstrap.sh |
 | `tests/pdp-test.php` | 46 assertions. The card and product page rules: SAVE only at 15%+, sold out outranks bestseller, Pack & label is never a tab, and an element hidden with `[hidden]` has a display rule that lets it |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |

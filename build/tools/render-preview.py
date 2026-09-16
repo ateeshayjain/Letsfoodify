@@ -256,11 +256,12 @@ def shortcode(code):
 def dynamic(name, attrs, inner):
     a = attrs or {}
     if name == "site-title":
-        return '<p class="fx-logo has-display-font-family">lets<span>foodify</span></p>'
+        return ('<p class="fx-logo has-display-font-family"><a href="#" data-s="home">'
+                'lets<span>foodify</span></a></p>')
     if name == "post-title":
         lvl = a.get("level", 2)
         if CUR and a.get("__woocommerceNamespace"):
-            return (f'<h{lvl} class="wp-block-post-title {cls_for(a)}"><a href="#">{html.escape(CUR[0])}</a></h{lvl}>'
+            return (f'<h{lvl} class="wp-block-post-title {cls_for(a)}"><a href="#" data-s="product">{html.escape(CUR[0])}</a></h{lvl}>'
                     + card_yield(CUR))
         # The page's own title. It always said "Express Dal Fry", so the cart
         # screen was headed with a product name — a fixture artefact that reads
@@ -287,7 +288,7 @@ def dynamic(name, attrs, inner):
         # WooCommerce's Mini-Cart button markup: amount, then icon + count badge.
         # The theme reorders them with CSS; the classes are Woo's, not fixtures.
         return ('<div class="wc-block-mini-cart wp-block-woocommerce-mini-cart">'
-                '<button class="wc-block-mini-cart__button" aria-label="3 items in cart, total price of ₹620">'
+                '<button class="wc-block-mini-cart__button" data-s="cart" aria-label="3 items in cart, total price of ₹620">'
                 '<span class="wc-block-mini-cart__amount">₹620</span>'
                 '<span class="wc-block-mini-cart__quantity-badge">'
                 '<svg class="wc-block-mini-cart__icon" viewBox="0 0 24 24" width="24" height="24" fill="none" '
@@ -297,20 +298,28 @@ def dynamic(name, attrs, inner):
                 '<span class="wc-block-mini-cart__badge">3</span></span></button></div>')
     if name == "woocommerce/customer-account":
         return ('<div class="wc-block-customer-account wp-block-woocommerce-customer-account">'
-                '<a class="wc-block-customer-account__account-link" href="#" aria-label="Account">'
+                '<a class="wc-block-customer-account__account-link" href="#" data-s="account" aria-label="Account">'
                 '<svg class="wc-block-customer-account__account-icon" viewBox="0 0 24 24" fill="none" '
                 'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'
                 '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a></div>')
     if name == "woocommerce/product-image" and CUR:
         badges = php("echo foodify_render_badges(foodify_card_badges($a[0]))", badge_state(CUR))
-        return f'<div class="wc-block-components-product-image"><a href="#">{BOWL.format(hue=CUR[5], time=CUR[2])}</a>{badges}</div>'
+        return (f'<div class="wc-block-components-product-image"><a href="#" data-s="product">'
+                f'{BOWL.format(hue=CUR[5], time=CUR[2])}</a>{badges}</div>')
     if name == "woocommerce/product-button" and CUR:
-        label = "Sold out" if "soldout" in CUR[9] else "Add to cart"
+        sold_out = "soldout" in CUR[9]
+        label = "Sold out" if sold_out else "Add to cart"
+        # In the mock, Add to cart opens the cart screen — the live button adds
+        # to the cart and opens the mini-cart drawer, and a button that does
+        # nothing at all is what a reviewer reports as broken. Sold out stays
+        # inert, because it is.
+        door = "" if sold_out else ' data-s="cart"'
         return ('<div class="wp-block-button wc-block-components-product-button">'
-                f'<a href="#" class="wp-block-button__link wp-element-button add_to_cart_button">{label}</a></div>')
+                f'<a href="#"{door} class="wp-block-button__link wp-element-button '
+                f'add_to_cart_button">{label}</a></div>')
     if name == "woocommerce/breadcrumbs":
-        return ('<p class="fx-crumb ' + cls_for(a) + '"><a href="#">Home</a> / '
-                '<a href="#">Express</a> / Dal Fry</p>')
+        return ('<p class="fx-crumb ' + cls_for(a) + '"><a href="#" data-s="home">Home</a> / '
+                '<a href="#" data-s="shop">Express</a> / Dal Fry</p>')
     if name == "woocommerce/product-image-gallery":
         # There is no photography. Rather than a grey box, the placeholder states
         # the brief — four shots, in order, with what each one has to prove. That
@@ -631,6 +640,34 @@ def find_close(markup, name, start):
     return len(markup), len(markup)
 
 
+def wire_links(body):
+    """Make the mock click-through.
+
+    Every anchor the THEME writes carries a real href — /shop/, /cart/,
+    /product-category/express/ — and in a static file they all went nowhere,
+    so a reviewer clicking the cart got silence and reasonably read it as
+    broken. This maps those hrefs onto the screens this preview has. It changes
+    nothing about the theme: it is the mock's own wiring, and the banner says so.
+    """
+    def screen_for(href):
+        if href.startswith("/cart"):        return "cart"
+        if href.startswith("/checkout"):    return "checkout"
+        if href.startswith("/my-account"):  return "account"
+        if href.startswith("/product/"):    return "product"
+        if href.startswith(("/shop", "/product-category", "/?orderby")): return "shop"
+        if href in ("/", "") or href.startswith("/#"): return "home"
+        return None
+
+    def sub(m):
+        head, href = m.group(1), m.group(2)
+        if "data-s=" in head:
+            return m.group(0)
+        s = screen_for(href)
+        return m.group(0) if not s else f'<a{head}href="{href}" data-s="{s}"'
+
+    return re.sub(r'<a([^>]*?)href="([^"]*)"', sub, body)
+
+
 def render(markup, depth=0):
     global LOOP_N
     if depth > 8:
@@ -684,8 +721,14 @@ def render(markup, depth=0):
             # hides the row below 560px and does not draw the overlay.
             cs, ce = find_close(markup, name, pos)
             labels = re.findall(r'wp:navigation-link\s*(\{.*?\})', markup[pos:cs])
-            items = "".join(f'<a href="#" class="wp-block-navigation-item__content">'
-                            f'{json.loads(l).get("label", "")}</a>' for l in labels)
+            # The link's real url too, not just its label: wire_links needs it
+            # to know which screen a nav item belongs to, and WordPress renders
+            # the href regardless.
+            items = "".join(
+                '<a href="{url}" class="wp-block-navigation-item__content">{label}</a>'.format(
+                    url=html.escape(json.loads(l).get("url", "#")),
+                    label=json.loads(l).get("label", ""))
+                for l in labels)
             out.append(f'<nav class="wp-block-navigation fx-nav">{items}</nav>')
             pos = skip_to = ce
             continue
@@ -996,7 +1039,7 @@ def main():
         path = os.path.join(THEME, "templates", fn)
         globals()["SIGNED_IN"] = (sid != "signin")
         globals()["SCREEN_ID"] = sid
-        body = render(open(path).read())
+        body = wire_links(render(open(path).read()))
         # The theme substitutes these from foodify_content_tokens(). The preview
         # must resolve the SAME tokens or it drifts from the site — which is
         # exactly how <!--FOODIFY_YEAR--> reached the live footer as an invisible
@@ -1068,6 +1111,8 @@ def main():
 <code>templates/*.html</code>, <code>parts/*.html</code> and <code>patterns/*.php</code>. Edit the theme and this
 changes with it. Food imagery is a CSS placeholder pending the week-3 shoot; product data is fixture data.
 It approximates WordPress's block renderer — judge layout, type and hierarchy here, behaviour on staging.
+The mock is click-through: the cart, the account icon, the nav, a product card and Add to cart all open the
+matching screen, as do the tabs above.
 <br><b>Invented for this mock-up, awaiting your word:</b> the FSSAI licence number ({FIXTURE_FSSAI}), the
 same-day NCR dispatch promise, the "Complete the meal" pairing, and each product's taste notes, cooked
 weight and FAQ. The site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
@@ -1075,7 +1120,11 @@ live until you confirm it.</div>
 {''.join(panels)}
 <script>
 document.addEventListener('click', function (e) {{
-  var t = e.target.closest('[data-s]'); if (!t) return;
+  var t = e.target.closest('[data-s]'); if (!t || !t.dataset.s) return;
+  // These carry the theme's real hrefs (/shop/, /cart/, …). Following one
+  // leaves this single file for a page that does not exist here, which
+  // looks exactly like a dead click.
+  e.preventDefault();
   {json.dumps([s[0] for s in SCREENS])}.forEach(function (s) {{
     document.getElementById('s-' + s).hidden = (s !== t.dataset.s);
   }});

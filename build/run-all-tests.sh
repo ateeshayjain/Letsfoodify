@@ -47,8 +47,11 @@ echo "── real renderers ──"
 run "wordpress-boot"  ./scripts/wp-boot-test.sh
 if [[ -x /opt/pw-browsers/chromium && -d /tmp/node_modules/playwright-core ]]; then
   run "browser-sweep" node tools/mobile-sweep.js
+  run "preview-doors" node tests/preview-doors.js
 else
   RAN=$((RAN+1)); FAILED=$((FAILED+1))
+  RAN=$((RAN+1)); FAILED=$((FAILED+1))
+  printf "  ${R}FAIL${N} %-28s browser missing — the click-through gate DID NOT RUN\n" "preview-doors"
   printf "  ${R}FAIL${N} %-28s browser or playwright-core missing — the sweep DID NOT RUN\n" "browser-sweep"
   printf "         npm i playwright-core (uses the preinstalled /opt/pw-browsers/chromium)\n"
 fi

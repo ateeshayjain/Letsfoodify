@@ -263,3 +263,26 @@ wrap back and watching it go red.
 
 Also fixed while in there: the preview headed the cart page "Express Dal Fry",
 because its post-title fixture returned a product name on every screen.
+
+## Round 7, 16 Sep — the mock is click-through
+
+**"I am clicking on cart but nothing is happening."** Only the tab strip along
+the top was ever wired. Every door the page itself offers — the cart pill, the
+account icon, the nav, a product card, Add to cart, the logo, the footer links
+— was dead, which reads as a broken build rather than as a static mock.
+
+They all work now, and the wiring is derived from the theme's own hrefs
+(`/shop/`, `/cart/`, `/product-category/…`) rather than hand-listed, so a link
+the theme adds is wired by being there. Two traps, both recorded because both
+look identical to the original complaint: an `href` the mock did not intercept
+NAVIGATES away from the single file to a page that does not exist here (the
+click handler calls preventDefault now), and an element carrying an empty
+`data-s` hides every screen at once.
+
+`tests/preview-doors.js` opens each door in a real browser and asserts the
+screen it lands on by name, plus that nothing points at a screen that does not
+exist. It is a blocking suite in `run-all-tests.sh` — 28 suites now.
+
+Sold out stays inert on purpose. On the live site Add to cart opens the
+mini-cart drawer rather than the cart page; the mock has no drawer, so it opens
+the cart screen instead.

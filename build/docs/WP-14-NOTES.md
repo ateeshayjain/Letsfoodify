@@ -29,7 +29,7 @@ invisible at cutover and expensive at week six.
 
 ## `run-all-tests.sh` — the whole gate, one command
 
-27 suites: lint, 17 pure PHP suites, the undefined-function scanner, contrast,
+28 suites: lint, 17 pure PHP suites, the undefined-function scanner, contrast,
 three gate self-tests, the WordPress boot, the browser sweep — and optionally
 the blocking smoke test against a URL. **A suite that cannot run is a FAILURE,
 not a skip**: a missing browser or WordPress turns the run red, because green
@@ -59,5 +59,5 @@ tool it needs is now built.
 
 ```
 python3 tests/selftest.py   # 55 — noindex caught, --staging inversion proven
-build/run-all-tests.sh      # 27 suites, ALL GREEN
+build/run-all-tests.sh      # 28 suites, ALL GREEN
 ```
