@@ -34,7 +34,10 @@ const INSIDE = ['.fd-badges > *', '.fd-chip', '.fd-save'];
   // 1920 is not vanity: the content rail stops growing at 1200, so every
   // alignment mistake that is 20px at 1280 is 220px on the screen the client
   // actually reviews on.
-  for (const [label, w, h] of [['phone', 390, 844], ['desktop', 1280, 900], ['wide', 1920, 1000]]) {
+  // 820 is not arbitrary: the header wrapped its account and cart onto a
+  // second line between roughly 620 and 900px, a band with no width in this
+  // list, so every run was clean while a tablet showed the bug.
+  for (const [label, w, h] of [['phone', 390, 844], ['tablet', 820, 1000], ['desktop', 1280, 900], ['wide', 1920, 1000]]) {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
     await page.goto(file);
     const tabs = await page.$$('[role=tablist] .tab');
@@ -114,6 +117,24 @@ const INSIDE = ['.fd-badges > *', '.fd-chip', '.fd-save'];
             if (body && hr.left > body.left + 2) {
               hits.push(`heading "${h.textContent.trim().slice(0, 22)}" is indented ${Math.round(hr.left - body.left)}px from the content it titles`);
             }
+          }
+        }
+        // The header's account and cart belong at the right-hand end of the
+        // header row, at every width. They wrapped onto a centred second line
+        // between roughly 620 and 900px — tablets and small laptops, a band no
+        // fixed-width screenshot happened to sit in.
+        // Every screen in the preview carries its own header in ONE document,
+        // so querySelector finds the hidden Home one. Take the visible header.
+        const hdr = [...document.querySelectorAll('.fd-header')].find(e => e.getBoundingClientRect().width > 0);
+        const acts = hdr && hdr.querySelector('.fd-header__actions');
+        const logo = hdr && hdr.querySelector('.fx-logo, .wp-block-site-title');
+        if (hdr && acts && logo) {
+          const h = hdr.getBoundingClientRect(), a = acts.getBoundingClientRect(), l = logo.getBoundingClientRect();
+          if (h.right - a.right > 2) hits.push(`header actions stop ${Math.round(h.right - a.right)}px short of the right edge`);
+          // Same row = their vertical ranges overlap at all; a taller
+          // control sitting lower than a short logo is not a wrap.
+          if (Math.min(a.bottom, l.bottom) - Math.max(a.top, l.top) <= 0) {
+            hits.push('header actions have wrapped onto their own line');
           }
         }
         for (const sel of INSIDE) {

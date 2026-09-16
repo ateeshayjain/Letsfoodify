@@ -521,7 +521,26 @@ input:focus, select:focus, textarea:focus {
    =========================================================================== */
 
 /* Header actions — account and cart, both 44px, the cart a filled pill. */
-.fd-header__actions { align-items: center; gap: var(--wp--preset--spacing--20); }
+/* Account and cart: always the right-hand end of the header row, never a
+   centred second line. margin-inline-start:auto eats the free space even if
+   something upstream re-introduces a wrap, and the nav is allowed to shrink
+   (min-width:0) so it gives way before the actions do. */
+.fd-header__actions {
+  align-items: center; gap: var(--wp--preset--spacing--20);
+  margin-inline-start: auto; flex: 0 0 auto;
+}
+.fd-header > .wp-block-navigation { min-width: 0; }
+/* Between core's 782px column breakpoint and about 1000px the five nav links,
+   the logo and the actions are within ~40px of fitting one line — so the nav
+   broke into two lines and the header looked collapsed on exactly the widths a
+   tablet uses. It gives up gap, not links: hiding a category behind a
+   hamburger on a 900px screen loses a whole navigation level to save 40px. */
+@media (max-width: 1023px) {
+  /* Both selectors on purpose: in WordPress the flex row is the __container
+     list inside the nav, in the preview it is the nav element itself. */
+  .fd-header > .wp-block-navigation,
+  .fd-header > .wp-block-navigation .wp-block-navigation__container { gap: var(--wp--preset--spacing--30); }
+}
 .wc-block-customer-account .wc-block-customer-account__account-link {
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);

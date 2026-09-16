@@ -174,10 +174,16 @@ main>.wp-block-group,main>section,main>div{margin:0}
 .wp-block-details summary{cursor:pointer}
 h1,h2,h3{margin:0 0 .4em}
 p{margin:0 0 1em}
-/* constrained layout, as theme.json declares it */
-main,header>div,footer>div,.wp-block-group>.wp-block-group,
-.wp-block-group[class*=has-background]>*{margin-left:auto;margin-right:auto}
+/* Constrained layout, as theme.json declares it. :not(.is-layout-flex) is
+   load-bearing: core applies these auto margins for CONSTRAINED containers
+   only, and a flex container's children get no such thing. Without it the
+   header's action group was centred by its own auto margins and stopped 23px
+   short of the right edge — a misalignment that existed only in the preview. */
+main,header>div,footer>div,
+.wp-block-group:not(.is-layout-flex)>.wp-block-group,
+.wp-block-group[class*=has-background]:not(.is-layout-flex)>*{margin-left:auto;margin-right:auto}
 .fx-shell main>*,header>div>*,footer>div>*{max-width:760px;margin-left:auto;margin-right:auto}
+.is-layout-flex>*{margin-left:0;margin-right:0}
 .fx-shell .alignwide,.fx-shell main>.alignwide{max-width:1200px}
 header>div,footer>div{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40)}
 main{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40)}
@@ -185,7 +191,7 @@ main{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset-
 
 .fx-logo{font-size:var(--wp--preset--font-size--xl);font-weight:700;margin:0;letter-spacing:-.02em}
 .fx-logo span{color:var(--wp--preset--color--flame-ink)}
-.fx-nav{display:flex;gap:22px;flex-wrap:wrap}
+.fx-nav{display:flex;gap:var(--wp--preset--spacing--50);flex-wrap:wrap}
 .fx-nav a{color:var(--wp--preset--color--char);text-decoration:none;font-size:var(--wp--preset--font-size--base)}
 .fx-nav a:hover{color:var(--wp--preset--color--flame-ink)}
 .fx-bowl{position:relative;aspect-ratio:1;border-radius:50%;
@@ -799,7 +805,26 @@ input:focus, select:focus, textarea:focus {
    =========================================================================== */
 
 /* Header actions — account and cart, both 44px, the cart a filled pill. */
-.fd-header__actions { align-items: center; gap: var(--wp--preset--spacing--20); }
+/* Account and cart: always the right-hand end of the header row, never a
+   centred second line. margin-inline-start:auto eats the free space even if
+   something upstream re-introduces a wrap, and the nav is allowed to shrink
+   (min-width:0) so it gives way before the actions do. */
+.fd-header__actions {
+  align-items: center; gap: var(--wp--preset--spacing--20);
+  margin-inline-start: auto; flex: 0 0 auto;
+}
+.fd-header > .wp-block-navigation { min-width: 0; }
+/* Between core's 782px column breakpoint and about 1000px the five nav links,
+   the logo and the actions are within ~40px of fitting one line — so the nav
+   broke into two lines and the header looked collapsed on exactly the widths a
+   tablet uses. It gives up gap, not links: hiding a category behind a
+   hamburger on a 900px screen loses a whole navigation level to save 40px. */
+@media (max-width: 1023px) {
+  /* Both selectors on purpose: in WordPress the flex row is the __container
+     list inside the nav, in the preview it is the nav element itself. */
+  .fd-header > .wp-block-navigation,
+  .fd-header > .wp-block-navigation .wp-block-navigation__container { gap: var(--wp--preset--spacing--30); }
+}
 .wc-block-customer-account .wc-block-customer-account__account-link {
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
@@ -1360,8 +1385,12 @@ live until you confirm it.</div>
 
 
 <div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
 
-<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group alignwide fd-header">
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
 <p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
 <nav class="wp-block-navigation fx-nav"><a href="#" class="wp-block-navigation-item__content">Express</a><a href="#" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="#" class="wp-block-navigation-item__content">Flavors</a><a href="#" class="wp-block-navigation-item__content">Combos</a><a href="#" class="wp-block-navigation-item__content">How it works</a></nav>
 
@@ -1725,8 +1754,12 @@ live until you confirm it.</div>
 
 
 <div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
 
-<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group alignwide fd-header">
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
 <p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
 <nav class="wp-block-navigation fx-nav"><a href="#" class="wp-block-navigation-item__content">Express</a><a href="#" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="#" class="wp-block-navigation-item__content">Flavors</a><a href="#" class="wp-block-navigation-item__content">Combos</a><a href="#" class="wp-block-navigation-item__content">How it works</a></nav>
 
@@ -1946,8 +1979,12 @@ live until you confirm it.</div>
 
 
 <div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
 
-<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group alignwide fd-header">
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
 <p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
 <nav class="wp-block-navigation fx-nav"><a href="#" class="wp-block-navigation-item__content">Express</a><a href="#" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="#" class="wp-block-navigation-item__content">Flavors</a><a href="#" class="wp-block-navigation-item__content">Combos</a><a href="#" class="wp-block-navigation-item__content">How it works</a></nav>
 
@@ -2164,8 +2201,12 @@ live until you confirm it.</div>
 
 
 <div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
 
-<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group alignwide fd-header">
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
 <p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
 <nav class="wp-block-navigation fx-nav"><a href="#" class="wp-block-navigation-item__content">Express</a><a href="#" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="#" class="wp-block-navigation-item__content">Flavors</a><a href="#" class="wp-block-navigation-item__content">Combos</a><a href="#" class="wp-block-navigation-item__content">How it works</a></nav>
 
@@ -2181,7 +2222,7 @@ live until you confirm it.</div>
 </header>
 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
-<h1 class="fx-posttitle alignwide has-3-xl-font-size">Express Dal Fry</h1>
+<h1 class="fx-posttitle alignwide has-3-xl-font-size">Cart</h1>
 
 
 <div class="wp-block-group alignwide has-border-color has-line-border-color has-leaf-wash-background-color has-background" style="border-width:1px;border-style:solid;border-radius:var(--wp--custom--radius--card);margin-bottom:var(--wp--preset--spacing--50);padding:var(--wp--preset--spacing--40)">
@@ -2299,7 +2340,7 @@ live until you confirm it.</div>
 </header>
 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--70)">
-<h1 class="fx-posttitle has-2-xl-font-size">Express Dal Fry</h1>
+<h1 class="fx-posttitle has-2-xl-font-size">Checkout</h1>
 <div class="fx-checkout">
 <div><div class="woocommerce-form-coupon-toggle"><div class="woocommerce-info">Have a code from a
 partner or a creator? <a href="#" class="showcoupon">Enter it here</a></div></div>
@@ -2343,8 +2384,12 @@ convenience or platform fee is added.</p>
 
 
 <div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
 
-<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group alignwide fd-header">
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
 <p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
 <nav class="wp-block-navigation fx-nav"><a href="#" class="wp-block-navigation-item__content">Express</a><a href="#" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="#" class="wp-block-navigation-item__content">Flavors</a><a href="#" class="wp-block-navigation-item__content">Combos</a><a href="#" class="wp-block-navigation-item__content">How it works</a></nav>
 
@@ -2360,7 +2405,7 @@ convenience or platform fee is added.</p>
 </header>
 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
-<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+<h1 class="fx-posttitle has-3-xl-font-size">My account</h1>
 <div class="woocommerce">
 <nav class="woocommerce-MyAccount-navigation"><ul><li class="woocommerce-MyAccount-navigation-link is-active"><a href="#">Orders &amp; reorder</a></li><li class="woocommerce-MyAccount-navigation-link"><a href="#">Saved addresses</a></li><li class="woocommerce-MyAccount-navigation-link"><a href="#">Your details</a></li><li class="woocommerce-MyAccount-navigation-link"><a href="#">Log out</a></li></ul></nav>
 <div class="woocommerce-MyAccount-content">
@@ -2447,8 +2492,12 @@ payload all keep reading the meta they have always read.</div>
 
 
 <div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
 
-<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group alignwide fd-header">
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
 <p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
 <nav class="wp-block-navigation fx-nav"><a href="#" class="wp-block-navigation-item__content">Express</a><a href="#" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="#" class="wp-block-navigation-item__content">Flavors</a><a href="#" class="wp-block-navigation-item__content">Combos</a><a href="#" class="wp-block-navigation-item__content">How it works</a></nav>
 
@@ -2464,7 +2513,7 @@ payload all keep reading the meta they have always read.</div>
 </header>
 
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
-<h1 class="fx-posttitle has-3-xl-font-size">Express Dal Fry</h1>
+<h1 class="fx-posttitle has-3-xl-font-size">Sign in</h1>
 <div class="woocommerce"><div class="fd-signin">
 <h2>Sign in</h2>
 <p class="fd-account-lead">Your saved addresses come back automatically, so checkout is four taps.</p>
@@ -2543,8 +2592,12 @@ without a template change. Guest checkout stays the default path either way.</di
 
 
 <div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
 
-<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group alignwide fd-header">
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
 <p class="fx-logo has-display-font-family">lets<span>foodify</span></p>
 <nav class="wp-block-navigation fx-nav"><a href="#" class="wp-block-navigation-item__content">Express</a><a href="#" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="#" class="wp-block-navigation-item__content">Flavors</a><a href="#" class="wp-block-navigation-item__content">Combos</a><a href="#" class="wp-block-navigation-item__content">How it works</a></nav>
 

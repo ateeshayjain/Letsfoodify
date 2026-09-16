@@ -167,6 +167,7 @@ def stars(r):
 CUR = None
 LOOP_N = 8
 LOOP_PICK = None
+SCREEN_ID = ""
 
 # What inc/product-display.php prepends to a product title inside a loop.
 CHIP = {
@@ -261,7 +262,13 @@ def dynamic(name, attrs, inner):
         if CUR and a.get("__woocommerceNamespace"):
             return (f'<h{lvl} class="wp-block-post-title {cls_for(a)}"><a href="#">{html.escape(CUR[0])}</a></h{lvl}>'
                     + card_yield(CUR))
-        return f'<h{lvl} class="fx-posttitle {cls_for(a)}">Express Dal Fry</h{lvl}>'
+        # The page's own title. It always said "Express Dal Fry", so the cart
+        # screen was headed with a product name — a fixture artefact that reads
+        # as a bug in a client review.
+        titles = {"cart": "Cart", "checkout": "Checkout", "account": "My account",
+                  "signin": "Sign in", "notfound": "Page not found"}
+        return (f'<h{lvl} class="fx-posttitle {cls_for(a)}">'
+                f'{titles.get(SCREEN_ID, "Express Dal Fry")}</h{lvl}>')
     if name == "query-title":
         return f'<h1 class="{cls_for(a)}">Foodify Express</h1>'
     if name == "term-description":
@@ -657,7 +664,14 @@ def render(markup, depth=0):
                 va = {"top": "flex-start", "center": "center", "bottom": "flex-end",
                       "stretch": "stretch"}.get(lay.get("verticalAlignment", "center"), "center")
                 style = f'display:flex;flex-direction:row;flex-wrap:{wrap};align-items:{va};justify-content:{jc};'
-            style += 'gap:var(--wp--style--block-gap)'
+            # A block's own blockGap, if it sets one. WordPress honours it;
+            # this always wrote the global gap, so a header that asked for a
+            # tighter row got the default and wrapped a width earlier than the
+            # theme said it would.
+            bg = (a.get("style", {}).get("spacing", {}) or {}).get("blockGap")
+            if isinstance(bg, str) and bg.startswith("var:preset|"):
+                bg = "var(--wp--preset--" + bg[len("var:preset|"):].replace("|", "--") + ")"
+            style += f'gap:{bg or "var(--wp--style--block-gap)"}'
             tail = markup[pos:]
             tail = re.sub(r'<div\s+class="', f'<div style="{style}" class="is-layout-flex ', tail, count=1)
             markup = markup[:pos] + tail
@@ -795,10 +809,16 @@ main>.wp-block-group,main>section,main>div{margin:0}
 .wp-block-details summary{cursor:pointer}
 h1,h2,h3{margin:0 0 .4em}
 p{margin:0 0 1em}
-/* constrained layout, as theme.json declares it */
-main,header>div,footer>div,.wp-block-group>.wp-block-group,
-.wp-block-group[class*=has-background]>*{margin-left:auto;margin-right:auto}
+/* Constrained layout, as theme.json declares it. :not(.is-layout-flex) is
+   load-bearing: core applies these auto margins for CONSTRAINED containers
+   only, and a flex container's children get no such thing. Without it the
+   header's action group was centred by its own auto margins and stopped 23px
+   short of the right edge — a misalignment that existed only in the preview. */
+main,header>div,footer>div,
+.wp-block-group:not(.is-layout-flex)>.wp-block-group,
+.wp-block-group[class*=has-background]:not(.is-layout-flex)>*{margin-left:auto;margin-right:auto}
 .fx-shell main>*,header>div>*,footer>div>*{max-width:__CONTENT__;margin-left:auto;margin-right:auto}
+.is-layout-flex>*{margin-left:0;margin-right:0}
 .fx-shell .alignwide,.fx-shell main>.alignwide{max-width:__WIDE__}
 header>div,footer>div{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40)}
 main{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40)}
@@ -807,7 +827,7 @@ main{padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset-
 FIXTURE_CSS = """
 .fx-logo{font-size:var(--wp--preset--font-size--xl);font-weight:700;margin:0;letter-spacing:-.02em}
 .fx-logo span{color:var(--wp--preset--color--flame-ink)}
-.fx-nav{display:flex;gap:22px;flex-wrap:wrap}
+.fx-nav{display:flex;gap:var(--wp--preset--spacing--50);flex-wrap:wrap}
 .fx-nav a{color:var(--wp--preset--color--char);text-decoration:none;font-size:var(--wp--preset--font-size--base)}
 .fx-nav a:hover{color:var(--wp--preset--color--flame-ink)}
 .fx-bowl{position:relative;aspect-ratio:1;border-radius:50%;
@@ -975,6 +995,7 @@ def main():
     for i, (sid, label, fn) in enumerate(SCREENS):
         path = os.path.join(THEME, "templates", fn)
         globals()["SIGNED_IN"] = (sid != "signin")
+        globals()["SCREEN_ID"] = sid
         body = render(open(path).read())
         # The theme substitutes these from foodify_content_tokens(). The preview
         # must resolve the SAME tokens or it drifts from the site — which is

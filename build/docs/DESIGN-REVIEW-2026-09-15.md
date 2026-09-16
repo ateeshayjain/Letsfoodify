@@ -233,3 +233,33 @@ The theme still prints NOT CONFIGURED for a licence it has not been given.
 **Still Nalin's call** — the dummies are the questions, in visible form: the
 real FSSAI number, whether same-day NCR dispatch can be promised, which
 products actually pair, and the per-SKU copy.
+
+## Round 6, 16 Sep — the header row
+
+**"The cart and profile should move to right."** They were, above ~900px and
+below ~620px. In between — every tablet and small laptop — the header row
+wrapped and dropped the account and cart onto a second line, centred. Three
+separate causes, all now fixed and all now pinned:
+
+1. The header group wrapped. It is `flexWrap: nowrap` now, so the row holds
+   and the nav wraps inside itself instead. `.fd-header__actions` also takes
+   `margin-inline-start: auto`, so even a wrap elsewhere would push them right
+   rather than centre them.
+2. The preview centred them by 23px of its own accord: its constrained-layout
+   rule applied auto margins to `.wp-block-group > .wp-block-group`, which in
+   WordPress happens for CONSTRAINED containers only, never inside a flex row.
+   Scoped with `:not(.is-layout-flex)`.
+3. The nav then broke to two lines between 782 and 800px, because the preview
+   hardcoded a 22px nav gap and ignored a block's own `blockGap` entirely. The
+   renderer honours `blockGap` now, the header sets spacing-30, and the nav
+   tightens its own gap below 1024 — it gives up gap, never links: hiding a
+   category behind a hamburger on a 900px screen loses a navigation level to
+   save 40px.
+
+The sweep now runs a **tablet width (820px)** — the band where this lived, and
+which no width in the list had ever touched — and fails if the header actions
+stop short of the right edge or leave the logo's row. Proven by putting the
+wrap back and watching it go red.
+
+Also fixed while in there: the preview headed the cart page "Express Dal Fry",
+because its post-title fixture returned a product name on every screen.
