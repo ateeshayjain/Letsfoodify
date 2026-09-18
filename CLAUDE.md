@@ -186,6 +186,7 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/DESIGN-REVIEW-2026-09-15.md` | Client review round 2: the cart, filter + sort, and the three preview lies it exposed |
 | `tests/shop-test.php` | Filter attribute ids resolve per install; a template never carries a numeric id |
 | `tests/claim-test.py` | **The one number.** "6 minute mein ghar ka khana ready!" lives in bootstrap's blogdescription; the hero renders it by token; no copy or fixture may outrun it |
+| `tools/design-book/` | **The client deliverable.** Every screen, laptop and phone, captured from the preview and assembled into `docs/Foodify-Storefront-Design.pdf` — capture.js · build.py · render.js, which fails rather than printing content cut off by the footer |
 | `tests/token-test.py` | **Rule 4, enforced.** Every `var(--wp--preset--*)` / `var(--wp--custom--*)` the theme uses must exist in theme.json — custom keys reach CSS kebab-cased, and a camelCase one (`tapTarget`) was silently invalid in six places |
 | `tests/preview-doors.js` | The mock must be clickable: every door opens the screen it claims, Back returns, the cart re-adds when a line is removed, and a click with no door says so — in a real browser |
 | `tests/fixture-leak-test.py` | **Invented data stays in the renderer that invents it.** The preview's dummy FSSAI licence and dispatch promise may not appear in the theme, a pattern, a template or bootstrap.sh |

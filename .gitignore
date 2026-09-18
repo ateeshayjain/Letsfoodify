@@ -8,3 +8,8 @@ backups/
 
 .DS_Store
 node_modules/
+
+# The design book's intermediates — the PDF in build/docs is the deliverable,
+# and `node capture.js && python3 build.py && node render.js` regenerates it.
+build/tools/design-book/shots/
+build/tools/design-book/design-book.html
