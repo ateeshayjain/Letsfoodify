@@ -335,3 +335,42 @@ order, but nothing generates a downloadable GST invoice. The free "PDF Invoices
 & Packing Slips" plugin would, styled to the tokens and carrying GSTIN and the
 FSSAI number; it costs nothing, so rule 5 does not bite, but it is a scope
 addition and needs a yes.
+
+## Round 9, 18 Sep — Combos, which had never been designed
+
+"This does not have combo wala design and filters also."
+
+**Combos were a real hole.** "Combos" has been a category and a menu link since
+the first build and nothing in the theme knew what a combo was: a three-meal
+box rendered exactly like a single sachet — one price, one prep time, no
+mention of what was inside it. That is the one product type where the buyer's
+first question is not "what is it?" but "what do I get?", and the page had no
+answer anywhere.
+
+`inc/product-combo.php` now carries the whole type: what is inside (one line
+per meal, with an optional count), the meal count, the per-meal price, and the
+saving. Two rules are pinned by `tests/combo-test.php` (26 assertions):
+
+- **A saving is computed, never guessed.** It comes from a figure the shop
+  enters — what those same packs cost bought one by one — and is shown only
+  above a floor. No figure, no saving line: a box that is not cheaper is still
+  a convenience, and an invented discount is the fabricated-trust pattern this
+  whole rebuild exists to delete.
+- **The per-meal price is arithmetic and rounds DOWN**, so it can never flatter
+  the pack.
+
+Two new screens in the preview — the Combos category and a box's own page —
+rendered from the same templates WooCommerce would use, with the panel hooked
+where the theme hooks it. A card says "3 meals · Dal Fry, Idli Sambhar, Dal
+Khichdi" and counts the rest rather than truncating a word; the strip under the
+price counts meals and per-meal price where a single pack counts grams.
+
+**Filters were already built — and effectively invisible in the PDF**, shown at
+a size nobody could read, with the phone panel closed. The book now has a page
+of its own for them: the column at full width, and the phone panel open, which
+is a state a reviewer never reaches by scrolling. The capture tool learned to
+open a panel before the shot for exactly that reason.
+
+The boxes themselves (which exist, what goes in each, the two prices) are
+fixture values like the FSSAI number — listed by name in the preview banner and
+on the book's "what is invented" page, because that is Nalin's to set.

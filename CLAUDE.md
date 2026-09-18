@@ -180,13 +180,14 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `tools/mobile-sweep.js` | Every screen, both widths, real Chromium — overflow, squeezed boxes and badges escaping their image, each named by selector |
 | `docs/LAUNCH-RUNBOOK.md` | **Launch day.** Cutover, the noindex flip, rollback, hypercare |
 | `docs/WP-14-NOTES.md` | The gate's noindex hole, 301 strictness, run-all-tests |
-| `run-all-tests.sh` | 29 suites, one command. A suite that cannot run is a FAIL |
+| `run-all-tests.sh` | 30 suites, one command. A suite that cannot run is a FAIL |
 | `tests/address-test.php` | 51 assertions. The "exactly one default" invariant |
 | `tests/otp-test.php` | 24 assertions. OTP limits, tested before the gateway exists |
 | `docs/DESIGN-REVIEW-2026-09-15.md` | Client review round 2: the cart, filter + sort, and the three preview lies it exposed |
 | `tests/shop-test.php` | Filter attribute ids resolve per install; a template never carries a numeric id |
 | `tests/claim-test.py` | **The one number.** "6 minute mein ghar ka khana ready!" lives in bootstrap's blogdescription; the hero renders it by token; no copy or fixture may outrun it |
 | `tools/design-book/` | **The client deliverable.** Every screen, laptop and phone, captured from the preview and assembled into `docs/Foodify-Storefront-Design.pdf` — capture.js · build.py · render.js, which fails rather than printing content cut off by the footer |
+| `inc/product-combo.php` | **Combos.** What is inside a box, the per-meal price, and a saving computed from a stated separate total — never guessed. `tests/combo-test.php` (26) |
 | `tests/token-test.py` | **Rule 4, enforced.** Every `var(--wp--preset--*)` / `var(--wp--custom--*)` the theme uses must exist in theme.json — custom keys reach CSS kebab-cased, and a camelCase one (`tapTarget`) was silently invalid in six places |
 | `tests/preview-doors.js` | The mock must be clickable: every door opens the screen it claims, Back returns, the cart re-adds when a line is removed, and a click with no door says so — in a real browser |
 | `tests/fixture-leak-test.py` | **Invented data stays in the renderer that invents it.** The preview's dummy FSSAI licence and dispatch promise may not appear in the theme, a pattern, a template or bootstrap.sh |

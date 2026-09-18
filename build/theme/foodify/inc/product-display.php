@@ -118,6 +118,9 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 		'servings'     => (string) $product->get_meta( '_foodify_servings' ),
 		'prep_minutes' => (string) $product->get_meta( '_foodify_prep_minutes' ),
 	] );
+	// A combo answers a different question here — what is in the pack, not how
+	// many one sachet serves — so product-combo.php swaps the line.
+	$yield = (string) apply_filters( 'foodify_card_yield_line', $yield, $product );
 	return $html . ( '' !== $yield ? '<p class="fd-yield">' . esc_html( $yield ) . '</p>' : '' );
 }, 10, 2 );
 
@@ -183,6 +186,8 @@ add_filter( 'render_block_woocommerce/product-price', static function ( string $
 		'servings'      => $meta( 'servings' ),
 		'prep_minutes'  => $meta( 'prep_minutes' ),
 	] );
+	// A combo answers this line in meals rather than grams — product-combo.php.
+	$parts = (array) apply_filters( 'foodify_pdp_yield_parts', $parts, $product );
 	if ( ! $parts ) {
 		return $html;
 	}

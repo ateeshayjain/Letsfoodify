@@ -1081,6 +1081,33 @@ input:focus, select:focus, textarea:focus {
   .fd-spec__list > div { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--10); }
 }
 
+/* Combos — a pack of several meals. The panel sits under the buy box, before
+   the tabs, because "what do I get?" is a combo buyer's first question and the
+   tabs are where answers go to be missed. The count sits in its own column so
+   the eye reads quantities down the left, the way a packing list is read. */
+.fd-combo {
+  margin: var(--wp--preset--spacing--70) 0 0;
+  padding: var(--wp--preset--spacing--50) var(--wp--preset--spacing--60);
+  background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--card);
+  max-width: 40rem;
+}
+.fd-combo__title { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--40); }
+.fd-combo__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--20); }
+.fd-combo__item { display: grid; grid-template-columns: 2.25rem 1fr; align-items: baseline; font-size: var(--wp--preset--font-size--md); }
+.fd-combo__qty {
+  font-family: var(--wp--preset--font-family--ui); font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--wp--preset--color--kraft-deep);
+}
+.fd-combo__qty::after { content: " ×"; }
+.fd-combo__facts {
+  margin: var(--wp--preset--spacing--40) 0 0; padding-top: var(--wp--preset--spacing--30);
+  border-top: 1px solid var(--wp--preset--color--line);
+  font-size: var(--wp--preset--font-size--sm); font-weight: 600; color: var(--wp--preset--color--kraft-deep);
+}
+/* On a card the same list is one muted line, like the yield line it replaces. */
+.fd-products .fd-yield { font-variant-numeric: tabular-nums; }
+
 /* The sticky bar. Appears only when the real button has scrolled away (the
    script decides); its button presses the real one. Clears the phone's
    home-indicator inset. */

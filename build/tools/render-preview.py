@@ -149,6 +149,37 @@ PRODUCTS = [
 ]
 
 
+# COMBOS — packs of several meals. Same tuple shape as PRODUCTS plus the two
+# fields a combo has: what is inside, and what those items cost bought one by
+# one. Both are FIXTURE values (see the placeholder block above): the packs,
+# their contents and their prices are Nalin's to set, and the saving the page
+# prints is computed from the separate total rather than invented.
+COMBOS = [
+    ("Trial Box · 3 meals",     "Combos", "6 MIN", 525,  615,  "#D9822B", "4.8", 46, 3,  set(),
+     "Express Dal Fry\nIdli Sambhar\nExpress Dal Khichdi", 615),
+    ("Week Box · 6 meals",      "Combos", "6 MIN", 999,  1170, "#CE9126", "4.7", 38, 6,  {"bestseller"},
+     "Express Dal Fry × 2\nIdli Sambhar × 2\nExpress Dal Khichdi\nPav Bhaji", 1170),
+    ("Hostel Box · 9 meals",    "Combos", "6 MIN", 1499, 1755, "#C2571F", "4.6", 21, 9,  set(),
+     "Express Dal Fry × 3\nIdli Sambhar × 2\nExpress Dal Khichdi × 2\nPav Bhaji\nAloo ka Mazaa", 1755),
+    ("Chai & Chutney Box",      "Combos", "3 MIN", 540,  615,  "#A6603A", "4.9", 17, 4,  {"jain"},
+     "Masala Chai × 2\nCoconut Red Chutney × 2", 615),
+]
+
+# The combo screens render the same templates with this list in place of
+# PRODUCTS, the way WooCommerce renders a different category with the same
+# template rather than a second one.
+COMBO_MODE = False
+
+
+def products():
+    return COMBOS if COMBO_MODE else PRODUCTS
+
+
+def combo_of(p):
+    """The two combo fields of a fixture row, or None for a single pack."""
+    return (p[10], float(p[11])) if len(p) > 11 else None
+
+
 def badge_state(p):
     f = p[9]
     return {"in_stock": "soldout" not in f, "bestseller": "bestseller" in f,
@@ -167,6 +198,7 @@ def stars(r):
 CUR = None
 LOOP_N = 8
 LOOP_PICK = None
+LOOP_ROWS = None
 SCREEN_ID = ""
 
 # What inc/product-display.php prepends to a product title inside a loop.
@@ -188,14 +220,24 @@ def price_html(p, size_cls=""):
     _n, _r, _t, price, was, *_ = p
     amt = lambda v: f'<span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>{v}</bdi></span>'
     inner = f'<del aria-hidden="true">{amt(was)}</del> <ins>{amt(price)}</ins>' if was else amt(price)
-    save = php("echo foodify_save_badge((float)$a[0], (float)$a[1])", was, price) if was else ""
+    combo = combo_of(p)
+    if combo:
+        save = php("echo foodify_combo_saving_badge((float)$a[0], (float)$a[1])", combo[1], price)
+    else:
+        save = php("echo foodify_save_badge((float)$a[0], (float)$a[1])", was, price) if was else ""
     if save:
         inner += f' <span class="fd-save">{html.escape(save)}</span>'
     return f'<div class="wc-block-components-product-price wp-block-woocommerce-product-price {size_cls}">{inner}</div>'
 
 
 def card_yield(p):
-    line = php("echo foodify_card_yield($a[0])", {"servings": str(p[8]), "prep_minutes": p[2].split()[0]})
+    combo = combo_of(p)
+    if combo:
+        # The theme swaps this line for a combo through foodify_card_yield_line;
+        # the preview calls the same function the filter calls.
+        line = php("echo foodify_combo_card_line(foodify_combo_items($a[0]))", combo[0])
+    else:
+        line = php("echo foodify_card_yield($a[0])", {"servings": str(p[8]), "prep_minutes": p[2].split()[0]})
     return f'<p class="fd-yield">{html.escape(line)}</p>' if line else ""
 
 
@@ -203,6 +245,27 @@ def card_yield(p):
 # Allergens and the FSSAI licence are deliberately EMPTY: the page must show
 # "Not provided" for both, and the preview showing a plausible value is how
 # the placeholder licence got into four templates in the first place.
+COMBO_ABOUT = ("<p>Three of the meals people reorder most, in one box: dal fry, idli sambhar and dal khichdi. "
+               "Each pack inside is the one sold on its own — the same 80 g, the same six minutes, the same shelf "
+               "life. The box is the convenience.</p>"
+               "<p>Bought one by one these three come to ₹615. The box is ₹525.</p>")
+
+# A combo declares for the BOX: the individual packs carry their own labels, and
+# the buyer is told so rather than shown one pack's ingredients for three.
+COMBO_VALUES = {
+    "ingredients": "Each pack carries its own ingredient list, printed on the pack and shown on that product page.",
+    "allergens": "", "net_quantity": "3 packs · 240 g", "servings": "6", "cooked_weight": "780 g",
+    "diet": "Vegetarian", "storage": "Cool, dry place.", "mrp": "₹615.00 (incl. all taxes)",
+    "best_before": "14 Aug 2027", "shelf_life": "12 months", "origin": "India", "fssai": "",
+    "marketed_by": "AVAC Ventures, Noida 201304", "care": "care@letsfoodify.com",
+}
+COMBO_FAQ = ("Q: Can I choose what goes in the box?\n"
+             "A: Not yet. The three boxes are fixed; a build-your-own box is planned.\n"
+             "Q: Do the packs expire together?\n"
+             "A: Each pack has its own best-before date, printed on it. The earliest is shown above.\n"
+             "Q: Is it cheaper than buying them separately?\n"
+             "A: Yes — ₹90 cheaper on this box. The comparison is printed under the contents.")
+
 PDP_VALUES = {
     "ingredients": "Split yellow lentils, onion, tomato, ghee, cumin, turmeric, coriander, ginger, garlic, salt, red chilli.",
     "allergens": "", "net_quantity": "80 g", "servings": "2", "cooked_weight": "260 g", "diet": "Vegetarian",
@@ -271,15 +334,24 @@ def dynamic(name, attrs, inner):
         # as a bug in a client review.
         titles = {"cart": "Cart", "checkout": "Checkout", "account": "My account",
                   "signin": "My account", "notfound": "Page not found"}
+        if COMBO_MODE:
+            return f'<h{lvl} class="fx-posttitle {cls_for(a)}">{html.escape(COMBOS[0][0])}</h{lvl}>'
         return (f'<h{lvl} class="fx-posttitle {cls_for(a)}">'
                 f'{titles.get(SCREEN_ID, "Express Dal Fry")}</h{lvl}>')
     if name == "query-title":
-        return f'<h1 class="{cls_for(a)}">Foodify Express</h1>'
+        return f'<h1 class="{cls_for(a)}">{"Combos" if COMBO_MODE else "Foodify Express"}</h1>'
     if name == "term-description":
+        if COMBO_MODE:
+            return ('<p class="' + cls_for(a) + '">A week of dinners in one box. Every pack inside is the same '
+                    'six-minute meal sold on its own — the box is the convenience, and the saving is against '
+                    'what those same packs cost bought one by one.</p>')
         return ('<p class="' + cls_for(a) + '">Add hot water, wait six minutes, eat. The Express range is '
                 'built for trains, hostels and hotel kettles — fourteen home-style meals that need no '
                 'cooking at all, with a nine to twelve month shelf life and no preservatives.</p>')
     if name == "post-excerpt":
+        if COMBO_MODE:
+            return ('<p class="' + cls_for(a) + '">Dal fry, idli sambhar and dal khichdi — three of the meals '
+                    'people reorder most, in one box.</p>')
         return ('<p class="' + cls_for(a) + '">Yellow moong and toor, tempered with cumin, tomato and a '
                 'little ghee. Dried slowly so the tempering survives.</p>')
     if name == "post-content":
@@ -321,6 +393,9 @@ def dynamic(name, attrs, inner):
                 f'<a href="#"{door} class="wp-block-button__link wp-element-button '
                 f'add_to_cart_button">{label}</a></div>')
     if name == "woocommerce/breadcrumbs":
+        if COMBO_MODE:
+            return ('<p class="fx-crumb ' + cls_for(a) + '"><a href="#" data-s="home">Home</a> / '
+                    '<a href="#" data-s="combos">Combos</a> / Trial Box</p>')
         return ('<p class="fx-crumb ' + cls_for(a) + '"><a href="#" data-s="home">Home</a> / '
                 '<a href="#" data-s="shop">Express</a> / Dal Fry</p>')
     if name == "woocommerce/product-image-gallery":
@@ -351,14 +426,28 @@ def dynamic(name, attrs, inner):
                 return ""   # the theme hides the row at zero reviews (product-display.php)
             return (f'<div class="wc-block-components-product-rating">{stars(CUR[6])} '
                     f'<span class="fd-rating-count">{CUR[7]} reviews</span></div>')
-        return f'<div class="fx-rating">{stars("4.7")} <span class="fx-rc">84 reviews</span></div>'
+        # The product page's own rating — the combo page is a different product.
+        row = COMBOS[0] if COMBO_MODE else PRODUCTS[0]
+        return f'<div class="fx-rating">{stars(row[6])} <span class="fx-rc">{row[7]} reviews</span></div>'
     if name == "woocommerce/product-price":
         if CUR:
             return price_html(CUR, cls_for(a))
         # The product page: the price, then the yield strip the theme appends.
-        parts = json.loads(php("echo json_encode(foodify_yield_parts($a[0]))", PDP_VALUES))
+        # A combo answers that strip in meals and per-meal price — the theme
+        # swaps it through foodify_pdp_yield_parts, so the preview calls the
+        # same function rather than writing a second version of the rule.
+        if COMBO_MODE:
+            c = COMBOS[0]
+            items, _sep = combo_of(c)
+            parts = json.loads(php(
+                "echo json_encode(foodify_combo_yield_parts(foodify_combo_items($a[0]), (float)$a[1], 'Ready in 6 min'))",
+                items, c[3]))
+            row = c
+        else:
+            parts = json.loads(php("echo json_encode(foodify_yield_parts($a[0]))", PDP_VALUES))
+            row = PRODUCTS[0]
         strip = "".join(f"<span>{html.escape(x)}</span>" for x in parts)
-        return price_html(PRODUCTS[0], "fx-price--lg " + cls_for(a)) + f'<p class="fd-yield-strip">{strip}</p>'
+        return price_html(row, "fx-price--lg " + cls_for(a)) + f'<p class="fd-yield-strip">{strip}</p>'
     if name == "woocommerce/product-stock-indicator":
         return '<p class="fx-stock">In stock</p>'
     if name == "woocommerce/add-to-cart-form":
@@ -367,6 +456,19 @@ def dynamic(name, attrs, inner):
         return ('<form class="cart fx-atc"><div class="quantity"><label class="screen-reader-text" for="fx-qty">Quantity</label>'
                 '<input type="number" id="fx-qty" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div>'
                 '<button type="button" data-s="cart" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">Add to cart</button></form>')
+    if name == "woocommerce/product-details" and COMBO_MODE:
+        c = COMBOS[0]
+        items, separate = combo_of(c)
+        # The theme prints this panel on woocommerce_after_single_product_summary
+        # at priority 5 — before the tabbed body at 6. Same order here.
+        panel = php("echo foodify_combo_panel_html(foodify_combo_items($a[0]),"
+                    "['price'=>(float)$a[1],'separate'=>(float)$a[2]])", items, c[3], separate)
+        body = php(
+            "echo foodify_render_pdp_body(['about'=>$a[0],'taste'=>[],"
+            "'groups'=>foodify_spec_model($a[1]),'nutrition'=>[],"
+            "'steps'=>foodify_prep_steps('hot water','6'),'faq'=>foodify_faq_pairs($a[2])])",
+            COMBO_ABOUT, COMBO_VALUES, COMBO_FAQ)
+        return panel + body
     if name == "woocommerce/product-details":
         # The theme renders the tabbed body from inc/product-spec.php on
         # woocommerce_after_single_product_summary — BEFORE this block in the
@@ -394,7 +496,10 @@ def dynamic(name, attrs, inner):
         return ('<div class="wp-block-woocommerce-catalog-sorting"><form class="woocommerce-ordering" method="get">'
                 f'<select name="orderby" class="orderby" aria-label="Shop order">{opts}</select></form></div>')
     if name == "woocommerce/product-results-count":
-        return '<p class="woocommerce-result-count wp-block-woocommerce-product-results-count">Showing 1–12 of 14 results</p>'
+        n = len(COMBOS) if COMBO_MODE else 14
+        shown = min(n, 12)
+        return ('<p class="woocommerce-result-count wp-block-woocommerce-product-results-count">'
+                f'Showing 1–{shown} of {n} results</p>')
     if name == "woocommerce/price-filter":
         return ('<div class="wp-block-woocommerce-price-filter"><h3 class="wc-block-price-filter__title">Price</h3>'
                 '<div class="wc-block-price-filter__range-input-wrapper"><div class="fx-range"></div></div>'
@@ -827,15 +932,21 @@ def render(markup, depth=0):
             # related products. The fixture loop always started at PRODUCTS[0],
             # so "Complete the meal" offered Express Dal Fry on the Express Dal
             # Fry page — a fixture artefact that reads as a bug.
-            globals()["LOOP_PICK"] = FIXTURE_PAIRINGS if name.endswith("related-products") else None
+            related = name.endswith("related-products")
+            globals()["LOOP_PICK"] = FIXTURE_PAIRINGS if related else None
+            # "Complete the meal" beside a combo offers single packs, not more
+            # boxes — and the pairing indices are into PRODUCTS, not COMBOS.
+            globals()["LOOP_ROWS"] = PRODUCTS if related else None
             continue
         if name == "post-template" and not selfclose:
             cs, ce = find_close(markup, name, pos)
             inner = markup[pos:cs]
             cols = a.get("layout", {}).get("columnCount", 3)
             cls = a.get("className", "")
-            pick = LOOP_PICK or list(range(len(PRODUCTS)))
-            items = "".join(loop_card(inner, PRODUCTS[pick[i % len(pick)]], i) for i in range(min(LOOP_N, 12)))
+            rows = LOOP_ROWS or products()
+            pick = [i for i in (LOOP_PICK or range(len(rows))) if i < len(rows)] or list(range(len(rows)))
+            n = min(LOOP_N, 12, len(rows)) if COMBO_MODE and not LOOP_ROWS else min(LOOP_N, 12)
+            items = "".join(loop_card(inner, rows[pick[i % len(pick)]], i) for i in range(n))
             out.append(f'<ul class="wp-block-post-template {cls} is-layout-grid columns-{cols} '
                        f'wp-block-post-template-is-layout-grid">{items}</ul>')
             pos = skip_to = ce
@@ -1069,6 +1180,8 @@ SCREENS = [
     ("home",     "Home",             "front-page.html"),
     ("shop",     "Category / shop",  "archive-product.html"),
     ("product",  "Product",          "single-product.html"),
+    ("combos",   "Combos",           "taxonomy-product_cat.html"),
+    ("combo",    "Combo pack",       "single-product.html"),
     ("cart",     "Cart",             "page-cart.html"),
     ("checkout", "Checkout",         "page-checkout.html"),
     ("account",  "Account",          "page-my-account.html"),
@@ -1080,6 +1193,8 @@ SCREENS = [
 # scopes the cart and account rules by them, so the preview shell carries them.
 BODY_CLASS = {
     "shop": "post-type-archive-product woocommerce",
+    "combos": "tax-product_cat woocommerce",
+    "combo": "single-product woocommerce",
     "cart": "woocommerce-cart woocommerce-page",
     "checkout": "woocommerce-checkout woocommerce-page",
     "account": "woocommerce-account woocommerce-page logged-in",   # WordPress adds logged-in for a signed-in visitor
@@ -1098,6 +1213,7 @@ def php(expr, *args):
     prelude = (
         "define('ABSPATH', __DIR__);"
         f"require '{inc}/product-spec.php'; require '{inc}/business-profile.php';"
+        f"require '{inc}/product-combo.php';"
         "$a = array_map(fn($j) => json_decode($j, true), array_slice($argv, 1));"
     )
     r = subprocess.run(["php", "-r", prelude + expr + ";"] + [json.dumps(x) for x in args],
@@ -1132,6 +1248,7 @@ def main():
         path = os.path.join(THEME, "templates", fn)
         globals()["SIGNED_IN"] = (sid != "signin")
         globals()["SCREEN_ID"] = sid
+        globals()["COMBO_MODE"] = sid in ("combos", "combo")
         body = wire_links(render(open(path).read()))
         # The theme substitutes these from foodify_content_tokens(). The preview
         # must resolve the SAME tokens or it drifts from the site — which is
@@ -1207,8 +1324,8 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 The mock is click-through: the cart, the account icon, the nav, a product card and Add to cart all open the
 matching screen, as do the tabs above.
 <br><b>Invented for this mock-up, awaiting your word:</b> the FSSAI licence number ({FIXTURE_FSSAI}), the
-same-day NCR dispatch promise, the "Complete the meal" pairing, and each product's taste notes, cooked
-weight and FAQ. The site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
+same-day NCR dispatch promise, the "Complete the meal" pairing, the combo boxes with their contents and
+prices, and each product's taste notes, cooked weight and FAQ. The site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
 live until you confirm it.</div>
 {''.join(panels)}
 {MOCK_SCRIPT.replace('__SCREENS__', json.dumps([s[0] for s in SCREENS]))}"""

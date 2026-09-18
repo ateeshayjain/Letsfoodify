@@ -1371,6 +1371,33 @@ input:focus, select:focus, textarea:focus {
   .fd-spec__list > div { grid-template-columns: 1fr; gap: var(--wp--preset--spacing--10); }
 }
 
+/* Combos — a pack of several meals. The panel sits under the buy box, before
+   the tabs, because "what do I get?" is a combo buyer's first question and the
+   tabs are where answers go to be missed. The count sits in its own column so
+   the eye reads quantities down the left, the way a packing list is read. */
+.fd-combo {
+  margin: var(--wp--preset--spacing--70) 0 0;
+  padding: var(--wp--preset--spacing--50) var(--wp--preset--spacing--60);
+  background: var(--wp--preset--color--kraft-pale);
+  border-radius: var(--wp--custom--radius--card);
+  max-width: 40rem;
+}
+.fd-combo__title { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--40); }
+.fd-combo__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--20); }
+.fd-combo__item { display: grid; grid-template-columns: 2.25rem 1fr; align-items: baseline; font-size: var(--wp--preset--font-size--md); }
+.fd-combo__qty {
+  font-family: var(--wp--preset--font-family--ui); font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--wp--preset--color--kraft-deep);
+}
+.fd-combo__qty::after { content: " ×"; }
+.fd-combo__facts {
+  margin: var(--wp--preset--spacing--40) 0 0; padding-top: var(--wp--preset--spacing--30);
+  border-top: 1px solid var(--wp--preset--color--line);
+  font-size: var(--wp--preset--font-size--sm); font-weight: 600; color: var(--wp--preset--color--kraft-deep);
+}
+/* On a card the same list is one muted line, like the yield line it replaces. */
+.fd-products .fd-yield { font-variant-numeric: tabular-nums; }
+
 /* The sticky bar. Appears only when the real button has scrolled away (the
    script decides); its button presses the real one. Clears the phone's
    home-indicator inset. */
@@ -1416,7 +1443,7 @@ input:focus, select:focus, textarea:focus {
 </style>
 <div class="proto"><div class="proto-in">
 <span class="proto-tag">Foodify · WP-03 · rendered from the theme</span>
-<div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" data-s="home">Home</button><button class="tab" role="tab" aria-selected="false" data-s="shop">Category / shop</button><button class="tab" role="tab" aria-selected="false" data-s="product">Product</button><button class="tab" role="tab" aria-selected="false" data-s="cart">Cart</button><button class="tab" role="tab" aria-selected="false" data-s="checkout">Checkout</button><button class="tab" role="tab" aria-selected="false" data-s="account">Account</button><button class="tab" role="tab" aria-selected="false" data-s="signin">Sign in</button><button class="tab" role="tab" aria-selected="false" data-s="notfound">404</button></div>
+<div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" data-s="home">Home</button><button class="tab" role="tab" aria-selected="false" data-s="shop">Category / shop</button><button class="tab" role="tab" aria-selected="false" data-s="product">Product</button><button class="tab" role="tab" aria-selected="false" data-s="combos">Combos</button><button class="tab" role="tab" aria-selected="false" data-s="combo">Combo pack</button><button class="tab" role="tab" aria-selected="false" data-s="cart">Cart</button><button class="tab" role="tab" aria-selected="false" data-s="checkout">Checkout</button><button class="tab" role="tab" aria-selected="false" data-s="account">Account</button><button class="tab" role="tab" aria-selected="false" data-s="signin">Sign in</button><button class="tab" role="tab" aria-selected="false" data-s="notfound">404</button></div>
 </div></div>
 <div class="banner"><b>This page is generated from the real theme</b> — <code>theme.json</code> tokens,
 <code>templates/*.html</code>, <code>parts/*.html</code> and <code>patterns/*.php</code>. Edit the theme and this
@@ -1425,8 +1452,8 @@ It approximates WordPress's block renderer — judge layout, type and hierarchy 
 The mock is click-through: the cart, the account icon, the nav, a product card and Add to cart all open the
 matching screen, as do the tabs above.
 <br><b>Invented for this mock-up, awaiting your word:</b> the FSSAI licence number (10012345000001), the
-same-day NCR dispatch promise, the "Complete the meal" pairing, and each product's taste notes, cooked
-weight and FAQ. The site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
+same-day NCR dispatch promise, the "Complete the meal" pairing, the combo boxes with their contents and
+prices, and each product's taste notes, cooked weight and FAQ. The site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
 live until you confirm it.</div>
 <div class="fx-shell " id="s-home"><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
@@ -2244,7 +2271,384 @@ live until you confirm it.</div>
     new IntersectionObserver(function(en){bar.hidden=en[0].isIntersecting;},{threshold:0}).observe(form);
     bar.querySelector('button').addEventListener('click',function(){var b=form.querySelector('button[type=submit],.single_add_to_cart_button');if(b){b.click();}else{form.scrollIntoView({behavior:'smooth',block:'center'});}});
   }
-})();</script></div><div class="fx-shell woocommerce-cart woocommerce-page" id="s-cart" hidden><header>
+})();</script></div><div class="fx-shell tax-product_cat woocommerce" id="s-combos" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
+
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
+<p class="fx-logo has-display-font-family"><a href="#" data-s="home">lets<span>foodify</span></a></p>
+<nav class="wp-block-navigation fx-nav"><a href="/product-category/express/" data-s="shop" class="wp-block-navigation-item__content">Express</a><a href="/product-category/hot-and-fresh/" data-s="shop" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="/product-category/flavors/" data-s="shop" class="wp-block-navigation-item__content">Flavors</a><a href="/product-category/combos/" data-s="shop" class="wp-block-navigation-item__content">Combos</a><a href="/#how-it-works" data-s="home" class="wp-block-navigation-item__content">How it works</a></nav>
+
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group fd-header__actions">
+<div class="wc-block-customer-account wp-block-woocommerce-customer-account"><a class="wc-block-customer-account__account-link" href="#" data-s="account" aria-label="Account"><svg class="wc-block-customer-account__account-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a></div>
+<div class="wc-block-mini-cart wp-block-woocommerce-mini-cart"><button class="wc-block-mini-cart__button" data-s="cart" aria-label="3 items in cart, total price of ₹620"><span class="wc-block-mini-cart__amount">₹620</span><span class="wc-block-mini-cart__quantity-badge"><svg class="wc-block-mini-cart__icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6.2"/><circle cx="9.5" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg><span class="wc-block-mini-cart__badge">3</span></span></button></div>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<!-- The title and the intro sit on the WIDE rail, like the grid below them.
+     Constrained, they render at content width and the page has two left
+     edges — 20px apart at 1280 and 220px apart at 1920. .fd-lede keeps the
+     intro to a readable measure. The wrapper is a DEFAULT-layout group,
+     not a constrained one: constrained would re-centre each child at the
+     content width, which is the drift being fixed. -->
+
+<div class="wp-block-group alignwide">
+<h1 class="has-3-xl-font-size">Combos</h1>
+<p class="fd-lede has-md-font-size has-mute-color has-text-color">A week of dinners in one box. Every pack inside is the same six-minute meal sold on its own — the box is the convenience, and the saving is against what those same packs cost bought one by one.</p>
+</div>
+
+
+
+<div class="wp-block-columns alignwide fd-shop">
+
+<div class="wp-block-column fd-shop__filters" style="flex-basis:232px">
+
+<details class="wp-block-details fd-filters" open><summary>Filter</summary>
+
+<div class="wp-block-woocommerce-filter-wrapper">
+<div class="wp-block-woocommerce-attribute-filter"><h3 class="wc-block-attribute-filter__title">Prep method</h3><ul class="wc-block-checkbox-list"><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input"><span class="wc-block-components-checkbox__label">Just add hot water <span class="wc-filter-element-label-list-count">(14)</span></span></label></div></li><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input"><span class="wc-block-components-checkbox__label">Stir with drinking water <span class="wc-filter-element-label-list-count">(7)</span></span></label></div></li><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input"><span class="wc-block-components-checkbox__label">Requires cooking <span class="wc-filter-element-label-list-count">(11)</span></span></label></div></li></ul></div>
+</div>
+
+
+<div class="wp-block-woocommerce-filter-wrapper">
+<div class="wp-block-woocommerce-attribute-filter"><h3 class="wc-block-attribute-filter__title">Dietary</h3><ul class="wc-block-checkbox-list"><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input"><span class="wc-block-components-checkbox__label">Vegan <span class="wc-filter-element-label-list-count">(9)</span></span></label></div></li><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input"><span class="wc-block-components-checkbox__label">Gluten free <span class="wc-filter-element-label-list-count">(12)</span></span></label></div></li><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input"><span class="wc-block-components-checkbox__label">Jain <span class="wc-filter-element-label-list-count">(6)</span></span></label></div></li><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input"><span class="wc-block-components-checkbox__label">Millet based <span class="wc-filter-element-label-list-count">(5)</span></span></label></div></li><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input"><span class="wc-block-components-checkbox__label">High protein <span class="wc-filter-element-label-list-count">(7)</span></span></label></div></li></ul></div>
+</div>
+
+
+<div class="wp-block-woocommerce-filter-wrapper">
+<div class="wp-block-woocommerce-price-filter"><h3 class="wc-block-price-filter__title">Price</h3><div class="wc-block-price-filter__range-input-wrapper"><div class="fx-range"></div></div><div class="wc-block-price-filter__controls"><span>₹100</span><span>₹1,800</span></div></div>
+</div>
+
+</details>
+
+</div>
+
+
+<div class="wp-block-column fd-shop__results">
+
+<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group fd-shop__toolbar">
+<p class="woocommerce-result-count wp-block-woocommerce-product-results-count">Showing 1–4 of 4 results</p>
+
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group fd-sort">
+
+<p class="fd-sort__label has-sm-font-size">Sort by</p>
+
+<div class="wp-block-woocommerce-catalog-sorting"><form class="woocommerce-ordering" method="get"><select name="orderby" class="orderby" aria-label="Shop order"><option>Featured</option><option selected>Most popular</option><option>Best rated</option><option>Newest</option><option>Price: low to high</option><option>Price: high to low</option></select></form></div>
+</div>
+
+</div>
+
+
+<div class="wp-block-query">
+<ul class="wp-block-post-template fd-products is-layout-grid columns-3 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish instock">
+<div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div></a></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Trial Box · 3 meals</a></h3><p class="fd-yield">3 meals · Express Dal Fry, Idli Sambhar, Express Dal Khichdi</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">46 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>615</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>525</bdi></span></ins> <span class="fd-save">Save ₹90</span></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li><li class="wp-block-post post-101 product type-product status-publish instock">
+<div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#CE9126"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span></span></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Week Box · 6 meals</a></h3><p class="fd-yield">6 meals · Express Dal Fry, Idli Sambhar, Express Dal Khichdi +1 more</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">38 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>1170</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>999</bdi></span></ins> <span class="fd-save">Save ₹171</span></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li><li class="wp-block-post post-102 product type-product status-publish instock">
+<div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#C2571F"><span class="fx-time">6 MIN</span></div></a></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Hostel Box · 9 meals</a></h3><p class="fd-yield">9 meals · Express Dal Fry, Idli Sambhar, Express Dal Khichdi +2 more</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.6</span> <span class="fd-rating-count">21 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>1755</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>1499</bdi></span></ins> <span class="fd-save">Save ₹256</span></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li><li class="wp-block-post post-103 product type-product status-publish instock">
+<div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Chai &amp; Chutney Box</a></h3><p class="fd-yield">4 meals · Masala Chai, Coconut Red Chutney</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.9</span> <span class="fd-rating-count">17 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>615</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>540</bdi></span></ins> <span class="fd-save">Save ₹75</span></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li></ul>
+<nav class="fx-pag" data-note="Paging is live on the site; the mock shows one page of 12."><a>1</a><a class="on">2</a><a>Next →</a></nav>
+
+</div>
+
+</div>
+
+</div>
+
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family"><a href="#" data-s="home">lets<span>foodify</span></a></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/" data-s="shop">Express</a></li><li><a href="/product-category/hot-and-fresh/" data-s="shop">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/" data-s="shop">Flavors</a></li><li><a href="/shop/" data-s="shop">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div><div class="fx-shell single-product woocommerce" id="s-combo" hidden><header>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
+
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
+
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
+<p class="fx-logo has-display-font-family"><a href="#" data-s="home">lets<span>foodify</span></a></p>
+<nav class="wp-block-navigation fx-nav"><a href="/product-category/express/" data-s="shop" class="wp-block-navigation-item__content">Express</a><a href="/product-category/hot-and-fresh/" data-s="shop" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="/product-category/flavors/" data-s="shop" class="wp-block-navigation-item__content">Flavors</a><a href="/product-category/combos/" data-s="shop" class="wp-block-navigation-item__content">Combos</a><a href="/#how-it-works" data-s="home" class="wp-block-navigation-item__content">How it works</a></nav>
+
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group fd-header__actions">
+<div class="wc-block-customer-account wp-block-woocommerce-customer-account"><a class="wc-block-customer-account__account-link" href="#" data-s="account" aria-label="Account"><svg class="wc-block-customer-account__account-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a></div>
+<div class="wc-block-mini-cart wp-block-woocommerce-mini-cart"><button class="wc-block-mini-cart__button" data-s="cart" aria-label="3 items in cart, total price of ₹620"><span class="wc-block-mini-cart__amount">₹620</span><span class="wc-block-mini-cart__quantity-badge"><svg class="wc-block-mini-cart__icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6.2"/><circle cx="9.5" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg><span class="wc-block-mini-cart__badge">3</span></span></button></div>
+</div>
+
+</div>
+
+</div>
+
+</header>
+
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--80)">
+<p class="fx-crumb alignwide has-sm-font-size"><a href="#" data-s="home">Home</a> / <a href="#" data-s="combos">Combos</a> / Trial Box</p>
+
+
+<div class="wp-block-columns alignwide fd-pdp" style="margin-top:var(--wp--preset--spacing--40)">
+
+<div class="wp-block-column fd-pdp__media" style="flex-basis:50%">
+<div class="fx-gallery"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time">6 MIN</span></div><div class="fx-shotlist"><div class="fx-shot"><div class="fx-bowl" style="--h:#D9822B"><span class="fx-time"></span></div><span class="fx-shot__n">1</span><strong>Pack, front</strong><em>Straight on, label legible. This is the Merchant Center image.</em></div><div class="fx-shot"><div class="fx-bowl" style="--h:#C67A2A"><span class="fx-time"></span></div><span class="fx-shot__n">2</span><strong>Prepared, in a bowl</strong><em>The actual portion, natural light, no styling props.</em></div><div class="fx-shot"><div class="fx-bowl" style="--h:#B9702B"><span class="fx-time"></span></div><span class="fx-shot__n">3</span><strong>Ingredients, laid out</strong><em>Proves it is food, not powder. Answers the real objection.</em></div><div class="fx-shot"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time"></span></div><span class="fx-shot__n">4</span><strong>In a hand or beside a mug</strong><em>Scale. 80 g means nothing without something next to it.</em></div></div><p class="fx-ph">No photography supplied yet. Four shots per product, in this order — shot 1 is what Google Shopping uses, so it is the one that cannot wait.</p></div>
+</div>
+
+
+
+<div class="wp-block-column fd-pdp__buy">
+<h1 class="fx-posttitle has-3-xl-font-size">Trial Box · 3 meals</h1>
+
+<p class="fd-promise has-xs-font-size">Same-day dispatch in Delhi NCR · 3–5 days pan-India</p>
+
+<div class="fx-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fx-rc">46 reviews</span></div>
+<p class="has-md-font-size">Dal fry, idli sambhar and dal khichdi — three of the meals people reorder most, in one box.</p>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price fx-price--lg has-2-xl-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>615</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>525</bdi></span></ins> <span class="fd-save">Save ₹90</span></div><p class="fd-yield-strip"><span>3 meals</span><span>₹175 per meal</span><span>Ready in 6 min</span></p>
+<p class="fx-stock">In stock</p>
+<form class="cart fx-atc"><div class="quantity"><label class="screen-reader-text" for="fx-qty">Quantity</label><input type="number" id="fx-qty" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div><button type="button" data-s="cart" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">Add to cart</button></form>
+
+
+<div class="wp-block-group fd-assure">
+<!-- Wireframe 02, rule 8: exactly five, directly under the button, one line
+     each, the same five on every product page. Only facts the site already
+     stands behind elsewhere: the claim, the trust strip, the checkout. -->
+
+<p class="fd-assure__item has-sm-font-size">Ready in 6 minutes</p>
+
+
+<p class="fd-assure__item has-sm-font-size">No preservatives</p>
+
+
+<p class="fd-assure__item has-sm-font-size">9–12 month shelf life</p>
+
+
+<p class="fd-assure__item has-sm-font-size">Cash on delivery available</p>
+
+
+<p class="fd-assure__item has-sm-font-size">Free shipping over ₹599</p>
+
+
+<p class="has-mute-color has-text-color has-xs-font-size">Shipping is shown in the cart, not at the last screen. MRP is inclusive of all taxes.</p>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="wp-block-group alignwide fd-pdp__body">
+<!-- The tabbed body (About · Ingredients & nutrition · How to cook · FAQ) and
+     the always-open Pack & label table render here, from inc/product-spec.php
+     on woocommerce_after_single_product_summary. PHP rather than blocks
+     because every section is driven by per-product data — a block template
+     cannot ask a product what its prep method is. -->
+<section class="fd-combo"><h2 class="fd-combo__title">What is inside</h2><ul class="fd-combo__list"><li class="fd-combo__item"><span class="fd-combo__qty">1</span><span>Express Dal Fry</span></li><li class="fd-combo__item"><span class="fd-combo__qty">1</span><span>Idli Sambhar</span></li><li class="fd-combo__item"><span class="fd-combo__qty">1</span><span>Express Dal Khichdi</span></li></ul><p class="fd-combo__facts">₹175 per meal · Save ₹90 against ₹615 bought separately</p></section><div class="fd-tabs" data-fd-tabs><section class="fd-tab is-open" id="fd-tab-about"><h2 class="fd-tab__title"><button type="button" class="fd-tab__button" aria-expanded="true" aria-controls="fd-panel-about" id="fd-tabbtn-about">About</button></h2><div class="fd-tab__panel" id="fd-panel-about" role="region" aria-labelledby="fd-tabbtn-about"><p>Three of the meals people reorder most, in one box: dal fry, idli sambhar and dal khichdi. Each pack inside is the one sold on its own — the same 80 g, the same six minutes, the same shelf life. The box is the convenience.</p><p>Bought one by one these three come to ₹615. The box is ₹525.</p></div></section><section class="fd-tab" id="fd-tab-ingredients"><h2 class="fd-tab__title"><button type="button" class="fd-tab__button" aria-expanded="false" aria-controls="fd-panel-ingredients" id="fd-tabbtn-ingredients">Ingredients &amp; nutrition</button></h2><div class="fd-tab__panel" id="fd-panel-ingredients" role="region" aria-labelledby="fd-tabbtn-ingredients" hidden><dl class="fd-spec__list"><div><dt>Ingredients</dt><dd>Each pack carries its own ingredient list, printed on the pack and shown on that product page.</dd></div><div class="is-missing"><dt>Allergens</dt><dd>Not provided</dd></div><div><dt>Net quantity</dt><dd>3 packs · 240 g</dd></div><div><dt>Servings per pack</dt><dd>6</dd></div><div><dt>Makes (cooked)</dt><dd>780 g</dd></div><div><dt>Veg / non-veg</dt><dd>Vegetarian</dd></div><div><dt>Storage</dt><dd>Cool, dry place.</dd></div></dl></div></section><section class="fd-tab" id="fd-tab-cook"><h2 class="fd-tab__title"><button type="button" class="fd-tab__button" aria-expanded="false" aria-controls="fd-panel-cook" id="fd-tabbtn-cook">How to cook</button></h2><div class="fd-tab__panel" id="fd-panel-cook" role="region" aria-labelledby="fd-tabbtn-cook" hidden><ol class="fd-prep__steps"><li class="fd-prep__step"><span class="fd-prep__n">1</span><span class="fd-prep__body"><strong>Tip it into a bowl</strong><span>The whole pack. No pan, no measuring.</span></span></li><li class="fd-prep__step"><span class="fd-prep__n">2</span><span class="fd-prep__body"><strong>Add boiling water</strong><span>To the line on the pack, and stir once.</span></span></li><li class="fd-prep__step"><span class="fd-prep__n">3</span><span class="fd-prep__body"><strong>Wait 6</strong><span>Cover it. Stir again and eat.</span></span></li></ol></div></section><section class="fd-tab" id="fd-tab-faq"><h2 class="fd-tab__title"><button type="button" class="fd-tab__button" aria-expanded="false" aria-controls="fd-panel-faq" id="fd-tabbtn-faq">FAQ</button></h2><div class="fd-tab__panel" id="fd-panel-faq" role="region" aria-labelledby="fd-tabbtn-faq" hidden><dl class="fd-faq"><div><dt>Can I choose what goes in the box?</dt><dd>Not yet. The three boxes are fixed; a build-your-own box is planned.</dd></div><div><dt>Do the packs expire together?</dt><dd>Each pack has its own best-before date, printed on it. The earliest is shown above.</dd></div><div><dt>Is it cheaper than buying them separately?</dt><dd>Yes — ₹90 cheaper on this box. The comparison is printed under the contents.</dd></div></dl></div></section></div><section class="fd-spec__group is-label fd-label"><h2>Pack &amp; label</h2><dl class="fd-spec__list"><div><dt>MRP</dt><dd>₹615.00 (incl. all taxes)</dd></div><div><dt>Best before</dt><dd>14 Aug 2027</dd></div><div><dt>Shelf life</dt><dd>12 months</dd></div><div><dt>Country of origin</dt><dd>India</dd></div><div class="is-missing"><dt>FSSAI licence</dt><dd>Not provided</dd></div><div><dt>Marketed by</dt><dd>AVAC Ventures, Noida 201304</dd></div><div><dt>Consumer care</dt><dd>care@letsfoodify.com</dd></div></dl><p class="fd-spec__note">These are the pack declarations. The same fields feed the Google product listing, so what you read here is what Google is told.</p></section>
+</div>
+
+
+
+<div class="wp-block-group alignwide fd-pdp__reviews" style="padding-top:var(--wp--preset--spacing--70)">
+
+<h2 class="wp-block-heading has-2-xl-font-size">What people said</h2>
+
+
+<p class="has-mute-color has-text-color has-sm-font-size">Only people who ordered this can review it.</p>
+
+<div class="fd-reviews"><figure class="fd-review"><blockquote>Took it to site for a week. Six minutes and it is actually dal, not soup.</blockquote><figcaption><span class="fd-stars">★★★★★</span> · Rakesh M. · <span class="fd-verified">Verified purchase</span></figcaption></figure><figure class="fd-review"><blockquote>My mother approved, which I did not expect.</blockquote><figcaption><span class="fd-stars">★★★★★</span> · Sneha T. · <span class="fd-verified">Verified purchase</span></figcaption></figure></div>
+</div>
+
+
+
+<div class="wp-block-group alignwide" style="padding-top:var(--wp--preset--spacing--80)">
+
+<h2 class="wp-block-heading has-2-xl-font-size">Complete the meal</h2>
+
+
+<div class="wp-block-woocommerce-related-products alignwide">
+<ul class="wp-block-post-template fd-products is-layout-grid columns-4 wp-block-post-template-is-layout-grid"><li class="wp-block-post post-100 product type-product status-publish instock">
+<div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#4E8B66"><span class="fx-time">1 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Coconut Red Chutney</a></h3><p class="fd-yield">Serves 4 · 1 min</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.5</span> <span class="fd-rating-count">19 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>240</bdi></span></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li><li class="wp-block-post post-101 product type-product status-publish instock">
+<div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div></a></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Masala Chai</a></h3><p class="fd-yield">Serves 1 · 3 min</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">71 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>375</bdi></span></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li><li class="wp-block-post post-102 product type-product status-publish instock">
+<div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#E0A03C"><span class="fx-time">6 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--flame">Bestseller</span></span></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Idli Sambhar</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.8</span> <span class="fd-rating-count">62 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>225</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>195</bdi></span></ins></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li><li class="wp-block-post post-103 product type-product status-publish instock">
+<div class="wc-block-components-product-image"><a href="#" data-s="product"><div class="fx-bowl" style="--h:#C2571F"><span class="fx-time">6 MIN</span></div></a></div>
+<h3 class="wp-block-post-title has-md-font-size"><a href="#" data-s="product">Pav Bhaji</a></h3><p class="fd-yield">Serves 2 · 6 min</p>
+<div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.7</span> <span class="fd-rating-count">57 reviews</span></div>
+<div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>185</bdi></span></div>
+<div class="wp-block-button wc-block-components-product-button"><a href="#" data-s="cart" class="wp-block-button__link wp-element-button add_to_cart_button">Add to cart</a></div>
+</li></ul>
+</div>
+
+</div>
+
+</main>
+
+<footer>
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family"><a href="#" data-s="home">lets<span>foodify</span></a></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/" data-s="shop">Express</a></li><li><a href="/product-category/hot-and-fresh/" data-s="shop">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/" data-s="shop">Flavors</a></li><li><a href="/shop/" data-s="shop">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/">Track order</a></li><li><a href="/shipping/">Shipping</a></li><li><a href="/returns/">Returns</a></li><li><a href="/contact-us/">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/">Our story</a></li><li><a href="/privacy-policy/">Privacy</a></li><li><a href="/terms/">Terms</a></li><li><a href="/partner/">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+
+</div>
+
+</footer>
+</div><div class="fx-shell woocommerce-cart woocommerce-page" id="s-cart" hidden><header>
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
 <p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
@@ -2742,7 +3146,7 @@ without a template change. Guest checkout stays the default path either way.</di
 </div>
 <script>
 (function () {
-  var SCREENS = ["home", "shop", "product", "cart", "checkout", "account", "signin", "notfound"];
+  var SCREENS = ["home", "shop", "product", "combos", "combo", "cart", "checkout", "account", "signin", "notfound"];
   var TABS = document.querySelectorAll('.tab');
   function show(id, push) {
     if (SCREENS.indexOf(id) < 0) return;

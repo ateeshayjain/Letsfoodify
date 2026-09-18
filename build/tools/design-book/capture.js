@@ -30,6 +30,15 @@ const LIST = [
   ['cart-phone',       'cart',     390, 844, 260],
   ['checkout-phone',   'checkout', 390, 844, 200],
   ['account-phone',    'account',  390, 844, 200],
+  // Combos — the pack of several meals, and the box's own page.
+  ['combos-desktop',   'combos',   1440, 900, 300],
+  ['combos-phone',     'combos',   390, 844, 520],
+  ['combo-desktop',    'combo',    1440, 900, 1250],
+  ['combo-phone',      'combo',    390, 844, 1880],
+  // Filters and sorting, close enough to read — and the phone panel OPEN,
+  // which is the state a reviewer never sees by scrolling past it.
+  ['filters-desktop',  'shop',     1440, 900, 430, { clip: { x: 130, y: 0, width: 1180, height: 620 } }],
+  ['filters-phone',    'shop',     390, 844, 380, { open: 'details.fd-filters' }],
   // The cover strip.
   ['cover-a',          'home',     390, 780, 0],
   ['cover-c',          'product',  390, 780, 0],
@@ -43,7 +52,7 @@ const NARROW = { 'product-desktop-2': 1150 };
 (async () => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const file = 'file://' + path.resolve(__dirname, '../../preview/storefront.html');
-  for (let [name, screen, w, h, y] of LIST) {
+  for (let [name, screen, w, h, y, opts = {}] of LIST) {
     if (NARROW[name]) { w = NARROW[name]; h = 860; }
     const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
     await page.goto(file);
@@ -55,7 +64,17 @@ const NARROW = { 'product-desktop-2': 1150 };
     await page.waitForTimeout(450);
     await page.evaluate((v) => window.scrollTo(0, v), y);
     await page.waitForTimeout(350);
-    await page.screenshot({ path: `${SHOTS}/${name}.jpg`, type: 'jpeg', quality: 86 });
+    // Some states only exist after a tap — the phone filter panel is closed on
+    // load (the theme closes it), and a screenshot of a closed panel is not a
+    // picture of the filter design.
+    if (opts.open) {
+      await page.evaluate((sel) => {
+        const d = [...document.querySelectorAll(sel)].find(e => e.getBoundingClientRect().width);
+        if (d) d.open = true;
+      }, opts.open);
+      await page.waitForTimeout(250);
+    }
+    await page.screenshot({ path: `${SHOTS}/${name}.jpg`, type: 'jpeg', quality: 86, ...(opts.clip ? { clip: opts.clip } : {}) });
     await page.close();
     process.stdout.write(name + ' ');
   }

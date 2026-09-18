@@ -113,6 +113,8 @@ function foodify_editor_fields(): array {
 		'cooked_weight'=> [ 'label' => 'Makes (cooked weight)',  'type' => 'text', 'hint' => 'e.g. 260 g — what the pack becomes once made. Answers "80 g is nothing" before it is asked.' ],
 		'taste'        => [ 'label' => 'Taste profile',          'type' => 'text', 'hint' => 'Up to four words, comma-separated: e.g. Savoury, Mildly spicy, Tangy' ],
 		'faq'          => [ 'label' => 'FAQ',                    'type' => 'textarea', 'hint' => 'Alternate lines "Q: …" and "A: …". A question without an answer is dropped.' ],
+		'combo_items'  => [ 'label' => "Combo — what's inside",  'type' => 'textarea', 'hint' => 'Combos only. One meal per line, with an optional count: "Express Dal Fry × 2". Leave empty for a single pack.' ],
+		'combo_separate' => [ 'label' => 'Combo — cost bought separately', 'type' => 'text', 'hint' => 'What the same items cost bought one by one, e.g. 615. The saving is calculated from this; leave empty and no saving is shown.' ],
 		'diet'         => [ 'label' => 'Veg / non-veg',          'type' => 'select', 'options' => [ '' => '—', 'Vegetarian' => 'Vegetarian', 'Non-vegetarian' => 'Non-vegetarian', 'Vegan' => 'Vegan' ] ],
 		'storage'      => [ 'label' => 'Storage',                'type' => 'text' ],
 		'best_before'  => [ 'label' => 'Best before',            'type' => 'text', 'hint' => 'Any date format; stored as "14 Aug 2027". Refused if not a date.' ],

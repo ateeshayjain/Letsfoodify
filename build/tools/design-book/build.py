@@ -126,9 +126,9 @@ pages.append(f"""<section class="page">
   </div>
   <div class="rule" style="margin:5mm 0 3mm"></div>
   <div style="display:flex;gap:8mm;font-size:9pt;color:var(--mute)">
-    <div><b style="color:var(--char)">What follows</b><br>3–4 Home &nbsp;·&nbsp; 5 Category &nbsp;·&nbsp; 6–7 Product</div>
-    <div><br>8 Cart &nbsp;·&nbsp; 9 Checkout &nbsp;·&nbsp; 10 Account</div>
-    <div><br>11 What is invented and needs your word &nbsp;·&nbsp; 12 What happens next</div>
+    <div><b style="color:var(--char)">What follows</b><br>3–4 Home &nbsp;·&nbsp; 5 Category &nbsp;·&nbsp; 6–7 Combos</div>
+    <div><br>8–9 Product &nbsp;·&nbsp; 10 Filters and sorting &nbsp;·&nbsp; 11 Cart &nbsp;·&nbsp; 12 Checkout</div>
+    <div><br>13 Account &nbsp;·&nbsp; 14 What is invented and needs your word &nbsp;·&nbsp; 15 What happens next</div>
   </div>
   {foot('How to read this')}
 </section>""")
@@ -191,6 +191,28 @@ pages.append(screen_page(
     "Laptop · category page with filters open", "Phone · filter and sort stay reachable",
     "Category / shop"))
 
+# ── Combos ──────────────────────────────────────────────────────────────────
+pages.append(screen_page(
+    "Combos", "A box of several meals",
+    "The Combos category has existed in the menu since the start with nothing behind it. This is what a pack of meals looks like.",
+    "combos-desktop", "combos-phone",
+    ["<b>The card says what is in the box</b> — \u201c3 meals \u00b7 Dal Fry, Idli Sambhar, Dal Khichdi\u201d — instead of the servings line a single pack carries. Four names and it counts the rest, rather than truncating a word.",
+     "<b>The saving is in rupees, against a figure you enter</b>: what those same packs cost bought one by one. No figure, no saving shown — a box that is not cheaper is still a convenience, and an invented discount is the pattern this rebuild is removing.",
+     "Boxes carry the same badges as any other product, so a bestselling box or a Jain box reads the same way everywhere."],
+    "Laptop \u00b7 the Combos category", "Phone \u00b7 two boxes across",
+    "Combos"))
+
+pages.append(screen_page(
+    "Combos", "What is inside the box",
+    "The first question a combo buyer asks is not \u201cwhat is it?\u201d but \u201cwhat do I get?\u201d \u2014 so the answer sits above the tabs, not inside them.",
+    "combo-desktop", "combo-phone",
+    ["<b>The contents are a list with counts</b>, read down the left like a packing slip — not a sentence a buyer has to parse.",
+     "<b>\u20b9175 per meal</b> is arithmetic, not marketing: the box price divided by the number of meals, rounded down so it can never flatter the pack.",
+     "The strip under the price counts <b>meals and per-meal price</b> where a single pack counts grams and servings.",
+     "Every pack inside keeps its own label and its own product page; the box does not pretend to declare for all three."],
+    "Laptop \u00b7 the box\u2019s own page", "Phone \u00b7 the same panel",
+    "Combos"))
+
 # ── 6–7. Product ────────────────────────────────────────────────────────────
 pages.append(screen_page(
     "Product", "The page that sells",
@@ -211,6 +233,32 @@ pages.append(screen_page(
      "A declaration you have not supplied is shown as <b>“Not provided”</b> rather than quietly left out — that is the honest way to handle allergens, and the same fields feed your Google product listing."],
     "Laptop · the tabbed body and the pack table", "Phone · the same, as sections",
     "Product", desk_w="148mm"))
+
+# ── Filters and sorting ─────────────────────────────────────────────────────
+pages.append(f"""<section class="page">
+  <div class="head"><span class="tag">Filters</span><h2 style="margin:0">Narrowing 44 products to the three you want</h2></div>
+  <p class="sub" style="margin:-1mm 0 3mm">Shown larger here because this is the machinery of the category page: on the audited site there is no way to filter at all.</p>
+  <div class="body">
+    <div class="col-desk" style="width:196mm">
+      <figure class="shot" style="margin:0"><img src="{img('filters-desktop')}"></figure>
+      <p class="cap">Laptop \u00b7 the filter column and the sort control, full size</p>
+      <ul class="notes" style="columns:2;column-gap:8mm">
+        <li><b>Prep method</b> \u2014 hot water, drinking water, requires cooking. The brand\u2019s own proposition, made filterable.</li>
+        <li><b>Dietary</b> \u2014 vegan, gluten free, Jain, millet based, high protein. A Jain customer finds their six products in one tap.</li>
+        <li><b>Price</b> \u2014 a range, not a set of bands nobody\u2019s budget matches.</li>
+        <li><b>Counts beside every filter</b>, so nobody taps into an empty result.</li>
+        <li><b>Sort is labelled</b> \u2014 \u201cSort by: Most popular\u201d \u2014 rather than an unmarked icon.</li>
+        <li>These come from product attributes, so adding a product to a category puts it in the filters automatically.</li>
+      </ul>
+    </div>
+    <div class="col-phone">
+      <figure class="shot" style="margin:0"><img src="{img('filters-phone')}"></figure>
+      <p class="cap">Phone \u00b7 the panel open</p>
+      <p style="font-size:8.5pt;color:var(--mute);margin-top:2mm">On a phone the column folds into a <b>Filter</b> button and opens as this panel, so the products stay on screen and nothing is lost.</p>
+    </div>
+  </div>
+  {foot('Filters and sorting')}
+</section>""")
 
 # ── 8. Cart ─────────────────────────────────────────────────────────────────
 pages.append(screen_page(
@@ -282,6 +330,14 @@ pages.append(f"""<section class="page">
     and one in a hand or beside a mug. The first is what Google Shopping uses.</p></div>
     <div class="card"><h3>Prices and reviews</h3><p>Sample values from the catalogue. Real prices, stock and reviews come from your
     WooCommerce back office, which is unchanged.</p></div>
+  </div>
+  <div class="cardrow">
+    <div class="card"><h3>The boxes themselves</h3><p>Trial, Week, Hostel and Chai &amp; Chutney are our guess at a range. Which boxes exist,
+    what goes in each and what they cost is yours to set.</p></div>
+    <div class="card"><h3>What a box saves</h3><p>Each box needs the figure its contents cost bought separately. The page calculates the
+    saving from that — it never guesses one.</p></div>
+    <div class="card" style="background:var(--kraft-pale)"><h3>How to answer</h3><p>A reply naming the boxes, their contents and the two
+    prices for each is enough. Everything else on this page can follow later.</p></div>
   </div>
   {foot('Awaiting your word')}
 </section>""")
