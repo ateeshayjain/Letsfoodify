@@ -47,18 +47,21 @@ degrades silently if unavailable, but it sends customer PIN codes to a third par
 needs a privacy-policy line, and the client should agree to it. A bundled offline PIN
 dataset avoids both problems.
 
-**6 — The fonts referenced in `theme.json` do not exist in this repo.** `Fraunces-Variable.woff2`
-and `InstrumentSans-Variable.woff2` must be downloaded into `assets/fonts/`. Until then the
-theme silently falls back to Georgia and system sans, and nothing will warn you.
+**6 — ~~The fonts referenced in `theme.json` do not exist in this repo.~~ RESOLVED.**
+Both files are in `theme/foodify/assets/fonts/` with checksums in `SHA256SUMS`, and
+`scripts/package-theme.sh` refuses to build a zip that does not contain them.
 
 **7 — Recurring cost was never totalled.** Blocksy Pro, Rank Math Pro, Digits, Judge.me,
 Metorik, ShortPixel, UpdraftPlus, plus SMS per-message. Roughly ₹60–95k in year one
 depending on the Metorik tier. Put it in front of the client before you commit them.
 
-**8 — None of this has run against a real WordPress install.** Everything here is
-syntax-checked only. `theme.json` parses, every PHP file lints clean, both shell scripts
-pass `bash -n`. That is not the same as working. Budget a full day to shake it out on
-staging before the schedule depends on it.
+**8 — Half-resolved: it runs in real WordPress, NOT yet in WooCommerce.**
+`scripts/wp-boot-test.sh` loads the theme into a real WordPress and fails on any
+PHP diagnostic; `scripts/package-theme.sh` boots the shipped zip the same way.
+WooCommerce could not be installed in the build environment (wordpress.org
+blocked), so every WooCommerce block, the cart, checkout and payment paths are
+first seen on staging. Budget a full day to shake that half out before the
+schedule depends on it — `docs/INSTALL-ON-STAGING.md`.
 
 **9 — The stock-count feature contradicts nothing, but check the data.** `product-display.php`
 shows "Only N left" when stock is 5 or fewer. If the client does not actually manage stock

@@ -35,11 +35,14 @@ search engines*. The smoke test fails an indexable staging site on purpose.
 Appearance → Themes → Add New → Upload Theme → choose the zip → Install.
 Or over SSH: `wp theme install foodify-*.zip`.
 
-**3. Rehearse the configuration.**
+**3. Rehearse the configuration.** Put the kit on the server (`git clone` it
+beside the site), then run the script FROM the WordPress folder — WP-CLI acts on
+the folder you are in, and the script calls its sibling files by path:
 
 ```bash
-cd ~/public_html          # the staging site's WordPress folder
-./bootstrap.sh --env=staging --dry-run
+git clone <repo> ~/letsfoodify                 # once
+cd ~/public_html                               # the staging site's WordPress folder
+bash ~/letsfoodify/build/scripts/bootstrap.sh --env=staging --dry-run
 ```
 
 Read what it would do. It backs up the database first, installs the free plugins
@@ -49,13 +52,13 @@ the tagline. Nothing paid is installed — rule 5.
 **4. Run it for real.**
 
 ```bash
-./bootstrap.sh --env=staging
+bash ~/letsfoodify/build/scripts/bootstrap.sh --env=staging
 ```
 
 **5. Check it with the gate, not by eye alone.**
 
 ```bash
-scripts/smoke-test.sh https://<your-staging-url> --staging
+bash ~/letsfoodify/build/scripts/smoke-test.sh https://<your-staging-url> --staging
 ```
 
 Non-zero means it is not ready. It is blocking, not advisory.

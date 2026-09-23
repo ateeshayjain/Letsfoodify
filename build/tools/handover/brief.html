@@ -1,0 +1,240 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>Developer handover — letsfoodify.com</title>
+<style>
+@font-face{font-family:Fraunces;src:url("../../theme/foodify/assets/fonts/Fraunces-Variable.woff2") format("woff2");font-weight:300 700}
+@font-face{font-family:"Instrument Sans";src:url("../../theme/foodify/assets/fonts/InstrumentSans-Variable.woff2") format("woff2");font-weight:400 700}
+:root{
+  --paper:#FDFBF7; --surface:#FFFFFF; --char:#2B2A27; --mute:#6E675E; --line:#E6DCCB; --line-strong:#9C8A6E;
+  --flame-ink:#C4451A; --flame-wash:#FCEADF; --flame-deep:#B03D14;
+  --leaf-ink:#3B6113; --leaf-wash:#E8F0DC; --kraft-pale:#F4EBDF; --kraft-deep:#8A5A28;
+  --display:Fraunces, Georgia, serif; --ui:'Instrument Sans', system-ui, sans-serif;
+  --mono:ui-monospace, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+}
+@page{size:A4;margin:16mm 16mm 18mm}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--char);font-family:var(--ui);font-size:9.6pt;line-height:1.5;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+h1{font-family:var(--display);font-weight:700;font-size:28pt;line-height:1.02;letter-spacing:-.02em;margin:0}
+h2{font-family:var(--display);font-weight:600;font-size:15pt;line-height:1.15;margin:8mm 0 2.5mm;break-after:avoid}
+h3{font-size:10.5pt;font-weight:700;margin:0 0 1mm;break-after:avoid}
+p{margin:0 0 2.2mm}
+code{font-family:var(--mono);font-size:8.4pt;background:var(--kraft-pale);padding:.2mm 1mm;border-radius:1mm;white-space:nowrap}
+pre{font-family:var(--mono);font-size:8.2pt;line-height:1.55;background:var(--surface);border:1px solid var(--line);
+  border-left:3px solid var(--kraft-deep);border-radius:0 2mm 2mm 0;padding:3mm 4mm;margin:2mm 0 3mm;white-space:pre-wrap;break-inside:avoid}
+pre .c{color:var(--mute)}
+.eyebrow{font-size:7.5pt;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--kraft-deep);margin:0 0 3mm}
+.lede{font-size:11.5pt;line-height:1.45;margin:4mm 0 0;max-width:160mm}
+.meta{display:flex;flex-wrap:wrap;gap:1mm 6mm;font-size:8.2pt;color:var(--mute);margin-top:4mm;padding-top:3mm;border-top:1px solid var(--line)}
+.rules{background:var(--flame-wash);border-radius:3mm;padding:4mm 5mm;margin-top:6mm;break-inside:avoid}
+.rules h3{color:var(--flame-deep);font-size:10pt;margin-bottom:2mm}
+.rules ol{margin:0;padding-left:5mm}
+.rules li{margin:0 0 1.3mm}
+.gate{background:var(--leaf-wash);border-radius:3mm;padding:3mm 5mm;margin-top:3mm;break-inside:avoid}
+.gate p{margin:0}
+.step{border-top:1px solid var(--line);padding:4mm 0 1mm;break-inside:avoid}
+.step:first-of-type{border-top:0}
+.step-head{display:flex;align-items:baseline;gap:3mm;margin-bottom:1.5mm}
+.num{font-family:var(--display);font-weight:600;font-size:18pt;line-height:1;color:var(--kraft-deep);min-width:7mm}
+.when{font-size:7.5pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--leaf-ink);background:var(--leaf-wash);
+  padding:.6mm 2.2mm;border-radius:99px;white-space:nowrap}
+ul.check{list-style:none;margin:0 0 1mm;padding:0}
+ul.check li{position:relative;padding-left:6.5mm;margin:0 0 1.5mm;break-inside:avoid}
+ul.check li::before{content:"";position:absolute;left:0;top:.9mm;width:3.2mm;height:3.2mm;border:1.2px solid var(--line-strong);border-radius:.6mm;background:var(--surface)}
+.why{color:var(--mute);font-size:8.6pt}
+table{width:100%;border-collapse:collapse;margin:2mm 0 3mm;font-size:8.8pt;break-inside:auto}
+th{text-align:left;font-size:7.3pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  border-bottom:1px solid var(--line-strong);padding:1.5mm 2mm 1.5mm 0}
+td{border-bottom:1px solid var(--line);padding:1.8mm 2mm 1.8mm 0;vertical-align:top}
+tr{break-inside:avoid}
+td:first-child{font-weight:600;width:44mm}
+.risk{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin:2mm 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:2.5mm;padding:3mm 3.5mm;break-inside:avoid}
+.card h3{font-size:9.6pt}
+.card p{font-size:8.6pt;margin:0}
+.tag{display:inline-block;font-size:6.8pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.3mm 1.8mm;border-radius:99px;margin-left:1.5mm;vertical-align:1px}
+.tag.hi{background:var(--flame-wash);color:var(--flame-deep)}
+.tag.md{background:var(--kraft-pale);color:var(--kraft-deep)}
+.note{font-size:8.4pt;color:var(--mute)}
+.page-break{break-before:page}
+.sign{margin-top:5mm;break-before:avoid;padding-top:3mm;border-top:1px solid var(--line);font-size:8.6pt;color:var(--mute)}
+</style></head><body>
+
+<p class="eyebrow">The Foodify Company · letsfoodify.com rebuild</p>
+<h1>Developer handover</h1>
+<p class="lede">The design and the code are done. Your job is to put them on a staging copy of the live store, prove them
+against real WooCommerce, load the real content, and run the launch. Nothing here asks you to build new features.</p>
+<div class="meta">
+  <span>From Ateeshay Jain, Mindlayer</span>
+  <span>23 September 2026</span>
+  <span>Repository: github.com/ateeshayjain/Letsfoodify · branch <code>main</code></span>
+</div>
+
+<div class="rules">
+  <h3>Five rules that cause irreversible damage if broken</h3>
+  <ol>
+    <li><b>The live site holds the order history.</b> Never run anything against production without showing Ateeshay the exact
+      command and getting a yes.</li>
+    <li><b>Never copy the staging database to production.</b> Live will have weeks of orders staging never saw. Settings move
+      through <code>build/scripts/bootstrap.sh</code> — if you change something in wp-admin, add it to that script the same day,
+      or it is lost at launch.</li>
+    <li><b>The smoke test is blocking.</b> If <code>smoke-test.sh</code> exits non-zero, nothing is deployed. No overrides.</li>
+    <li><b>No hard-coded colour, font size or spacing.</b> Every value comes from <code>theme.json</code>; add a token there first.
+      <code>tests/token-test.py</code> checks that every token used actually exists.</li>
+    <li><b>Ask before installing any paid plugin.</b> The client's yearly budget is already at its limit.</li>
+  </ol>
+</div>
+<div class="gate">
+  <p><b>Before and after every change, run the gate:</b> <code>build/run-all-tests.sh</code> — 30 suites. A suite that cannot run
+  (no PHP, no browser, no WordPress) counts as a failure, not a skip, so green means verified.
+  Full background and the reasoning behind each rule: <code>CLAUDE.md</code> at the repo root.</p>
+</div>
+
+<h2>The five steps</h2>
+
+<div class="step">
+  <div class="step-head"><span class="num">1</span><h3>Access, and protect the live store</h3><span class="when">Day one</span></div>
+  <ul class="check">
+    <li>Hosting access (Hostinger hPanel), a WordPress admin login, and SSH with WP-CLI.</li>
+    <li>Take a fresh backup of the live site — <b>and restore it on a scratch site to prove it works.</b>
+      <span class="why">A backup that has never been restored is a hope, not a backup.</span></li>
+    <li>Confirm with Ateeshay that the client has started the slow approvals: DLT registration for SMS login, Google Business
+      Profile verification, the photo shoot. <span class="why">They take weeks and run in the background.</span></li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="step-head"><span class="num">2</span><h3>Install on a staging copy</h3><span class="when">About an afternoon</span></div>
+  <p>Follow <code>build/docs/INSTALL-ON-STAGING.md</code> line by line. In short:</p>
+  <ul class="check">
+    <li>Create a staging copy of the live store (hPanel → WordPress → Staging) and tick <i>Discourage search engines</i>.</li>
+    <li>Upload the theme zip — Appearance → Themes → Add New → Upload. Use the zip sent with this document, or build one with
+      <code>build/scripts/package-theme.sh</code>, which boots the zip in WordPress before calling it good.</li>
+    <li>From the staging WordPress folder, run <code>bootstrap.sh --env=staging --dry-run</code>, read it, then run it for real.</li>
+    <li>Run the smoke test against staging with <code>--staging</code>. It must pass.</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="step-head"><span class="num">3</span><h3>Prove it against real WooCommerce</h3><span class="when">At least a full day</span></div>
+  <p><b>This is the part nobody has done yet.</b> The theme has been booted in real WordPress, but WooCommerce could not be
+  installed where it was built, so the shop is first seen working here.</p>
+  <ul class="check">
+    <li><b>Plugin names and Rank Math settings.</b> Written from memory — check each one resolves in the dry run.
+      <span class="why">A wrong settings key fails silently: the setting simply never applies.</span></li>
+    <li><b>A real test order</b> through Razorpay in test mode, plus one cash-on-delivery order, then cancel it. Check the
+      nine-field checkout: removing “last name” may break Razorpay or the GST invoice. If it does, keep the field hidden and fill
+      it from the full name.</li>
+    <li><b>Every shop screen</b> against <code>build/docs/Foodify-Storefront-Design.pdf</code>: product grids, filters and sort,
+      the header cart, cart, checkout, account, a combo box.</li>
+    <li><b>Real phones</b> — iPhone Safari and Android Chrome. <span class="why">The automated sweep covers layout; fonts, the
+      menu overlay and the payment popup only show on real devices.</span></li>
+    <li>The analytics check in <code>docs/WP-13-NOTES.md</code>: view → add to cart → checkout → purchase, and purchase fires
+      exactly once on refresh.</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="step-head"><span class="num">4</span><h3>Load the real content</h3><span class="when">As the client supplies it</span></div>
+  <ul class="check">
+    <li>Photos — four per product, in order: pack front, prepared in a bowl, ingredients laid out, in a hand or beside a mug.</li>
+    <li>Each product's fields in the product editor: ingredients, allergens, net quantity, cooked weight, taste notes, FAQ, HSN
+      code and GST rate. <span class="why">An empty required declaration shows as “Not provided” on the page — on purpose.</span></li>
+    <li>Combos: <i>Combo — what's inside</i> (one meal per line) and <i>Combo — cost bought separately</i>. No separate price
+      means no saving is shown.</li>
+    <li>FSSAI licence number and phone number in <code>theme/foodify/inc/business-profile.php</code>. Until then the site prints
+      <b>NOT CONFIGURED</b> — correct, and never to be replaced with a placeholder.</li>
+    <li>Tag clean-up — <code>tags-to-attributes.php</code>, then <code>taxonomy-cleanup.php</code>, each via
+      <code>wp eval-file … report</code> first. Deletions happen only with <code>execute --confirm</code>.</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="step-head"><span class="num">5</span><h3>Launch</h3><span class="when">One agreed window</span></div>
+  <p>Follow <code>build/docs/LAUNCH-RUNBOOK.md</code> — it is the whole sequence.</p>
+  <ul class="check">
+    <li>A full dress rehearsal on staging the day before, run as if it were the launch.</li>
+    <li>At launch only <b>files and <code>bootstrap.sh</code></b> move to the live site. Never the staging database.</li>
+    <li>Smoke test before and after. Keep the old host live and paid for 30 days — it is the rollback.</li>
+  </ul>
+</div>
+
+<h2>Known risks — check these first</h2>
+<p class="note">From <code>build/docs/REVIEW-NOTES.md</code>, where each is written up in full.</p>
+<div class="risk">
+  <div class="card"><h3>WooCommerce never run<span class="tag hi">High</span></h3>
+    <p>Every WooCommerce block, the cart, checkout and payment paths are unverified until staging. Budget the full day in step 3.</p></div>
+  <div class="card"><h3>Last-name field<span class="tag hi">High</span></h3>
+    <p>Razorpay and some invoice plugins expect a surname. Test a real transaction before trusting the nine-field checkout.</p></div>
+  <div class="card"><h3>Slugs and option keys from memory<span class="tag md">Medium</span></h3>
+    <p><code>seo-by-rank-math</code>, <code>judgeme-product-reviews-woocommerce</code> and the Rank Math title keys in
+    <code>bootstrap.sh</code>. Confirm each in the dry run.</p></div>
+  <div class="card"><h3>PIN-code lookup is third-party<span class="tag md">Medium</span></h3>
+    <p>Checkout calls <code>api.postalpincode.in</code> from the customer's browser. It fails quietly, but the client must agree
+    and the privacy policy needs a line. An offline PIN dataset avoids both.</p></div>
+  <div class="card"><h3>“Only N left” needs stock<span class="tag md">Medium</span></h3>
+    <p>The low-stock line only appears if stock is managed per product. Check whether the client does.</p></div>
+  <div class="card"><h3>SMS login waits on DLT<span class="tag md">Medium</span></h3>
+    <p>Mobile-number sign-in needs DLT registration. Until then, email and password sign-in stands in; guest checkout is the default.</p></div>
+</div>
+
+<h2>What you will get from the client</h2>
+<table>
+  <tr><th>Item</th><th>Needed for</th><th>Who</th></tr>
+  <tr><td>FSSAI licence number</td><td>Header strip, every product page, invoices</td><td>Client</td></tr>
+  <tr><td>Phone number</td><td>Footer and local business data — must match Google Business Profile exactly</td><td>Client</td></tr>
+  <tr><td>Product photography</td><td>Every product page and the Google product listing</td><td>Client — shoot booked</td></tr>
+  <tr><td>Per-product details</td><td>Ingredients, allergens, weights, taste, FAQ, HSN, GST rate</td><td>Client, HSN/GST from their CA</td></tr>
+  <tr><td>Combo boxes</td><td>Which boxes exist, contents, price and cost bought separately</td><td>Client</td></tr>
+  <tr><td>Razorpay keys</td><td>Test keys for staging, live keys at launch</td><td>Client</td></tr>
+  <tr><td>DLT registration and SMS provider</td><td>Mobile-number sign-in</td><td>Client — takes weeks</td></tr>
+  <tr><td>Google Business Profile</td><td>Reviews on the home page, local search</td><td>Client</td></tr>
+</table>
+
+<h2>Not yours to decide — wait for these</h2>
+<ul class="check">
+  <li><b>Host move.</b> Re-test the live site's caching in a clean browser first; the original reading was likely skewed by a
+    cart cookie. If it says HIT, the move is optional.</li>
+  <li><b>Paid plugins</b> (Rank Math Pro, an OTP plugin, image optimisation): the yearly total goes to the client before any is installed.</li>
+  <li><b>Timeline.</b> The one-developer plan is in <code>build/docs/SOLO-PLAN.md</code>. Agree dates with Ateeshay before quoting any.</li>
+</ul>
+
+<h2>Commands</h2>
+<pre><span class="c"># the gate — before and after every change (add a URL to include the blocking smoke test)</span>
+build/run-all-tests.sh
+build/run-all-tests.sh https://&lt;staging-url&gt;
+
+<span class="c"># the theme zip — refuses to produce one that does not boot in WordPress</span>
+build/scripts/package-theme.sh
+
+<span class="c"># configuration on staging — run FROM the staging WordPress folder</span>
+bash ~/letsfoodify/build/scripts/bootstrap.sh --env=staging --dry-run
+bash ~/letsfoodify/build/scripts/bootstrap.sh --env=staging
+
+<span class="c"># the blocking gate against staging</span>
+bash ~/letsfoodify/build/scripts/smoke-test.sh https://&lt;staging-url&gt; --staging
+
+<span class="c"># the preview and the client PDF, after a design change</span>
+python3 build/tools/render-preview.py
+node build/tools/design-book/capture.js &amp;&amp; python3 build/tools/design-book/build.py &amp;&amp; node build/tools/design-book/render.js</pre>
+
+<h2>Where things live</h2>
+<table>
+  <tr><th>Path</th><th>What it is</th></tr>
+  <tr><td><code>CLAUDE.md</code></td><td>Start here: the rules, the design tokens, and why each call went the way it did</td></tr>
+  <tr><td><code>build/theme/foodify/</code></td><td>The theme — a standalone block theme, no page builder, no parent theme</td></tr>
+  <tr><td><code>build/scripts/bootstrap.sh</code></td><td>Every setting, as code. The only way configuration reaches the live site</td></tr>
+  <tr><td><code>build/scripts/smoke-test.sh</code></td><td>The blocking launch gate</td></tr>
+  <tr><td><code>build/docs/INSTALL-ON-STAGING.md</code></td><td>Step 2, in full</td></tr>
+  <tr><td><code>build/docs/LAUNCH-RUNBOOK.md</code></td><td>Step 5: cutover, rollback, the 30 days after</td></tr>
+  <tr><td><code>build/docs/REVIEW-NOTES.md</code></td><td>The known risks above, written up in full</td></tr>
+  <tr><td><code>build/docs/WP-*-NOTES.md</code></td><td>One file per work package: what was built and why</td></tr>
+  <tr><td><code>build/docs/Foodify-Storefront-Design.pdf</code></td><td>What the finished site should look like, screen by screen</td></tr>
+</table>
+
+<h2>If something goes wrong</h2>
+<p><b>On staging:</b> Appearance → Themes → activate the old theme. That is the whole rollback — products and orders were never
+touched, and <code>bootstrap.sh</code> exported the database to <code>../backups/</code> before it changed anything.
+<b>On the live site:</b> the rollback section of <code>LAUNCH-RUNBOOK.md</code>, and nothing else.</p>
+
+<p class="sign">Questions go to Ateeshay Jain at Mindlayer before anything touches the live site — rule 1 is not a formality.</p>
+</body></html>

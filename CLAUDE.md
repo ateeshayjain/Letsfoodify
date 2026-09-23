@@ -178,6 +178,7 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/WP-13-NOTES.md` | GA4 instrumentation + the DebugView launch runbook |
 | `tests/wp13-test.php` | 24 assertions. Purchase fires once; item ids join the feed; zero PII |
 | `tools/mobile-sweep.js` | Every screen, both widths, real Chromium — overflow, squeezed boxes and badges escaping their image, each named by selector |
+| `docs/Developer-Handover.pdf` | **Give this to the developer.** Four pages: the five rules, the five steps with checklists, known risks, client inputs, commands. Source: `tools/handover/brief.html` → `node tools/handover/render.js` |
 | `docs/INSTALL-ON-STAGING.md` | **Start here to make it a real website.** Staging copy → upload the zip → `bootstrap.sh` → smoke test. What will look unfinished, and why that is correct |
 | `scripts/package-theme.sh` | Builds `dist/foodify-<version>-<commit>.zip` and boots THAT ZIP in a real WordPress before calling it good |
 | `docs/LAUNCH-RUNBOOK.md` | **Launch day.** Cutover, the noindex flip, rollback, hypercare |
