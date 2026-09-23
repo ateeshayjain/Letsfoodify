@@ -33,8 +33,12 @@ if [[ ! -f "$WP/wp-load.php" ]]; then
   exit 2
 fi
 
+# FOODIFY_THEME_SRC lets the packaging script boot the theme FROM THE ZIP it is
+# about to hand over, rather than from the source folder beside it — the
+# artifact that ships is the one that gets tested.
+SRC="${FOODIFY_THEME_SRC:-$KIT/theme/foodify}"
 rm -rf "$WP/wp-content/themes/foodify"
-cp -r "$KIT/theme/foodify" "$WP/wp-content/themes/foodify" || { printf "${R}  FAIL${N} could not stage the theme\n"; exit 2; }
+cp -r "$SRC" "$WP/wp-content/themes/foodify" || { printf "${R}  FAIL${N} could not stage the theme\n"; exit 2; }
 
 cat > "$WP/foodify-boot.php" <<'PHP'
 <?php

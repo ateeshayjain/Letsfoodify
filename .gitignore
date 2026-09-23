@@ -13,3 +13,7 @@ node_modules/
 # and `node capture.js && python3 build.py && node render.js` regenerates it.
 build/tools/design-book/shots/
 build/tools/design-book/design-book.html
+
+# Theme zips are build output. scripts/package-theme.sh rebuilds one from any
+# commit and refuses to produce one that does not boot in WordPress.
+build/dist/
