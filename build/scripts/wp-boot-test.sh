@@ -40,6 +40,16 @@ SRC="${FOODIFY_THEME_SRC:-$KIT/theme/foodify}"
 rm -rf "$WP/wp-content/themes/foodify"
 cp -r "$SRC" "$WP/wp-content/themes/foodify" || { printf "${R}  FAIL${N} could not stage the theme\n"; exit 2; }
 
+# ACTIVATE IN ONE LOAD, CHECK IN THE NEXT. WordPress fires after_switch_theme on
+# the request AFTER a switch (check_theme_switched, on init) — which is where the
+# theme creates the Shop Staff role, the address-book endpoint and its tables.
+# Switching and checking in one process ran the checks before that hook, so on a
+# freshly built WordPress four checks failed, and on every later run (theme
+# already active) they passed. A gate whose verdict depends on the previous run
+# is not a gate. This is also exactly what happens when someone clicks Activate.
+php -r 'require "'"$WP"'/wp-load.php"; switch_theme("foodify");' >/dev/null 2>&1 \
+  || { printf "${R}  FAIL${N} could not activate the theme\n"; exit 2; }
+
 cat > "$WP/foodify-boot.php" <<'PHP'
 <?php
 $problems = [];
@@ -51,7 +61,6 @@ set_error_handler( function ( $no, $str, $file, $line ) use ( &$problems ) {
 }, E_ALL );
 
 require_once __DIR__ . '/wp-load.php';
-switch_theme( 'foodify' );
 
 $fail = 0;
 $ok   = function ( string $label, bool $cond ) use ( &$fail ): void {
