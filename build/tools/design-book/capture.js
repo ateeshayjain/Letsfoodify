@@ -57,10 +57,10 @@ const NARROW = { 'product-desktop-2': 1150 };
     const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
     await page.goto(file);
     await page.addStyleTag({ content: HIDE });
-    await page.evaluate((s) => {
-      const t = [...document.querySelectorAll('.tab')].find(x => x.dataset.s === s);
-      t.click();
-    }, screen);
+    // The prototype now has a screen per product; the book's "product" and
+    // "combo" pages are the Dal Fry and the Trial Box, as they always were.
+    const ALIAS = { product: 'p-express-dal-fry', combo: 'p-trial-box-3-meals' };
+    await page.evaluate((s) => window.fxShow(s, false), ALIAS[screen] || screen);
     await page.waitForTimeout(450);
     await page.evaluate((v) => window.scrollTo(0, v), y);
     await page.waitForTimeout(350);

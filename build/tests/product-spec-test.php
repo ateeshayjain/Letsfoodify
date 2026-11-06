@@ -140,6 +140,10 @@ check( 'steps are numbered from one', 1 === $s[0]['n'] && 3 === $s[2]['n'] );
 $s = foodify_prep_steps( 'Stir with drinking water' );
 check( 'cold water never says boiling', false === stripos( implode( ' ', array_column( $s, 'detail' ) ), 'boiling' ) );
 check( 'and never says wait',           false === stripos( implode( ' ', array_column( $s, 'title' ) ), 'wait' ) );
+// The cold-water range is chutneys. "Tip it into a glass … Stir and drink" shipped
+// on the coconut chutney page and was caught by looking at it, not by a test.
+check( 'a chutney is never drunk',
+	! preg_match( '/\b(drink|glass)\b/i', implode( ' ', array_column( $s, 'title' ) ) ) );
 
 $s = foodify_prep_steps( 'Requires cooking', '8 minutes' );
 check( 'cooking says simmer, with the product\'s time',

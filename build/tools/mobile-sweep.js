@@ -40,11 +40,13 @@ const INSIDE = ['.fd-badges > *', '.fd-chip', '.fd-save'];
   for (const [label, w, h] of [['phone', 390, 844], ['tablet', 820, 1000], ['desktop', 1280, 900], ['wide', 1920, 1000]]) {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
     await page.goto(file);
-    const tabs = await page.$$('[role=tablist] .tab');
-    for (const tab of tabs) {
-      const name = (await tab.textContent()).trim();
-      await tab.click();
-      await page.waitForTimeout(120);
+    // Every screen, not only the ones with a tab: the prototype has a page per
+    // product, per category and per footer link, and a layout fault on the
+    // Lemon Masala Tea page is as visible to a client as one on the home page.
+    const ids = await page.evaluate(() => window.fxScreens);
+    for (const name of ids) {
+      await page.evaluate((id) => window.fxShow(id, false), name);
+      await page.waitForTimeout(60);
       const report = await page.evaluate(([ROWS, INSIDE]) => {
         const vw = document.documentElement.clientWidth;
         const doc = document.documentElement.scrollWidth;
@@ -164,6 +166,6 @@ const INSIDE = ['.fd-badges > *', '.fd-chip', '.fd-save'];
     await page.close();
   }
   await browser.close();
-  console.log(failures ? `\n${failures} screen/width combinations overflow or collide` : '\nall screens clean at both widths');
+  console.log(failures ? `\n${failures} screen/width combinations overflow or collide` : '\nall screens clean at every width');
   process.exit(failures ? 1 : 0);
 })();

@@ -180,11 +180,14 @@ function foodify_prep_steps( string $method, string $minutes = '' ): array {
 			[ 'n' => 3, 'title' => "Wait {$time}",         'detail' => 'Cover it. Stir again and eat.' ],
 		];
 	}
+	// The cold-water range is Flavors — chutneys (SCOPE.md §2). These steps said
+	// "Tip it into a glass … Stir and drink", which reads as a drink and is wrong
+	// on every product the method applies to.
 	if ( false !== strpos( $m, 'drinking water' ) || false !== strpos( $m, 'cold water' ) ) {
 		return [
-			[ 'n' => 1, 'title' => 'Tip it into a glass',  'detail' => 'The whole sachet.' ],
-			[ 'n' => 2, 'title' => 'Add drinking water',   'detail' => 'Room temperature is fine.' ],
-			[ 'n' => 3, 'title' => 'Stir and drink',       'detail' => 'No heating, no waiting.' ],
+			[ 'n' => 1, 'title' => 'Tip it into a bowl',   'detail' => 'The whole sachet.' ],
+			[ 'n' => 2, 'title' => 'Add drinking water',   'detail' => 'Room temperature is fine, a little at a time.' ],
+			[ 'n' => 3, 'title' => 'Stir and serve',       'detail' => 'No grinding, no heating.' ],
 		];
 	}
 	if ( false !== strpos( $m, 'cook' ) ) {

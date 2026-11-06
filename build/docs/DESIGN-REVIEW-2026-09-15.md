@@ -374,3 +374,46 @@ open a panel before the shot for exactly that reason.
 The boxes themselves (which exist, what goes in each, the two prices) are
 fixture values like the FSSAI number — listed by name in the preview banner and
 on the book's "what is invented" page, because that is Nalin's to set.
+
+## Round 10, 6 Nov — a prototype that behaves like the shop
+
+Asked for: "a clickable version for a complete website experience." The preview
+was click-through only as far as navigation went. Add to cart opened the cart
+without adding anything, every card opened the same Dal Fry page, the filters
+and sort did nothing, and Place order was a toast. It looked like a shop and
+did not behave like one.
+
+It is now a working prototype, still rendered from the theme:
+
+- **36 screens**: a page per product (12 singles, 4 combos), per category, and
+  per footer link, plus cart, checkout, order received, account and sign-in.
+  The four new singles (Dal Makhni, Palak Gravy, the millet cheela, Lemon
+  Masala Tea) are SKUs seen on the live site; their prices and copy are fixtures.
+- **The cart follows the shop's real rules**: free shipping from ₹599 compared
+  after codes, ₹59 below it, ₹25 off for paying online, cash on delivery on
+  every order. Quantities apply after the theme's own 700 ms pause.
+- **Checkout both ways**: returning customer (address filled, chooser) and
+  guest (empty fields, WooCommerce's validation). Razorpay's window is simulated
+  and says so. The order lands on WooCommerce's thank-you page, then in the
+  account with Details and Reorder.
+- **Sign-in is WP-05's OTP flow**, mobile number then code.
+- **Filters, price range and sort work**, with WooCommerce's no-results text.
+- **Mini-cart drawer** (header.html sets `addToCartBehaviour: open_drawer`) and
+  the phone menu overlay (`overlayMenu: mobile`).
+
+`tests/preview-doors.js` now walks that journey (51 checks) and ends by
+clicking every link and button on every screen, failing on any that only says
+"not built". The shipping threshold is tested at its edges; moving it to ₹699
+fails the suite. `tools/mobile-sweep.js` sweeps all 36 screens, not the 11 tabs.
+
+Found on the way, in the theme:
+
+- **The chutney page said "Tip it into a glass … Stir and drink."** The
+  cold-water steps in `foodify_prep_steps()` were written for a drink; the
+  range is chutneys. Now "a bowl … Stir and serve", with a test.
+- **The Dal Fry fixture listed onion, garlic and ginger** on a product its own
+  FAQ calls Jain. Fixture only, corrected.
+- **Order received keeps "← Back to cart" in its header.** WooCommerce renders
+  the thank-you page through the checkout template, so header-checkout.html's
+  link appears after the cart has been emptied. Not fixed: the decision is
+  whether that page should get the normal header.
