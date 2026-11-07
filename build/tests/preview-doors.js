@@ -260,6 +260,34 @@ const path = require('path');
   await go('home'); await go('combos'); await page.goBack(); await wait(200);
   check('the browser Back button returns to the previous screen', (await shown()) === 'home', await shown());
 
+  // ── the account can be found, and reviews can be read ────────────────────
+  // "Where is my account?" — the header button was a bare icon.
+  await go('home');
+  const acct = await page.evaluate(() => { const l = document.querySelector('#s-home .wc-block-customer-account__account-link .label');
+    return l ? { text: l.textContent.trim(), width: l.getBoundingClientRect().width } : null; });
+  check('the header account button says "My account" on a laptop', acct && acct.text === 'My account' && acct.width > 0, acct);
+  await go('p-trial-box-3-meals');
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await click('#s-p-trial-box-3-meals .woocommerce-review-link'); await wait(900);
+  const rev = await page.evaluate(() => { const r = document.querySelector('#s-p-trial-box-3-meals #reviews');
+    return { top: Math.round(r.getBoundingClientRect().top), cards: r.querySelectorAll('.fd-review').length,
+             summary: r.querySelector('.fx-rev-summary').textContent }; });
+  check('the review count jumps to the reviews, landing in view', rev.top > 0 && rev.top < 400, rev);
+  check('there are reviews to read, with the rating and count', rev.cards >= 3 && /out of 5/.test(rev.summary) && /46/.test(rev.summary), rev);
+
+  // On a phone: the product page opens on the product, and the account is in the menu.
+  const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await phone.goto('file://' + path.resolve(__dirname, '../preview/storefront.html'));
+  await phone.waitForTimeout(300);
+  const landed = await phone.evaluate(() => { window.fxShow('p-trial-box-3-meals');
+    return Math.round(document.querySelector('#s-p-trial-box-3-meals h1').getBoundingClientRect().top); });
+  check('on a phone, a tapped product shows its name on the first screen', landed > 0 && landed < 844, landed);
+  await phone.evaluate(() => [...document.querySelectorAll('#s-home .fx-burger')][0].click());
+  const menuAcct = await phone.evaluate(() => { const a = [...document.querySelectorAll('.fx-menu a')].find(x => /My account/.test(x.textContent));
+    if (!a) return null; a.click(); return [...document.querySelectorAll('[id^=s-]')].find(e => !e.hidden).id; });
+  check('on a phone, the menu has "My account" and it opens the account', menuAcct === 's-account', menuAcct);
+  await phone.close();
+
   // ── nothing anywhere is dead ──────────────────────────────────────────────
   // Every visible link and button on every screen is clicked. A click that the
   // prototype does not handle shows the "not built" toast; there must be none.

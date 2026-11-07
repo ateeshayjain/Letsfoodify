@@ -530,7 +530,7 @@ function foodify_pdp_script(): string {
   if(bar&&form&&'IntersectionObserver'in window){
     var qty=form.querySelector('input.qty');var unit=parseFloat(bar.getAttribute('data-unit')||'0');var total=bar.querySelector('.fd-sticky-atc__total');
     function fmt(n){try{return new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(n);}catch(e){return String(Math.round(n));}}
-    function update(){var q=qty?parseInt(qty.value,10)||1:1;total.textContent='₹'+fmt(unit*q);bar.querySelector('.fd-sticky-atc__qty').textContent=q+(q===1?' pack':' packs');}
+    function update(){var q=qty?parseInt(qty.value,10)||1:1;total.textContent='₹'+fmt(unit*q);bar.querySelector('.fd-sticky-atc__qty').textContent=q+' '+(q===1?(bar.getAttribute('data-unit-one')||'pack'):(bar.getAttribute('data-unit-many')||'packs'));}
     if(qty){qty.addEventListener('input',update);qty.addEventListener('change',update);}update();
     new IntersectionObserver(function(en){bar.hidden=en[0].isIntersecting;},{threshold:0}).observe(form);
     bar.querySelector('button').addEventListener('click',function(){var b=form.querySelector('button[type=submit],.single_add_to_cart_button');if(b){b.click();}else{form.scrollIntoView({behavior:'smooth',block:'center'});}});

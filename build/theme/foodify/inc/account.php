@@ -270,3 +270,19 @@ add_action( 'template_redirect', static function (): void {
 	wp_safe_redirect( wc_get_account_endpoint_url( 'orders' ) );
 	exit;
 } );
+
+/**
+ * The header's account button, in the words the rest of the site uses.
+ *
+ * header.html shows the button with its label ("where is my account?" — a bare
+ * person icon was not found). WooCommerce labels it "My Account" and "Log in";
+ * everything else here says "My account" and "Sign in", and two words for one
+ * action on one screen read as two different things. Scoped to this block's
+ * output only — nothing else WooCommerce prints is touched.
+ */
+add_filter( 'render_block_woocommerce/customer-account', static function ( string $html ): string {
+	return strtr( $html, [
+		'>My Account<' => '>' . esc_html__( 'My account', 'foodify' ) . '<',
+		'>Log in<'     => '>' . esc_html__( 'Sign in', 'foodify' ) . '<',
+	] );
+} );

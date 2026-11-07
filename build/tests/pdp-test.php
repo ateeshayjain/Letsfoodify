@@ -122,6 +122,10 @@ foreach ( [ 'fd-sticky-atc', 'fd-tab__panel' ] as $cls ) {
 		! $sets_display || $has_escape );
 }
 check( 'the script exists and is inert without the markup', str_contains( $js, 'data-fd-tabs' ) && str_contains( $js, 'IntersectionObserver' ) );
+// A combo's bar said "1 pack" for a box of three. The unit comes from the bar.
+check( 'the sticky bar names the unit the page sells (pack or box), not always "pack"',
+	str_contains( $js, "data-unit-one" ) && str_contains( $js, "data-unit-many" )
+	&& str_contains( (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' ), "__( 'box', 'foodify' )" ) );
 check( 'tabs on desktop, accordions below core\'s breakpoint', str_contains( $js, 'min-width:782px' ) );
 check( 'it cannot end the script block early', ! str_contains( $js, '</script' ) );
 

@@ -460,16 +460,38 @@ REVIEWS = [
 # Product-page reviews, by how the product is made — so the chai page is not
 # praised for being "actually dal". Fixture text, like everything on this list.
 PDP_REVIEWS = {
-    "Express Dal Fry": [("Took it to site for a week. Six minutes and it is actually dal, not soup.", "Rakesh M."),
-                        ("My mother approved, which I did not expect.", "Sneha T.")],
-    "Just add hot water": [("A kettle and six minutes, and it tastes like somebody cooked.", "Karan V."),
-                           ("Packed four for a hostel week. Gone in three days.", "Ishita B.")],
-    "Stir with drinking water": [("Stirred it up at my desk and it tasted fresh.", "Priya K."),
-                                 ("Goes with every idli and dosa in the house.", "Lakshmi N.")],
-    "Requires cooking": [("Easy on a weekday morning, and the kids eat it.", "Meera J."),
-                         ("Proper flavour. Worth the few minutes at the stove.", "Vikram S.")],
-    "combo": [("The box saved me ordering four times a month.", "Arjun P."),
-              ("Good way to try the range before picking favourites.", "Nidhi G.")],
+    # (text, name, stars). Five per kind, mostly fives and fours, so a 4.3
+    # product does not read as a wall of five-star praise.
+    "Express Dal Fry": [
+        ("Took it to site for a week. Six minutes and it is actually dal, not soup.", "Rakesh M.", 5),
+        ("My mother approved, which I did not expect.", "Sneha T.", 5),
+        ("Jain and still tastes of something. Rare. We keep four in the cupboard.", "Hemal D.", 5),
+        ("Good dal. I add a squeeze of lemon and it is perfect.", "Arvind K.", 4),
+        ("Thicker than I like — use a little more water than the line says.", "Pooja S.", 4)],
+    "Just add hot water": [
+        ("A kettle and six minutes, and it tastes like somebody cooked.", "Karan V.", 5),
+        ("Packed four for a hostel week. Gone in three days.", "Ishita B.", 5),
+        ("Took these on a Rajdhani overnight. Hot water from the pantry car did the job.", "Sameer A.", 5),
+        ("Tasty. Portion is right for one hungry person, not two.", "Neha G.", 4),
+        ("Spice level was a bit much for my kids.", "Ritu P.", 3)],
+    "Stir with drinking water": [
+        ("Stirred it up at my desk and it tasted fresh.", "Priya K.", 5),
+        ("Goes with every idli and dosa in the house.", "Lakshmi N.", 5),
+        ("Closer to fresh than any packet chutney I have tried.", "Venkat R.", 4),
+        ("Add the water slowly — I made it too thin the first time.", "Sowmya J.", 4),
+        ("Good, but I wish the sachet was bigger.", "Kiran T.", 4)],
+    "Requires cooking": [
+        ("Easy on a weekday morning, and the kids eat it.", "Meera J.", 5),
+        ("Proper flavour. Worth the few minutes at the stove.", "Vikram S.", 5),
+        ("Tastes like a dhaba version. Strong, the way I like it.", "Harpreet K.", 5),
+        ("Nice. The instructions could say how much water for two cups.", "Anil B.", 4),
+        ("Decent, a little mild for me.", "Ruchi M.", 3)],
+    "combo": [
+        ("The box saved me ordering four times a month.", "Arjun P.", 5),
+        ("Good way to try the range before picking favourites.", "Nidhi G.", 5),
+        ("Sent one to my son at college. He asked for another.", "Usha R.", 5),
+        ("Every pack arrived well within date. Good packing.", "Farhan Q.", 4),
+        ("Would like to choose what goes in the box.", "Tanvi L.", 4)],
 }
 
 
@@ -606,10 +628,12 @@ def dynamic(name, attrs, inner):
                 '<span class="wc-block-mini-cart__badge">0</span></span></button></div>')
     if name == "woocommerce/customer-account":
         return ('<div class="wc-block-customer-account wp-block-woocommerce-customer-account">'
-                '<a class="wc-block-customer-account__account-link" href="/my-account/" data-s="account" aria-label="Account">'
+                '<a class="wc-block-customer-account__account-link" href="/my-account/" data-s="account">'
                 '<svg class="wc-block-customer-account__account-icon" viewBox="0 0 24 24" fill="none" '
                 'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'
-                '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a></div>')
+                '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>'
+                # WooCommerce's label, in the words inc/account.php gives it.
+                '<span class="label">My account</span></a></div>')
     if name == "woocommerce/product-image" and CUR:
         badges = php("echo foodify_render_badges(foodify_card_badges($a[0]))", badge_state(CUR))
         return (f'<div class="wc-block-components-product-image"><a href="/product/{slug_of(CUR)}/" data-s="{screen_of(CUR)}" tabindex="-1">'
@@ -646,10 +670,14 @@ def dynamic(name, attrs, inner):
         return (
             '<div class="fx-gallery">'
             + BOWL.format(hue=hue, time=PDP[2])
+            # Folded: open, it put ~800px of brief between the photo and the
+            # product's name on a phone, so a tapped product looked like it had
+            # opened on nothing.
+            + '<details class="fx-brief"><summary>Photo brief: the four shots this page needs</summary>'
             + '<div class="fx-shotlist">' + thumbs + '</div>'
             + '<p class="fx-ph">No photography supplied yet. Four shots per product, in this '
               'order — shot 1 is what Google Shopping uses, so it is the one that cannot wait.</p>'
-            + '</div>'
+            + '</details></div>'
         )
     if name == "woocommerce/product-rating":
         row = CUR or PDP
@@ -658,7 +686,9 @@ def dynamic(name, attrs, inner):
         if CUR:
             return (f'<div class="wc-block-components-product-rating">{stars(CUR[6])} '
                     f'<span class="fd-rating-count">{CUR[7]} reviews</span></div>')
-        return f'<div class="fx-rating">{stars(row[6])} <span class="fx-rc">{row[7]} reviews</span></div>'
+        word = "customer review" if row[7] == 1 else "customer reviews"
+        return (f'<div class="fx-rating">{stars(row[6])} <a href="#reviews" class="woocommerce-review-link" rel="nofollow">'
+                f'(<span class="count">{row[7]}</span> {word})</a></div>')
     if name == "woocommerce/product-price":
         if CUR:
             return price_html(CUR, cls_for(a))
@@ -719,15 +749,25 @@ def dynamic(name, attrs, inner):
 
     if name == "woocommerce/product-reviews":
         if PDP[7] == 0:
-            return ('<div class="fd-reviews"><p class="woocommerce-noreviews">There are no reviews yet. '
+            return ('<div id="reviews" class="woocommerce-Reviews fd-reviews-block"><p class="woocommerce-noreviews">There are no reviews yet. '
                     'Reviews open to customers who have bought it.</p></div>')
         key = "combo" if combo_of(PDP) else (PDP[0] if PDP[0] in PDP_REVIEWS else PREP_TERM[PDP[1]])
+        shown = PDP_REVIEWS[key]
         cards = "".join(
             f'<figure class="fd-review"><blockquote>{html.escape(q)}</blockquote>'
-            f'<figcaption><span class="fd-stars">{"★"*5}</span> · {who} · '
+            f'<figcaption><span class="fd-stars" aria-label="{n} out of 5">{"★"*n}{"☆"*(5-n)}</span> · {who} · '
             f'<span class="fd-verified">Verified purchase</span></figcaption></figure>'
-            for q, who in PDP_REVIEWS[key])
-        return f'<div class="fd-reviews">{cards}</div>'
+            for q, who, n in shown)
+        more = ""
+        if PDP[7] > len(shown):
+            # WooCommerce's block pages reviews; the prototype carries five per
+            # product and says so rather than inventing the rest.
+            more = (f'<p class="fx-rev-more"><span>Showing {len(shown)} of {PDP[7]} reviews</span> '
+                    f'<button type="button" class="wp-element-button fd-secondary" data-note="On the site the next reviews load here, ten at a time. '
+                    f'The prototype carries the first {len(shown)} for each product.">More reviews</button></p>')
+        return (f'<div id="reviews" class="woocommerce-Reviews fd-reviews-block">'
+                f'<p class="fx-rev-summary">{stars(PDP[6])} <strong>{PDP[6]} out of 5</strong> · {PDP[7]} reviews</p>'
+                f'<div class="fd-reviews">{cards}</div>{more}</div>')
     if name == "woocommerce/catalog-sorting":
         # WooCommerce's ordering form; option labels are the theme's shortened
         # set, and popularity is the default bootstrap.sh sets.
@@ -1152,8 +1192,8 @@ MOCK_SCRIPT = r'''<script>
     $$('.wc-block-mini-cart__button').forEach(function (b) {
       b.setAttribute('aria-label', t.count + (t.count === 1 ? ' item' : ' items') + ' in cart, total price of ' + rs(t.sub));
     });
-    $$('.wc-block-customer-account__account-link').forEach(function (a) {
-      a.setAttribute('aria-label', S.signedIn ? 'My account' : 'Sign in');
+    $$('.wc-block-customer-account__account-link .label').forEach(function (l) {
+      l.textContent = S.signedIn ? 'My account' : 'Sign in';
     });
     // WooCommerce's Product Button block says how many are already in the cart
     // ("2 in cart") and still adds one more on each press. The card is where the
@@ -1875,8 +1915,9 @@ def render(markup, depth=0):
             # to know which screen a nav item belongs to, and WordPress renders
             # the href regardless.
             items = "".join(
-                '<a href="{url}" class="wp-block-navigation-item__content">{label}</a>'.format(
+                '<a href="{url}" class="wp-block-navigation-item__content {cls}">{label}</a>'.format(
                     url=html.escape(json.loads(l).get("url", "#")),
+                    cls=html.escape(json.loads(l).get("className", "")),
                     label=json.loads(l).get("label", ""))
                 for l in labels)
             out.append('<button type="button" class="wp-block-navigation__responsive-container-open fx-burger" '
@@ -2064,6 +2105,13 @@ FIXTURE_CSS = """
 .fx-empty{padding:var(--wp--preset--spacing--60) 0;font-size:var(--wp--preset--font-size--md)}
 .fd-cart-back a{color:var(--wp--preset--color--mute)}
 .fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
+.fx-brief{margin-top:var(--wp--preset--spacing--40);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:0 var(--wp--preset--spacing--40)}
+.fx-brief>summary{min-height:var(--wp--custom--tap-target);display:flex;align-items:center;font-size:var(--wp--preset--font-size--sm);font-weight:600;color:var(--wp--preset--color--mute);cursor:pointer}
+.fx-brief[open]{padding-bottom:var(--wp--preset--spacing--40)}
+@media (max-width:781px){.fx-gallery>.fx-bowl{max-width:min(440px,64vw)}}
+.woocommerce-review-link{color:inherit}
+.fx-rev-summary{display:flex;align-items:center;flex-wrap:wrap;gap:var(--wp--preset--spacing--20);margin:0 0 var(--wp--preset--spacing--40)}
+.fx-rev-more{display:flex;align-items:center;flex-wrap:wrap;gap:var(--wp--preset--spacing--40);margin-top:var(--wp--preset--spacing--50);color:var(--wp--preset--color--mute);font-size:var(--wp--preset--font-size--sm)}
 .fx-shotlist{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--wp--preset--spacing--30);margin-top:var(--wp--preset--spacing--40)}
 .fx-shot{position:relative;background:var(--wp--preset--color--surface);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--30)}
 .fx-shot .fx-bowl{opacity:.28;max-width:100%;margin-bottom:var(--wp--preset--spacing--20)}
@@ -2146,6 +2194,8 @@ FIXTURE_CSS = """
 .fx-shell [hidden]:not(.fd-sticky-atc):not(.fd-tab__panel),.fx-drawer-overlay [hidden],.fx-menu[hidden],
 .fx-drawer-overlay[hidden],.fx-rzp[hidden]{display:none!important}
 html.fx-locked{overflow:hidden}
+/* The prototype bar is sticky; an in-page jump (Reviews) must land below it. */
+.fx-shell [id]{scroll-margin-top:7rem}
 .woocommerce-message,.woocommerce-info,.woocommerce-error{list-style:none;margin:0 0 var(--wp--preset--spacing--40);
   padding:var(--wp--preset--spacing--30) var(--wp--preset--spacing--40);border-radius:var(--wp--custom--radius--control);
   background:var(--wp--preset--color--surface);border:1px solid var(--wp--preset--color--line);
@@ -2451,8 +2501,8 @@ def main():
             # What inc/product-display.php prints in wp_footer on a product page:
             # the sticky bar, hidden until the real button scrolls away. The
             # theme's one script runs once per product screen (see MOCK_SCRIPT).
-            unit = "box" if combo_of(PDP) else "pack"
-            body += (f'<div class="fd-sticky-atc" data-unit="{PDP[3]}" hidden><div class="fd-sticky-atc__price">'
+            unit, units = ("box", "boxes") if combo_of(PDP) else ("pack", "packs")
+            body += (f'<div class="fd-sticky-atc" data-unit="{PDP[3]}" data-unit-one="{unit}" data-unit-many="{units}" hidden><div class="fd-sticky-atc__price">'
                      f'<strong class="fd-sticky-atc__total">₹{PDP[3]}</strong><span class="fd-sticky-atc__qty">1 {unit}</span></div>'
                      '<button type="button" class="wp-element-button">Add to cart</button></div>')
         if label:

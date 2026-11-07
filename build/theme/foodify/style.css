@@ -573,14 +573,33 @@ input:focus, select:focus, textarea:focus {
   .fd-header > .wp-block-navigation,
   .fd-header > .wp-block-navigation .wp-block-navigation__container { gap: var(--wp--preset--spacing--30); }
 }
+/* Account: icon AND words on a laptop — a bare person icon is what the client
+   could not find ("where is my account?"). Below 1024px the row has no room for
+   the word beside the cart pill, so it is the 44px icon again, still labelled
+   for screen readers by the link's own text. */
 .wc-block-customer-account .wc-block-customer-account__account-link {
   display: inline-flex; align-items: center; justify-content: center;
-  width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  gap: var(--wp--preset--spacing--20);
+  min-width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  padding: 0 var(--wp--preset--spacing--40) 0 var(--wp--preset--spacing--30);
   border: 1px solid var(--wp--preset--color--line-strong);
   border-radius: var(--wp--custom--radius--pill);
   color: var(--wp--preset--color--char);
+  font-weight: 600; text-decoration: none; white-space: nowrap;
 }
-.wc-block-customer-account .wc-block-customer-account__account-icon { width: 1.25rem; height: 1.25rem; }
+.wc-block-customer-account .wc-block-customer-account__account-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
+/* "My account" as a menu item exists for the phone overlay (header.html). From
+   600px — core's overlay breakpoint — the menu is a row beside the labelled
+   account button, and a second "My account" there would be the same door twice. */
+@media (min-width: 600px) {
+  .wp-block-navigation .fd-nav-account { display: none; }
+}
+@media (max-width: 1023px) {
+  .wc-block-customer-account .wc-block-customer-account__account-link { width: var(--wp--custom--tap-target); padding: 0; }
+  .wc-block-customer-account__account-link .label {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
 
 /* The cart. An outline icon in the margin is what the client could not find;
    a charcoal pill carrying the icon, the count and the amount is a control. */

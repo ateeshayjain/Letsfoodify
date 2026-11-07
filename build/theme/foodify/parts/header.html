@@ -21,10 +21,14 @@
 <!-- wp:navigation-link {"label":"Flavors","url":"/product-category/flavors/"} /-->
 <!-- wp:navigation-link {"label":"Combos","url":"/product-category/combos/"} /-->
 <!-- wp:navigation-link {"label":"How it works","url":"/#how-it-works"} /-->
+<!-- The account, inside the phone menu only. The header button is an icon on a
+     phone (no room for its word), and an unlabelled icon was not found.
+     style.css hides this item wherever the menu is a row, not the overlay. -->
+<!-- wp:navigation-link {"label":"My account","url":"/my-account/","className":"fd-nav-account"} /-->
 <!-- /wp:navigation -->
 <!-- wp:group {"className":"fd-header__actions","layout":{"type":"flex","flexWrap":"nowrap"}} -->
 <div class="wp-block-group fd-header__actions">
-<!-- wp:woocommerce/customer-account {"displayStyle":"icon_only","iconClass":"wc-block-customer-account__account-icon"} /-->
+<!-- wp:woocommerce/customer-account {"displayStyle":"icon_and_text","iconClass":"wc-block-customer-account__account-icon"} /-->
 <!-- wp:woocommerce/mini-cart {"miniCartIcon":"cart","hasHiddenPrice":false,"productCountVisibility":"always","addToCartBehaviour":"open_drawer"} /-->
 </div>
 <!-- /wp:group -->

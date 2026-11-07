@@ -231,11 +231,17 @@ add_action( 'wp_footer', static function (): void {
 	}
 	$product = wc_get_product( get_the_ID() );
 	if ( $product instanceof WC_Product && $product->is_in_stock() && $product->is_purchasable() ) {
+		// A combo is bought by the box; "1 pack" on the bar of a three-pack box
+		// reads as one meal.
+		$box = function_exists( 'foodify_combo_data' ) && null !== foodify_combo_data( $product );
+		$one = $box ? __( 'box', 'foodify' ) : __( 'pack', 'foodify' );
 		printf(
-			'<div class="fd-sticky-atc" data-unit="%1$s" hidden><div class="fd-sticky-atc__price"><strong class="fd-sticky-atc__total">%2$s</strong><span class="fd-sticky-atc__qty">1 pack</span></div><button type="button" class="wp-element-button">%3$s</button></div>',
+			'<div class="fd-sticky-atc" data-unit="%1$s" data-unit-one="%4$s" data-unit-many="%5$s" hidden><div class="fd-sticky-atc__price"><strong class="fd-sticky-atc__total">%2$s</strong><span class="fd-sticky-atc__qty">1 %4$s</span></div><button type="button" class="wp-element-button">%3$s</button></div>',
 			esc_attr( (string) wc_get_price_to_display( $product ) ),
 			wp_kses_post( wc_price( wc_get_price_to_display( $product ) ) ),
-			esc_html__( 'Add to cart', 'foodify' )
+			esc_html__( 'Add to cart', 'foodify' ),
+			esc_attr( $one ),
+			esc_attr( $box ? __( 'boxes', 'foodify' ) : __( 'packs', 'foodify' ) )
 		);
 	}
 	echo '<script>' . foodify_pdp_script() . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- static script, no data.
