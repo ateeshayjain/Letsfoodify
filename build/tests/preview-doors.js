@@ -214,6 +214,11 @@ const path = require('path');
     total: parseInt(document.querySelector('#s-order .fx-o-total').textContent.replace(/[^0-9]/g, ''), 10) }));
   check('a successful payment lands on Order received with an order number and the same total', placed.screen === 's-order' && placed.no === '1195' && placed.total === online.total, { placed, online });
   check('the cart is empty after ordering', (await badge()) === 0);
+  const chrome = await page.evaluate(() => ({
+    order: { back: /Back to cart/.test(document.getElementById('s-order').textContent), nav: !!document.querySelector('#s-order .fx-nav') },
+    checkout: /Back to cart/.test(document.getElementById('s-checkout').textContent) }));
+  check('order received has the site header (no "Back to cart" to an empty cart); checkout keeps its own',
+    !chrome.order.back && chrome.order.nav && chrome.checkout, chrome);
   const stale = await page.evaluate(() => [...document.querySelectorAll('.add_to_cart_button[data-add]')].filter(b => /in cart/.test(b.textContent)).length);
   check('and no card still claims "in cart"', stale === 0, stale);
   await go('checkout');

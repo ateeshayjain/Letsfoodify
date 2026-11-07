@@ -64,5 +64,15 @@ check( 'account is private',  true  === foodify_is_private_page( false, false, t
 // whole storefront and undoes WP-04.
 check( 'everything else stays cacheable', false === foodify_is_private_page( false, false, false ) );
 
+echo "── the order-received page wears the site's header ──\n";
+
+check( 'checkout keeps its stripped header',  'header-checkout' === foodify_checkout_part_slug( 'header-checkout', false ) );
+check( 'checkout keeps its stripped footer',  'footer-checkout' === foodify_checkout_part_slug( 'footer-checkout', false ) );
+// "← Back to cart" after an order points at an empty cart.
+check( 'order received gets the site header', 'header' === foodify_checkout_part_slug( 'header-checkout', true ) );
+check( 'and the site footer',                 'footer' === foodify_checkout_part_slug( 'footer-checkout', true ) );
+check( 'any other part passes through',       'header' === foodify_checkout_part_slug( 'header', true ) );
+check( 'unknown parts are left alone',        'promo'  === foodify_checkout_part_slug( 'promo', true ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

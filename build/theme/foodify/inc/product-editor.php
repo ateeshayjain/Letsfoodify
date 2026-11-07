@@ -275,6 +275,54 @@ add_action( 'admin_notices', static function (): void {
 } );
 
 /**
+ * Anything that contains onion or garlic cannot be Jain (client rule, 7 Nov 2026).
+ *
+ * The card badge already refuses the claim at render time (foodify_card_badges).
+ * This takes the Dietary → Jain tag itself off on save, so the shop's Jain
+ * filter and the Google feed stop listing the product too — a badge hidden on
+ * the card while the filter still offers it would be the same claim made in a
+ * second place. Priority 99 on save_post: WooCommerce writes a product's
+ * attributes on save_post at priority 1, and anything earlier is overwritten.
+ * NOT YET RUN AGAINST WOOCOMMERCE — check on staging (DESIGN-REVIEW round 11).
+ */
+add_action( 'save_post', static function ( int $post_id, WP_Post $post ): void {
+	if ( 'product' !== $post->post_type || wp_is_post_revision( $post_id ) || ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) ) {
+		return;
+	}
+	if ( ! function_exists( 'foodify_attribute_taxonomy' ) || ! function_exists( 'foodify_jain_conflicts' ) ) {
+		return;
+	}
+	$tax = foodify_attribute_taxonomy( 'dietary' );
+	if ( ! taxonomy_exists( $tax ) || ! has_term( 'jain', $tax, $post_id ) ) {
+		return;
+	}
+	$hits = foodify_jain_conflicts( (string) get_post_meta( $post_id, '_foodify_ingredients', true ) );
+	if ( ! $hits ) {
+		return;
+	}
+	wp_remove_object_terms( $post_id, 'jain', $tax );
+	if ( function_exists( 'wc_delete_product_transients' ) ) {
+		wc_delete_product_transients( $post_id );
+	}
+	set_transient( 'foodify_jain_' . get_current_user_id(), $hits, 60 );
+}, 99, 2 );
+
+add_action( 'admin_notices', static function (): void {
+	$hits = get_transient( 'foodify_jain_' . get_current_user_id() );
+	if ( ! is_array( $hits ) || ! $hits ) {
+		return;
+	}
+	delete_transient( 'foodify_jain_' . get_current_user_id() );
+	printf(
+		'<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s <code>%3$s</code>. %4$s</p></div>',
+		esc_html__( 'Foodify:', 'foodify' ),
+		esc_html__( 'the Jain tag was removed — the ingredients list', 'foodify' ),
+		esc_html( implode( ', ', $hits ) ),
+		esc_html__( 'Anything with onion or garlic cannot be sold as Jain. If the ingredients are wrong, correct them and add the tag again.', 'foodify' )
+	);
+} );
+
+/**
  * A completeness column on the products list, so "which of the 44 still need
  * data" is a glance, not a spreadsheet.
  */

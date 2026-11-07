@@ -275,7 +275,12 @@ function foodify_save_badge( float $regular, float $sale ): string {
  * Sold out outranks everything — a bestseller you cannot buy is a sold-out
  * product. New outranks nothing.
  *
- * @param array{in_stock?:bool,bestseller?:bool,new?:bool,dietary?:array<int,string>} $s
+ * The Jain badge is a claim about what is IN the food, so it is checked against
+ * the ingredient list rather than trusted from the tag: a product tagged Jain
+ * whose ingredients name onion or garlic shows no Jain badge (see
+ * foodify_jain_conflicts). No ingredient list, nothing to contradict the tag.
+ *
+ * @param array{in_stock?:bool,bestseller?:bool,new?:bool,dietary?:array<int,string>,ingredients?:string} $s
  * @return array{commercial:string,dietary:string}
  */
 function foodify_card_badges( array $s ): array {
@@ -287,8 +292,42 @@ function foodify_card_badges( array $s ): array {
 	} elseif ( ! empty( $s['new'] ) ) {
 		$commercial = 'New';
 	}
-	$dietary = in_array( 'jain', array_map( 'strval', (array) ( $s['dietary'] ?? [] ) ), true ) ? 'Jain' : '';
+	$jain    = in_array( 'jain', array_map( 'strval', (array) ( $s['dietary'] ?? [] ) ), true )
+		&& [] === foodify_jain_conflicts( (string) ( $s['ingredients'] ?? '' ) );
+	$dietary = $jain ? 'Jain' : '';
 	return [ 'commercial' => $commercial, 'dietary' => $dietary ];
+}
+
+/**
+ * What in an ingredient list rules out "Jain". Returns the offending words as
+ * written, so an editor can be told exactly what to fix; [] means no conflict.
+ *
+ * The client's rule: anything that contains onion or garlic cannot be Jain.
+ * That includes the onion family by other names and the Hindi names, because
+ * Indian labels use both. Matched as whole words, so "Onion-free" and "no
+ * garlic" — which say the opposite — do not count.
+ *
+ * Root vegetables (potato, ginger, carrot, beetroot) are also avoided in strict
+ * Jain practice, but the client has not set that rule; they are deliberately
+ * NOT in this list until they do.
+ *
+ * @return array<int,string>
+ */
+function foodify_jain_conflicts( string $ingredients ): array {
+	$words = 'onions?|garlic|shallots?|leeks?|chives?|scallions?|pyaa?z|piyaz|kanda|lehsun|lahsun|lasun';
+	if ( ! preg_match_all( '/\b(' . $words . ')\b/iu', $ingredients, $m, PREG_OFFSET_CAPTURE ) ) {
+		return [];
+	}
+	$found = [];
+	foreach ( $m[1] as [ $word, $at ] ) {
+		$before = strtolower( substr( $ingredients, max( 0, $at - 8 ), min( 8, $at ) ) );
+		$after  = strtolower( substr( $ingredients, $at + strlen( $word ), 6 ) );
+		if ( preg_match( '/\b(no|without)\s+$/', $before ) || preg_match( '/^[\s-]*free\b/', $after ) ) {
+			continue;   // "no onion", "garlic-free": a statement of absence
+		}
+		$found[] = $word;
+	}
+	return array_values( array_unique( $found ) );
 }
 
 function foodify_render_badges( array $badges ): string {

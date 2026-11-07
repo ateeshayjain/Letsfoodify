@@ -417,3 +417,33 @@ Found on the way, in the theme:
   the thank-you page through the checkout template, so header-checkout.html's
   link appears after the cart has been emptied. Not fixed: the decision is
   whether that page should get the normal header.
+
+## Round 11, 7 Nov — Jain, and the page after the order
+
+**"Anything that contains onion, garlic cannot be Jain."** The theme showed the
+Jain badge from the Dietary tag alone and never read the ingredients — which is
+how the preview's Jain Dal Fry listed onion, garlic and ginger for weeks. Now:
+
+- `foodify_jain_conflicts()` (inc/product-spec.php) names any onion, garlic,
+  shallot, leek, chive or scallion in an ingredient list, including the Hindi
+  names (pyaz, lehsun, lasun, kanda). Whole words; "no onion" and
+  "garlic-free" are statements of absence and do not count.
+- The card badge is refused when the ingredients conflict, whatever the tag says.
+- On save, the Jain tag itself is removed and the editor is told which word
+  caused it — so the shop's Jain filter and the Google feed drop the product
+  too. **This runs on WooCommerce's save and has not been run against
+  WooCommerce: check on staging** (tag a test product Jain, put "onion" in its
+  ingredients, save, and confirm the tag is gone and the notice shows).
+- The preview refuses to render a Jain fixture whose ingredients conflict.
+- The Chai & Chutney Box is no longer Jain: a box is Jain only if every pack in
+  it is, and the Masala Chai is not tagged Jain.
+
+**Open for Nalin:** strict Jain practice also excludes root vegetables —
+potato, ginger, carrot, beetroot. They are NOT in the rule until he says so.
+
+**The order-received page now has the site's header and footer.** WooCommerce
+renders it through the checkout page, so it carried the checkout's "← Back to
+cart" with an empty cart behind it. `foodify_checkout_part_slug()`
+(inc/checkout-flow.php) swaps the two template parts once the order is
+received; checkout itself keeps its stripped header. Tested in
+checkout-test.php and in the preview journey.

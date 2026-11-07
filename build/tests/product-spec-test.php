@@ -159,6 +159,34 @@ check( 'the method match is case-insensitive', 3 === count( foodify_prep_steps( 
 check( 'a default time is used when the product states none',
 	false !== strpos( foodify_prep_steps( 'hot water' )[2]['title'], '6 minutes' ) );
 
+echo "── nothing with onion or garlic is Jain ──\n";
+
+// The client's rule, 7 Nov 2026. The preview had shipped a Jain Dal Fry whose
+// ingredient list named onion, garlic and ginger — the tag was trusted, the food
+// was not read.
+$jain = [ 'in_stock' => true, 'dietary' => [ 'jain' ] ];
+check( 'onion in the ingredients: no Jain badge',
+	'' === foodify_card_badges( $jain + [ 'ingredients' => 'Lentils, onion, tomato, cumin.' ] )['dietary'] );
+check( 'garlic: no Jain badge',
+	'' === foodify_card_badges( $jain + [ 'ingredients' => 'Spinach, Garlic, salt' ] )['dietary'] );
+check( 'garlic powder still counts',
+	[ 'garlic' ] === foodify_jain_conflicts( 'Salt, garlic powder, chilli' ) );
+check( 'plural and onion family: onions, shallots, spring onion',
+	[ 'Onions', 'shallots', 'onion' ] === foodify_jain_conflicts( 'Onions, shallots, spring onion' ) );
+check( 'the Hindi names count: pyaz, lehsun',
+	[ 'pyaz', 'lehsun' ] === foodify_jain_conflicts( 'Dal, pyaz, lehsun, namak' ) );
+check( 'a clean list keeps the Jain badge',
+	'Jain' === foodify_card_badges( $jain + [ 'ingredients' => 'Coconut, roasted chana dal, red chilli, tamarind, salt.' ] )['dietary'] );
+check( 'no ingredient list: nothing contradicts the tag',
+	'Jain' === foodify_card_badges( $jain )['dietary'] );
+// Whole words only, and a statement of absence is not an ingredient.
+check( '"no onion, no garlic" is not a conflict',   [] === foodify_jain_conflicts( 'Lentils (no onion, no garlic), cumin' ) );
+check( '"garlic-free" is not a conflict',          [] === foodify_jain_conflicts( 'Garlic-free spice blend, salt' ) );
+check( '"leek" does not match inside "fenugreek"', [] === foodify_jain_conflicts( 'Fenugreek leaves, salt' ) );
+check( 'asafoetida (the Jain substitute) is fine', [] === foodify_jain_conflicts( 'Asafoetida, cumin, salt' ) );
+check( 'the badge rule never touches the commercial badge',
+	'Bestseller' === foodify_card_badges( $jain + [ 'bestseller' => true, 'ingredients' => 'onion' ] )['commercial'] );
+
 echo "── the two attribute lists must not drift ──\n";
 
 // foodify_attribute_slugs() exists so the theme can register filters WITHOUT

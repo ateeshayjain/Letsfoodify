@@ -255,7 +255,8 @@ COMBOS = [
      "Express Dal Fry × 2\nIdli Sambhar × 2\nExpress Dal Khichdi\nPav Bhaji", 1170),
     ("Hostel Box · 9 meals",    "Combos", "6 MIN", 1499, 1755, "#C2571F", "4.6", 21, 9,  set(),
      "Express Dal Fry × 3\nIdli Sambhar × 2\nExpress Dal Khichdi × 2\nPav Bhaji\nAloo ka Mazaa", 1755),
-    ("Chai & Chutney Box",      "Combos", "3 MIN", 540,  615,  "#A6603A", "4.9", 17, 4,  {"jain"},
+    # Not Jain: a box is Jain only if every pack in it is, and the Masala Chai is not.
+    ("Chai & Chutney Box",      "Combos", "3 MIN", 540,  615,  "#A6603A", "4.9", 17, 4,  set(),
      "Masala Chai × 2\nCoconut Red Chutney × 2", 615),
 ]
 
@@ -267,7 +268,9 @@ def combo_of(p):
 def badge_state(p):
     f = p[9]
     return {"in_stock": "soldout" not in f, "bestseller": "bestseller" in f,
-            "new": "new" in f, "dietary": ["jain"] if "jain" in f else []}
+            "new": "new" in f, "dietary": ["jain"] if "jain" in f else [],
+            # The theme checks the Jain badge against the ingredients; so does the preview.
+            "ingredients": PRODUCT_INFO.get(p[0], {}).get("ingredients", "")}
 BOWL = ('<div class="fx-bowl" style="--h:{hue}"><span class="fx-time">{time}</span></div>')
 
 
@@ -1914,7 +1917,10 @@ def render(markup, depth=0):
             pos = skip_to = ce
             continue
         if name == "template-part":
-            p = os.path.join(THEME, "parts", a.get("slug", "") + ".html")
+            # The order-received page swaps the checkout's header and footer for
+            # the site's — decided by the theme's own function, as on the site.
+            slug = php("echo foodify_checkout_part_slug($a[0], $a[1])", a.get("slug", ""), SCREEN_ID == "order")
+            p = os.path.join(THEME, "parts", slug + ".html")
             tag = a.get("tagName", "div")
             if os.path.exists(p):
                 out.append(f"<{tag}>" + render(open(p).read(), depth + 1) + f"</{tag}>")
@@ -2375,7 +2381,7 @@ def php(expr, *args):
     prelude = (
         "define('ABSPATH', __DIR__);"
         f"require '{inc}/product-spec.php'; require '{inc}/business-profile.php';"
-        f"require '{inc}/product-combo.php';"
+        f"require '{inc}/product-combo.php'; require '{inc}/checkout-flow.php';"
         "$a = array_map(fn($j) => json_decode($j, true), array_slice($argv, 1));"
     )
     r = subprocess.run(["php", "-r", prelude + expr + ";"] + [json.dumps(x) for x in args],
@@ -2399,6 +2405,13 @@ PDP_SCRIPT = php("echo foodify_pdp_script()")
 
 def main():
     global PDP, LISTING, CAT, PAGE, SIGNED_IN, SCREEN_ID
+    # Anything that contains onion or garlic cannot be Jain (client rule, 7 Nov).
+    # A fixture that breaks it does not render: the Dal Fry did, for weeks.
+    for p in PRODUCTS:
+        if "jain" in p[9] or "Jain" in info_of(p).get("diet", []):
+            hits = php("echo implode(',', foodify_jain_conflicts($a[0]))", info_of(p).get("ingredients", ""))
+            if hits:
+                raise SystemExit(f"fixture {p[0]!r} is tagged Jain but its ingredients name: {hits}")
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     layout = (LAYOUT_CSS
               .replace("__CONTENT__", S["layout"]["contentSize"])

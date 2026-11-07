@@ -149,6 +149,8 @@ function foodify_badge_state( WC_Product $product ): array {
 		'bestseller' => in_array( $product->get_id(), foodify_bestseller_ids(), true ),
 		'new'        => $created instanceof WC_DateTime && $created->getTimestamp() > time() - 30 * DAY_IN_SECONDS,
 		'dietary'    => (array) wc_get_product_terms( $product->get_id(), foodify_attribute_taxonomy( 'dietary' ), [ 'fields' => 'slugs' ] ),
+		// The Jain badge is checked against this, not trusted from the tag.
+		'ingredients' => (string) $product->get_meta( '_foodify_ingredients' ),
 	];
 }
 

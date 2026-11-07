@@ -2787,7 +2787,7 @@ live until you confirm it.</p></details></div>
 
 
 <div class="wp-block-woocommerce-filter-wrapper">
-<div class="wp-block-woocommerce-attribute-filter"><h3 class="wc-block-attribute-filter__title">Dietary</h3><ul class="wc-block-checkbox-list"><li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label><input type="checkbox" class="wc-block-components-checkbox__input" data-attr="dietary" value="Jain"><span class="wc-block-components-checkbox__label">Jain <span class="wc-filter-element-label-list-count">(1)</span></span></label></div></li></ul></div>
+
 </div>
 
 
@@ -2834,8 +2834,8 @@ live until you confirm it.</p></details></div>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.6</span> <span class="fd-rating-count">21 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>1755</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>1499</bdi></span></ins> <span class="fd-save">Save ₹256</span></div>
 <div class="wp-block-button wc-block-components-product-button"><a href="?add-to-cart=hostel-box-9-meals" data-add="hostel-box-9-meals" class="wp-block-button__link wp-element-button add_to_cart_button ajax_add_to_cart">Add to cart</a></div>
-</li><li class="wp-block-post post-103 product type-product status-publish instock" data-slug="chai-and-chutney-box" data-price="540" data-rating="4.9" data-pop="17" data-new="0" data-order="3" data-prep="Requires cooking|Stir with drinking water" data-diet="Jain">
-<div class="wc-block-components-product-image"><a href="/product/chai-and-chutney-box/" data-s="p-chai-and-chutney-box" data-s="p-chai-and-chutney-box" tabindex="-1"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div></a><span class="fd-badges"><span class="fd-badge fd-badge--leaf">Jain</span></span></div>
+</li><li class="wp-block-post post-103 product type-product status-publish instock" data-slug="chai-and-chutney-box" data-price="540" data-rating="4.9" data-pop="17" data-new="0" data-order="3" data-prep="Requires cooking|Stir with drinking water" data-diet="">
+<div class="wc-block-components-product-image"><a href="/product/chai-and-chutney-box/" data-s="p-chai-and-chutney-box" data-s="p-chai-and-chutney-box" tabindex="-1"><div class="fx-bowl" style="--h:#A6603A"><span class="fx-time">3 MIN</span></div></a></div>
 <h3 class="wp-block-post-title has-md-font-size"><a href="/product/chai-and-chutney-box/" data-s="p-chai-and-chutney-box" data-s="p-chai-and-chutney-box">Chai &amp; Chutney Box</a></h3><p class="fd-yield">4 meals · Masala Chai, Coconut Red Chutney</p>
 <div class="wc-block-components-product-rating"><span class="fx-stars">★★★★☆</span> <span class="fx-rc">4.9</span> <span class="fd-rating-count">17 reviews</span></div>
 <div class="wc-block-components-product-price wp-block-woocommerce-product-price has-lg-font-size"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>615</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">₹</span>540</bdi></span></ins> <span class="fd-save">Save ₹75</span></div>
@@ -6310,22 +6310,30 @@ convenience or platform fee is added.</p>
 
 </footer>
 </div><div class="fx-shell woocommerce-checkout woocommerce-page woocommerce-order-received" id="s-order" hidden><header>
-<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40)">
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 
-<div style="display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group">
+<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · Same-day dispatch in Delhi NCR · 3–5 days pan-India · FSSAI 10012345000001</p>
+
+</div>
+
+
+
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- The header row does NOT wrap. Wrapping put the account and cart on a
+     second line, centred, at every width between about 620 and 900px —
+     tablets and small laptops. The nav wraps INSIDE itself instead, so
+     the logo stays left and the actions stay right at every width. -->
+
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:var(--wp--preset--spacing--30)" class="is-layout-flex wp-block-group alignwide fd-header">
 <p class="fx-logo has-display-font-family"><a href="/" data-s="home" data-s="home">lets<span>foodify</span></a></p>
+<button type="button" class="wp-block-navigation__responsive-container-open fx-burger" aria-label="Open menu"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><nav class="wp-block-navigation fx-nav"><a href="/product-category/express/" data-s="cat-express" class="wp-block-navigation-item__content">Express</a><a href="/product-category/hot-and-fresh/" data-s="cat-hot-and-fresh" class="wp-block-navigation-item__content">Hot &amp; Fresh</a><a href="/product-category/flavors/" data-s="cat-flavors" class="wp-block-navigation-item__content">Flavors</a><a href="/product-category/combos/" data-s="combos" class="wp-block-navigation-item__content">Combos</a><a href="/#how-it-works" data-s="home" data-anchor="how-it-works" class="wp-block-navigation-item__content">How it works</a></nav>
 
-<p class="fd-checkout-back has-mute-color has-text-color has-sm-font-size"><a href="/cart/" data-s="cart">← Back to cart</a></p>
-
+<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:flex-start;gap:var(--wp--style--block-gap)" class="is-layout-flex wp-block-group fd-header__actions">
+<div class="wc-block-customer-account wp-block-woocommerce-customer-account"><a class="wc-block-customer-account__account-link" href="/my-account/" data-s="account" data-s="account" aria-label="Account"><svg class="wc-block-customer-account__account-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a></div>
+<div class="wc-block-mini-cart wp-block-woocommerce-mini-cart"><button class="wc-block-mini-cart__button" data-drawer aria-label="Cart"><span class="wc-block-mini-cart__amount">₹0</span><span class="wc-block-mini-cart__quantity-badge"><svg class="wc-block-mini-cart__icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 8H6.2"/><circle cx="9.5" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg><span class="wc-block-mini-cart__badge">0</span></span></button></div>
 </div>
 
 </div>
-
-
-
-<div class="wp-block-group has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
-
-<p class="has-text-align-center has-leaf-ink-color has-text-color has-sm-font-size">Secure checkout · GST included in every price · No charges added after this page</p>
 
 </div>
 
@@ -6354,15 +6362,57 @@ convenience or platform fee is added.</p>
 </main>
 
 <footer>
-<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-top-width:1px;border-top-style:solid;padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
+<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
 
-<p class="fd-checkout-help has-text-align-center has-mute-color has-text-color has-sm-font-size">Stuck? <a href="/contact-us/" data-s="page-contact-us">Talk to us</a> · <a href="/shipping/" data-s="page-shipping">Shipping</a> · <a href="/returns/" data-s="page-returns">Returns</a> · <a href="/privacy-policy/" data-s="page-privacy-policy">Privacy</a> · <a href="/terms/" data-s="page-terms">Terms</a></p>
+<div class="wp-block-columns">
+
+<div class="wp-block-column" style="flex-basis:38%">
+<p class="fx-logo has-display-font-family"><a href="/" data-s="home" data-s="home">lets<span>foodify</span></a></p>
+
+<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+
+</div>
 
 
-<p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001</p>
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
 
 
-<p class="has-text-align-center has-mute-color has-text-color has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/product-category/express/" data-s="cat-express">Express</a></li><li><a href="/product-category/hot-and-fresh/" data-s="cat-hot-and-fresh">Hot &amp; Fresh</a></li><li><a href="/product-category/flavors/" data-s="cat-flavors">Flavors</a></li><li><a href="/shop/" data-s="shop">All products</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/track-order/" data-s="page-track-order">Track order</a></li><li><a href="/shipping/" data-s="page-shipping">Shipping</a></li><li><a href="/returns/" data-s="page-returns">Returns</a></li><li><a href="/contact-us/" data-s="page-contact-us">Contact</a></li></ul>
+
+</div>
+
+
+<div class="wp-block-column">
+
+<h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
+
+
+<ul class="wp-block-list is-style-plain has-sm-font-size"><li><a href="/our-story/" data-s="page-our-story">Our story</a></li><li><a href="/privacy-policy/" data-s="page-privacy-policy">Privacy</a></li><li><a href="/terms/" data-s="page-terms">Terms</a></li><li><a href="/partner/" data-s="page-partner">Partner with us</a></li></ul>
+
+</div>
+
+</div>
+
+
+<hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
+
+
+<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence 10012345000001 · care@letsfoodify.com</p>
+
+
+<p class="has-xs-font-size">© 2026 The Foodify Company. All prices inclusive of GST.</p>
 
 </div>
 

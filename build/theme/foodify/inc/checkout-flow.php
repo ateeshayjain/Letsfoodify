@@ -93,6 +93,24 @@ function foodify_is_private_page( bool $cart, bool $checkout, bool $account ): b
 	return $cart || $checkout || $account;
 }
 
+/**
+ * Which header or footer a template part should be on the page being shown.
+ *
+ * WooCommerce renders the order-received page through the CHECKOUT page, so it
+ * inherits templates/page-checkout.html — the stripped checkout chrome, whose
+ * only way out is "← Back to cart". After an order the cart is empty and that
+ * link leads nowhere useful, and the customer has nothing left to be kept from
+ * leaving: the order is placed. So once the order is received, the checkout
+ * parts give way to the site's own header and footer. Everything else passes
+ * through untouched — the swap is narrow on purpose.
+ */
+function foodify_checkout_part_slug( string $slug, bool $order_received ): string {
+	if ( ! $order_received ) {
+		return $slug;
+	}
+	return [ 'header-checkout' => 'header', 'footer-checkout' => 'footer' ][ $slug ] ?? $slug;
+}
+
 /* -------------------------------------------------------------------------
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
@@ -100,6 +118,19 @@ function foodify_is_private_page( bool $cart, bool $checkout, bool $account ): b
 if ( ! function_exists( 'add_action' ) ) {
 	return;   // loaded by the test harness
 }
+
+// The order-received page gets the site's header and footer, not the checkout's
+// (see foodify_checkout_part_slug). render_block_data runs before a block is
+// rendered, so the template part is simply asked for by its other name; the
+// template file itself stays the checkout's.
+add_filter( 'render_block_data', static function ( array $block ): array {
+	if ( 'core/template-part' !== ( $block['blockName'] ?? '' ) || empty( $block['attrs']['slug'] ) ) {
+		return $block;
+	}
+	$received = function_exists( 'is_order_received_page' ) && is_order_received_page();
+	$block['attrs']['slug'] = foodify_checkout_part_slug( (string) $block['attrs']['slug'], $received );
+	return $block;
+} );
 
 /**
  * Cart, checkout and account must not be cached. This is a privacy control.
