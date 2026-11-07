@@ -313,7 +313,8 @@ function foodify_card_badges( array $s ): array {
  *    accept dry ginger; an ingredient list rarely says which form it is.
  *  - Tapioca / sabudana counts: it is made from cassava root.
  * Turmeric is a rhizome but is NOT listed — dried haldi is a staple of Jain
- * cooking. Change either by editing the list below; the tests name each one.
+ * cooking. Both calls confirmed by the client, 7 Nov 2026. The tests name
+ * each word, so changing either is deliberate.
  *
  * @return array<int,string>
  */

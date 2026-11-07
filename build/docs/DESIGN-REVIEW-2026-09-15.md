@@ -443,7 +443,8 @@ beetroot, radish, turnip, yam, arbi/colocasia and tapioca/sabudana (cassava),
 with their Hindi names. Two calls taken on the strict side: ginger counts
 DRIED as well (sonth), since a label rarely says which; turmeric does NOT,
 because dried haldi is a staple of Jain cooking. Both are one line in
-`foodify_jain_conflicts()` if Nalin rules otherwise.
+`foodify_jain_conflicts()` if Nalin rules otherwise. **Both confirmed by
+Ateeshay, 7 Nov: dried ginger counts, turmeric does not.**
 
 **The order-received page now has the site's header and footer.** WooCommerce
 renders it through the checkout page, so it carried the checkout's "← Back to
