@@ -122,6 +122,16 @@ const path = require('path');
   const b0 = await badge();
   await go('cat-express'); await click('#s-cat-express .add_to_cart_button'); await wait();
   check('Add to cart on a card adds one and opens the mini-cart drawer', (await badge()) === b0 + 1 && await drawerOpen(), { b0, b1: await badge() });
+  // The card itself says so — WooCommerce's Product Button block shows "N in cart".
+  const cardLabel = () => page.evaluate(() => {
+    const b = [...document.querySelectorAll('#s-cat-express .add_to_cart_button')].find(e => e.getBoundingClientRect().width > 0)
+      || document.querySelector('#s-cat-express .add_to_cart_button[data-add]');
+    const slug = b.dataset.add, a = b.textContent.trim();
+    const other = document.querySelector(`#s-home .add_to_cart_button[data-add="${slug}"]`);
+    return { slug, label: a, home: other ? other.textContent.trim() : null };
+  });
+  const lab = await cardLabel();
+  check('after adding, the card says how many are in the cart — on every page that lists it', /^\d+ in cart$/.test(lab.label) && lab.home === lab.label, lab);
   await click('.fx-drawer-overlay .wc-block-mini-cart__footer-cart'); await wait();
   check('the drawer\'s "View my cart" opens the cart', (await shown()) === 'cart', await shown());
 
@@ -204,6 +214,8 @@ const path = require('path');
     total: parseInt(document.querySelector('#s-order .fx-o-total').textContent.replace(/[^0-9]/g, ''), 10) }));
   check('a successful payment lands on Order received with an order number and the same total', placed.screen === 's-order' && placed.no === '1195' && placed.total === online.total, { placed, online });
   check('the cart is empty after ordering', (await badge()) === 0);
+  const stale = await page.evaluate(() => [...document.querySelectorAll('.add_to_cart_button[data-add]')].filter(b => /in cart/.test(b.textContent)).length);
+  check('and no card still claims "in cart"', stale === 0, stale);
   await go('checkout');
   check('checkout with an empty cart sends you to the cart', (await shown()) === 'cart', await shown());
 

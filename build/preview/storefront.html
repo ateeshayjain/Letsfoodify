@@ -7595,6 +7595,17 @@ DLT-registered. Guest checkout stays the default path either way.</div>
     $$('.wc-block-customer-account__account-link').forEach(function (a) {
       a.setAttribute('aria-label', S.signedIn ? 'My account' : 'Sign in');
     });
+    // WooCommerce's Product Button block says how many are already in the cart
+    // ("2 in cart") and still adds one more on each press. The card is where the
+    // shopper's eye is when they press it; the header pill is usually scrolled away.
+    var inCart = {};
+    S.cart.forEach(function (l) { inCart[l.s] = l.q; });
+    $$('.add_to_cart_button[data-add]').forEach(function (b) {
+      var q = inCart[b.getAttribute('data-add')] || 0;
+      b.textContent = q ? q + ' in cart' : 'Add to cart';
+      b.classList.toggle('added', q > 0);
+      b.setAttribute('aria-label', q ? 'Add another ' + CATALOG[b.getAttribute('data-add')].name + ' (' + q + ' in cart)' : 'Add ' + CATALOG[b.getAttribute('data-add')].name + ' to cart');
+    });
   }
 
   // ── the cart ─────────────────────────────────────────────────────────────
