@@ -275,7 +275,8 @@ add_action( 'admin_notices', static function (): void {
 } );
 
 /**
- * Anything that contains onion or garlic cannot be Jain (client rule, 7 Nov 2026).
+ * Anything that contains onion, garlic or a root vegetable cannot be Jain
+ * (client rule, 7 Nov 2026; the word list is foodify_jain_conflicts).
  *
  * The card badge already refuses the claim at render time (foodify_card_badges).
  * This takes the Dietary → Jain tag itself off on save, so the shop's Jain
@@ -318,7 +319,7 @@ add_action( 'admin_notices', static function (): void {
 		esc_html__( 'Foodify:', 'foodify' ),
 		esc_html__( 'the Jain tag was removed — the ingredients list', 'foodify' ),
 		esc_html( implode( ', ', $hits ) ),
-		esc_html__( 'Anything with onion or garlic cannot be sold as Jain. If the ingredients are wrong, correct them and add the tag again.', 'foodify' )
+		esc_html__( 'Anything with onion, garlic or a root vegetable cannot be sold as Jain. If the ingredients are wrong, correct them and add the tag again.', 'foodify' )
 	);
 } );
 

@@ -367,7 +367,7 @@ PDP_ABOUT = ("<p>The dal you would make on a Tuesday if you had the hour: yellow
              "nine at night. One pack is dinner for two, or a very good lunch for one.</p>")
 PDP_FAQ = ("Q: Does it need a stove?\nA: No. Boiling water from a kettle is enough.\n"
            "Q: How long does an opened pack keep?\nA: Three days, sealed, in a cool dry place.\n"
-           "Q: Is it Jain?\nA: This one is — no onion, no garlic. Look for the Jain badge on other packs.")
+           "Q: Is it Jain?\nA: This one is — no onion, no garlic, no root vegetables. Look for the Jain badge on other packs.")
 
 
 # ── the catalogue, as the click-through sees it ──────────────────────────────
@@ -2405,7 +2405,7 @@ PDP_SCRIPT = php("echo foodify_pdp_script()")
 
 def main():
     global PDP, LISTING, CAT, PAGE, SIGNED_IN, SCREEN_ID
-    # Anything that contains onion or garlic cannot be Jain (client rule, 7 Nov).
+    # Anything that contains onion, garlic or a root vegetable cannot be Jain (client rule, 7 Nov).
     # A fixture that breaks it does not render: the Dal Fry did, for weeks.
     for p in PRODUCTS:
         if "jain" in p[9] or "Jain" in info_of(p).get("diet", []):

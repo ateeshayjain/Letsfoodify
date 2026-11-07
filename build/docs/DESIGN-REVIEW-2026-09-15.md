@@ -438,8 +438,12 @@ how the preview's Jain Dal Fry listed onion, garlic and ginger for weeks. Now:
 - The Chai & Chutney Box is no longer Jain: a box is Jain only if every pack in
   it is, and the Masala Chai is not tagged Jain.
 
-**Open for Nalin:** strict Jain practice also excludes root vegetables —
-potato, ginger, carrot, beetroot. They are NOT in the rule until he says so.
+**Root vegetables too** (same day, second message). Potato, ginger, carrot,
+beetroot, radish, turnip, yam, arbi/colocasia and tapioca/sabudana (cassava),
+with their Hindi names. Two calls taken on the strict side: ginger counts
+DRIED as well (sonth), since a label rarely says which; turmeric does NOT,
+because dried haldi is a staple of Jain cooking. Both are one line in
+`foodify_jain_conflicts()` if Nalin rules otherwise.
 
 **The order-received page now has the site's header and footer.** WooCommerce
 renders it through the checkout page, so it carried the checkout's "← Back to

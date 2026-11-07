@@ -277,7 +277,7 @@ function foodify_save_badge( float $regular, float $sale ): string {
  *
  * The Jain badge is a claim about what is IN the food, so it is checked against
  * the ingredient list rather than trusted from the tag: a product tagged Jain
- * whose ingredients name onion or garlic shows no Jain badge (see
+ * whose ingredients name onion, garlic or a root vegetable shows no Jain badge (see
  * foodify_jain_conflicts). No ingredient list, nothing to contradict the tag.
  *
  * @param array{in_stock?:bool,bestseller?:bool,new?:bool,dietary?:array<int,string>,ingredients?:string} $s
@@ -302,19 +302,33 @@ function foodify_card_badges( array $s ): array {
  * What in an ingredient list rules out "Jain". Returns the offending words as
  * written, so an editor can be told exactly what to fix; [] means no conflict.
  *
- * The client's rule: anything that contains onion or garlic cannot be Jain.
- * That includes the onion family by other names and the Hindi names, because
- * Indian labels use both. Matched as whole words, so "Onion-free" and "no
- * garlic" — which say the opposite — do not count.
+ * The client's rule (7 Nov 2026): anything that contains onion, garlic or a
+ * root vegetable cannot be Jain. That includes the onion family by other names
+ * and the Hindi names, because Indian labels use both. Matched as whole words,
+ * so "Onion-free" and "no garlic" — which say the opposite — do not count.
  *
- * Root vegetables (potato, ginger, carrot, beetroot) are also avoided in strict
- * Jain practice, but the client has not set that rule; they are deliberately
- * NOT in this list until they do.
+ * Two judgement calls, both on the strict side because a wrong "Jain" is a
+ * broken promise while a missing one is only a missing badge:
+ *  - GINGER counts in any form, dried (sonth) included. Many Jain kitchens
+ *    accept dry ginger; an ingredient list rarely says which form it is.
+ *  - Tapioca / sabudana counts: it is made from cassava root.
+ * Turmeric is a rhizome but is NOT listed — dried haldi is a staple of Jain
+ * cooking. Change either by editing the list below; the tests name each one.
  *
  * @return array<int,string>
  */
 function foodify_jain_conflicts( string $ingredients ): array {
-	$words = 'onions?|garlic|shallots?|leeks?|chives?|scallions?|pyaa?z|piyaz|kanda|lehsun|lahsun|lasun';
+	$words = implode( '|', [
+		// onion and garlic
+		'onions?', 'garlic', 'shallots?', 'leeks?', 'chives?', 'scallions?',
+		'pyaa?z', 'piyaz', 'kanda', 'lehsun', 'lahsun', 'lasun',
+		// root vegetables
+		'potato(?:es)?', 'aloo', 'ginger', 'adrak', 'sonth', 'saunth',
+		'carrots?', 'gajar', 'beetroots?', 'beets?', 'chukandar',
+		'radish(?:es)?', 'horseradish', 'mooli', 'turnips?', 'shalgam',
+		'shakarkandi', 'yams?', 'suran', 'jimikand', 'arbi', 'colocasia', 'taro',
+		'cassava', 'tapioca', 'sabudana',
+	] );
 	if ( ! preg_match_all( '/\b(' . $words . ')\b/iu', $ingredients, $m, PREG_OFFSET_CAPTURE ) ) {
 		return [];
 	}

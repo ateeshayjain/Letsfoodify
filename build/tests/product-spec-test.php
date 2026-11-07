@@ -184,6 +184,21 @@ check( '"no onion, no garlic" is not a conflict',   [] === foodify_jain_conflict
 check( '"garlic-free" is not a conflict',          [] === foodify_jain_conflicts( 'Garlic-free spice blend, salt' ) );
 check( '"leek" does not match inside "fenugreek"', [] === foodify_jain_conflicts( 'Fenugreek leaves, salt' ) );
 check( 'asafoetida (the Jain substitute) is fine', [] === foodify_jain_conflicts( 'Asafoetida, cumin, salt' ) );
+
+echo "── nor anything with a root vegetable ──\n";
+
+// Client rule, 7 Nov 2026, second message: root vegetables too.
+foreach ( [ 'potato', 'Potatoes', 'sweet potato', 'aloo', 'ginger', 'dry ginger', 'sonth', 'carrot', 'gajar',
+            'beetroot', 'radish', 'mooli', 'turnip', 'yam', 'arbi', 'colocasia', 'tapioca', 'sabudana' ] as $root ) {
+	check( "'$root' rules out Jain", [] !== foodify_jain_conflicts( "Rice, $root, salt" ) );
+}
+check( 'and the badge goes with it',
+	'' === foodify_card_badges( $jain + [ 'ingredients' => 'Masala blend: cardamom, ginger, clove' ] )['dietary'] );
+// Dried haldi is a staple of Jain cooking; the rule says root VEGETABLES.
+check( 'turmeric is not a conflict', [] === foodify_jain_conflicts( 'Lentils, turmeric, cumin, salt' ) );
+check( '"beets" counts as beetroot',
+	[ 'beets' ] === foodify_jain_conflicts( 'Roasted beets, salt' ) );
+check( '"carrot-free" is a statement of absence', [] === foodify_jain_conflicts( 'Carrot-free, salt' ) );
 check( 'the badge rule never touches the commercial badge',
 	'Bestseller' === foodify_card_badges( $jain + [ 'bestseller' => true, 'ingredients' => 'onion' ] )['commercial'] );
 
