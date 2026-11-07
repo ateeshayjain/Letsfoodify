@@ -385,7 +385,7 @@ function foodify_faq_pairs( string $raw ): array {
 }
 
 /**
- * The tabbed body: About · Ingredients & nutrition · How to cook · FAQ.
+ * The tabbed body: About · Ingredients & nutrition · How to make · FAQ.
  * Tabs on desktop, accordions on a phone, ONE content source. A section with
  * nothing in it is not a tab. Pack & label is deliberately NOT a tab — it is
  * rendered after them, always open: a legal declaration behind a collapsed
@@ -433,7 +433,7 @@ function foodify_pdp_sections( array $d ): array {
 				$e( $step['detail'] )
 			);
 		}
-		$sections[] = [ 'id' => 'cook', 'title' => 'How to cook', 'html' => $html . '</ol>' ];
+		$sections[] = [ 'id' => 'cook', 'title' => 'How to make', 'html' => $html . '</ol>' ];
 	}
 
 	$faq = (array) ( $d['faq'] ?? [] );

@@ -183,7 +183,7 @@ tr.total td{border-bottom:0; border-top:1.5px solid var(--ink-2); font-weight:70
 /* ---- gantt ---- */
 .gantt{margin:0 0 10px; min-width:640px}
 .gantt-head{
-  display:grid; grid-template-columns:132px repeat(13,1fr); gap:3px;
+  display:grid; grid-template-columns:132px repeat(19,1fr); gap:3px;
   font-family:var(--mono); font-size:10px; color:var(--ink-3);
   padding-bottom:7px; border-bottom:1px solid var(--rule); margin-bottom:9px;
 }
@@ -191,7 +191,7 @@ tr.total td{border-bottom:0; border-top:1.5px solid var(--ink-2); font-weight:70
 .gantt-head span:first-child{text-align:left; font-family:var(--sans);
   font-size:10px; font-weight:600; letter-spacing:.11em; text-transform:uppercase}
 .gantt-row{
-  display:grid; grid-template-columns:132px repeat(13,1fr); gap:3px;
+  display:grid; grid-template-columns:132px repeat(19,1fr); gap:3px;
   align-items:center; margin-bottom:5px;
 }
 .gantt-lbl{font-family:var(--sans); font-size:13px; font-weight:500; padding-right:10px}
@@ -270,7 +270,7 @@ footer a{color:var(--ink-2)}
   <dl class="meta">
     <div><dt>Client</dt><dd>The Foodify Company<br>Noida 201304</dd></div>
     <div><dt>Stack</dt><dd>WordPress + WooCommerce<br>live</dd></div>
-    <div><dt>Effort</dt><dd>63–72 dev-days<br>~9 weeks to launch</dd></div>
+    <div><dt>Effort</dt><dd>63–72 dev-days<br>~15 weeks to launch, one developer</dd></div>
     <div><dt>Status</dt><dd class="flag">Not confirmed<br>with client</dd></div>
   </dl>
 
@@ -554,25 +554,26 @@ footer a{color:var(--ink-2)}
   <div class="scroll"><div class="gantt">
     <div class="gantt-head">
       <span>Phase</span>
-      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
-      <span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span>
+      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span>
     </div>
     <div class="gantt-row"><span class="gantt-lbl">0 · Discovery</span>
       <div class="bar" style="grid-column:2/3">W1</div></div>
+    <div class="gantt-row"><span class="gantt-lbl">Host move</span>
+      <div class="bar" style="grid-column:3/4"></div></div>
     <div class="gantt-row"><span class="gantt-lbl">1 · Design</span>
-      <div class="bar" style="grid-column:3/5">W2</div></div>
+      <div class="bar" style="grid-column:4/6">W2</div></div>
     <div class="gantt-row"><span class="gantt-lbl">2 · Build</span>
-      <div class="bar" style="grid-column:5/9">W3 · W4 · W5 · W6</div></div>
+      <div class="bar" style="grid-column:6/15">W3 · W4 · W5 · W6</div></div>
     <div class="gantt-row"><span class="gantt-lbl">3 · SEO &amp; Google</span>
-      <div class="bar" style="grid-column:6/10">W7 · W8 · W9</div></div>
+      <div class="bar" style="grid-column:6/16">W7 · W8 · W9</div></div>
     <div class="gantt-row"><span class="gantt-lbl">4 · Launch</span>
-      <div class="bar" style="grid-column:10/11">W10</div></div>
+      <div class="bar" style="grid-column:15/17">W10</div></div>
     <div class="gantt-row"><span class="gantt-lbl">5 · Hypercare</span>
-      <div class="bar b-rec" style="grid-column:11/15">W10 · W11</div></div>
-    <p class="gantt-note">Weeks. Phases 2 and 3 deliberately overlap — SEO and compliance work against templates as they land, rather than queueing behind the whole build.</p>
+      <div class="bar b-rec" style="grid-column:17/21">W10 · W11</div></div>
+    <p class="gantt-note">Weeks. One developer, so the build runs in sequence; SEO content (copy, alt text) runs in the background from week 5 and the taxonomy and redirect map land in week 14. Hypercare monitoring runs 30 days from cutover.</p>
   </div></div>
   <div class="call risk"><span class="lbl">Critical path</span>
-  <p><strong>~9 weeks to launch, 13 to close.</strong> Design sign-off at the end of week 3 is the critical path — every week it slips, the whole schedule slips. Say that at kickoff. The client's DLT registration, started week 1, is the only other thing that can become critical.</p></div>
+  <p><strong>~15 weeks to launch, 17 to handover.</strong> One developer, so the phases run in sequence, and the move to a new host is included. Design sign-off at the end of week 4 is the critical path — every week it slips, the whole schedule slips. Say that at kickoff. The client's DLT registration, started week 1, must be approved by week 11 or mobile sign-in slips with it.</p></div>
 </section>
 
 <section id="cost">

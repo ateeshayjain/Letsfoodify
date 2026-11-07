@@ -228,7 +228,7 @@ pages.append(screen_page(
     "Product", "What is in it, and the pack declarations",
     "The detail a careful buyer — and Legal Metrology — expects, without burying the page in text.",
     "product-desktop-2", "product-phone-2",
-    ["<b>About · Ingredients &amp; nutrition · How to cook · FAQ</b> are tabs on a laptop and open-and-close sections on a phone. Same words, one place to edit them.",
+    ["<b>About · Ingredients &amp; nutrition · How to make · FAQ</b> are tabs on a laptop and open-and-close sections on a phone. Same words, one place to edit them.",
      "<b>Pack &amp; label is always open</b>, never hidden in a tab: MRP, best before, shelf life, country of origin, FSSAI licence, marketed by, consumer care.",
      "A declaration you have not supplied is shown as <b>“Not provided”</b> rather than quietly left out — that is the honest way to handle allergens, and the same fields feed your Google product listing."],
     "Laptop · the tabbed body and the pack table", "Phone · the same, as sections",

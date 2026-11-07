@@ -247,9 +247,16 @@ if [[ "$PHASE" == "all" ]]; then
   fi
 
   log "Phase 3 · Plugin set"
-  for p in judgeme-product-reviews-woocommerce wp-mail-smtp; do
+  # woocommerce-pdf-invoices-packing-slips (WP Overnight, free, GPL) gives the
+  # customer a downloadable GST invoice from My account and attaches it to the
+  # order email. Slug checked against the plugin's own repository, 7 Nov 2026.
+  for p in judgeme-product-reviews-woocommerce wp-mail-smtp woocommerce-pdf-invoices-packing-slips; do
     wp plugin install "$p" --activate
   done
+  # Its settings are NOT set here: the option keys have not been checked against
+  # the installed plugin, and a wrong key fails silently (REVIEW-NOTES item 3).
+  # Set them once in wp-admin, then copy them into this script (rule 2).
+  warn "PDF invoices: set GSTIN, registered address, invoice numbering and 'attach to Processing + Completed emails' in WooCommerce → PDF Invoices, then add those options here"
   # Blocksy Pro is no longer on this list — the standalone theme removed the need
   # for it, and rule 5 says paid plugins are asked about, not assumed.
   warn "Premium plugins install manually: Rank Math Pro, Digits (OTP — needs DLT registration first)"
@@ -448,6 +455,7 @@ if [[ $DRY -eq 0 ]]; then
   command wp option get woocommerce_enable_reviews | grep -q yes && ok "reviews: on" || warn "reviews: OFF"
   command wp option get woocommerce_enable_guest_checkout | grep -q yes && ok "guest checkout: on" || warn "guest checkout: OFF"
   command wp plugin is-active seo-by-rank-math >/dev/null 2>&1 && ok "Rank Math: active" || warn "Rank Math: INACTIVE"
+  command wp plugin is-active woocommerce-pdf-invoices-packing-slips >/dev/null 2>&1 && ok "PDF invoices: active" || warn "PDF invoices: INACTIVE — customers cannot download a GST invoice"
 fi
 
 log "Done — env=$ENV phase=$PHASE"

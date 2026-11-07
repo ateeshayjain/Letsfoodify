@@ -80,6 +80,8 @@ $d = [
 ];
 $secs = foodify_pdp_sections( $d );
 check( 'four sections when all four have content', [ 'about', 'ingredients', 'cook', 'faq' ] === array_column( $secs, 'id' ) );
+// Most of the range needs no cooking — hot water, or a stir of cold water.
+check( 'the steps tab says "How to make", not "How to cook"', 'How to make' === ( array_column( $secs, 'title', 'id' )['cook'] ?? '' ) );
 $secs = foodify_pdp_sections( array_merge( $d, [ 'about' => '', 'taste' => [], 'faq' => [] ] ) );
 check( 'an empty section is not a tab',  [ 'ingredients', 'cook' ] === array_column( $secs, 'id' ) );
 $body = foodify_render_pdp_body( $d );

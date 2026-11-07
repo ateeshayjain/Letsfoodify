@@ -181,23 +181,18 @@ add_action( 'woocommerce_after_checkout_validation', static function ( array $da
 /**
  * PIN-code lookup. Fills city and state so the customer types two fewer fields.
  *
- * PRIVACY: this calls a third-party API from the customer's browser on the
- * checkout page, sending their PIN code to api.postalpincode.in — an unofficial
- * free service with no SLA. That needs a privacy-policy line and the client's
- * agreement (REVIEW-NOTES item 5). The endpoint is filterable so it can be
- * repointed at a bundled offline dataset or a same-origin proxy without
- * touching this file:
- *
- *     add_filter( 'foodify_pincode_endpoint', fn() => home_url( '/wp-json/foodify/v1/pin/' ) );
- *
- * Returning an empty string disables the lookup entirely and leaves manual entry.
+ * Answered by the site itself (inc/pincodes.php, India Post's directory bundled
+ * in assets/data). It used to call api.postalpincode.in from the customer's
+ * browser — a third party receiving customer PIN codes, with no SLA, on the
+ * checkout page. The endpoint stays filterable; returning an empty string
+ * disables the lookup and leaves manual entry.
  */
 add_action( 'wp_enqueue_scripts', static function (): void {
 	if ( ! function_exists( 'is_checkout' ) || ! ( is_checkout() || is_account_page() ) ) {
 		return;
 	}
 
-	$endpoint = (string) apply_filters( 'foodify_pincode_endpoint', 'https://api.postalpincode.in/pincode/' );
+	$endpoint = (string) apply_filters( 'foodify_pincode_endpoint', rest_url( 'foodify/v1/pin/' ) );
 	if ( '' === $endpoint ) {
 		return;
 	}
@@ -259,7 +254,9 @@ add_action( 'wp_enqueue_scripts', static function (): void {
 
   function setState($state, apiState){
     if (!$state.length) return;
-    var code = (cfg.aliases || {})[norm(apiState)];
+    // The site's own endpoint answers with WooCommerce's state code; a
+    // repointed service may answer with a name.
+    var code = /^[A-Z]{2}$/.test(apiState || '') ? apiState : (cfg.aliases || {})[norm(apiState)];
     var $opt = code
       ? $state.find('option[value="' + code + '"]')
       : $state.find('option').filter(function(){ return norm($(this).text()) === norm(apiState); });

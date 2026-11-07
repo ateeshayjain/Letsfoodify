@@ -102,6 +102,15 @@ if ( $role ) {
 global $wp_rewrite;
 $ok( "the address-book endpoint is registered", in_array( 'address-book', array_column( (array) $wp_rewrite->endpoints, 1 ), true ) );
 
+// Checkout's PIN lookup is answered by the site, not a third party. Asked
+// through WordPress's own REST server, as the checkout script asks it.
+$pin = rest_do_request( new WP_REST_Request( 'GET', '/foodify/v1/pin/500001' ) );
+$pd  = $pin->get_data();
+$ok( 'the PIN endpoint answers on-site (500001 → Hyderabad, TS)',
+    200 === $pin->get_status() && 'TS' === ( $pd[0]['PostOffice'][0]['State'] ?? '' ) && 'Hyderabad' === ( $pd[0]['PostOffice'][0]['District'] ?? '' ) );
+$miss = rest_do_request( new WP_REST_Request( 'GET', '/foodify/v1/pin/999999' ) )->get_data();
+$ok( 'an unknown PIN answers Error, not a guess', 'Error' === ( $miss[0]['Status'] ?? '' ) );
+
 restore_error_handler();
 $problems = array_values( array_unique( $problems ) );
 $ok( sprintf( 'the theme raises no PHP diagnostic (%d found)', count( $problems ) ), ! $problems );

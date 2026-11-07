@@ -452,3 +452,21 @@ cart" with an empty cart behind it. `foodify_checkout_part_slug()`
 (inc/checkout-flow.php) swaps the two template parts once the order is
 received; checkout itself keeps its stripped header. Tested in
 checkout-test.php and in the preview journey.
+
+## Round 12, 7 Nov — the recommendations, worked through
+
+Fixed in the repo:
+- **PIN lookup on-site.** No customer PIN code goes to api.postalpincode.in any more;
+  the theme answers from India Post's directory (REVIEW-NOTES item 5). Refresh the
+  data from data.gov.in before launch.
+- **Timeline.** The client scope now says ~15 weeks to launch, 17 to handover.
+- **"How to make"** replaces "How to cook" — most of the range needs no cooking.
+  The design-book PDF still shows the old label until it is regenerated.
+- **GST invoices.** The free PDF Invoices & Packing Slips plugin is in bootstrap;
+  the prototype shows its Invoice action on each order. Needs the GSTIN.
+- **Surname.** Already handled in code; the review note was stale.
+
+Deliberately not done:
+- **Contact form.** A form plugin brings spam, and the spam filters that work are
+  paid or need accounts the client would run. Email is on the page; a WhatsApp
+  click-to-chat link is the better fit once Foodify gives a number.

@@ -26,26 +26,29 @@ certainly measured my own cart cookie, not their configuration.** Re-run it clea
 private window, no cart, `curl -sI https://letsfoodify.com/ | grep -i hcdn-cache` — before
 committing to a migration. If it says HIT, the caching is fine and the move is optional.
 
-**2 — The two published client documents still say ten weeks.** They were written assuming
-a pod of four or five. You now have one developer plus a host migration. `docs/SOLO-PLAN.md`
-says 15 weeks. **Do not send the Rebuild Scope to the client until those numbers agree** —
-it is a commitment to a date you cannot hit.
+**2 — ~~The two published client documents still say ten weeks.~~ RESOLVED 7 Nov.**
+`planning/SCOPE.md` §9 and `planning/scope-artifact.html` now say ~15 weeks to launch and
+17 to handover, one developer, host move included — the same as `docs/SOLO-PLAN.md`.
 
 **3 — Plugin slugs and Rank Math option keys are asserted from memory, not verified.**
 `seo-by-rank-math`, `judgeme-product-reviews-woocommerce`, and every
 `rank-math-options-titles` sub-key in `bootstrap.sh`. Run `--dry-run` first and check each
 one resolves. A wrong option key fails silently — the setting simply never applies.
 
-**4 — Removing `billing_last_name` may break the payment gateway.** Razorpay and some GST
-invoicing plugins expect a surname field. Test a real transaction before assuming the
-nine-field checkout is safe. If it breaks, keep the field and hide it, populating it from
-the full-name split.
+**4 — ~~Removing `billing_last_name` may break the payment gateway.~~ RESOLVED in code.**
+The form asks for one full name; `inc/checkout-fields.php` splits it back into first and
+last name when the order is created and when an address is saved, so Razorpay, the
+courier payload and any invoice plugin still find a surname. Still worth one real
+test payment on staging, as with everything payment-side.
 
-**5 — Checkout now calls a third-party API from the customer's browser.** The PIN lookup
-hits `api.postalpincode.in`, an unofficial free service, on your most critical page. It
-degrades silently if unavailable, but it sends customer PIN codes to a third party — that
-needs a privacy-policy line, and the client should agree to it. A bundled offline PIN
-dataset avoids both problems.
+**5 — ~~Checkout calls a third-party API from the customer's browser.~~ RESOLVED 7 Nov.**
+The PIN lookup is answered by the site itself (`inc/pincodes.php`, endpoint
+`/wp-json/foodify/v1/pin/<pin>`) from India Post's directory bundled in
+`assets/data/pincodes.json` (GODL-India, attribution in `assets/data/SOURCE.md`). No PIN
+code leaves the site. The bundled copy is a 2015 snapshot with Telangana and Ladakh
+corrected; **download the current directory from data.gov.in and rebuild with
+`tools/build-pincodes.py` before launch.** Tested in checkout-test.php and in real
+WordPress by the boot test.
 
 **6 — ~~The fonts referenced in `theme.json` do not exist in this repo.~~ RESOLVED.**
 Both files are in `theme/foodify/assets/fonts/` with checksums in `SHA256SUMS`, and
@@ -66,3 +69,10 @@ schedule depends on it — `docs/INSTALL-ON-STAGING.md`.
 **9 — The stock-count feature contradicts nothing, but check the data.** `product-display.php`
 shows "Only N left" when stock is 5 or fewer. If the client does not actually manage stock
 per SKU, it will never fire — which is correct behaviour, but they may expect otherwise.
+
+**10 — GST invoices: plugin added, settings not.** `bootstrap.sh` now installs the free
+PDF Invoices & Packing Slips plugin (slug checked against its own repository). Its
+settings — GSTIN, registered address, numbering, which emails carry the PDF — are set
+once in wp-admin and then copied into `bootstrap.sh`; the option keys have not been
+checked against the installed plugin, and a wrong key fails silently (item 3). Needs
+Foodify's GSTIN.

@@ -976,7 +976,8 @@ DLT-registered. Guest checkout stays the default path either way.</div>
 <tbody class="fx-vo-lines"></tbody><tfoot class="fx-vo-totals"></tfoot></table></section>
 <section class="woocommerce-customer-details"><h2 class="woocommerce-column__title">Delivery address</h2>
 <address class="fx-vo-address"></address></section>
-<p><button type="button" class="wp-element-button fd-reorder fx-vo-reorder">Reorder these items</button></p>
+<p class="fx-o-actions"><button type="button" class="wp-element-button fd-reorder fx-vo-reorder">Reorder these items</button>
+<a href="#" class="woocommerce-button button invoice wp-element-button fd-secondary" data-note="On the live site this downloads the order&#8217;s GST invoice as a PDF, from the free PDF Invoices &amp; Packing Slips plugin. It needs Foodify&#8217;s GSTIN before it can be issued.">Download invoice (PDF)</a></p>
 </section>
 <section data-panel-body="address-book" hidden>
 <p class="fd-account-lead">Save the places you order to. Checkout fills in your default address on its
@@ -1451,7 +1452,9 @@ MOCK_SCRIPT = r'''<script>
         '<td class="woocommerce-orders-table__cell-order-total">' + rs(o.t.total) + '<span class="fx-meta">' + o.t.count + (o.t.count === 1 ? ' item' : ' items') + '</span></td>' +
         '<td class="woocommerce-orders-table__cell-order-actions">' +
         '<button type="button" class="wp-element-button fd-reorder" data-reorder="' + o.no + '">Reorder</button>' +
-        '<button type="button" class="wp-element-button fd-secondary" data-view="' + o.no + '">Details</button></td></tr>';
+        '<button type="button" class="wp-element-button fd-secondary" data-view="' + o.no + '">Details</button>' +
+        // PDF Invoices & Packing Slips adds this action to the orders table.
+        '<a href="#" class="woocommerce-button button invoice wp-element-button fd-secondary" data-note="On the live site this downloads the order&#8217;s GST invoice as a PDF, from the free PDF Invoices &amp; Packing Slips plugin. It needs Foodify&#8217;s GSTIN before it can be issued.">Invoice</a></td></tr>';
     }).join('') : '<tr><td colspan="5">No order has been made yet. <a href="#" data-s="shop">Browse products</a></td></tr>';
     var o = S.orders.filter(function (x) { return x.no === viewing; })[0];
     if (o) {

@@ -74,5 +74,31 @@ check( 'and the site footer',                 'footer' === foodify_checkout_part
 check( 'any other part passes through',       'header' === foodify_checkout_part_slug( 'header', true ) );
 check( 'unknown parts are left alone',        'promo'  === foodify_checkout_part_slug( 'promo', true ) );
 
+echo "── PIN codes are answered on-site, with the right state ──\n";
+
+require_once __DIR__ . '/../theme/foodify/inc/pincodes.php';
+$pins = foodify_pin_data( __DIR__ . '/../theme/foodify/assets/data/pincodes.json' );
+check( 'the bundled table loads and is the whole country (15,000+ PINs)', count( $pins['pins'] ?? [] ) > 15000 );
+check( 'it carries its licence attribution', false !== stripos( (string) ( $pins['source'] ?? '' ), 'Open Data License' ) );
+$h = foodify_pin_lookup( '201304', $pins );
+check( '201304 is Gautam Buddha Nagar, UP', $h && 'Gautam Buddha Nagar' === $h['city'] && 'UP' === $h['state'] );
+// The state decides the GST split and the shipping zone. Old India Post
+// snapshots predate Telangana and Ladakh.
+check( 'Hyderabad (500001) is Telangana, not Andhra Pradesh', 'TS' === ( foodify_pin_lookup( '500001', $pins )['state'] ?? '' ) );
+check( 'Leh (194101) is Ladakh, not Jammu & Kashmir', 'LA' === ( foodify_pin_lookup( '194101', $pins )['state'] ?? '' ) );
+check( 'East Godavari (533101) stays Andhra Pradesh', 'AP' === ( foodify_pin_lookup( '533101', $pins )['state'] ?? '' ) );
+check( 'a PIN filed under two states gives no state — the customer picks', '' === ( foodify_pin_lookup( '396235', $pins )['state'] ?? 'x' ) );
+check( 'an unknown PIN is null, not a guess', null === foodify_pin_lookup( '999999', $pins ) );
+check( 'five digits is null', null === foodify_pin_lookup( '20130', $pins ) );
+check( 'no city carries an India Post tag like "(CGH)"', ! preg_grep( '/\(/', $pins['districts'] ?? [] ) );
+check( 'the response keeps the shape the checkout script reads',
+	'Success' === foodify_pin_response( $h )[0]['Status'] && 'UP' === foodify_pin_response( $h )[0]['PostOffice'][0]['State']
+	&& 'Error' === foodify_pin_response( null )[0]['Status'] );
+check( 'a missing table degrades to no lookup, not an error', [] === foodify_pin_data( '/nonexistent/pincodes.json' ) );
+// The reason this exists: checkout must not send PIN codes to a third party.
+$src = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/checkout-fields.php' );
+check( 'checkout\'s default endpoint is the site\'s own',
+	1 === preg_match( "/apply_filters\\(\\s*'foodify_pincode_endpoint',\\s*rest_url\\(/", $src ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

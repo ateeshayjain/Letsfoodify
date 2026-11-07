@@ -369,15 +369,18 @@ consultant / counsel — this is a build checklist, not legal advice.**
 
 | Phase | Contents | Calendar |
 |---|---|---|
-| 0 — Discovery | W1. **Client starts DLT registration in parallel — week 1.** | Week 1 |
-| 1 — Design | W2, signed off before any front-end build | Weeks 2–3 |
-| 2 — Build | W3, W4, W5, W6 | Weeks 4–7 |
-| 3 — SEO & Google | W7, W8, W9 — overlaps build | Weeks 5–8 |
-| 4 — Launch | W10 QA, cutover with 301 map | Week 9 |
-| 5 — Hypercare | W10 monitoring, W11 handover | Weeks 10–13 |
+| 0 — Discovery | W1. **Client starts DLT registration and GBP verification in parallel — week 1.** | Week 1 |
+| — Host move | Migration to the new host, onto staging; parity checked | Week 2 |
+| 1 — Design | W2, signed off before any template is built. **Sign-off gate, end of week 4** | Weeks 3–4 |
+| 2 — Build | W3, W4, W5, W6 — in sequence, not in parallel | Weeks 5–13 |
+| 3 — SEO & Google | W7, W8, W9 — product copy and alt text in the background from week 5; taxonomy and redirect map in week 14 | Weeks 5–14 |
+| 4 — Launch | W10 full QA (week 14), cutover with 301 map (week 15) | Weeks 14–15 |
+| 5 — Hypercare | W10 monitoring, W11 handover; monitoring runs 30 days from cutover | Weeks 16–17, monitoring to ~19 |
 
-**~9 weeks to launch, 13 to close.** Design sign-off (end of week 3) is the critical
-path — every week it slips, the whole schedule slips. Say that at kickoff.
+**~15 weeks to launch, 17 to handover — built by one developer, so the phases
+run in sequence, and including the move to a new host.** Design
+sign-off at the end of week 4 is the critical path — every week it slips, the whole
+schedule slips. DLT registration, started in week 1, must be approved by week 11.
 
 ---
 

@@ -236,6 +236,7 @@ add_filter( 'script_loader_tag', static function ( string $tag, string $handle )
  */
 
 /** Feature modules. Each is independently removable. */
+require_once FOODIFY_DIR . '/inc/pincodes.php';         // PIN → city/state, answered on-site
 require_once FOODIFY_DIR . '/inc/checkout-fields.php';
 require_once FOODIFY_DIR . '/inc/checkout-flow.php';    // WP-06: the page around the form
 require_once FOODIFY_DIR . '/inc/payments.php';          // WP-07: prepaid saving, COD rules
