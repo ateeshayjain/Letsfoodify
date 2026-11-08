@@ -178,7 +178,7 @@ PRODUCT_INFO = {
         about="<p>Breakfast in Chennai, wherever you are: steamed rice-and-urad idli, dried whole, with a tamarind sambhar that brings back its own drumstick and curry leaf.</p>"),
     "Express Dal Khichdi": dict(
         slug="express-dal-khichdi", diet=["Gluten free"], net="80 g", cooked="270 g", taste="Mild, Comforting",
-        ingredients="Rice, split moong dal, ghee, cumin, turmeric, asafoetida, salt.",
+        ingredients="Rice, split moong dal, ghee, cumin, turmeric, gluten-free asafoetida, salt.",
         excerpt="Rice and moong, soft and lightly spiced. The meal for a long day or a tired stomach.",
         about="<p>Rice and yellow moong cooked soft with a little ghee and cumin — the thing you are made when you are unwell, and the thing you want when you are not.</p>"),
     "Aloo ka Mazaa": dict(
@@ -249,16 +249,273 @@ CATEGORIES = [
 # their contents and their prices are Nalin's to set, and the saving the page
 # prints is computed from the separate total rather than invented.
 COMBOS = [
-    ("Trial Box · 3 meals",     "Combos", "6 MIN", 525,  615,  "#D9822B", "4.8", 46, 3,  set(),
-     "Express Dal Fry\nIdli Sambhar\nExpress Dal Khichdi", 615),
-    ("Week Box · 6 meals",      "Combos", "6 MIN", 999,  1170, "#CE9126", "4.7", 38, 6,  {"bestseller"},
-     "Express Dal Fry × 2\nIdli Sambhar × 2\nExpress Dal Khichdi\nPav Bhaji", 1170),
-    ("Hostel Box · 9 meals",    "Combos", "6 MIN", 1499, 1755, "#C2571F", "4.6", 21, 9,  set(),
-     "Express Dal Fry × 3\nIdli Sambhar × 2\nExpress Dal Khichdi × 2\nPav Bhaji\nAloo ka Mazaa", 1755),
+    ("Trial Box · 3 meals",     "Combos", "6 MIN", 495,  565,  "#D9822B", "4.8", 46, 3,  set(),
+     "Express Dal Fry\nIdli Sambhar\nExpress Dal Khichdi", 565),
+    ("Week Box · 6 meals",      "Combos", "6 MIN", 975,  1130, "#CE9126", "4.7", 38, 6,  {"bestseller"},
+     "Express Dal Fry × 2\nIdli Sambhar × 2\nExpress Dal Khichdi\nPav Bhaji", 1130),
+    ("Hostel Box · 9 meals",    "Combos", "6 MIN", 1375, 1600, "#C2571F", "4.6", 21, 9,  set(),
+     "Express Dal Fry × 3\nIdli Sambhar × 2\nExpress Dal Khichdi × 2\nPav Bhaji\nAloo ka Mazaa", 1600),
     # Not Jain: a box is Jain only if every pack in it is, and the Masala Chai is not.
-    ("Chai & Chutney Box",      "Combos", "3 MIN", 540,  615,  "#A6603A", "4.9", 17, 4,  set(),
-     "Masala Chai × 2\nCoconut Red Chutney × 2", 615),
+    ("Chai & Chutney Box",      "Combos", "3 MIN", 1050, 1230, "#A6603A", "4.9", 17, 4,  set(),
+     "Masala Chai × 2\nCoconut Red Chutney × 2", 1230),
 ]
+
+# ── the rest of the catalogue, to the live site's 44 ─────────────────────────
+# INVENTED to fill the prototype to the live site's size (44 products: 38 single
+# packs, 6 boxes). Only Schezwan Rice is a known SKU (taxonomy-cleanup.php's
+# spelling fix); every other name below stands in until Foodify sends the real
+# list. Same tuple shape as PRODUCTS above; every time is within the 6-minute
+# claim (tests/claim-test.py reads this file).
+PRODUCTS += [
+    ("Schezwan Rice",            "Express",     "6 MIN", 195, 0,   "#B8452A", "4.4", 26, 2, set()),
+    ("Rajma Chawal",             "Express",     "6 MIN", 210, 240, "#8B3A2A", "4.7", 52, 2, {"bestseller"}),
+    ("Chole Chawal",             "Express",     "6 MIN", 210, 0,   "#A8652E", "4.6", 37, 2, set()),
+    ("Kadhi Chawal",             "Express",     "6 MIN", 195, 0,   "#D8B04A", "4.5", 22, 2, set()),
+    ("Vegetable Pulao",          "Express",     "6 MIN", 185, 0,   "#C9A24E", "4.3", 18, 2, set()),
+    ("Lemon Rice",               "Express",     "5 MIN", 175, 0,   "#D9B23A", "4.5", 29, 2, {"jain"}),
+    ("Curd Rice",                "Express",     "5 MIN", 175, 0,   "#E8DDBD", "4.6", 31, 2, {"jain"}),
+    ("Bisi Bele Bath",           "Express",     "6 MIN", 210, 0,   "#B9622F", "4.6", 19, 2, set()),
+    ("Vegetable Upma",           "Express",     "5 MIN", 165, 0,   "#D6BE7A", "4.2", 15, 1, set()),
+    ("Kanda Poha",               "Express",     "5 MIN", 165, 0,   "#E0C25A", "4.4", 24, 1, set()),
+    ("Masala Oats",              "Express",     "4 MIN", 150, 0,   "#B99A62", "4.1", 11, 1, {"soldout"}),
+    ("Dal Tadka",                "Express",     "6 MIN", 185, 0,   "#D49A2C", "4.5", 34, 2, set()),
+    ("Vegetable Biryani",        "Express",     "6 MIN", 225, 0,   "#C2702E", "4.6", 40, 2, set()),
+    ("Jain Pav Bhaji",           "Express",     "6 MIN", 195, 0,   "#C7612A", "4.5", 14, 2, {"jain", "new"}),
+    ("Sambhar Rice",             "Express",     "6 MIN", 185, 0,   "#C0702E", "4.4", 17, 2, set()),
+    ("Ragi Dosa Mix",            "Hot & Fresh", "5 MIN", 220, 0,   "#7A4E3A", "4.4", 13, 3, set()),
+    ("Moong Dal Cheela Mix",     "Hot & Fresh", "6 MIN", 230, 0,   "#C2B25A", "4.5", 16, 3, {"jain"}),
+    ("Rava Idli Mix",            "Hot & Fresh", "6 MIN", 195, 0,   "#E6D9B4", "4.3", 12, 4, set()),
+    ("Besan Cheela Mix",         "Hot & Fresh", "5 MIN", 199, 0,   "#D7A84A", "4.2", 9,  3, set()),
+    ("Instant Dhokla Mix",       "Hot & Fresh", "6 MIN", 210, 0,   "#E2C64C", "4.4", 15, 4, {"new"}),
+    ("Elaichi Chai",             "Hot & Fresh", "3 MIN", 325, 0,   "#9C6B44", "4.7", 33, 1, {"jain"}),
+    ("Tulsi Kadha",              "Hot & Fresh", "4 MIN", 299, 0,   "#6E7A3A", "4.3", 8,  1, set()),
+    ("Tomato Chutney",           "Flavors",     "1 MIN", 220, 0,   "#B8392A", "4.4", 14, 4, set()),
+    ("Peanut Chutney",           "Flavors",     "1 MIN", 220, 0,   "#B58A52", "4.6", 21, 4, {"jain"}),
+    ("Coriander Mint Chutney",   "Flavors",     "1 MIN", 230, 0,   "#3F7D4A", "4.5", 12, 4, {"jain", "new"}),
+    ("Curry Leaf Podi",          "Flavors",     "1 MIN", 210, 0,   "#4A5A2E", "4.6", 10, 6, set()),
+]
+
+COMBOS += [
+    ("Chutney Trio Box",       "Combos", "1 MIN", 595, 690,  "#4E8B66", "4.7", 13, 12, set(),
+     "Coconut Red Chutney\nPeanut Chutney\nCoriander Mint Chutney", 690),
+    ("Breakfast Box · 6 packs", "Combos", "6 MIN", 949, 1125, "#E0A03C", "4.5", 9, 9, {"new"},
+     "Idli Sambhar × 2\nSuper Millet Idli\nKanda Poha\nVegetable Upma\nRava Idli Mix", 1125),
+]
+
+
+def _info(slug, diet, net, cooked, taste, ingredients, excerpt, about):
+    return dict(slug=slug, diet=diet, net=net, cooked=cooked, taste=taste, ingredients=ingredients,
+                excerpt=excerpt, about=f"<p>{about}</p>")
+
+
+PRODUCT_INFO.update({
+    "Schezwan Rice": _info("schezwan-rice", [], "85 g", "280 g", "Spicy, Tangy",
+        "Rice, cabbage, carrot, capsicum, spring onion, garlic, schezwan sauce (red chilli, vinegar, soy sauce), oil, salt.",
+        "Indo-Chinese fried rice with a proper schezwan kick.",
+        "Fried rice the way a Mumbai street cart makes it: cabbage, capsicum and spring onion in a garlic-and-chilli schezwan sauce."),
+    "Rajma Chawal": _info("rajma-chawal", ["High protein"], "95 g", "320 g", "Savoury, Comforting",
+        "Rice, kidney beans, tomato, onion, ginger, garlic, ghee, garam masala, salt.",
+        "Punjabi rajma and rice — the Sunday lunch, in six minutes.",
+        "Kidney beans slow-cooked in an onion-tomato masala, with steamed rice, the way a Punjabi kitchen does it on a Sunday."),
+    "Chole Chawal": _info("chole-chawal", ["High protein"], "95 g", "320 g", "Spicy, Tangy",
+        "Rice, chickpeas, tomato, onion, ginger, garlic, chole masala, oil, salt.",
+        "Chickpeas in a dark, tangy masala, with rice.",
+        "Chickpeas in a dark chole masala with dried mango and pomegranate seed, and a bowl of rice to go with it."),
+    "Kadhi Chawal": _info("kadhi-chawal", [], "85 g", "300 g", "Tangy, Mild",
+        "Rice, curd, gram flour, ghee, cumin, fenugreek, turmeric, curry leaves, salt.",
+        "Yoghurt kadhi with gram-flour pakoras, and rice.",
+        "A gently sour yoghurt-and-besan kadhi, tempered with cumin and curry leaves, over rice."),
+    "Vegetable Pulao": _info("vegetable-pulao", ["Vegan", "Gluten free"], "80 g", "270 g", "Mild, Aromatic",
+        "Basmati rice, peas, carrot, beans, onion, oil, bay leaf, cumin, cinnamon, salt.",
+        "Basmati with peas, carrot and whole spices.",
+        "Basmati cooked with whole spices, peas, carrot and beans. Light enough for lunch, good with any dal."),
+    "Lemon Rice": _info("lemon-rice", ["Jain", "Vegan", "Gluten free"], "80 g", "260 g", "Tangy, Fresh",
+        "Rice, peanuts, lemon juice powder, chana dal, mustard seeds, curry leaves, turmeric, green chilli, oil, salt.",
+        "South Indian lemon rice with peanuts and curry leaves.",
+        "Rice tossed with lemon, turmeric, roasted peanuts and a mustard-seed tempering — temple food, travel food."),
+    "Curd Rice": _info("curd-rice", ["Jain", "Gluten free"], "75 g", "260 g", "Cool, Mild",
+        "Rice, curd powder, milk solids, mustard seeds, curry leaves, green chilli, salt.",
+        "Thayir sadam — cool curd rice for a hot day.",
+        "Soft rice in cool curd with a mustard-seed and curry-leaf tempering. The meal that settles a stomach."),
+    "Bisi Bele Bath": _info("bisi-bele-bath", ["High protein"], "90 g", "310 g", "Spicy, Tangy",
+        "Rice, toor dal, tamarind, beans, carrot, peas, ghee, bisi bele bath masala, asafoetida, salt.",
+        "Karnataka's rice-and-dal one-pot, hot and sour.",
+        "Rice and toor dal cooked together with vegetables, tamarind and a roasted spice blend, finished with ghee."),
+    "Vegetable Upma": _info("vegetable-upma", [], "70 g", "220 g", "Savoury, Mild",
+        "Semolina, peas, carrot, onion, cashew, mustard seeds, curry leaves, oil, salt.",
+        "Rava upma with vegetables and cashew.",
+        "Roasted semolina with peas, carrot and a few cashews, tempered with mustard and curry leaves."),
+    "Kanda Poha": _info("kanda-poha", ["Vegan", "Gluten free"], "70 g", "220 g", "Savoury, Tangy",
+        "Flattened rice, onion, peanuts, mustard seeds, curry leaves, turmeric, lemon, sugar, oil, salt.",
+        "Maharashtrian poha with onion and peanuts.",
+        "Flattened rice with onion, peanuts, turmeric and a squeeze of lemon — Pune's breakfast."),
+    "Masala Oats": _info("masala-oats", ["Vegan"], "60 g", "200 g", "Savoury, Spiced",
+        "Rolled oats, tomato, onion, carrot, peas, spices, salt.",
+        "Savoury oats with vegetables and spices.",
+        "Rolled oats cooked savoury, with tomato, carrot and peas. A quick, filling breakfast."),
+    "Dal Tadka": _info("dal-tadka", ["High protein"], "80 g", "260 g", "Savoury, Smoky",
+        "Toor dal, tomato, onion, garlic, ghee, cumin, red chilli, turmeric, asafoetida, salt.",
+        "Toor dal with a garlic-and-cumin tadka.",
+        "Yellow toor dal finished with a smoky tadka of ghee, garlic, cumin and red chilli."),
+    "Vegetable Biryani": _info("vegetable-biryani", [], "100 g", "330 g", "Spiced, Aromatic",
+        "Basmati rice, potato, carrot, beans, peas, fried onion, curd powder, ghee, biryani masala, mint, salt.",
+        "Layered vegetable biryani with fried onion and mint.",
+        "Basmati and vegetables dum-style, with fried onion, mint and a biryani masala of our own."),
+    "Jain Pav Bhaji": _info("jain-pav-bhaji", ["Jain"], "85 g", "280 g", "Spicy, Buttery, Tangy",
+        "Raw banana, peas, cauliflower, capsicum, tomato, butter, pav bhaji masala (Jain), salt.",
+        "Pav bhaji without potato, onion or garlic — raw banana does the work.",
+        "The Juhu bhaji, made Jain: raw banana in place of potato, no onion, no garlic, all the butter."),
+    "Sambhar Rice": _info("sambhar-rice", [], "85 g", "290 g", "Tangy, Savoury",
+        "Rice, toor dal, tamarind, drumstick, shallots, sambhar powder, asafoetida, curry leaves, oil, salt.",
+        "Sambhar sadam — rice and sambhar cooked together.",
+        "Rice and toor-dal sambhar cooked as one, with drumstick, shallots and tamarind."),
+    "Ragi Dosa Mix": _info("ragi-dosa-mix", ["Millet based", "Vegan", "Gluten free"], "200 g", "", "Earthy, Savoury",
+        "Finger millet, rice, black gram, fenugreek, salt.",
+        "Ragi dosa batter mix. Whisk with water, pour, done.",
+        "Finger millet, rice and urad dal, milled for crisp, thin dosas without the overnight soak."),
+    "Moong Dal Cheela Mix": _info("moong-dal-cheela-mix", ["Jain", "High protein", "Vegan", "Gluten free"], "200 g", "", "Savoury, Mild",
+        "Split moong dal, green chilli, coriander, cumin, salt.",
+        "Moong dal cheela mix — a high-protein breakfast pancake.",
+        "Ground split moong with cumin and coriander. Whisk with water and make thin cheelas on a hot pan."),
+    "Rava Idli Mix": _info("rava-idli-mix", [], "200 g", "", "Mild, Soft",
+        "Semolina, curd powder, cashew, mustard seeds, curry leaves, baking soda, salt.",
+        "Rava idli mix — steamed in six minutes, no fermenting.",
+        "Semolina idli as Bengaluru makes it, with cashew and curry leaves. Mix, rest two minutes, steam."),
+    "Besan Cheela Mix": _info("besan-cheela-mix", ["Vegan", "Gluten free"], "200 g", "", "Savoury, Spiced",
+        "Gram flour, onion flakes, ajwain, turmeric, red chilli, salt.",
+        "Besan cheela mix with onion and ajwain.",
+        "Gram-flour pancakes with onion and carom seed. Pour thin, flip once."),
+    "Instant Dhokla Mix": _info("instant-dhokla-mix", [], "200 g", "", "Tangy, Soft",
+        "Gram flour, semolina, citric acid, sugar, baking soda, turmeric, salt, mustard seeds, curry leaves.",
+        "Khaman dhokla mix, with its own tempering sachet.",
+        "Soft, sour Gujarati khaman. Whisk, steam six minutes in a covered pan, pour the tempering over."),
+    "Elaichi Chai": _info("elaichi-chai", ["Jain", "Vegan", "Gluten free"], "250 g", "", "Sweet, Floral",
+        "Assam tea, green cardamom.",
+        "Assam tea with green cardamom. Boil, simmer, strain.",
+        "Strong Assam leaf and crushed green cardamom — the plain, fragrant chai of a North Indian home."),
+    "Tulsi Kadha": _info("tulsi-kadha", ["Vegan", "Gluten free"], "100 g", "", "Warming, Herbal",
+        "Holy basil, dry ginger, black pepper, cinnamon, clove, liquorice.",
+        "A warming tulsi and spice kadha for evenings and colds.",
+        "Holy basil, dry ginger, pepper and cinnamon, simmered into a strong, warming kadha."),
+    "Tomato Chutney": _info("tomato-chutney", ["Vegan", "Gluten free"], "50 g", "", "Tangy, Spicy",
+        "Tomato, red chilli, garlic, tamarind, mustard seeds, oil, salt.",
+        "Andhra-style tomato chutney. Stir with water.",
+        "A sharp tomato chutney with red chilli and garlic — for dosa, rice or a plain paratha."),
+    "Peanut Chutney": _info("peanut-chutney", ["Jain", "Vegan", "Gluten free"], "50 g", "", "Nutty, Mildly spicy",
+        "Roasted peanuts, red chilli, tamarind, salt, curry leaves.",
+        "Roasted peanut chutney, ready with a stir of water.",
+        "Roasted peanuts ground with red chilli and tamarind. Thick with a little water, pourable with more."),
+    "Coriander Mint Chutney": _info("coriander-mint-chutney", ["Jain", "Vegan", "Gluten free"], "40 g", "", "Fresh, Tangy",
+        "Coriander leaves, mint leaves, green chilli, lemon juice powder, salt.",
+        "Hari chutney — coriander, mint and green chilli.",
+        "The green chutney from every chaat stall: coriander, mint and green chilli, dried so it keeps."),
+    "Curry Leaf Podi": _info("curry-leaf-podi", ["Vegan"], "100 g", "", "Nutty, Spicy",
+        "Curry leaves, black gram, chana dal, sesame seeds, red chilli, asafoetida, salt.",
+        "Karuveppilai podi — mix with ghee or oil over rice or idli.",
+        "Roasted curry leaves, lentils and sesame, ground coarse. A spoon over hot rice with ghee is a meal."),
+})
+
+# Nutrition per serving, for every single pack. INVENTED, to the right order of
+# magnitude for each kind of product. The theme prints a panel only from three
+# values up (foodify_nutrition_rows); combos print none — each pack inside has
+# its own.
+_NUTRITION_BASE = {
+    #               energy kcal, protein g, carbs g, sugars g, fat g, sodium mg
+    "meal":       (300, 10.0, 46.0, 3.0, 8.0, 620),
+    "mix":        (200,  8.0, 30.0, 2.0, 4.0, 380),
+    "tea":        (  2,  0.1,  0.4, 0.0, 0.0,   2),
+    "chutney":    ( 60,  2.0,  5.0, 2.0, 4.0, 220),
+}
+
+
+def _kind(p):
+    if p[1] == "Flavors":
+        return "chutney"
+    if any(w in p[0] for w in ("Chai", "Tea", "Kadha")):
+        return "tea"
+    if p[1] == "Hot & Fresh":
+        return "mix"
+    return "meal"
+
+
+def nutrition_for(p):
+    """A full panel per product, varied a little by name so no two read alike."""
+    if p[0] == "Express Dal Fry":
+        return PDP_NUTRITION
+    e, pr, c, s, f, na = _NUTRITION_BASE[_kind(p)]
+    j = (sum(map(ord, p[0])) % 21 - 10) / 100.0      # -10% .. +10%, deterministic
+    fmt = lambda v: (f"{v:.1f}".rstrip("0").rstrip(".") if v < 10 else f"{round(v)}")
+    return {"energy": f"{round(e * (1 + j))} kcal", "protein": f"{fmt(pr * (1 + j))} g",
+            "carbs": f"{fmt(c * (1 - j))} g", "sugars": f"{fmt(s * (1 + j))} g",
+            "fat": f"{fmt(f * (1 + j))} g", "sodium": f"{round(na * (1 - j))} mg"}
+
+
+# Allergens, DERIVED from the ingredient list against FSSAI's declarable list
+# (Labelling and Display Regulations 2020) — never typed separately, so a
+# product cannot list ghee and declare no milk. Asafoetida is compounded with
+# wheat flour unless the list says it is gluten-free.
+_ALLERGENS = [
+    ("Milk", r"\b(ghee|butter|cream|milk|curd|paneer|khoa)\b"),
+    ("Cereals containing gluten", r"\b(wheat|semolina|rava|sooji|barley|oats|maida)\b|(?<!gluten-free )\basafoetida\b"),
+    ("Peanuts", r"\b(peanuts?|groundnuts?)\b"),
+    ("Tree nuts", r"\b(cashews?|almonds?|pistachios?|walnuts?)\b"),
+    ("Soybeans", r"\b(soy|soya|soybeans?)\b"),
+]
+
+
+def allergen_list(ingredients):
+    """[(allergen, the ingredient that carries it)] — the source is named, so a
+    buyer can see WHY a dal declares gluten (the asafoetida's wheat)."""
+    out = []
+    for name, rx in _ALLERGENS:
+        m = re.search(rx, ingredients, re.I)
+        if m:
+            src = m.group(0).lower()
+            out.append((name, "wheat, in the asafoetida" if src == "asafoetida" else src))
+    return out
+
+
+def allergens_for(ingredients):
+    found = allergen_list(ingredients)
+    # "Peanuts (peanuts)" says nothing twice; name the source only when it adds.
+    return (", ".join(n if src.rstrip("s") in n.lower() else f"{n} ({src})" for n, src in found) if found
+            else "None of FSSAI's declarable allergens")
+
+
+def _check_catalogue():
+    """The rules the invented data must keep. A row that breaks one does not render."""
+    for p in PRODUCTS:
+        info = PRODUCT_INFO[p[0]]
+        al = allergens_for(info["ingredients"])
+        if "Vegan" in info["diet"] and "Milk (" in al:
+            raise SystemExit(f"fixture {p[0]!r} is tagged Vegan but contains milk")
+        if "Gluten free" in info["diet"] and "gluten" in al:
+            raise SystemExit(f"fixture {p[0]!r} is tagged Gluten free but contains gluten")
+        if ("jain" in p[9]) != ("Jain" in info["diet"]):
+            raise SystemExit(f"fixture {p[0]!r}: the Jain flag and the Jain diet tag disagree")
+        if not p[2].endswith(" MIN") or int(p[2].split()[0]) > 6:
+            raise SystemExit(f"fixture {p[0]!r} outruns the 6-minute claim")
+    for c in COMBOS:
+        for line in c[10].split("\n"):
+            name = re.sub(r"\s*×\s*\d+\s*$", "", line).strip()
+            if name not in PRODUCT_INFO:
+                raise SystemExit(f"combo {c[0]!r} lists {name!r}, which is not a product")
+        separate = sum(next(p for p in PRODUCTS if p[0] == n)[3] * q for n, q in combo_lines(c))
+        if separate != c[11] or (c[4] and c[4] != c[11]) or c[3] >= separate:
+            raise SystemExit(f"combo {c[0]!r}: the packs inside cost ₹{separate} one by one; "
+                             f"the row says ₹{c[11]} (was ₹{c[4]}, box ₹{c[3]})")
+    if len(PRODUCTS) + len(COMBOS) != 44:
+        raise SystemExit(f"the catalogue has {len(PRODUCTS) + len(COMBOS)} products; the live site has 44")
+
+
+def combo_lines(c):
+    """(product name, quantity) for each line of a box's contents."""
+    out = []
+    for line in c[10].split("\n"):
+        m = re.search(r"\s*×\s*(\d+)\s*$", line)
+        out.append((line[:m.start()].strip() if m else line.strip(), int(m.group(1)) if m else 1))
+    return out
+
 
 def combo_of(p):
     """The two combo fields of a fixture row, or None for a single pack."""
@@ -329,14 +586,10 @@ def card_yield(p):
 
 
 # The product page's fixture data, in the shape the theme's own functions take.
-# Allergens and the FSSAI licence are deliberately EMPTY: the page must show
-# "Not provided" for both, and the preview showing a plausible value is how
-# the placeholder licence got into four templates in the first place.
-COMBO_ABOUT = ("<p>Three of the meals people reorder most, in one box: dal fry, idli sambhar and dal khichdi. "
-               "Each pack inside is the one sold on its own — the same 80 g, the same six minutes, the same shelf "
-               "life. The box is the convenience.</p>"
-               "<p>Bought one by one these three come to ₹615. The box is ₹525.</p>")
-
+# The FSSAI licence is deliberately EMPTY: the page must show "Not provided",
+# and the preview showing a plausible value is how the placeholder licence got
+# into four templates in the first place. Allergens are filled per product by
+# pdp_values(), DERIVED from the ingredient list (allergens_for).
 # A combo declares for the BOX: the individual packs carry their own labels, and
 # the buyer is told so rather than shown one pack's ingredients for three.
 COMBO_VALUES = {
@@ -346,13 +599,6 @@ COMBO_VALUES = {
     "best_before": "14 Aug 2027", "shelf_life": "12 months", "origin": "India", "fssai": "",
     "marketed_by": "AVAC Ventures, Noida 201304", "care": "care@letsfoodify.com",
 }
-COMBO_FAQ = ("Q: Can I choose what goes in the box?\n"
-             "A: Not yet. The three boxes are fixed; a build-your-own box is planned.\n"
-             "Q: Do the packs expire together?\n"
-             "A: Each pack has its own best-before date, printed on it. The earliest is shown above.\n"
-             "Q: Is it cheaper than buying them separately?\n"
-             "A: Yes — ₹90 cheaper on this box. The comparison is printed under the contents.")
-
 PDP_VALUES = {
     "ingredients": "Split yellow lentils, onion, tomato, ghee, cumin, turmeric, coriander, ginger, garlic, salt, red chilli.",
     "allergens": "", "net_quantity": "80 g", "servings": "2", "cooked_weight": "260 g", "diet": "Vegetarian",
@@ -519,13 +765,24 @@ def pdp_values(p):
     if combo:
         items = [l for l in combo[0].split("\n") if l.strip()]
         packs = sum(int(m.group(1)) if (m := re.search(r"×\s*(\d+)\s*$", l)) else 1 for l in items)
+        # A box declares every allergen of every pack inside it.
+        found = []
+        for name, _q in combo_lines(p):
+            for al, _src in allergen_list(PRODUCT_INFO[name]["ingredients"]):
+                if al not in found:
+                    found.append(al)
+        order = [n for n, _rx in _ALLERGENS]
+        found.sort(key=order.index)
         return dict(COMBO_VALUES, net_quantity=f"{packs} packs", servings=str(p[8]),
-                    cooked_weight="", mrp=f"₹{int(combo[1]):,}.00 (incl. all taxes)")
+                    cooked_weight="", mrp=f"₹{int(combo[1]):,}.00 (incl. all taxes)",
+                    allergens=(", ".join(found) + " — across the packs in this box") if found
+                    else "None of FSSAI's declarable allergens")
     info = info_of(p)
     v = dict(PDP_VALUES)
     v.update(ingredients=info["ingredients"], net_quantity=info["net"], servings=str(p[8]),
              cooked_weight=info["cooked"], prep_minutes=p[2].split()[0],
-             mrp=f"₹{p[4] or p[3]}.00 (incl. all taxes)")
+             mrp=f"₹{p[4] or p[3]}.00 (incl. all taxes)",
+             allergens=allergens_for(info["ingredients"]))
     if p[0] != "Express Dal Fry":
         v["storage"] = "Cool, dry place. Keep the pouch sealed."
     return v
@@ -739,7 +996,7 @@ def dynamic(name, attrs, inner):
         # The theme renders the tabbed body from inc/product-spec.php on
         # woocommerce_after_single_product_summary — BEFORE this block in the
         # page body. The preview calls the SAME renderer with fixture data.
-        nutrition = PDP_NUTRITION if PDP[0] == "Express Dal Fry" else {}
+        nutrition = nutrition_for(PDP)
         return php(
             "echo foodify_render_pdp_body(['about'=>$a[0],'taste'=>foodify_taste_chips($a[1]),"
             "'groups'=>foodify_spec_model($a[2]),'nutrition'=>foodify_nutrition_rows($a[3]),"
@@ -778,8 +1035,11 @@ def dynamic(name, attrs, inner):
                 f'<select name="orderby" class="orderby" aria-label="Shop order">{opts}</select></form></div>')
     if name == "woocommerce/product-results-count":
         n = len(LISTING)
+        per = 12   # archive-product.html / taxonomy-product_cat.html perPage
+        text = ("Showing the single result" if n == 1 else f"Showing all {n} results" if n <= per
+                else f"Showing 1&ndash;{per} of {n} results")
         return ('<p class="woocommerce-result-count wp-block-woocommerce-product-results-count">'
-                + ("Showing the single result" if n == 1 else f"Showing all {n} results") + '</p>')
+                + text + '</p>')
     if name == "woocommerce/price-filter":
         lo = min(r[3] for r in LISTING)
         hi = max(r[3] for r in LISTING)
@@ -1565,11 +1825,10 @@ MOCK_SCRIPT = r'''<script>
       var ok = (!want.prep.length || want.prep.some(function (w) { return prep.indexOf(w) >= 0; })) &&
                (!want.dietary.length || want.dietary.every(function (w) { return diet.indexOf(w) >= 0; })) &&
                price >= lo && price <= hi;
-      li.hidden = !ok; if (ok) shown++;
+      li.setAttribute('data-match', ok ? '1' : '0'); if (ok) shown++;
     });
-    var rc = $('.woocommerce-result-count', root);
-    if (rc) rc.textContent = shown === 0 ? 'No products found' : shown === 1 ? 'Showing the single result' : 'Showing all ' + shown + ' results';
     var nr = $('.fx-noresults', root); if (nr) nr.hidden = shown > 0;
+    paginate(root, 1);
     var mn = $('.wc-block-price-filter__amount--min', root), mx = $('.wc-block-price-filter__amount--max', root), bar = $('.fx-range i', root);
     if (mn && mx && bar) {
       var f = parseFloat(mn.getAttribute('data-floor')), c = parseFloat(mx.getAttribute('data-ceil')), span = Math.max(1, c - f);
@@ -1590,7 +1849,30 @@ MOCK_SCRIPT = r'''<script>
     $$('li.wp-block-post', grid).map(function (li, i) { return [key(li), i, li]; })
       .sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; })
       .forEach(function (x) { grid.appendChild(x[2]); });
+    paginate(root, 1);
   }
+  // WooCommerce's twelve-a-page listing: the result count and core's
+  // query-pagination markup, recomputed over whatever the filters left.
+  function paginate(root, page) {
+    var grid = $('.fd-shop__results .wp-block-post-template', root); if (!grid) return;
+    var per = +grid.getAttribute('data-per-page') || 1e9;
+    var match = $$('li.wp-block-post', grid).filter(function (li) { return li.getAttribute('data-match') !== '0'; });
+    var pages = Math.max(1, Math.ceil(match.length / per)); page = Math.min(Math.max(1, page), pages);
+    $$('li.wp-block-post', grid).forEach(function (li) { li.hidden = true; });
+    match.slice((page - 1) * per, page * per).forEach(function (li) { li.hidden = false; });
+    var n = match.length, rc = $('.woocommerce-result-count', root);
+    if (rc) rc.textContent = n === 0 ? 'No products found' : n === 1 ? 'Showing the single result' :
+      n <= per ? 'Showing all ' + n + ' results' : 'Showing ' + ((page - 1) * per + 1) + '\u2013' + Math.min(n, page * per) + ' of ' + n + ' results';
+    var nav = $('.wp-block-query-pagination', root); if (!nav) return;
+    nav.hidden = pages < 2; if (pages < 2) { nav.innerHTML = ''; return; }
+    var h = page > 1 ? '<a href="#" class="wp-block-query-pagination-previous" data-page="' + (page - 1) + '">Previous Page</a>' : '';
+    h += '<div class="wp-block-query-pagination-numbers">';
+    for (var i = 1; i <= pages; i++) h += i === page ? '<span aria-current="page" class="page-numbers current">' + i + '</span>'
+      : '<a href="#" class="page-numbers" data-page="' + i + '">' + i + '</a>';
+    h += '</div>' + (page < pages ? '<a href="#" class="wp-block-query-pagination-next" data-page="' + (page + 1) + '">Next Page</a>' : '');
+    nav.innerHTML = h;
+  }
+  $$('.fd-shop__results .wp-block-post-template').forEach(function (g) { paginate(g.closest('.fx-shell'), 1); });
   function resetFilters(root) {
     $$('.wc-block-components-checkbox__input', root).forEach(function (c) { c.checked = false; });
     var mn = $('.wc-block-price-filter__amount--min', root), mx = $('.wc-block-price-filter__amount--max', root);
@@ -1607,6 +1889,11 @@ MOCK_SCRIPT = r'''<script>
     var t = e.target, root = t.closest('.fx-shell');
     var el;
     if ((el = t.closest('.proto-reset'))) { e.preventDefault(); S = seed(); save(); checkoutMode = null; viewing = null; paintHeader(); show('home'); say('Prototype reset: three items in the cart, signed in as a returning customer.'); return; }
+    if ((el = t.closest('[data-page]'))) {
+      e.preventDefault(); paginate(root, +el.getAttribute('data-page'));
+      var top = $('.fd-shop__results', root); if (top) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     if ((el = t.closest('[data-add]'))) {
       e.preventDefault();
       var form = el.closest('form.cart'), q = form ? Math.max(1, parseInt((form.querySelector('input.qty') || {}).value, 10) || 1) : 1;
@@ -1939,10 +2226,15 @@ def render(markup, depth=0):
             inner = markup[pos:cs]
             cols = a.get("layout", {}).get("columnCount", 3)
             cls = a.get("className", "")
-            rows = LOOP_ROWS[:min(LOOP_N, 12)]
+            # A shop or category listing renders EVERY row and the page script
+            # shows twelve at a time, so filters and sort work across all pages
+            # the way WooCommerce's do (it re-queries; this re-slices).
+            paged = LISTING is not None and LOOP_ROWS is LISTING
+            rows = LOOP_ROWS if paged else LOOP_ROWS[:min(LOOP_N, 12)]
             items = "".join(loop_card(inner, r, i) for i, r in enumerate(rows))
+            per = f' data-per-page="{LOOP_N}"' if paged else ""
             out.append(f'<ul class="wp-block-post-template {cls} is-layout-grid columns-{cols} '
-                       f'wp-block-post-template-is-layout-grid">{items}</ul>')
+                       f'wp-block-post-template-is-layout-grid"{per}>{items}</ul>')
             pos = skip_to = ce
             continue
         if name == "query-no-results" and not selfclose:
@@ -1954,10 +2246,13 @@ def render(markup, depth=0):
             pos = skip_to = ce
             continue
         if name == "query-pagination" and not selfclose:
-            # WordPress prints pagination only when there is a second page. No
-            # listing here has more than one page of twelve, so there is none —
-            # the old fixture drew "1 2 Next" with nothing behind it.
+            # WordPress prints pagination only when there is a second page. The
+            # page script fills this with core's own markup (previous, numbers,
+            # next) and re-draws it whenever a filter changes the count.
             _cs, ce = find_close(markup, name, pos)
+            if LISTING is not None and len(LISTING) > LOOP_N:
+                out.append('<nav class="wp-block-query-pagination is-layout-flex is-content-justification-center" '
+                           'aria-label="Pagination"></nav>')
             pos = skip_to = ce
             continue
         if name == "template-part":
@@ -2460,6 +2755,7 @@ def main():
     global PDP, LISTING, CAT, PAGE, SIGNED_IN, SCREEN_ID
     # Anything that contains onion, garlic or a root vegetable cannot be Jain (client rule, 7 Nov).
     # A fixture that breaks it does not render: the Dal Fry did, for weeks.
+    _check_catalogue()
     for p in PRODUCTS:
         if "jain" in p[9] or "Jain" in info_of(p).get("diet", []):
             hits = php("echo implode(',', foodify_jain_conflicts($a[0]))", info_of(p).get("ingredients", ""))
@@ -2573,7 +2869,12 @@ six digits work), and food photography (coloured bowls, pending the shoot). Noth
 prototype remembers your cart and orders in this browser only, and <b>Reset</b> clears them.</p>
 <p><b>Invented for the prototype, awaiting your word:</b> the FSSAI licence number ({FIXTURE_FSSAI}), the
 same-day NCR dispatch promise, the "Complete the meal" pairing, the combo boxes with their contents and
-prices, each product's price, ingredients, taste notes, cooked weight, FAQ and reviews, and the partner code.
+prices, each product's price, ingredients, allergens, nutrition, taste notes, cooked weight, FAQ and reviews,
+and the partner code. The shop holds 44 products, as the live site does, but only the observed SKUs are real names
+(Dal Fry, Dal Makhni, Idli Sambhar, Pav Bhaji, Palak Gravy, Dal Khichdi, Aloo ka Mazaa, Super Millet Idli, the
+millet-beetroot cheela, Masala Chai, Lemon Masala Tea, Coconut Red Chutney, Schezwan Rice); the rest stand in
+until Foodify sends its list. Allergens are worked out from each ingredient list against FSSAI's declarable
+allergens, so they are only as right as the ingredients.
 The live site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
 live until you confirm it.</p></details></div>
 {''.join(panels)}

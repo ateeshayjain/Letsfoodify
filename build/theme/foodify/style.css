@@ -645,6 +645,29 @@ input:focus, select:focus, textarea:focus {
 .fd-shop__toolbar .woocommerce-result-count {
   margin: 0; color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm);
 }
+/* Pagination under the grid (12 a page). Core prints the markup; every page
+   number is a tap-sized pill, the current one filled. */
+.fd-shop__results .wp-block-query-pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--wp--preset--spacing--20); flex-wrap: wrap;
+  margin-top: var(--wp--preset--spacing--60);
+  font-family: var(--wp--preset--font-family--ui); font-weight: 600;
+}
+.fd-shop__results .wp-block-query-pagination-numbers { display: flex; gap: var(--wp--preset--spacing--20); }
+.fd-shop__results .wp-block-query-pagination .page-numbers,
+.fd-shop__results .wp-block-query-pagination-previous,
+.fd-shop__results .wp-block-query-pagination-next {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: var(--wp--custom--tap-target); min-height: var(--wp--custom--tap-target);
+  padding: 0 var(--wp--preset--spacing--30);
+  border: 1px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--pill);
+  color: var(--wp--preset--color--char); text-decoration: none;
+}
+.fd-shop__results .wp-block-query-pagination .page-numbers.current {
+  background: var(--wp--preset--color--char); border-color: var(--wp--preset--color--char);
+  color: var(--wp--preset--color--paper);
+}
 .fd-sort { align-items: center; gap: var(--wp--preset--spacing--20); }
 .fd-sort__label { margin: 0; font-weight: 600; white-space: nowrap; }
 .fd-sort .woocommerce-ordering { margin: 0; position: relative; }

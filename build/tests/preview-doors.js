@@ -54,7 +54,50 @@ const path = require('path');
   });
   check('every link points at a screen that exists', !orphans.length, orphans);
   const pdps = await page.evaluate(() => window.fxScreens.filter(s => s.startsWith('p-')).length);
-  check('there is a product page for every product (12 singles + 4 combos)', pdps === 16, pdps);
+  check('there is a product page for every product (38 singles + 6 combos: the live site has 44)', pdps === 44, pdps);
+
+  // ── declarations: every product page states allergens; every single pack has a nutrition panel ──
+  const decl = await page.evaluate(() => window.fxScreens.filter(s => s.startsWith('p-')).map(id => {
+    const el = document.getElementById('s-' + id);
+    const row = [...el.querySelectorAll('.fd-spec__list > div')].find(d => d.querySelector('dt')?.textContent === 'Allergens');
+    const ing = [...el.querySelectorAll('.fd-spec__list > div')].find(d => d.querySelector('dt')?.textContent === 'Ingredients');
+    return { id, allergens: row ? row.querySelector('dd').textContent : null, ing: ing ? ing.querySelector('dd').textContent : '',
+             combo: !!el.querySelector('.fd-combo'), nutrition: el.querySelectorAll('.fd-nutrition tr').length };
+  }));
+  const noAl = decl.filter(d => !d.allergens || /not provided/i.test(d.allergens));
+  check('every product page declares its allergens (none says "Not provided")', !noAl.length, noAl.map(d => d.id));
+  const ghee = decl.filter(d => /\b(ghee|butter|cream|curd)\b/i.test(d.ing) && !/^.*Milk/.test(d.allergens || ''));
+  check('a pack made with ghee, butter, cream or curd declares milk', !ghee.length, ghee.map(d => d.id));
+  const noNut = decl.filter(d => !d.combo && d.nutrition < 6);
+  check('every single pack prints a six-line nutrition panel', !noNut.length, noNut.map(d => [d.id, d.nutrition]));
+  const comboNut = decl.filter(d => d.combo && d.nutrition > 0);
+  check('a box prints no nutrition panel of its own (each pack has one)', !comboNut.length, comboNut.map(d => d.id));
+
+  // ── pagination: twelve a page, and the pages follow the filters ───────────
+  const pg = await page.evaluate(() => {
+    window.fxShow('shop', false);
+    const root = document.getElementById('s-shop');
+    const vis = () => [...root.querySelectorAll('.fd-shop__results li.wp-block-post')].filter(li => !li.hidden).length;
+    const count = () => root.querySelector('.woocommerce-result-count').textContent;
+    const nums = () => [...root.querySelectorAll('.wp-block-query-pagination .page-numbers')].map(e => e.textContent).join(' ');
+    const r = { p1: vis(), c1: count(), nums: nums() };
+    root.querySelector('.wp-block-query-pagination-next').click();
+    r.p2 = vis(); r.c2 = count(); r.prev = !!root.querySelector('.wp-block-query-pagination-previous');
+    root.querySelector('.wp-block-query-pagination .page-numbers[data-page="4"]').click();
+    r.p4 = vis(); r.c4 = count(); r.next4 = !!root.querySelector('.wp-block-query-pagination-next');
+    const jain = root.querySelector('.wc-block-components-checkbox__input[value="Jain"]');
+    jain.click(); jain.dispatchEvent(new Event('change', { bubbles: true }));
+    r.jain = vis(); r.cj = count(); r.navHidden = root.querySelector('.wp-block-query-pagination').hidden;
+    jain.click(); jain.dispatchEvent(new Event('change', { bubbles: true }));
+    window.fxShow('combos', false);
+    r.comboNav = !!document.querySelector('#s-combos .wp-block-query-pagination');
+    return r;
+  });
+  check('the shop shows twelve of 38 on page 1, with pages 1–4', pg.p1 === 12 && pg.c1 === 'Showing 1–12 of 38 results' && pg.nums === '1 2 3 4', pg);
+  check('Next opens page 2 (13–24) and offers Previous', pg.p2 === 12 && pg.c2 === 'Showing 13–24 of 38 results' && pg.prev, pg);
+  check('page 4 holds the last two and has no Next', pg.p4 === 2 && pg.c4 === 'Showing 37–38 of 38 results' && !pg.next4, pg);
+  check('filtering re-paginates: Jain fits one page and the pager goes away', pg.jain > 0 && pg.jain <= 12 && pg.navHidden && /^Showing all \d+ results$/.test(pg.cj), pg);
+  check('a listing with one page prints no pager', !pg.comboNav, pg);
 
   // ── browsing ──────────────────────────────────────────────────────────────
   for (const [what, sel, expect] of [
@@ -86,12 +129,13 @@ const path = require('path');
     const box = [...r.querySelectorAll('.wc-block-components-checkbox__input')].find(c => c.value === 'Requires cooking');
     box.click();
     const vis = [...r.querySelectorAll('.fd-products > li')].filter(li => !li.hidden);
-    const out = { n: vis.length, allCook: vis.every(li => li.dataset.prep.includes('Requires cooking')),
+    const all = [...r.querySelectorAll('.fd-products > li')].filter(li => li.dataset.prep.includes('Requires cooking')).length;
+    const out = { n: vis.length, all, allCook: vis.every(li => li.dataset.prep.includes('Requires cooking')),
                   count: r.querySelector('.woocommerce-result-count').textContent };
     box.click();
     return out;
   });
-  check('a Prep method filter leaves only matching products and recounts', filtered.n === 3 && filtered.allCook && /3/.test(filtered.count), filtered);
+  check('a Prep method filter leaves only matching products and recounts', filtered.n === filtered.all && filtered.n > 3 && filtered.n <= 12 && filtered.allCook && filtered.count === `Showing all ${filtered.n} results`, filtered);
   const priced = await page.evaluate(() => {
     const r = document.getElementById('s-shop'), mx = r.querySelector('.wc-block-price-filter__amount--max');
     mx.value = 200; mx.dispatchEvent(new Event('change', { bubbles: true }));
@@ -111,7 +155,8 @@ const path = require('path');
   const empty = await page.evaluate(() => {
     const r = document.getElementById('s-shop');
     const a = [...r.querySelectorAll('.wc-block-components-checkbox__input')];
-    a.find(c => c.value === 'Requires cooking').click(); a.find(c => c.value === 'Jain').click();
+    // No chutney is high in protein: an honest empty result.
+    a.find(c => c.value === 'Stir with drinking water').click(); a.find(c => c.value === 'High protein').click();
     const shownNo = !r.querySelector('.fx-noresults').hidden;
     r.querySelector('.fx-noresults a').click();
     return { shownNo, after: [...r.querySelectorAll('.fd-products > li')].filter(li => !li.hidden).length };
