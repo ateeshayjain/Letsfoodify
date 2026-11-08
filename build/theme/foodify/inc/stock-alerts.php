@@ -188,28 +188,34 @@ function foodify_stock_alert_form_html( array $d ): string {
 				. '<input type="hidden" name="token" value="' . $e( (string) $d['token'] ) . '">'
 				. '<button type="submit" class="fd-notify__undo">Cancel this alert</button></form>'
 			: '';
-		return '<div class="fd-notify is-done" id="fd-notify" role="status">'
+		return '<div class="fd-notify is-done" id="fd-notify" tabindex="-1" role="status">'
 			. '<p class="fd-notify__msg">' . $e( foodify_stock_alert_notice( $status, (string) $d['product'], (string) ( $d['email'] ?? '' ) ) ) . '</p>'
 			. $cancel . '</div>';
 	}
 
-	$note = '';
+	$note  = '';
+	$error = false;
 	if ( '' !== $status ) {
-		$ok   = 'cancelled' === $status;
-		$note = '<p class="fd-notify__' . ( $ok ? 'msg' : 'error' ) . '" role="' . ( $ok ? 'status' : 'alert' ) . '">'
+		$ok    = 'cancelled' === $status;
+		$error = ! $ok;
+		$note  = '<p class="fd-notify__' . ( $ok ? 'msg' : 'error' ) . '" id="fd-notify-' . ( $ok ? 'msg' : 'error' ) . '" role="' . ( $ok ? 'status' : 'alert' ) . '">'
 			. $e( foodify_stock_alert_notice( $status ) ) . '</p>';
 	}
 	$privacy = '' !== (string) ( $d['privacy_url'] ?? '' )
 		? ' <a href="' . $e( (string) $d['privacy_url'] ) . '">Privacy policy</a>'
 		: '';
 	$invalid = 'invalid' === $status ? ' aria-invalid="true"' : '';
+	// After an error the address comes back as typed (PRODUCT-19), and the
+	// error is part of the field's description, so a reader hears both.
+	$value = $error && '' !== (string) ( $d['email'] ?? '' ) ? ' value="' . $e( (string) $d['email'] ) . '"' : '';
+	$desc  = ( $error ? 'fd-notify-error ' : '' ) . 'fd-notify-privacy';
 
-	return '<form class="fd-notify" id="fd-notify" method="post" action="' . $e( (string) $d['action'] ) . '">'
-		. '<p class="fd-notify__title">Sold out for now</p>'
+	return '<form class="fd-notify" id="fd-notify" tabindex="-1" method="post" action="' . $e( (string) $d['action'] ) . '">'
+		. '<p class="fd-notify__title">Sold out</p>'
 		. $note
 		. '<label class="fd-notify__label" for="fd-notify-email">Email me once when it’s back</label>'
 		. '<span class="fd-notify__row">'
-		. '<input class="fd-notify__input" id="fd-notify-email" type="email" name="email" autocomplete="email" inputmode="email" maxlength="254" required' . $invalid . ' aria-describedby="fd-notify-privacy">'
+		. '<input class="fd-notify__input" id="fd-notify-email" type="email" name="email" autocomplete="email" inputmode="email" maxlength="254" required' . $invalid . $value . ' aria-describedby="' . $desc . '">'
 		. '<button class="fd-notify__go wp-element-button" type="submit">Notify me</button>'
 		. '</span>'
 		. '<input type="hidden" name="action" value="foodify_stock_alert">' . $hidden
@@ -294,7 +300,9 @@ function foodify_stock_alert_request_product(): WC_Product {
 		exit;
 	}
 	if ( ! wp_verify_nonce( $nonce, 'foodify_stock_alert_' . $product_id ) ) {
-		foodify_stock_alert_redirect( $product_id, [ 'status' => 'error' ] );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- echoed back into the form only, never stored beyond the 10-minute flash.
+		$typed = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		foodify_stock_alert_redirect( $product_id, [ 'status' => 'error', 'email' => $typed ] );
 	}
 	return $product;
 }
@@ -317,16 +325,17 @@ $foodify_stock_alert_subscribe = static function (): void {
 		foodify_stock_alert_redirect( $id, [ 'status' => 'instock' ] );
 	}
 	if ( ! foodify_stock_alerts_accepting( $product ) ) {
-		foodify_stock_alert_redirect( $id, [ 'status' => 'full' ] );
+		foodify_stock_alert_redirect( $id, [ 'status' => 'full', 'email' => $raw ] );
 	}
 	$email = foodify_stock_alert_email_ok( $raw );
 	if ( null === $email ) {
-		foodify_stock_alert_redirect( $id, [ 'status' => 'invalid' ] );
+		// sanitize_email() empties most invalid input; echo back what survives.
+		foodify_stock_alert_redirect( $id, [ 'status' => 'invalid', 'email' => $raw ] );
 	}
 	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 	if ( foodify_stock_alert_limited( foodify_stock_alert_bucket( 'ip', $ip ), FOODIFY_STOCK_ALERT_IP_MAX, $now )
 		|| foodify_stock_alert_limited( foodify_stock_alert_bucket( 'em', $email ), FOODIFY_STOCK_ALERT_EMAIL_MAX, $now ) ) {
-		foodify_stock_alert_redirect( $id, [ 'status' => 'limited' ] );
+		foodify_stock_alert_redirect( $id, [ 'status' => 'limited', 'email' => $email ] );
 	}
 
 	$token = bin2hex( random_bytes( 16 ) );
@@ -336,7 +345,7 @@ $foodify_stock_alert_subscribe = static function (): void {
 		foodify_stock_alerts_put( $id, $res['subs'] );
 		foodify_stock_alert_redirect( $id, [ 'status' => $res['result'], 'email' => $email, 'token' => $token ] );
 	}
-	foodify_stock_alert_redirect( $id, [ 'status' => $res['result'] ] );
+	foodify_stock_alert_redirect( $id, [ 'status' => $res['result'], 'email' => $email ] );
 };
 add_action( 'admin_post_nopriv_foodify_stock_alert', $foodify_stock_alert_subscribe );
 add_action( 'admin_post_foodify_stock_alert', $foodify_stock_alert_subscribe );

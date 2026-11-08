@@ -136,6 +136,43 @@ function foodify_rating_display( float $average, int $count ): array {
 	];
 }
 
+/**
+ * Five glyphs for an average — ONE rounding rule for the whole product page
+ * (UX review 8 Nov 2026, PRODUCT-15). The title said ★★★★☆ for 4.7 and the
+ * summary above the reviews said ★★★★★. The rule is FLOOR, the same stance as
+ * every other number here: a 4.7 is shown as four full stars and "4.7", never
+ * rounded up into a fifth star it did not earn.
+ */
+function foodify_star_glyphs( float $average ): string {
+	$full = (int) floor( max( 0.0, min( 5.0, $average ) ) + 1e-9 );
+	return str_repeat( '★', $full ) . str_repeat( '☆', 5 - $full );
+}
+
+/**
+ * The glyphs for the eye, the number for a reader: the stars are aria-hidden
+ * and the text says "Rated 4.7 out of 5".
+ */
+function foodify_stars_html( float $average ): string {
+	return '<span class="fd-stars" aria-hidden="true">' . foodify_star_glyphs( $average ) . '</span>'
+		. '<span class="fd-sr">Rated ' . number_format( round( $average, 1 ), 1 ) . ' out of 5</span>';
+}
+
+/**
+ * The rating row under the product page's title: stars, the average, and the
+ * count as a link to the reviews. Nothing at zero reviews (product-display.php
+ * hides the row then too — no empty stars).
+ */
+function foodify_pdp_rating_html( float $average, int $count ): string {
+	$d = foodify_rating_display( $average, $count );
+	if ( ! $d['show'] ) {
+		return '';
+	}
+	$word = 1 === $count ? 'review' : 'reviews';
+	return '<div class="fd-rating">' . foodify_stars_html( $d['stars'] )
+		. ' <span class="fd-rating__score" aria-hidden="true">' . number_format( $d['stars'], 1 ) . '</span>'
+		. ' <a href="#reviews" class="woocommerce-review-link" rel="nofollow">(' . $count . ' ' . $word . ')</a></div>';
+}
+
 /* -------------------------------------------------------------------------
  * 11 · The star histogram and the filter — pure.
  *
@@ -250,6 +287,18 @@ function foodify_review_count_line( int $shown, int $loaded, int $total ): strin
 }
 
 /**
+ * The filter's group label (PRODUCT-6). When WooCommerce pages the reviews the
+ * chips can only filter the ones on this page, so they say so — "Filter the 5
+ * reviews shown" — and the script recounts each chip among those five. The
+ * histogram above keeps the totals. The script mirrors this word for word.
+ */
+function foodify_review_filter_label( int $loaded, int $total ): string {
+	return $loaded > 0 && $loaded < $total
+		? sprintf( 'Filter the %d %s shown', $loaded, 1 === $loaded ? 'review' : 'reviews' )
+		: 'Filter reviews';
+}
+
+/**
  * The block above the review list: the average, the 5→1 histogram, and the
  * filter. The filter ships `hidden` — without the script its buttons would do
  * nothing, so without the script they do not exist, and every review shows.
@@ -260,8 +309,7 @@ function foodify_review_summary_html( array $hist, int $with_photos ): string {
 		return '';
 	}
 	$avg   = (float) ( $hist['average'] ?? 0 );
-	$full  = (int) round( $avg );
-	$stars = str_repeat( '★', $full ) . str_repeat( '☆', 5 - $full );
+	$stars = foodify_star_glyphs( $avg );   // the title's rule, not round()
 	$word  = 1 === $total ? 'review' : 'reviews';
 
 	$rows = '';
@@ -292,7 +340,7 @@ function foodify_review_summary_html( array $hist, int $with_photos ): string {
 		. ' <span class="fd-rsum__basis">out of 5 · ' . $total . ' ' . $word . '</span></p>'
 		. '<ul class="fd-rsum__bars" aria-label="How the ' . $total . ' ' . $word . ' are spread">' . $rows . '</ul>'
 		. '<div class="fd-rsum__filter" data-fd-review-filter hidden>'
-		. '<p class="fd-rsum__label" id="fd-rsum-label">Filter reviews</p>'
+		. '<p class="fd-rsum__label" id="fd-rsum-label" data-fd-filter-label>' . htmlspecialchars( foodify_review_filter_label( $total, $total ), ENT_QUOTES ) . '</p>'
 		. '<div class="fd-rsum__chips" role="group" aria-labelledby="fd-rsum-label">' . $chips . '</div>'
 		. '<p class="fd-rsum__count" data-fd-review-count aria-live="polite">' . htmlspecialchars( foodify_review_count_line( $total, $total, $total ), ENT_QUOTES ) . '</p>'
 		. '<button type="button" class="fd-rsum__clear" data-fd-filter-clear hidden>Clear</button>'
@@ -485,15 +533,21 @@ function foodify_review_photo_refusal( string $reason, ?array $limits = null ): 
 	][ $reason ] ?? '';
 }
 
-/** "Photo from Priya's review" — first name only; never a surname, never an email. */
-function foodify_review_photo_alt( string $author ): string {
+/**
+ * "Photo from Priya's review" — first name only; never a surname, never an
+ * email. With several photos each is numbered — "Photo 1 of 2 from Priya's
+ * review" — so a reader moving through them hears three different things
+ * rather than the same sentence three times (PRODUCT-23).
+ */
+function foodify_review_photo_alt( string $author, int $n = 0, int $of = 1 ): string {
 	$author = trim( (string) preg_replace( '/\s+/u', ' ', strip_tags( $author ) ) );
 	$first  = '' !== $author ? explode( ' ', $author )[0] : '';
 	$first  = rtrim( $first, '.,' );
+	$photo  = $of > 1 && $n >= 1 && $n <= $of ? "Photo {$n} of {$of}" : 'Photo';
 	if ( '' === $first || str_contains( $first, '@' ) || ! preg_match( '/\p{L}/u', $first ) ) {
-		return "Photo from a customer's review";
+		return "{$photo} from a customer's review";
 	}
-	return sprintf( "Photo from %s's review", $first );
+	return sprintf( "%s from %s's review", $photo, $first );
 }
 
 /**
@@ -503,15 +557,14 @@ function foodify_review_photo_alt( string $author ): string {
  * @param array<int,array{thumb:string,full:string,width?:int,height?:int}> $photos
  */
 function foodify_review_photos_html( array $photos, string $author ): string {
-	$ok  = static fn( string $u ): bool => (bool) preg_match( '#^(https?://|/)[^\s"\'<>]*$#', $u );
-	$alt = htmlspecialchars( foodify_review_photo_alt( $author ), ENT_QUOTES );
-	$li  = '';
-	foreach ( $photos as $p ) {
-		$thumb = (string) ( $p['thumb'] ?? '' );
-		$full  = (string) ( $p['full'] ?? '' );
-		if ( ! $ok( $thumb ) || ! $ok( $full ) ) {
-			continue;
-		}
+	$ok     = static fn( string $u ): bool => (bool) preg_match( '#^(https?://|/)[^\s"\'<>]*$#', $u );
+	$photos = array_values( array_filter( $photos, static fn( $p ): bool => $ok( (string) ( $p['thumb'] ?? '' ) ) && $ok( (string) ( $p['full'] ?? '' ) ) ) );
+	$of     = count( $photos );
+	$li     = '';
+	foreach ( $photos as $i => $p ) {
+		$thumb = (string) $p['thumb'];
+		$full  = (string) $p['full'];
+		$alt   = htmlspecialchars( foodify_review_photo_alt( $author, $i + 1, $of ), ENT_QUOTES );
 		$dims = ( ! empty( $p['width'] ) && ! empty( $p['height'] ) )
 			? sprintf( ' width="%d" height="%d"', (int) $p['width'], (int) $p['height'] )
 			: '';
@@ -551,6 +604,19 @@ function foodify_review_filter_script(): string {
     var count=bar.querySelector('[data-fd-review-count]'),clear=bar.querySelector('[data-fd-filter-clear]'),current='';
     function rating(el){var m=/(?:^|\s)fd-rv--([1-5])(?:\s|$)/.exec(el.className);return m?m[1]:'';}
     function word(n){return n===1?'review':'reviews';}
+    // Paged reviews: the chips can only filter what is on this page, so they
+    // count only that, and the label says so. The histogram keeps the totals.
+    if(items.length<total){
+      var lab=bar.querySelector('[data-fd-filter-label]');
+      if(lab)lab.textContent='Filter the '+items.length+' '+word(items.length)+' shown';
+      chips.forEach(function(c){
+        var k=c.getAttribute('data-fd-filter'),n=items.filter(function(el){return k==='photos'?el.classList.contains('fd-rv--photos'):rating(el)===k;}).length;
+        c.hidden=n<1;
+        if(k==='photos'){c.textContent='With photos ('+n+')';c.setAttribute('aria-label','With photos, '+n+' '+word(n));}
+        else{c.textContent=k+'★ ('+n+')';c.setAttribute('aria-label',k+' '+(k==='1'?'star':'stars')+', '+n+' '+word(n));}
+      });
+      chips=chips.filter(function(c){return !c.hidden;});
+    }
     function line(shown,loaded){
       if(total<1)return '';
       if(loaded>=total){if(shown>=total)return total===1?'Showing 1 review':'Showing all '+total+' reviews';return 'Showing '+shown+' of '+total+' '+word(total);}
@@ -569,7 +635,7 @@ function foodify_review_filter_script(): string {
   }
   var links=[].slice.call(document.querySelectorAll('a[data-fd-photo]'));
   if(!links.length||typeof HTMLDialogElement!=='function')return;
-  var dlg=document.createElement('dialog');dlg.className='fd-rv-dialog';
+  var dlg=document.createElement('dialog');dlg.className='fd-rv-dialog';dlg.setAttribute('aria-label','Review photo');
   dlg.innerHTML='<img alt=""><form method="dialog"><button type="submit" class="fd-rv-dialog__close">Close</button></form>';
   document.body.appendChild(dlg);
   var big=dlg.querySelector('img'),opener=null;
@@ -581,6 +647,30 @@ function foodify_review_filter_script(): string {
   });});
 })();
 JS;
+}
+
+/**
+ * The section's heading and the line under it (PRODUCT-24). With reviews:
+ * "What people said". With none, "What people said" over an empty list read
+ * as a verdict, and the line under it ("Only people who ordered this can
+ * review it") told a buyer what they could not do rather than how they can.
+ *
+ * @return array{title:string,sub:string}
+ */
+function foodify_review_section_copy( int $count ): array {
+	return $count > 0
+		? [ 'title' => 'What people said', 'sub' => 'Only people who ordered this can review it.' ]
+		: [ 'title' => 'Reviews', 'sub' => 'Bought it? You can review it from My account → Orders.' ];
+}
+
+/**
+ * With no reviews, WooCommerce's own block adds a second "Reviews" heading and
+ * "There are no reviews yet." under the section's heading and line. Both go;
+ * the review form (for a verified buyer) stays.
+ */
+function foodify_review_strip_empty_state( string $html ): string {
+	$html = (string) preg_replace( '~<h2\b[^>]*\bclass="[^"]*\bwoocommerce-Reviews-title\b[^"]*"[^>]*>.*?</h2>\s*~s', '', $html );
+	return (string) preg_replace( '~<p\b[^>]*\bclass="[^"]*\bwoocommerce-noreviews\b[^"]*"[^>]*>.*?</p>\s*~s', '', $html );
 }
 
 /* -------------------------------------------------------------------------
@@ -1221,7 +1311,40 @@ add_filter( 'render_block', static function ( string $html, array $block ): stri
 	$stats   = foodify_review_product_stats( $id );
 	$summary = foodify_review_summary_html( foodify_review_histogram( $stats['ratings'] ), (int) $stats['with_photos'] );
 	if ( '' === $summary ) {
-		return $html;
+		return foodify_review_strip_empty_state( $html );   // no reviews: the section's own heading and line say it
 	}
 	return $summary . $html . '<script>' . foodify_review_filter_script() . '</script>'; // static script, no data
+}, 10, 2 );
+
+/** The section heading and its line, by whether the product has reviews (PRODUCT-24). */
+$foodify_review_copy = static function ( string $html, array $block ): string {
+	$cls = (string) ( $block['attrs']['className'] ?? '' );
+	$key = str_contains( $cls, 'fd-reviews__title' ) ? 'title' : ( str_contains( $cls, 'fd-reviews__sub' ) ? 'sub' : '' );
+	if ( '' === $key || ! function_exists( 'is_product' ) || ! is_product() ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
+	if ( ! $product instanceof WC_Product ) {
+		return $html;
+	}
+	$copy = foodify_review_section_copy( (int) $product->get_review_count() );
+	return (string) preg_replace( '~^(\s*<(h2|p)\b[^>]*>).*?(</\2>)~s', '$1' . esc_html( $copy[ $key ] ) . '$3', $html, 1 );
+};
+add_filter( 'render_block_core/heading', $foodify_review_copy, 10, 2 );
+add_filter( 'render_block_core/paragraph', $foodify_review_copy, 10, 2 );
+
+/**
+ * The rating row under the product page's title, in the same stars and the
+ * same rounding rule as the summary above the reviews (PRODUCT-15). Cards keep
+ * WooCommerce's own rating block.
+ */
+add_filter( 'render_block_woocommerce/product-rating', static function ( string $html, array $block ): string {
+	if ( ! empty( $block['attrs']['isDescendentOfQueryLoop'] ) || ! function_exists( 'is_product' ) || ! is_product() ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
+	if ( ! $product instanceof WC_Product ) {
+		return $html;
+	}
+	return foodify_pdp_rating_html( (float) $product->get_average_rating(), (int) $product->get_review_count() ); // Escaped in the builder.
 }, 10, 2 );

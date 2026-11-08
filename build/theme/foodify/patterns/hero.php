@@ -18,7 +18,7 @@
 <h1 class="wp-block-heading has-4-xl-font-size"><!--FOODIFY_TAGLINE--></h1>
 <!-- /wp:heading -->
 <!-- wp:paragraph {"fontSize":"md","textColor":"mute"} -->
-<p class="has-mute-color has-text-color has-md-font-size">Home-style Indian meals — no cooking, no preservatives, 12-month shelf life. Just add hot water.</p>
+<p class="has-mute-color has-text-color has-md-font-size">Home-style Indian meals — no preservatives, 9–12 month shelf life. Most need only hot water.</p>
 <!-- /wp:paragraph -->
 <!-- wp:buttons -->
 <div class="wp-block-buttons">
@@ -36,8 +36,8 @@
 <div class="wp-block-column is-vertically-aligned-center" style="flex-basis:45%">
 <!-- wp:group {"className":"fd-hero-image fd-photo-placeholder","style":{"spacing":{"padding":{"top":"var:preset|spacing|90","bottom":"var:preset|spacing|90"}}},"backgroundColor":"kraft-pale","layout":{"type":"constrained"}} -->
 <div class="wp-block-group fd-hero-image fd-photo-placeholder has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--90);padding-bottom:var(--wp--preset--spacing--90)">
-<!-- wp:paragraph {"align":"center","textColor":"mute","fontSize":"sm"} -->
-<p class="has-text-align-center has-mute-color has-text-color has-sm-font-size">Photography placeholder — prepared Dal Makhni, steam rising</p>
+<!-- wp:paragraph {"align":"center","textColor":"mute","fontSize":"base"} -->
+<p class="has-text-align-center has-mute-color has-text-color has-base-font-size">Photography placeholder — prepared Dal Makhni, steam rising</p>
 <!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->

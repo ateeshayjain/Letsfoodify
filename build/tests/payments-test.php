@@ -130,5 +130,14 @@ check( 'and it earns no prepaid discount', 0.0 === foodify_prepaid_discount( 620
 check( 'while the default config would have PAID it the discount — which is the bug',
 	25.0 === foodify_prepaid_discount( 620.0, 'cod_delhivery', $C ) );
 
+echo "── the cart names the prepaid saving, from the same numbers (BUY-25) ──\n";
+$D = foodify_payment_defaults();
+check( 'an online gateway is on -> "Pay online at checkout and save ₹25"', 'Pay online at checkout and save ₹25' === foodify_cart_prepaid_hint( 615.0, [ 'cod', 'razorpay' ], $D ) );
+check( 'the figure is the fee\'s figure', foodify_prepaid_discount( 615.0, 'razorpay', $D ) === 25.0 && str_ends_with( foodify_cart_prepaid_hint( 615.0, [ 'razorpay' ], $D ), '₹25' ) );
+check( 'cash on delivery only -> no promise', '' === foodify_cart_prepaid_hint( 615.0, [ 'cod' ], $D ) );
+check( 'no gateways -> no promise', '' === foodify_cart_prepaid_hint( 615.0, [], $D ) );
+check( 'a config with no saving -> no promise', '' === foodify_cart_prepaid_hint( 615.0, [ 'razorpay' ], [ 'prepaid_flat' => 0.0 ] + $D ) );
+check( 'a ₹20 cart is promised ₹20, as the fee would give', 'Pay online at checkout and save ₹20' === foodify_cart_prepaid_hint( 20.0, [ 'razorpay' ], $D ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

@@ -83,6 +83,20 @@ function foodify_combo_meal_count( array $items ): int {
 	return $n;
 }
 
+/**
+ * "3 meals" / "1 pack". A box of chai and chutneys is not three meals
+ * (BROWSE-13): the unit is the product's `_foodify_combo_unit` — 'meal'
+ * (the default, today's wording) or 'pack'. Anything else reads as 'meal'.
+ */
+function foodify_combo_unit( string $unit ): string {
+	return 'pack' === strtolower( trim( $unit ) ) ? 'pack' : 'meal';
+}
+
+function foodify_combo_count_label( int $n, string $unit = 'meal' ): string {
+	$u = foodify_combo_unit( $unit );
+	return $n . ' ' . ( 1 === $n ? $u : $u . 's' );
+}
+
 /** Price per meal, rounded DOWN so the figure can never flatter the pack. */
 function foodify_combo_per_meal( float $price, int $meals ): int {
 	if ( $price <= 0 || $meals < 1 ) {
@@ -107,18 +121,25 @@ function foodify_combo_saving( float $separate, float $price ): array {
 	];
 }
 
-/** The floor a saving must clear to be worth a badge. Below this it is noise. */
+/**
+ * The floor a saving must clear to be worth a badge. Below this it is noise.
+ *
+ * ONE floor, the single pack's (foodify_save_badge_min(), 15%), and one badge
+ * format, "Save N%" (UX review 8 Nov 2026, BROWSE-13). It was ₹25 here — so a
+ * ₹1,600 box saving ₹25 (1.6%) earned the same SAVE badge a pack needs 15% for,
+ * in a different format two cards away.
+ */
 function foodify_combo_saving_min(): int {
-	return 25;
+	return function_exists( 'foodify_save_badge_min' ) ? foodify_save_badge_min() : 15;
 }
 
-/** "Save ₹90" — or nothing at all. */
+/** "Save 15%" — or nothing at all. Floors the percent, never rounds up to the floor. */
 function foodify_combo_saving_badge( float $separate, float $price ): string {
 	$saving = foodify_combo_saving( $separate, $price );
-	if ( $saving['amount'] < foodify_combo_saving_min() ) {
+	if ( $saving['percent'] < foodify_combo_saving_min() ) {
 		return '';
 	}
-	return 'Save ₹' . number_format( $saving['amount'] );
+	return 'Save ' . $saving['percent'] . '%';
 }
 
 /**
@@ -127,7 +148,7 @@ function foodify_combo_saving_badge( float $separate, float $price ): string {
  * A card has room for about three names. The rest are counted rather than
  * truncated mid-word, because "Dal Fry, Idli Sam…" reads as a broken layout.
  */
-function foodify_combo_card_line( array $items, int $show = 3 ): string {
+function foodify_combo_card_line( array $items, int $show = 3, string $unit = 'meal' ): string {
 	if ( ! $items ) {
 		return '';
 	}
@@ -136,7 +157,7 @@ function foodify_combo_card_line( array $items, int $show = 3 ): string {
 	$head  = array_slice( $names, 0, $show );
 	$rest  = count( $names ) - count( $head );
 	$list  = implode( ', ', $head ) . ( $rest > 0 ? ' +' . $rest . ' more' : '' );
-	return ( 1 === $meals ? '1 meal' : $meals . ' meals' ) . ' · ' . $list;
+	return foodify_combo_count_label( $meals, $unit ) . ' · ' . $list;
 }
 
 /**
@@ -146,15 +167,15 @@ function foodify_combo_card_line( array $items, int $show = 3 ): string {
  * @param array<int,array{name:string,qty:int}> $items
  * @return array<int,string>
  */
-function foodify_combo_yield_parts( array $items, float $price, string $prep = '' ): array {
+function foodify_combo_yield_parts( array $items, float $price, string $prep = '', string $unit = 'meal' ): array {
 	if ( ! $items ) {
 		return [];
 	}
 	$meals = foodify_combo_meal_count( $items );
-	$parts = [ 1 === $meals ? '1 meal' : $meals . ' meals' ];
+	$parts = [ foodify_combo_count_label( $meals, $unit ) ];
 	$per   = foodify_combo_per_meal( $price, $meals );
 	if ( $per > 0 ) {
-		$parts[] = '₹' . number_format( $per ) . ' per meal';
+		$parts[] = '₹' . number_format( $per ) . ' per ' . foodify_combo_unit( $unit );
 	}
 	if ( '' !== trim( $prep ) ) {
 		$parts[] = trim( $prep );
@@ -165,8 +186,12 @@ function foodify_combo_yield_parts( array $items, float $price, string $prep = '
 /**
  * The "What's inside" panel for a combo's product page.
  *
- * @param array<int,array{name:string,qty:int}> $items
- * @param array{price?:float,separate?:float,prep?:string} $d
+ * Each item links to its own product page when the glue found one (`url`,
+ * PRODUCT-11): "what is a Express Dal Khichdi?" is answered one tap away.
+ * Only http(s) or root-relative URLs are printed as links.
+ *
+ * @param array<int,array{name:string,qty:int,url?:string}> $items
+ * @param array{price?:float,separate?:float,prep?:string,unit?:string} $d
  */
 function foodify_combo_panel_html( array $items, array $d = [] ): string {
 	if ( ! $items ) {
@@ -176,25 +201,32 @@ function foodify_combo_panel_html( array $items, array $d = [] ): string {
 	$meals = foodify_combo_meal_count( $items );
 	$price = (float) ( $d['price'] ?? 0 );
 	$sep   = (float) ( $d['separate'] ?? 0 );
+	$unit  = foodify_combo_unit( (string) ( $d['unit'] ?? 'meal' ) );
 
 	$rows = '';
 	foreach ( $items as $item ) {
-		$qty   = max( 1, (int) ( $item['qty'] ?? 1 ) );
+		$qty  = max( 1, (int) ( $item['qty'] ?? 1 ) );
+		$url  = (string) ( $item['url'] ?? '' );
+		$name = $e( (string) $item['name'] );
+		if ( '' !== $url && preg_match( '#^(https?://|/)[^\s"\'<>]*$#', $url ) ) {
+			$name = '<a class="fd-combo__link" href="' . $e( $url ) . '">' . $name . '</a>';
+		}
 		$rows .= sprintf(
 			'<li class="fd-combo__item"><span class="fd-combo__qty">%1$d</span><span>%2$s</span></li>',
 			$qty,
-			$e( (string) $item['name'] )
+			$name
 		);
 	}
 
 	$facts = [];
 	$per   = foodify_combo_per_meal( $price, $meals );
 	if ( $per > 0 ) {
-		$facts[] = '₹' . number_format( $per ) . ' per meal';
+		$facts[] = '₹' . number_format( $per ) . ' per ' . $unit;
 	}
 	$badge = foodify_combo_saving_badge( $sep, $price );
 	if ( '' !== $badge ) {
-		$facts[] = $badge . ' against ₹' . number_format( (int) $sep ) . ' bought separately';
+		$saving  = foodify_combo_saving( $sep, $price );
+		$facts[] = $badge . ' (₹' . number_format( $saving['amount'] ) . ') against ₹' . number_format( (int) $sep ) . ' bought separately';
 	}
 	if ( ! empty( $d['prep'] ) ) {
 		$facts[] = $e( (string) $d['prep'] );
@@ -230,7 +262,32 @@ function foodify_combo_data( WC_Product $product ): ?array {
 		'items'    => $items,
 		'price'    => (float) $product->get_price(),
 		'separate' => (float) get_post_meta( $product->get_id(), '_foodify_combo_separate', true ),
+		// 'meal' (default) or 'pack' — set 'pack' on a box of chai / chutneys.
+		'unit'     => foodify_combo_unit( (string) get_post_meta( $product->get_id(), '_foodify_combo_unit', true ) ),
 	];
+}
+
+/**
+ * Each item's product page, by exact published title. Unmatched names stay
+ * plain text: a link that guesses is worse than no link.
+ *
+ * @param array<int,array{name:string,qty:int}> $items
+ */
+function foodify_combo_item_links( array $items ): array {
+	foreach ( $items as $i => $item ) {
+		$ids = get_posts( [
+			'post_type'      => 'product',
+			'post_status'    => 'publish',
+			'title'          => (string) $item['name'],
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+		] );
+		if ( $ids ) {
+			$items[ $i ]['url'] = (string) get_permalink( (int) $ids[0] );
+		}
+	}
+	return $items;
 }
 
 // The strip under the price: meals and per-meal price, not grams.
@@ -240,13 +297,13 @@ add_filter( 'foodify_pdp_yield_parts', static function ( array $parts, WC_Produc
 		return $parts;
 	}
 	$prep = foodify_minutes_label( (string) $product->get_meta( '_foodify_prep_minutes' ) );
-	return foodify_combo_yield_parts( $combo['items'], $combo['price'], '' !== $prep ? 'Ready in ' . $prep : '' );
+	return foodify_combo_yield_parts( $combo['items'], $combo['price'], '' !== $prep ? 'Ready in ' . $prep : '', $combo['unit'] );
 }, 10, 2 );
 
 // The card's second line, in place of the single-meal yield line.
 add_filter( 'foodify_card_yield_line', static function ( string $line, WC_Product $product ): string {
 	$combo = foodify_combo_data( $product );
-	return $combo ? foodify_combo_card_line( $combo['items'] ) : $line;
+	return $combo ? foodify_combo_card_line( $combo['items'], 3, $combo['unit'] ) : $line;
 }, 10, 2 );
 
 // "Save ₹90" beside the price of a combo, on the card and on the page.
@@ -259,19 +316,27 @@ add_filter( 'woocommerce_get_price_html', static function ( string $html, WC_Pro
 	return '' === $badge ? $html : $html . ' <span class="fd-save">' . esc_html( $badge ) . '</span>';
 }, 21, 2 );
 
-// The panel, directly under the buy box — before the tabs, because it is the
-// question a combo buyer asks first.
-add_action( 'woocommerce_after_single_product_summary', static function (): void {
-	global $product;
+// The panel, directly under Add to cart (priority 9: before the delivery
+// check, Offers and the assurances) — the question a combo buyer asks first,
+// answered beside the button that buys it. It used to print below the whole
+// buy column, after the assurances, on a phone a screen further down. Not
+// ABOVE the button: with a 4–5 item list that pushes Add to cart out of the
+// first screen and a half (UX review decision 5, PRODUCT-11).
+add_filter( 'render_block_woocommerce/add-to-cart-form', static function ( string $html ): string {
+	if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
 	if ( ! $product instanceof WC_Product ) {
-		return;
+		return $html;
 	}
 	$combo = foodify_combo_data( $product );
 	if ( ! $combo ) {
-		return;
+		return $html;
 	}
-	echo foodify_combo_panel_html( $combo['items'], [
+	return $html . foodify_combo_panel_html( foodify_combo_item_links( $combo['items'] ), [
 		'price'    => $combo['price'],
 		'separate' => $combo['separate'],
-	] ); // phpcs:ignore WordPress.Security.EscapeOutput — escaped in the builder.
-}, 5 );
+		'unit'     => $combo['unit'],
+	] ); // Escaped in the builder.
+}, 9 );

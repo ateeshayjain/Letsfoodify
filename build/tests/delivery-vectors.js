@@ -46,5 +46,47 @@ for (const c of vec.cases) {
   check(c.name + (same ? '' : '\n        want ' + JSON.stringify(c.expect) + '\n        got  ' + JSON.stringify(got)), same);
 }
 
-console.log('\n' + pass + ' passed, ' + fail + ' failed');
-process.exit(fail ? 1 : 0);
+// ── the widget's error state (UX review, PRODUCT-18) ─────────────────────
+// A bad or unknown PIN marks the FIELD, not just the message: aria-invalid on
+// the input and the error class on both, cleared again by a good answer. Run
+// against a minimal fake DOM, through the same source the page prints.
+(async () => {
+  function el(tag) {
+    const attrs = {}, cls = new Set(), kids = [], on = {};
+    return {
+      tag, hidden: true, value: '', textContent: '', kids, on,
+      get className() { return [...cls].join(' '); },
+      set className(v) { cls.clear(); String(v).split(/\s+/).filter(Boolean).forEach(c => cls.add(c)); },
+      classList: { add: c => cls.add(c), remove: c => cls.delete(c), contains: c => cls.has(c),
+                   toggle: (c, f) => { if (f === undefined ? !cls.has(c) : f) cls.add(c); else cls.delete(c); } },
+      setAttribute: (k, v) => { attrs[k] = String(v); }, getAttribute: k => (k in attrs ? attrs[k] : null),
+      removeAttribute: k => { delete attrs[k]; }, hasAttribute: k => k in attrs,
+      addEventListener: (t, f) => { on[t] = f; }, appendChild: c => kids.push(c), attrs,
+    };
+  }
+  const box = el('div'), form = el('form'), input = el('input'), out = el('p');
+  box.setAttribute('data-config', JSON.stringify(norm.main));
+  box.setAttribute('data-pin-url', '/pin/');
+  box.querySelector = sel => (sel === 'form' ? form : sel === 'input' ? input : out);
+  const lookups = { '201304': { city: 'Gautam Buddha Nagar', state: 'UP' } };
+  const win = { localStorage: { getItem: () => null, setItem: () => {} },
+                foodifyPinLookup: pin => lookups[pin] || null };
+  const doc = { querySelectorAll: () => [box], createElement: el };
+  vm.runInNewContext(src, { window: win, document: doc, Promise, Date });
+  const tick = () => new Promise(r => setTimeout(r, 0));
+  const submit = async v => { input.value = v; form.on.submit({ preventDefault() {} }); await tick(); await tick(); };
+
+  check('the widget un-hides itself once bound', box.hidden === false);
+  await submit('2013');
+  check('a short PIN: aria-invalid="true" on the field', input.getAttribute('aria-invalid') === 'true');
+  check('… the field carries is-invalid, the message is-error',
+    input.classList.contains('is-invalid') && out.classList.contains('is-error'));
+  await submit('201304');
+  check('a good PIN clears both', input.getAttribute('aria-invalid') === null && !input.classList.contains('is-invalid') && out.classList.contains('is-ok'));
+  await submit('999999');
+  check('a PIN the table does not know is an error on the field too (it was a grey "no")',
+    input.getAttribute('aria-invalid') === 'true' && out.classList.contains('is-error'));
+
+  console.log('\n' + pass + ' passed, ' + fail + ' failed');
+  process.exit(fail ? 1 : 0);
+})();

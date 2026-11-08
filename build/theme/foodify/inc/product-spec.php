@@ -460,9 +460,15 @@ function foodify_spec_rows_html( array $rows ): string {
 	$e    = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
 	$html = '<dl class="fd-spec__list">';
 	foreach ( $rows as $row ) {
+		// The allergens row is the one a buyer scans for (PRODUCT-20): it carries
+		// its own class so it can be set in bold.
+		$cls = array_filter( [
+			'allergens' === ( $row['key'] ?? '' ) ? 'fd-spec__row--allergens' : '',
+			$row['provided'] ? '' : 'is-missing',
+		] );
 		$html .= sprintf(
 			'<div%1$s><dt>%2$s</dt><dd>%3$s</dd></div>',
-			$row['provided'] ? '' : ' class="is-missing"',
+			$cls ? ' class="' . implode( ' ', $cls ) . '"' : '',
 			$e( $row['label'] ),
 			$e( $row['value'] )
 		);
@@ -500,7 +506,7 @@ function foodify_render_pdp_body( array $d ): string {
 	if ( $label ) {
 		$out .= '<section class="fd-spec__group is-label fd-label"><h2>Pack &amp; label</h2>';
 		$out .= foodify_spec_rows_html( $label );
-		$out .= '<p class="fd-spec__note">These are the pack declarations. The same fields feed the Google product listing, so what you read here is what Google is told.</p></section>';
+		$out .= '<p class="fd-spec__note">These are the declarations printed on the pack.</p></section>';
 	}
 	return $out;
 }
@@ -532,9 +538,16 @@ function foodify_pdp_script(): string {
     function fmt(n){try{return new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(n);}catch(e){return String(Math.round(n));}}
     function update(){var q=qty?parseInt(qty.value,10)||1:1;total.textContent='₹'+fmt(unit*q);bar.querySelector('.fd-sticky-atc__qty').textContent=q+' '+(q===1?(bar.getAttribute('data-unit-one')||'pack'):(bar.getAttribute('data-unit-many')||'packs'));}
     if(qty){qty.addEventListener('input',update);qty.addEventListener('change',update);}update();
-    new IntersectionObserver(function(en){bar.hidden=en[0].isIntersecting;},{threshold:0}).observe(form);
+    // Shown only once the form has scrolled off the TOP. "Not intersecting" is
+    // also true on first load when the button is below the fold, and the bar
+    // then sat over the price it summarises (UX review, PRODUCT-2).
+    new IntersectionObserver(function(en){var e=en[0];bar.hidden=e.isIntersecting||e.boundingClientRect.top>0;},{threshold:0}).observe(form);
     bar.querySelector('button').addEventListener('click',function(){var b=form.querySelector('button[type=submit],.single_add_to_cart_button');if(b){b.click();}else{form.scrollIntoView({behavior:'smooth',block:'center'});}});
   }
+  // Arriving at #fd-notify (the card's "Notify me", or back from the alert
+  // form) scrolls there; focus follows, so a keyboard or reader user lands on
+  // the form and its message rather than at the top of the page.
+  if(location.hash==='#fd-notify'){var nt=document.getElementById('fd-notify');if(nt){if(!nt.hasAttribute('tabindex'))nt.setAttribute('tabindex','-1');nt.focus();}}
 })();
 JS;
 }
@@ -721,6 +734,246 @@ function foodify_shot_keys_from_tags( array $tags ): array {
 		}
 	}
 	return array_values( array_unique( $out ) );
+}
+
+/* -------------------------------------------------------------------------
+ * UX review, 8 Nov 2026 — product page and card fixes. Pure; the hooks in
+ * product-display.php, offers.php and reviews.php call them, and so can the
+ * prototype.
+ * ---------------------------------------------------------------------- */
+
+/**
+ * The dietary tags a product page prints beside the veg mark, in a fixed order.
+ * Input: the product's pa_dietary slugs (or their labels — the prototype passes
+ * labels). "Jain" is a claim about what is IN the food, so it obeys the same
+ * ingredient check as the card badge (foodify_jain_conflicts). Unknown values
+ * are dropped rather than printed raw.
+ *
+ * @param array<int,string> $values
+ * @return array<int,string> Labels.
+ */
+function foodify_diet_tags( array $values, string $ingredients = '' ): array {
+	$known = [
+		'jain'         => 'Jain',
+		'vegan'        => 'Vegan',
+		'gluten-free'  => 'Gluten free',
+		'millet'       => 'Millet based',
+		'high-protein' => 'High protein',
+	];
+	$alias = [ 'millet-based' => 'millet' ];
+	$have  = [];
+	foreach ( $values as $v ) {
+		$k = trim( (string) preg_replace( '/[\s_]+/', '-', strtolower( trim( (string) $v ) ) ), '-' );
+		$have[ $alias[ $k ] ?? $k ] = true;
+	}
+	$out = [];
+	foreach ( $known as $slug => $label ) {
+		if ( empty( $have[ $slug ] ) ) {
+			continue;
+		}
+		if ( 'jain' === $slug && [] !== foodify_jain_conflicts( $ingredients ) ) {
+			continue;   // the tag says Jain, the ingredients say otherwise
+		}
+		$out[] = $label;
+	}
+	return $out;
+}
+
+/**
+ * The line under the product page's H1: the commercial badge the card shows
+ * (Bestseller / New / Sold out — foodify_card_badges) and every dietary tag.
+ * Before: the card said Bestseller · Jain, the page it opened said neither.
+ *
+ * @param array<int,string> $diet Labels from foodify_diet_tags().
+ */
+function foodify_pdp_tags_html( string $commercial, array $diet ): string {
+	$e   = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
+	$out = '';
+	if ( '' !== $commercial ) {
+		$out .= '<span class="fd-badge ' . ( 'Sold out' === $commercial ? 'fd-badge--out' : 'fd-badge--flame' ) . '">' . $e( $commercial ) . '</span>';
+	}
+	foreach ( $diet as $label ) {
+		$out .= '<span class="fd-badge fd-badge--leaf">' . $e( (string) $label ) . '</span>';
+	}
+	return '' === $out ? '' : '<p class="fd-pdp-tags">' . $out . '</p>';
+}
+
+/**
+ * The card's dietary line under the name (BROWSE-18): "Jain · Vegan", as text,
+ * in place of a leaf badge stacked on the image — which LOOK's CSS hides
+ * whenever a Sold out / Bestseller badge is there, so the tag was lost exactly
+ * on the cards people look at most. At most $max tags, in foodify_diet_tags()
+ * order (Jain first: the one a buyer filters on), so it stays one line.
+ *
+ * @param array<int,string> $tags
+ */
+function foodify_card_diet_html( array $tags, int $max = 2 ): string {
+	$tags = array_slice( array_values( array_filter( array_map( 'strval', $tags ), static fn( $t ): bool => '' !== trim( $t ) ) ), 0, max( 1, $max ) );
+	return $tags ? '<p class="fd-card-diet">' . htmlspecialchars( implode( ' · ', $tags ), ENT_QUOTES ) . '</p>' : '';
+}
+
+/**
+ * The card's prep line — principle 1, "six minutes is the product": the card
+ * names the method and the time FIRST, ahead of the name and the price.
+ * "Hot water · 6 min · Serves 2" in one line, so the card does not grow: it
+ * replaces the grey "Serves 2 · 6 min" line under the name (UX review, BROWSE-1).
+ *
+ * @param array{label?:string,modifier?:string} $chip foodify_prep_chip_parts()
+ */
+function foodify_card_prep_html( array $chip, int $servings = 0 ): string {
+	$label = trim( (string) ( $chip['label'] ?? '' ) );
+	if ( '' === $label ) {
+		return '';
+	}
+	$e   = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
+	$mod = trim( (string) ( $chip['modifier'] ?? '' ) );
+	return '<p class="fd-card-prep"><span class="fd-chip' . ( '' !== $mod ? ' ' . $e( $mod ) : '' ) . '">' . $e( $label ) . '</span>'
+		. ( $servings > 0 ? '<span class="fd-card-prep__serves">Serves ' . $servings . '</span>' : '' )
+		. '</p>';
+}
+
+/**
+ * Short allergen names from the declared allergens text, for a one-line
+ * "Contains:" under the yield strip (PRODUCT-20). "Milk (ghee), Cereals
+ * containing gluten (wheat, in the asafoetida)" → [milk, gluten]. A
+ * declaration of none, a missing declaration and "may contain" statements
+ * give nothing here: the table row says those in full, and a one-line summary
+ * must never shorten "may contain" into "contains" or "not provided" into
+ * silence that reads as safe.
+ *
+ * @return array<int,string>
+ */
+function foodify_allergen_names( string $raw ): array {
+	$raw = trim( $raw );
+	if ( '' === $raw || preg_match( '/^(none|nil|no\b|not provided)|\bnone of\b/i', $raw ) ) {
+		return [];
+	}
+	$flat  = (string) preg_replace( '/\([^)]*\)/', '', $raw );
+	$names = [];
+	foreach ( preg_split( '/[,;]|\band\b/i', $flat ) ?: [] as $part ) {
+		$p = strtolower( trim( (string) preg_replace( '/\s+/', ' ', $part ), " .\t" ) );
+		if ( '' === $p || str_starts_with( $p, 'may contain' ) || str_contains( $p, 'traces' ) ) {
+			continue;
+		}
+		if ( str_contains( $p, 'gluten' ) ) {
+			$p = 'gluten';
+		} elseif ( str_contains( $p, 'sulphite' ) || str_contains( $p, 'sulfite' ) ) {
+			$p = 'sulphites';
+		} elseif ( str_contains( $p, 'soy' ) ) {
+			$p = 'soy';
+		} elseif ( str_contains( $p, 'crustacea' ) ) {
+			$p = 'crustaceans';
+		}
+		$names[] = $p;
+	}
+	return array_values( array_unique( $names ) );
+}
+
+/** '<p class="fd-allergens"><strong>Contains:</strong> milk, gluten</p>' or ''. */
+function foodify_allergen_line_html( string $raw ): string {
+	$names = foodify_allergen_names( $raw );
+	return $names
+		? '<p class="fd-allergens"><strong>Contains:</strong> ' . htmlspecialchars( implode( ', ', $names ), ENT_QUOTES ) . '</p>'
+		: '';
+}
+
+/**
+ * The assurances under Add to cart, from the product's own data (PRODUCT-4).
+ * They used to be typed into the template — "Ready in 6 minutes" and "9–12
+ * month shelf life" on every product, a 1-minute chutney and a 12-month label
+ * included. The prep time is gone from here entirely: the yield strip states it,
+ * from the product, one place per fact. Shelf life comes from the product's
+ * declared shelf life and is left out when there is none. Cash on delivery is a
+ * way to pay, so it lives here, not under Offers (foodify_cod_line()). Sold out,
+ * the lines about buying (COD) go.
+ *
+ * @param array{shelf_life?:string,cod?:string,in_stock?:bool} $d
+ * @return array<int,string>
+ */
+function foodify_assurance_lines( array $d ): array {
+	$in    = ! isset( $d['in_stock'] ) || (bool) $d['in_stock'];
+	$lines = [ 'No preservatives' ];
+	$shelf = trim( (string) ( $d['shelf_life'] ?? '' ) );
+	if ( '' !== $shelf ) {
+		$lines[] = 'Shelf life: ' . $shelf;
+	}
+	$cod = trim( (string) ( $d['cod'] ?? '' ) );
+	if ( $in && '' !== $cod ) {
+		$lines[] = $cod;
+	}
+	return $lines;
+}
+
+/** The small print under the assurances (PRODUCT-14 wording). */
+function foodify_assurance_note( bool $in_stock ): string {
+	return $in_stock
+		? 'Delivery charge, if any, shows in your cart. MRP includes all taxes.'
+		: 'MRP includes all taxes.';
+}
+
+function foodify_assurance_html( array $lines, string $note = '' ): string {
+	if ( ! $lines && '' === $note ) {
+		return '';
+	}
+	$e   = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
+	$out = '<div class="fd-assure">';
+	foreach ( $lines as $l ) {
+		$out .= '<p class="fd-assure__item">' . $e( (string) $l ) . '</p>';
+	}
+	return $out . ( '' !== $note ? '<p class="fd-assure__note">' . $e( $note ) . '</p>' : '' ) . '</div>';
+}
+
+/**
+ * The sale price as a screen reader hears it (PRODUCT-16). WooCommerce marks
+ * the struck-through MRP aria-hidden, so a reader heard only "₹185" — never
+ * that it was ₹225. Visually unchanged; the reader hears "MRP ₹225, now ₹185".
+ * Prices arrive as WooCommerce's own (already escaped) wc_price() markup; the
+ * plain texts are escaped here.
+ */
+function foodify_sale_price_html( string $regular_html, string $sale_html, string $regular_text ): string {
+	return '<span class="fd-sr">MRP ' . htmlspecialchars( trim( $regular_text ), ENT_QUOTES ) . ', now </span>'
+		. '<del aria-hidden="true">' . $regular_html . '</del> <ins>' . $sale_html . '</ins>';
+}
+
+/**
+ * A card button's text once the product is in the cart (BROWSE-7). WooCommerce
+ * says "1 in cart" and the button still adds one more on every press — a label
+ * that reads as a state, on a control that performs an action. WooCommerce 11
+ * builds that text from __( '%s in cart', 'woocommerce' ) in PHP and swaps '###'
+ * for the count in the browser (ProductButton.php, frontend.ts), so one
+ * translation filter changes both. The count stays visible, after the action.
+ */
+function foodify_in_cart_text(): string {
+	// A no-break space before the dot: on a two-up phone card the button
+	// wraps to "Add another ·" / "1 in cart", never a line starting "·".
+	return "Add another\u{00A0}· %s in cart";
+}
+
+/** A sold-out card button's accessible name (BROWSE-21). */
+function foodify_sold_out_button_label( string $name, bool $accepting_alerts ): string {
+	$name = trim( $name );
+	return $accepting_alerts ? "Notify me when {$name} is back" : "{$name} is sold out";
+}
+
+/**
+ * Sold-out products last in every listing sort (BROWSE-8) — the same rule the
+ * search ranking applies (foodify_search_rank: in stock before sold out, then
+ * the order asked for). Adds a LEFT JOIN on WooCommerce's product lookup table
+ * and prefixes ORDER BY, so "Price: low to high" stays price order within each
+ * half. A product with no lookup row sorts as in stock (NULL first). Idempotent.
+ *
+ * @param array{join?:string,orderby?:string} $clauses WP_Query posts_clauses
+ */
+function foodify_sold_out_last_clauses( array $clauses, string $posts_table, string $lookup_table ): array {
+	$alias = 'fd_stock';
+	$join  = (string) ( $clauses['join'] ?? '' );
+	if ( str_contains( $join, " {$alias} ON " ) ) {
+		return $clauses;
+	}
+	$clauses['join']    = $join . " LEFT JOIN {$lookup_table} {$alias} ON {$alias}.product_id = {$posts_table}.ID";
+	$order              = trim( (string) ( $clauses['orderby'] ?? '' ) );
+	$clauses['orderby'] = "( {$alias}.stock_status = 'outofstock' ) ASC" . ( '' !== $order ? ', ' . $order : '' );
+	return $clauses;
 }
 
 /* -------------------------------------------------------------------------

@@ -1,7 +1,10 @@
 <!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}}},"backgroundColor":"char","textColor":"paper","layout":{"type":"constrained"}} -->
 <div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
-<!-- wp:paragraph {"align":"center","fontSize":"sm"} -->
-<p class="has-text-align-center has-sm-font-size">Free shipping over ₹599 · <!--FOODIFY_DELIVERY--> · FSSAI <!--FOODIFY_FSSAI--></p>
+<!-- The strip is 16px and ONE line on a phone: below 782px only the first
+     fact shows (.fd-strip__more is hidden in style.css). "Free delivery", not
+     "free shipping" — one name per thing, the word checkout uses. -->
+<!-- wp:paragraph {"align":"center","className":"fd-strip","fontSize":"base"} -->
+<p class="has-text-align-center fd-strip has-base-font-size"><span class="fd-strip__fact">Free delivery over ₹599</span><span class="fd-strip__more"><!--FOODIFY_DELIVERY_BAR--> · FSSAI <!--FOODIFY_FSSAI--></span></p>
 <!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
@@ -21,6 +24,10 @@
 <!-- wp:navigation-link {"label":"Flavors","url":"/product-category/flavors/"} /-->
 <!-- wp:navigation-link {"label":"Combos","url":"/product-category/combos/"} /-->
 <!-- wp:navigation-link {"label":"How it works","url":"/#how-it-works"} /-->
+<!-- Overlay-only: the whole menu and the box builder, which a phone menu had no
+     door to (BROWSE-15). Hidden wherever the menu is a row (style.css, 900px). -->
+<!-- wp:navigation-link {"label":"All meals","url":"/shop/","className":"fd-nav-extra"} /-->
+<!-- wp:navigation-link {"label":"Build a box","url":"/build-a-box/","className":"fd-nav-extra"} /-->
 <!-- The account, inside the phone menu only. The header button is an icon on a
      phone (no room for its word), and an unlabelled icon was not found.
      style.css hides this item wherever the menu is a row, not the overlay. -->
@@ -37,7 +44,7 @@
 <details class="fd-search" data-fd-search><summary class="fd-search__toggle"><span class="fd-search__when-closed"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Search</span></span><span class="fd-search__when-open"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Close search</span></span></summary><div class="fd-search__panel"><form class="fd-search__form" role="search" method="get" action="/"><label class="fd-sr" for="fd-search-q">Search the menu</label><input class="fd-search__input" id="fd-search-q" type="search" name="s" placeholder="Search meals, ingredients" autocomplete="off" enterkeyhint="search"><input type="hidden" name="post_type" value="product"><button class="fd-search__go" type="submit"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Search</span></button></form><div class="fd-search__pop" hidden><p class="fd-search__none" hidden></p><ul class="fd-search__list" id="fd-search-list" role="listbox" aria-label="Suggestions"></ul></div><p class="fd-sr" role="status" aria-live="polite" data-fd-search-status></p></div></details>
 <!-- /wp:html -->
 <!-- wp:woocommerce/customer-account {"displayStyle":"icon_and_text","iconClass":"wc-block-customer-account__account-icon"} /-->
-<!-- wp:woocommerce/mini-cart {"miniCartIcon":"cart","hasHiddenPrice":false,"productCountVisibility":"always","addToCartBehaviour":"open_drawer"} /-->
+<!-- wp:woocommerce/mini-cart {"miniCartIcon":"cart","hasHiddenPrice":false,"productCountVisibility":"greater_than_zero","addToCartBehaviour":"open_drawer"} /-->
 </div>
 <!-- /wp:group -->
 </div>

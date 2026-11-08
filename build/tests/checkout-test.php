@@ -40,7 +40,7 @@ check( 'address but NO resolved rate -> still an estimate', 'estimate' === $p['k
 
 $p = foodify_cart_promise( [ 'needs_shipping' => true, 'has_address' => true, 'shipping_cost' => 0.0 ] );
 check( 'free shipping resolved -> a promise', 'promise' === $p['kind'] );
-check( 'free shipping -> says so', false !== stripos( $p['message'], 'free shipping' ) );
+check( 'free delivery -> says so, in the one name (decision 6)', false !== stripos( $p['message'], 'free delivery' ) && false === stripos( $p['message'], 'shipping' ) );
 
 $p = foodify_cart_promise( [ 'needs_shipping' => true, 'has_address' => true, 'shipping_cost' => 79.0 ] );
 check( 'paid shipping resolved -> a promise', 'promise' === $p['kind'] );
@@ -73,6 +73,68 @@ check( 'order received gets the site header', 'header' === foodify_checkout_part
 check( 'and the site footer',                 'footer' === foodify_checkout_part_slug( 'footer-checkout', true ) );
 check( 'any other part passes through',       'header' === foodify_checkout_part_slug( 'header', true ) );
 check( 'unknown parts are left alone',        'promo'  === foodify_checkout_part_slug( 'promo', true ) );
+
+echo "── flat rate is hidden once free delivery applies (BUY-3) ──\n";
+$keep = foodify_shipping_rates_to_keep( [ 'flat_rate:2' => 'flat_rate', 'free_shipping:1' => 'free_shipping' ] );
+check( 'free + flat -> only free is offered (a stale ₹59 choice cannot survive)', [ 'free_shipping:1' ] === $keep );
+check( 'below the minimum (no free rate) -> flat rate stays', [ 'flat_rate:2' ] === foodify_shipping_rates_to_keep( [ 'flat_rate:2' => 'flat_rate' ] ) );
+check( 'other methods are left alone', [ 'free_shipping:1', 'local_pickup:3' ] === foodify_shipping_rates_to_keep( [ 'free_shipping:1' => 'free_shipping', 'flat_rate:2' => 'flat_rate', 'local_pickup:3' => 'local_pickup' ] ) );
+check( 'no rates -> none', [] === foodify_shipping_rates_to_keep( [] ) );
+$flow = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/checkout-flow.php' );
+check( 'the rule is wired to woocommerce_package_rates', 1 === preg_match( "/add_filter\\(\\s*'woocommerce_package_rates'.*?foodify_shipping_rates_to_keep\\(/s", $flow ) );
+// "Delivery | Delivery: ₹59" (UX recheck): the title that repeats the heading goes.
+$amt = '<span class="woocommerce-Price-amount amount">₹59</span>';
+check( 'a method titled "Delivery" shows its price alone', $amt === foodify_shipping_method_label( 'Delivery: ' . $amt, 'Delivery' ) );
+check( '"Free delivery" keeps its words (it has no price to show)', 'Free delivery' === foodify_shipping_method_label( 'Free delivery', 'Free delivery' ) );
+check( 'another method names itself', 'Express delivery: ' . $amt === foodify_shipping_method_label( 'Express delivery: ' . $amt, 'Express delivery' ) );
+check( 'a title only starting with the heading is not cut', 'Delivery partner: ' . $amt === foodify_shipping_method_label( 'Delivery partner: ' . $amt, 'Delivery partner' ) );
+check( 'the totals row is headed "Delivery"', 'Delivery' === foodify_shipping_heading() );
+check( 'both are wired', 1 === preg_match( "/'woocommerce_shipping_package_name'.*?foodify_shipping_heading\\(/s", $flow )
+	&& 1 === preg_match( "/'woocommerce_cart_shipping_method_full_label'.*?foodify_shipping_method_label\\(/s", $flow ) );
+$boot = (string) file_get_contents( __DIR__ . '/../scripts/bootstrap.sh' );
+check( 'the methods carry the customer titles "Free delivery" and "Delivery" (BUY-15)', str_contains( $boot, '"title":"Free delivery"' ) && str_contains( $boot, '"title":"Delivery"' ) );
+
+echo "── an empty quantity never removes a cart line (BUY-6) ──\n";
+check( 'an empty field does not apply', false === foodify_cart_qty_applies( '' ) && false === foodify_cart_qty_applies( '  ' ) );
+check( 'a whole number applies, 0 included (typing 0 is a removal on purpose)', foodify_cart_qty_applies( '3' ) && foodify_cart_qty_applies( '0' ) && foodify_cart_qty_applies( ' 12 ' ) );
+check( 'typos do not apply', ! foodify_cart_qty_applies( '2.5' ) && ! foodify_cart_qty_applies( '-1' ) && ! foodify_cart_qty_applies( 'abc' ) && ! foodify_cart_qty_applies( '1e2' ) );
+$cjs = foodify_cart_qty_script();
+check( 'the cart script runs the same test before it submits', str_contains( $cjs, '/^\d{1,4}$/' ) && 1 === preg_match( '/if\(bad\)return;.*setTimeout/s', $cjs ) );
+check( 'the cart enqueues that script, not a copy', str_contains( $flow, "wp_add_inline_script( 'foodify-cart', foodify_cart_qty_script() )" ) );
+
+echo "── a wrong coupon code says which, and what to do (BUY-9) ──\n";
+check( 'not-exist -> names the code in capitals, says what to do',
+	"We couldn't find the code BADCODE. Check the spelling, or ask the person who gave it to you." === foodify_coupon_error_text( 'Coupon "badcode" does not exist!', 105, 'badcode' ) );
+check( 'no exclamation mark, no "Coupon"', ! str_contains( foodify_coupon_error_text( 'x', 105, 'badcode' ), '!' ) );
+check( 'the own-referral message (code 100) is kept',
+	'This is your own referral code — share it with a friend instead.' === foodify_coupon_error_text( 'This is your own referral code — share it with a friend instead.', 100, 'priya50' ) );
+check( 'other WooCommerce messages pass through', 'Coupon usage limit has been reached.' === foodify_coupon_error_text( 'Coupon usage limit has been reached.', 106, 'x' ) );
+check( 'a code with markup is escaped', ! str_contains( foodify_coupon_error_text( '', 105, '<b>x' ), '<B>' ) );
+
+echo "── order received: what happens next, once (BUY-22, BUY-11) ──\n";
+$t = foodify_order_next_text( [ 'estimate' => 'Delivers Thu 12 – Sat 14 Nov', 'is_cod' => true, 'total' => '₹644', 'email' => 'priya@example.com' ] );
+check( 'it says when it arrives', str_contains( $t, 'Delivers Thu 12 – Sat 14 Nov.' ) );
+check( 'what is still owed, on cash on delivery', str_contains( $t, 'Keep ₹644 ready in cash' ) );
+check( 'plain text, so it survives whichever escaping the template applies', $t === strip_tags( $t ) );
+check( 'and where the receipt went', str_contains( $t, 'priya@example.com' ) );
+check( 'it does not repeat "Thank you. Your order has been received."', ! str_contains( $t, 'has been received' ) );
+$t = foodify_order_next_text( [ 'estimate' => '', 'is_cod' => false, 'paid' => true, 'email' => 'a@b.in' ] );
+check( 'no delivery option set -> no date, and no guessed one', ! str_contains( $t, 'Delivers' ) && str_contains( $t, 'Your payment is complete.' ) );
+$t = foodify_order_next_text( [ 'is_cod' => false, 'paid' => false ] );
+check( 'an online order not yet paid does not claim it is', ! str_contains( $t, 'payment is complete' ) );
+check( 'customer data is escaped', ! str_contains( foodify_order_next_text( [ 'email' => '<script>' ] ), '<script>' ) );
+check( 'the duplicate payment row is dropped on that page only', 1 === preg_match( "/woocommerce_get_order_item_totals.*?is_order_received_page\\(\\).*?unset\\( \\\$rows\\['payment_method'\\] \\)/s", $flow ) );
+
+echo "── checkout PIN: state always, city only when empty, the date (BUY-16, BUY-11) ──\n";
+$pjs = foodify_checkout_pin_script();
+check( 'it cannot end its script block early', ! str_contains( $pjs, '</script' ) );
+check( 'a city the customer typed is never overwritten', str_contains( $pjs, "(cur === '' || cur === auto[pre])" ) );
+check( 'a PIN the table does not know says so, with the fix', str_contains( $pjs, "'PIN not found — type your city.'" ) );
+check( 'a lookup that could not run is not "not found"', str_contains( $pjs, "if (res === 'error')" ) );
+check( 'the date comes from the product page\'s own function', str_contains( $pjs, 'window.foodifyDelivery.answer(' ) );
+check( 'and only while the delivery option is set', str_contains( $pjs, 'if (!cfg.delivery || !window.foodifyDelivery) return false;' ) );
+$fields = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/checkout-fields.php' );
+check( 'checkout passes the option (null when unset) and the shared script', str_contains( $fields, "'delivery' => \$delivery" ) && str_contains( $fields, 'foodify_delivery_script()' ) && str_contains( $fields, 'foodify_checkout_pin_script()' ) );
 
 echo "── PIN codes are answered on-site, with the right state ──\n";
 

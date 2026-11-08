@@ -36,7 +36,7 @@
  *   0  the name starts with the query              "dal f"  → Dal Fry
  *   1  every query word starts a word of the name   "fry"    → Dal Fry
  *   2  …or of the keywords (tags, Hindi names, ingredients)  "rajma", "moong"
- *   3  …allowing ONE typo on query words of 5+ letters       "biryni"
+ *   3  …allowing ONE typo on query words of 4+ letters       "biryni", "idly"
  *   Sold-out products come after every in-stock one, whatever their tier.
  *   Within a tier, catalogue order — the index is built by popularity.
  *
@@ -51,8 +51,13 @@ defined( 'ABSPATH' ) || exit;
  * Pure — tested in tests/search-test.php without WordPress.
  * ---------------------------------------------------------------------- */
 
-/** Below this length a query word must match exactly (as a prefix); at or above it, one typo is forgiven. */
-const FOODIFY_SEARCH_TYPO_MIN = 5;
+/**
+ * Below this length a query word must match exactly (as a prefix); at or above
+ * it, one typo is forgiven. 4 since the UX fix wave (8 Nov 2026, BROWSE-9):
+ * the menu's commonest names are four letters — idli, poha, upma, chai — and
+ * "idly" found nothing. Three letters stays exact ("dal" must not find "dol").
+ */
+const FOODIFY_SEARCH_TYPO_MIN = 4;
 
 /**
  * Lower-case, punctuation to spaces, single spaces. Letters, combining marks and
@@ -229,6 +234,41 @@ function foodify_search_popular( array $rows, int $n = 3 ): array {
 	return $out;
 }
 
+/**
+ * The last option in the suggestions (BROWSE-9): "See all 7 results for ‘dal’".
+ * The browser prints the same words (FDSearch.seeAll); the vectors compare them.
+ */
+function foodify_search_see_all_text( string $q, int $n ): string {
+	$q = trim( preg_replace( '/\s+/u', ' ', $q ) ?? '' );
+	return 1 === $n ? 'See 1 result for ‘' . $q . '’' : 'See all ' . $n . ' results for ‘' . $q . '’';
+}
+
+/**
+ * The results page's own search field (BROWSE-10): the query, in an open field
+ * at the top, so a customer can correct "biryni" without hunting for the
+ * header icon. A plain GET form like the header's — works with no script.
+ */
+function foodify_search_results_form_html( string $q ): string {
+	$e = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES, 'UTF-8' );
+	return '<form class="fd-search-again" role="search" method="get" action="/">'
+		. '<label class="fd-search-again__label" for="fd-search-again-q">Search the menu</label>'
+		. '<span class="fd-search-again__row">'
+		. '<input class="fd-search-again__input" id="fd-search-again-q" type="search" name="s" value="' . $e( trim( $q ) ) . '" autocomplete="off" enterkeyhint="search">'
+		. '<input type="hidden" name="post_type" value="product">'
+		. '<button class="wp-element-button fd-search-again__go" type="submit">Search</button>'
+		. '</span></form>';
+}
+
+/**
+ * Should the results count ("No products found") be dropped? Only on a search
+ * with nothing found: the page then says "No match for ‘xyz’. Popular right
+ * now:" and shows three products, and WooCommerce's line under the heading
+ * contradicts the products right below it (BROWSE-10).
+ */
+function foodify_search_hide_results_count( bool $is_search, int $found ): bool {
+	return $is_search && $found < 1;
+}
+
 /** "No match for ‘xyz’" — the same words the browser prints. */
 function foodify_search_none_text( string $q ): string {
 	return 'No match for ‘' . trim( preg_replace( '/\s+/u', ' ', $q ) ?? '' ) . '’';
@@ -327,7 +367,7 @@ function foodify_search_form_html(): string {
 function foodify_search_engine_js(): string {
 	return <<<'JS'
 var FDSearch=(function(){
-  var MIN=5;
+  var MIN=4;
   function norm(s){return String(s==null?'':s).toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu,' ').replace(/ +/g,' ').trim();}
   function words(s){var n=norm(s);return n===''?[]:n.split(' ');}
   function cps(s){return Array.from(s);}
@@ -371,7 +411,8 @@ var FDSearch=(function(){
     return hits.slice(0,limit).map(function(h){return h.r;});
   }
   function popular(rows,n){if(n==null)n=3;var out=[];for(var i=0;i<rows.length&&out.length<n;i++){if(rows[i].stock)out.push(rows[i]);}return out;}
-  return {norm:norm,rank:rank,popular:popular};
+  function seeAll(q,n){q=String(q==null?'':q).replace(/\s+/g,' ').trim();return n===1?'See 1 result for ‘'+q+'’':'See all '+n+' results for ‘'+q+'’';}
+  return {norm:norm,rank:rank,popular:popular,seeAll:seeAll};
 })();
 JS;
 }
@@ -392,7 +433,7 @@ function foodify_search_script(): string {
 (function(){
   var root=document.querySelector('[data-fd-search]');if(!root)return;
   var input=root.querySelector('.fd-search__input'),pop=root.querySelector('.fd-search__pop'),list=root.querySelector('.fd-search__list'),
-      none=root.querySelector('.fd-search__none'),status=root.querySelector('[data-fd-search-status]'),toggle=root.querySelector('summary'),
+      none=root.querySelector('.fd-search__none'),status=root.querySelector('[data-fd-search-status]'),toggle=root.querySelector('summary'),form=root.querySelector('form'),
       wide=matchMedia('(min-width:1200px)'),rows=null,loading=false,opts=[],active=-1,KEY='fd-search-v1';
   root.classList.add('is-enhanced');
   input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');
@@ -434,10 +475,18 @@ function foodify_search_script(): string {
     var hit=FDSearch.rank(rows,q,6),miss=!hit.length;opts=miss?FDSearch.popular(rows,3):hit;
     list.textContent='';active=-1;input.removeAttribute('aria-activedescendant');
     opts.forEach(function(r,i){list.appendChild(opt(r,i));});
+    // The last option: every match, on the results page (BROWSE-9).
+    if(!miss){var all=FDSearch.rank(rows,q,200).length,act=form.getAttribute('action')||'/',
+      href=act+(act.indexOf('?')<0?'?':'&')+'s='+encodeURIComponent(q.trim())+'&post_type=product',
+      li=document.createElement('li'),a=document.createElement('a');
+      li.id='fd-search-opt-'+opts.length;li.className='fd-search__opt fd-search__all';li.setAttribute('role','option');li.setAttribute('aria-selected','false');
+      a.href=href;a.tabIndex=-1;a.className='fd-search__link';a.textContent=FDSearch.seeAll(q,all);li.appendChild(a);list.appendChild(li);
+      opts=opts.concat([{url:href}]);}
     none.hidden=!miss;none.textContent=miss?'No match for ‘'+q.trim().replace(/\s+/g,' ')+'’. Popular right now:':'';
     if(!opts.length){close();status.textContent=none.textContent;return;}
     pop.hidden=false;input.setAttribute('aria-expanded','true');
-    status.textContent=(miss?none.textContent+' ':'')+(opts.length===1?'1 suggestion.':opts.length+' suggestions.');
+    var n=miss?opts.length:opts.length-1;
+    status.textContent=(miss?none.textContent+' ':'')+(n===1?'1 suggestion.':n+' suggestions.');
   }
   function move(d){
     if(pop.hidden){show();if(pop.hidden)return;}
@@ -601,6 +650,21 @@ add_filter( 'render_block_core/paragraph', static function ( string $html, array
 	$text = foodify_search_none_text( get_search_query( false ) ) . '. Popular right now:';
 	return (string) preg_replace( '~(<p\b[^>]*>).*?(</p>)~s', '$1' . esc_html( $text ) . '$2', $html, 1 );
 }, 10, 2 );
+
+/** The results page: the query in an open field under the heading (BROWSE-10). */
+add_filter( 'render_block_core/query-title', static function ( string $html, array $block ): string {
+	if ( 'search' !== ( $block['attrs']['type'] ?? '' ) || ! is_search() ) {
+		return $html;
+	}
+	return $html . foodify_search_results_form_html( get_search_query( false ) ); // Escaped in the builder.
+}, 10, 2 );
+
+/** …and no "No products found" above the popular products the page then shows (BROWSE-10). */
+add_filter( 'render_block_woocommerce/product-results-count', static function ( string $html ): string {
+	global $wp_query;
+	$found = $wp_query instanceof WP_Query ? (int) $wp_query->found_posts : 0;
+	return foodify_search_hide_results_count( is_search(), $found ) ? '' : $html;
+} );
 
 /** Remember that the header form rendered, so the script prints only where there is a field to drive. */
 add_filter( 'render_block_core/html', static function ( string $html ): string {

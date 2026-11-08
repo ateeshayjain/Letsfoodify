@@ -414,5 +414,26 @@ check( 'foodify_partner_coupons_on_order() keeps only the partner code', 1 === c
 $attr = foodify_attributed_coupons( $found, 500.0 );
 check( 'and the partner is attributed the whole net order — no share lost to a referral', 1 === count( $attr ) && 500.0 === $attr[0]['attributed_revenue'] );
 
+echo "── UX fix wave: repeat orders and Refer a friend (ACCOUNT-2, -7, -11, -13) ──\n";
+$lh = foodify_repeat_list_html( [ [ 'id' => 'r1', 'weeks' => 4, 'next' => '2026-12-06', 'status' => 'active', 'summary' => 'Poha' ] ], [ 'lead' => 2, 'active' => true, 'nonces' => [] ] );
+check( 'ACCOUNT-2: "Stop repeating", not "Cancel" next to "Change"', str_contains( $lh, '>Stop repeating<' ) && ! str_contains( $lh, '>Cancel<' ) );
+check( 'ACCOUNT-2: it is confirmed in place, like cancelling an order', 1 === preg_match( '#<details class="fd-repeat-item__stop"><summary[^>]*>Stop repeating</summary>.*?>Yes, stop reminders</button>.*?</details>#s', $lh ) );
+check( 'ACCOUNT-2: the stop is styled as the dangerous one', str_contains( $lh, 'class="fd-secondary fd-danger">Stop repeating' ) && str_contains( $lh, 'is-danger">Yes, stop reminders' ) );
+check( 'ACCOUNT-2: the confirm still posts the cancel verb', 1 === preg_match( '#<details class="fd-repeat-item__stop">.*?value="cancel".*?</details>#s', $lh ) );
+check( 'ACCOUNT-7: the interval button says "Save"', str_contains( $lh, '<button type="submit" class="fd-secondary">Save</button>' ) && ! str_contains( $lh, '>Change<' ) );
+check( 'ACCOUNT-7: nothing submits on change', ! str_contains( $lh, 'onchange' ) );
+check( 'ACCOUNT-7: the confirmation names the interval and the first reminder', 'Repeat set up — every 4 weeks. First reminder: Fri 4 Dec.' === foodify_repeat_created_message( 4, '2026-12-06', 2 ) );
+$set = foodify_repeat_offer_html( [ 'order_id' => 7, 'labels' => $plain, 'nonce_field' => '', 'existing' => [ 'weeks' => 4, 'next' => '2026-12-06' ], 'manage_url' => '/m/', 'created' => foodify_repeat_created_message( 4, '2026-12-06', 2 ) ] );
+check( 'ACCOUNT-7: shown in place, where the button was, as a status', str_contains( $set, '<p class="fd-repeat__done" role="status" tabindex="-1">Repeat set up — every 4 weeks. First reminder: Fri 4 Dec.</p>' ) && str_contains( $set, 'id="fd-repeat-7"' ) );
+check( 'ACCOUNT-7: and only right after setting it up', ! str_contains( foodify_repeat_offer_html( [ 'order_id' => 7, 'labels' => $plain, 'nonce_field' => '', 'existing' => [ 'weeks' => 4, 'next' => '2026-12-06' ] ] ), 'fd-repeat__done' ) );
+$rsrc = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/repeat-orders.php' );
+check( 'ACCOUNT-7: the create action redirects to that confirmation', str_contains( $rsrc, "add_query_arg( 'fd_repeat', 'set'" ) && str_contains( $rsrc, 'foodify_repeat_created_message( (int) $s[\'weeks\']' ) );
+check( 'ACCOUNT-11: a delivered (completed) order offers "Repeat this order"', foodify_repeat_offer_allowed( 'completed' ) && foodify_repeat_offer_allowed( 'wc-completed' ) );
+check( 'ACCOUNT-11: processing / on-hold / pending show nothing', ! foodify_repeat_offer_allowed( 'processing' ) && ! foodify_repeat_offer_allowed( 'on-hold' ) && ! foodify_repeat_offer_allowed( 'pending' ) && ! foodify_repeat_offer_allowed( 'return-requested' ) );
+check( 'ACCOUNT-11: the order page asks that rule', str_contains( $rsrc, '! foodify_repeat_offer_allowed( (string) $order->get_status() )' ) );
+check( 'the customer copy says "stop", not "cancel"', ! str_contains( foodify_repeat_labels( 0.0, 2 )['lead'], 'cancel' ) && 'Stopped repeating. No more reminders for this order.' === foodify_repeat_apply( [ [ 'id' => 'r1', 'coupon' => '' ] ], 'r1', 'cancel', [], '2026-11-20', 'n' )['message'] );
+check( 'ACCOUNT-13: "Send on WhatsApp" is the main button, first', 1 === preg_match( '#<div class="fd-refer__actions"><a class="wp-element-button[^"]*" href="https://wa\.me/#', $panel ) );
+check( 'ACCOUNT-13: Copy link and Share are secondary', str_contains( $panel, '<button type="button" class="fd-secondary" data-fd-copy' ) && 1 === preg_match( '#<button type="button" class="fd-secondary" data-fd-share[^>]*hidden>Share</button>#', $panel ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

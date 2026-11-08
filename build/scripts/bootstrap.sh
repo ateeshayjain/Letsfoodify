@@ -318,15 +318,34 @@ if [[ "$PHASE" == "all" ]]; then
       # coupon either falsely qualifies the customer for free shipping or falsely
       # un-qualifies them — and they find out at the payment step, which is the
       # exact "no surprises after the cart" promise this build is built on.
-      wp wc shipping_zone_method create "$ZID" --method_id=free_shipping --user=1 \
-        --settings='{"requires":"min_amount","min_amount":"599","ignore_discounts":"no"}' >/dev/null 2>&1 \
-        && ok "free shipping over ₹599 (compared AFTER discounts)" \
-        || warn "free-shipping method not created — check it by hand"
-
-      wp wc shipping_zone_method create "$ZID" --method_id=flat_rate --user=1 \
-        --settings='{"cost":"59"}' >/dev/null 2>&1 \
-        && ok "flat rate ₹59 below the threshold" \
-        || warn "flat-rate method not created — check it by hand"
+      # Customer titles (decision 6, UX fix wave 8 Nov 2026 — review BUY-15):
+      # one name per thing, the customer's word. WooCommerce's defaults are
+      # "Free shipping" and "Flat rate", and "Flat rate" is a term of art the
+      # customer then reads next to a ₹59 charge.
+      #
+      # IDEMPOTENT: a re-run used to create a second free-shipping and a second
+      # flat-rate method in the same zone. Now an existing method is updated in
+      # place (titles and settings) and only a missing one is created.
+      ship_method() {   # ship_method <method_id> <settings-json> <ok-message>
+        local mid="$1" settings="$2" msg="$3" iid
+        iid="$(command wp wc shipping_zone_method list "$ZID" --fields=instance_id,method_id --format=csv --user=1 2>/dev/null \
+          | awk -F, -v m="$mid" '$2==m {print $1; exit}')"
+        if [[ -n "$iid" ]]; then
+          command wp wc shipping_zone_method update "$ZID" "$iid" --settings="$settings" --user=1 >/dev/null 2>&1 \
+            && ok "$msg (updated #$iid)" || warn "$mid method #$iid not updated — check it by hand"
+        else
+          command wp wc shipping_zone_method create "$ZID" --method_id="$mid" --settings="$settings" --user=1 >/dev/null 2>&1 \
+            && ok "$msg" || warn "$mid method not created — check it by hand"
+        fi
+      }
+      ship_method free_shipping '{"title":"Free delivery","requires":"min_amount","min_amount":"599","ignore_discounts":"no"}' \
+        'Free delivery over ₹599 (compared AFTER coupons, before the box discount)'
+      ship_method flat_rate '{"title":"Delivery","cost":"59"}' \
+        'Delivery ₹59 below the threshold'
+      # Flat rate is HIDDEN once free delivery applies — a woocommerce_package_rates
+      # filter in inc/checkout-flow.php (review BUY-3). Without it the zone offers
+      # both, WooCommerce keeps a previously chosen method, and a customer told
+      # "Free delivery unlocked" can still be charged ₹59.
 
       # ASSERT, do not assume. A zone with no methods silently offers no shipping
       # at all, and an empty checkout shipping section reads as a theme bug.
@@ -339,7 +358,8 @@ if [[ "$PHASE" == "all" ]]; then
     fi
   else
     echo "    [dry-run] wp wc shipping_zone create --name=India"
-    echo "    [dry-run] wp wc shipping_zone_method create <id> --method_id=free_shipping (ignore_discounts=no)"
+    echo "    [dry-run] wp wc shipping_zone_method create|update <id> free_shipping title='Free delivery' (ignore_discounts=no)"
+    echo "    [dry-run] wp wc shipping_zone_method create|update <id> flat_rate title='Delivery'"
   fi
 
   log "Phase 4 · Cash on delivery"

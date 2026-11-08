@@ -176,7 +176,7 @@ const path = require('path');
     return { slug, label: a, home: other ? other.textContent.trim() : null };
   });
   const lab = await cardLabel();
-  check('after adding, the card says how many are in the cart — on every page that lists it', /^\d+ in cart$/.test(lab.label) && lab.home === lab.label, lab);
+  check('after adding, the card says how many are in the cart — on every page that lists it', /^Add another\u00a0· \d+ in cart$/.test(lab.label) && lab.home === lab.label, lab);
   await click('.fx-drawer-overlay .wc-block-mini-cart__footer-cart'); await wait();
   check('the drawer\'s "View my cart" opens the cart', (await shown()) === 'cart', await shown());
 
@@ -187,7 +187,7 @@ const path = require('path');
   check('the product page adds the quantity chosen', makhni === 3, makhni);
   await go('p-aloo-ka-mazaa');
   const soldOut = await page.evaluate(() => { const r = document.getElementById('s-p-aloo-ka-mazaa'); return { form: !!r.querySelector('form.cart'), stock: r.querySelector('.stock').textContent }; });
-  check('a sold-out product has no Add to cart and says Out of stock', !soldOut.form && /Out of stock/.test(soldOut.stock), soldOut);
+  check('a sold-out product has no Add to cart and says Sold out', !soldOut.form && /Sold out/.test(soldOut.stock), soldOut);
   await click('.wc-block-mini-cart__button'); await wait();
   check('the header cart opens the drawer', await drawerOpen());
   await page.keyboard.press('Escape'); await wait();
@@ -204,7 +204,7 @@ const path = require('path');
   let m = await math();
   check('subtotal is the sum of the lines', m.sub === m.lines, m);
   await page.fill('#coupon_code', 'nope'); await click('#s-cart button[name=apply_coupon]'); await wait();
-  check('an unknown code is refused in WooCommerce\'s words', /does not exist/.test(await page.textContent('#s-cart .woocommerce-notices-wrapper')));
+  check('an unknown code is refused, naming it and saying what to do', /couldn't find the code NOPE\. Check the spelling/.test(await page.textContent('#s-cart .woocommerce-notices-wrapper')));
   await page.fill('#coupon_code', 'nalin10'); await click('#s-cart button[name=apply_coupon]'); await wait();
   m = await math();
   check('NALIN10 takes 10% off', m.disc === Math.round(m.sub * 0.10), m);
@@ -336,6 +336,7 @@ const path = require('path');
     const d = document.getElementById('s-p-express-dal-fry');
     r.veg = !!d.querySelector('h1 .fd-veg'); r.unit = d.querySelector('.fd-unit-price')?.textContent;
     r.offers = [...d.querySelectorAll('.fd-offer__text')].map(e => e.textContent).join(' | ');
+    r.cod = [...d.querySelectorAll('.fd-assure__item')].some(e => /Cash on delivery/.test(e.textContent));
     // 5 · the photo brief asks for the back of the pack
     r.brief = d.querySelector('.fx-brief summary').textContent + ' ' + d.querySelector('.fx-brief').textContent.includes('Back of pack');
     // 4 · notify me on a sold-out product
@@ -386,7 +387,7 @@ const path = require('path');
   check('the PIN is remembered on the next product page', feat.pinNext === feat.pin, feat);
   check('an unknown PIN is said to be unknown, not given a date', feat.pinBad === 'unknown', feat.pinBad);
   check('the product page shows the veg mark and the price per 100 g', feat.veg && feat.unit === '₹231.25/100 g', feat);
-  check('the offers are the cart\'s own rules (₹599, ₹25 online, COD)', /599/.test(feat.offers) && /₹25/.test(feat.offers) && /Cash on delivery/.test(feat.offers), feat.offers);
+  check('the offers are the cart\'s own rules (₹599, ₹25 online); COD is an assurance, not an offer', /599/.test(feat.offers) && /₹25/.test(feat.offers) && !/Cash on delivery/.test(feat.offers) && feat.cod, feat);
   check('the photo brief asks for the back-of-pack label', /5 shots/.test(feat.brief) && /true$/.test(feat.brief), feat.brief);
   check('a sold-out product takes an email for one back-in-stock alert', /email a@b\.in once/.test(feat.notify), feat.notify);
   check('search finds Rajma Chawal for "rajma"', feat.search[0] === 'rajma-chawal', feat.search);
@@ -399,6 +400,32 @@ const path = require('path');
   check('an order can be set to repeat', /repeats every 2 weeks/.test(feat.repeat), feat.repeat);
   check('refer a friend shows a code', /^REF/.test(feat.refer || ''), feat.refer);
   check('the WhatsApp and cart-reminder opt-ins start unticked', feat.optins.length === 2 && feat.optins.every(x => x === false), feat.optins);
+
+  // ── UX review P0s (8 Nov 2026) ─────────────────────────────────────────────
+  const p0 = await page.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms)), r = {};
+    document.querySelector('.proto-reset').click();
+    // BUY-1: Rajma ×2 + Idli = ₹615. As a complete 3-pack box it must not cost more.
+    window.fxSetCart([['rajma-chawal', 2], ['idli-sambhar', 1]], null); window.fxShow('cart', false);
+    const total = () => document.querySelector('#s-cart .order-total td').textContent.replace(/[^0-9]/g, '');
+    r.loose = +total();
+    window.fxSetCart([], null); window.fxShow('box', false);
+    const b = document.getElementById('s-box'), ids = Object.entries(window.FX_BOX_IDS);
+    b.querySelector('input[name=box_size][value="3"]').click();
+    const plus = slug => b.querySelector('.fd-box__pack[data-id="' + ids.find(x => x[1] === slug)[0] + '"] .fd-box__plus');
+    plus('rajma-chawal').click(); plus('rajma-chawal').click(); plus('idli-sambhar').click();
+    b.querySelector('[data-fd-box-add]').click(); await sl(50);
+    r.boxed = +total();
+    r.shipping = document.querySelector('#s-cart .shipping td').textContent;
+    // BUY-2: choosing "Office" is enough — the order goes to Office without "Use this address".
+    window.fxSetCart([['pav-bhaji', 4]], null); window.fxShow('checkout', false);
+    const office = document.querySelector('#s-checkout input[name=fx-addr][value="a2"]');
+    office.click(); office.dispatchEvent(new Event('input', { bubbles: true }));
+    r.pin = document.getElementById('fx-co-pin').value;
+    return r;
+  });
+  check('a complete box never costs more than the same packs loose (no ₹59 comes back)', p0.boxed <= p0.loose && /Free delivery/.test(p0.shipping), p0);
+  check('choosing a saved address fills checkout with it at once', p0.pin === '201301', p0);
 
   // On a phone: the product page opens on the product, and the account is in the menu.
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });

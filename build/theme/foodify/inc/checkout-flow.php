@@ -63,7 +63,7 @@ function foodify_cart_promise( array $s ): array {
 	if ( empty( $s['has_address'] ) || null === ( $s['shipping_cost'] ?? null ) ) {
 		return [
 			'kind'    => 'estimate',
-			'message' => 'Shipping is calculated from your PIN code at the next step. Nothing else is added.',
+			'message' => 'Delivery is worked out from your PIN code at the next step. Nothing else is added.',
 		];
 	}
 
@@ -71,13 +71,13 @@ function foodify_cart_promise( array $s ): array {
 	if ( $cost <= 0.0 ) {
 		return [
 			'kind'    => 'promise',
-			'message' => 'Free shipping applied. The total below is what you pay — nothing is added at checkout.',
+			'message' => 'Free delivery applied. The total below is what you pay — nothing is added at checkout.',
 		];
 	}
 
 	return [
 		'kind'    => 'promise',
-		'message' => 'Shipping is already included in the total below. Nothing further is added at checkout.',
+		'message' => 'Delivery is already included in the total below. Nothing further is added at checkout.',
 	];
 }
 
@@ -109,6 +109,283 @@ function foodify_checkout_part_slug( string $slug, bool $order_received ): strin
 		return $slug;
 	}
 	return [ 'header-checkout' => 'header', 'footer-checkout' => 'footer' ][ $slug ] ?? $slug;
+}
+
+/**
+ * Which shipping rates a customer may be offered (review BUY-3).
+ *
+ * The zone carries BOTH free_shipping and flat_rate (bootstrap.sh). WooCommerce
+ * lists every available rate and KEEPS a method the customer chose earlier —
+ * so someone who saw "Delivery ₹59", then added enough to read "Free delivery
+ * unlocked", could still be charged ₹59 because the flat-rate radio was the
+ * one left selected. Once a free_shipping rate is available, flat rate is not
+ * an option anyone would choose, so it is not offered. Any other method (a
+ * pickup, a courier added later) is left alone: this only removes the paid
+ * twin of free delivery.
+ *
+ * @param array<string,string> $methods Rate id => method id, in WooCommerce's order.
+ * @return array<int,string> Rate ids to keep, in the same order.
+ */
+function foodify_shipping_rates_to_keep( array $methods ): array {
+	$free = in_array( 'free_shipping', array_map( 'strval', $methods ), true );
+	$keep = [];
+	foreach ( $methods as $rate_id => $method_id ) {
+		if ( $free && 'flat_rate' === (string) $method_id ) {
+			continue;
+		}
+		$keep[] = (string) $rate_id;
+	}
+	return $keep;
+}
+
+/**
+ * A delivery method's label in the cart and checkout totals (UX recheck).
+ *
+ * WooCommerce prints a method as "Title: ₹59" in a row it heads "Shipping".
+ * With the methods titled for customers (bootstrap.sh: "Delivery", "Free
+ * delivery") and the row headed "Delivery" (foodify_shipping_heading()), that
+ * read "Delivery | Delivery: ₹59". When a method's title IS the row heading,
+ * the price alone is the label. Any other title — "Free delivery", a courier
+ * added later, "Express delivery: ₹99" — still names itself.
+ *
+ * @param string $full  WooCommerce's label ("Delivery: <span>₹59</span>"), already escaped.
+ * @param string $title The method's own title.
+ */
+function foodify_shipping_method_label( string $full, string $title ): string {
+	$prefix = trim( $title ) . ': ';
+	if ( 0 === strcasecmp( trim( $title ), foodify_shipping_heading() ) && str_starts_with( $full, $prefix ) ) {
+		return substr( $full, strlen( $prefix ) );
+	}
+	return $full;
+}
+
+/** The totals row's heading: the site's word for it, not WooCommerce's "Shipping". */
+function foodify_shipping_heading(): string {
+	return 'Delivery';
+}
+
+/**
+ * May the cart apply a quantity the customer typed (review BUY-6)?
+ *
+ * Only a whole number, 0 or more. An EMPTY field is someone halfway through
+ * retyping a number; WooCommerce reads an empty quantity as 0 and REMOVES THE
+ * LINE, so applying it after a 0.7 s pause deleted food from the cart while
+ * the customer was still typing. "2.5", "-1", "abc" are typos, not orders.
+ * The cart script (foodify_cart_qty_script) runs the identical test.
+ */
+function foodify_cart_qty_applies( string $raw ): bool {
+	return 1 === preg_match( '/^\d{1,4}$/', trim( $raw ) );
+}
+
+/**
+ * The cart page's quantity auto-apply. Returned as source so the prototype can
+ * embed the SAME code. Expects WooCommerce's classic cart: inputs `.qty` inside
+ * `.woocommerce-cart-form`, and its `update_cart` button.
+ */
+function foodify_cart_qty_script(): string {
+	return <<<'JS'
+(function($){
+  var timer;
+  function ok(v){return /^\d{1,4}$/.test(String(v==null?'':v).trim());}
+  $(document.body).on('change input', '.woocommerce-cart-form .qty', function(){
+    clearTimeout(timer);
+    // Empty or not a whole number: the customer is still typing. WooCommerce
+    // reads an empty quantity as 0 and removes the line — never submit that.
+    var bad=false;$('.woocommerce-cart-form .qty').each(function(){if(!ok(this.value))bad=true;});
+    if(bad)return;
+    // A pause, not a keystroke: typing "12" would otherwise submit "1" first.
+    timer = setTimeout(function(){
+      var $btn = $('.woocommerce-cart-form button[name="update_cart"], .woocommerce-cart-form input[name="update_cart"]');
+      if ($btn.length){ $btn.prop('disabled', false).trigger('click'); }
+    }, 700);
+  });
+})(jQuery);
+JS;
+}
+
+/**
+ * The wrong-code message (review BUY-9).
+ *
+ * WooCommerce says `Coupon "badcode" does not exist!` — the code lower-cased
+ * (WooCommerce stores codes that way), an exclamation mark, and no next step.
+ * This names the code as the customer typed it would be printed (upper case,
+ * as the cart labels "Code NALIN10"), and says what to do. Every other message
+ * passes through untouched — in particular code 100, the filtered message,
+ * which is how referrals.php says "This is your own referral code — share it
+ * with a friend instead."
+ *
+ * @param int $not_exist WooCommerce's WC_Coupon::E_WC_COUPON_NOT_EXIST (105).
+ */
+function foodify_coupon_error_text( string $message, int $code, string $coupon_code, int $not_exist = 105 ): string {
+	if ( $code !== $not_exist ) {
+		return $message;
+	}
+	$typed = strtoupper( trim( $coupon_code ) );
+	if ( '' === $typed ) {
+		return 'Please type a code first.';
+	}
+	return sprintf(
+		"We couldn't find the code %s. Check the spelling, or ask the person who gave it to you.",
+		htmlspecialchars( $typed, ENT_QUOTES )
+	);
+}
+
+/**
+ * What happens next, on the order-received page (review BUY-22, BUY-11).
+ *
+ * Replaces WooCommerce's "Thank you. Your order has been received." — which the
+ * page already says in its heading — with the three things a customer wants to
+ * know: when it arrives, what they still owe, and where the receipt went.
+ * PLAIN TEXT (escaped): WooCommerce prints it inside a <p>, and depending on
+ * the template version through esc_html() or wp_kses_post() — text survives
+ * both, markup would not. esc_html() does not double-encode.
+ *
+ * @param array{estimate?:string,detail?:string,is_cod?:bool,paid?:bool,total?:string,email?:string} $o
+ *        `estimate` is foodify_delivery_estimate()['label'] for the order's PIN
+ *        at the moment it was placed ('' when the option is unset or the PIN has
+ *        no zone — then no date is printed, rather than a guess).
+ */
+function foodify_order_next_text( array $o ): string {
+	$e     = static fn( $s ): string => htmlspecialchars( (string) $s, ENT_QUOTES );
+	$parts = [ 'Your order is placed.' ];
+	$when  = trim( (string) ( $o['estimate'] ?? '' ) );
+	if ( '' !== $when ) {
+		$parts[] = $e( $when ) . '.';
+	}
+	$total = trim( (string) ( $o['total'] ?? '' ) );
+	if ( ! empty( $o['is_cod'] ) ) {
+		$parts[] = '' !== $total
+			? 'Keep ' . $e( $total ) . ' ready in cash for the delivery.'
+			: 'Please pay in cash when it arrives.';
+	} elseif ( ! empty( $o['paid'] ) ) {
+		$parts[] = 'Your payment is complete.';
+	}
+	$email = trim( (string) ( $o['email'] ?? '' ) );
+	$parts[] = '' !== $email
+		? 'We have emailed your receipt to ' . $e( $email ) . ' and will write again when it ships.'
+		: 'We will let you know when it ships.';
+	return implode( ' ', $parts );
+}
+
+/**
+ * The checkout PIN script: city and state from the PIN, and — once the
+ * delivery option is set — the delivery date under the PIN field.
+ *
+ * Returned as source (the prototype embeds the SAME code). Expects jQuery,
+ * window.FOODIFY_PIN = {endpoint, aliases, delivery} (delivery is the
+ * normalised `foodify_delivery_zones` or null), and for the date
+ * window.foodifyDelivery (delivery-estimate.php's script). DOM: WooCommerce's
+ * #billing_postcode / #shipping_postcode, #*_city, #*_state; it inserts one
+ * `span.fd-pin-note` (role=status) after each postcode input and points the
+ * input's aria-describedby at it.
+ *
+ * Rules (review BUY-16, BUY-11):
+ *  - STATE is always filled from the PIN: it decides the GST split and the
+ *    shipping zone, and a stale state is wrong in a way nobody sees.
+ *  - CITY is filled only when it is empty, or still holds the city this script
+ *    filled for an earlier PIN. A city the customer typed is theirs.
+ *  - A PIN the table does not know says "PIN not found — type your city.";
+ *    a lookup that could not run says nothing (that is not "not found").
+ *  - The date shows only when the option is set and the PIN has a zone.
+ */
+function foodify_checkout_pin_script(): string {
+	return <<<'JS'
+(function($){
+  var cfg    = window.FOODIFY_PIN || {};
+  var cache  = {};
+  var auto   = {};   // prefix -> the city this script last filled
+  var timer;
+
+  function norm(s){ return (s||'').toString().trim().toLowerCase().replace(/\s+/g,' '); }
+  function digits(v){ return (v||'').toString().replace(/\D/g,''); }
+
+  function lookup(pin){
+    if (cache[pin] !== undefined) return Promise.resolve(cache[pin]);
+    if (typeof window.foodifyPinLookup === 'function') {
+      return Promise.resolve(window.foodifyPinLookup(pin)).then(function(r){ cache[pin] = r || null; return cache[pin]; });
+    }
+    return fetch(cfg.endpoint + pin, { credentials: 'same-origin' })
+      .then(function(r){ if (!r.ok) throw r; return r.json(); })
+      .then(function(j){
+        var po = j && j[0] && j[0].Status === 'Success' && j[0].PostOffice && j[0].PostOffice[0];
+        cache[pin] = po ? { city: po.District || '', state: po.State || '' } : null;
+        return cache[pin];
+      })
+      .catch(function(){ return 'error'; });   // not cached: "could not look" is not "not found"
+  }
+
+  function setState($state, apiState){
+    if (!$state.length || !apiState) return;
+    // The site's own endpoint answers with WooCommerce's state code; a
+    // repointed service may answer with a name.
+    var code = /^[A-Z]{2}$/.test(apiState) ? apiState : (cfg.aliases || {})[norm(apiState)];
+    var $opt = code
+      ? $state.find('option[value="' + code + '"]')
+      : $state.find('option').filter(function(){ return norm($(this).text()) === norm(apiState); });
+    if ($opt.length && $state.val() !== $opt.val()) { $state.val($opt.val()).trigger('change'); }
+  }
+
+  function note(pre){
+    var id = pre + '_postcode_note', $n = $('#' + id);
+    if ($n.length) return $n;
+    var $f = $('#' + pre + '_postcode');
+    if (!$f.length) return $n;
+    $n = $('<span class="fd-pin-note" role="status" aria-live="polite"></span>').attr('id', id);
+    var $w = $f.closest('.woocommerce-input-wrapper');
+    ($w.length ? $w : $f).after($n);
+    var d = $f.attr('aria-describedby') || '';
+    if ((' ' + d + ' ').indexOf(' ' + id + ' ') < 0) $f.attr('aria-describedby', $.trim(d + ' ' + id));
+    return $n;
+  }
+  function say(pre, kind, text, detail){
+    var $n = note(pre);
+    if (!$n.length) return;
+    $n.attr('class', 'fd-pin-note' + (kind ? ' is-' + kind : '')).empty();
+    if (text) $n.append($('<strong class="fd-pin-note__msg"></strong>').text(text));
+    if (detail) $n.append(' · ').append($('<span class="fd-pin-note__detail"></span>').text(detail));
+  }
+
+  // The date, from the same rules and the same function as the product page.
+  function eta(pre, pin, res){
+    if (!cfg.delivery || !window.foodifyDelivery) return false;
+    var state = (res && res.state) || $('#' + pre + '_state').val() || '';
+    var a = window.foodifyDelivery.answer(pin, res ? { city: res.city || '', state: state } : null, cfg.delivery, Date.now());
+    if (a.status === 'ok') { say(pre, 'ok', a.estimate.label, a.estimate.detail); return true; }
+    if (a.status === 'unserviceable') { say(pre, 'no', a.message, ''); return true; }
+    return false;
+  }
+
+  function apply(pre, pin){
+    lookup(pin).then(function(res){
+      if (digits($('#' + pre + '_postcode').val()) !== pin) return;   // the PIN changed while we looked
+      if (res === 'error') { say(pre, '', '', ''); return; }
+      if (!res) { say(pre, 'error', 'PIN not found — type your city.', ''); return; }
+      var $city = $('#' + pre + '_city'), cur = $.trim($city.val() || '');
+      if ($city.length && res.city && (cur === '' || cur === auto[pre])) {
+        $city.val(res.city).trigger('change');
+        auto[pre] = res.city;
+      }
+      setState($('#' + pre + '_state'), res.state);
+      if (!eta(pre, pin, res)) say(pre, '', '', '');
+      $(document.body).trigger('update_checkout');
+    });
+  }
+
+  $(document.body).on('input change', '#billing_postcode, #shipping_postcode', function(){
+    var $f  = $(this),
+        pin = digits($f.val()),
+        pre = $f.attr('id').split('_')[0];
+    clearTimeout(timer);
+    if (pin.length !== 6) { say(pre, '', '', ''); return; }
+    timer = setTimeout(function(){ apply(pre, pin); }, 250);   // one call, not one per keystroke
+  });
+  // A PIN that spans two states: the date follows the state the customer picks.
+  $(document.body).on('change', '#billing_state, #shipping_state', function(){
+    var pre = this.id.split('_')[0], pin = digits($('#' + pre + '_postcode').val());
+    if (pin.length === 6 && cache[pin] !== undefined && cache[pin]) eta(pre, pin, cache[pin]);
+  });
+})(jQuery);
+JS;
 }
 
 /* -------------------------------------------------------------------------
@@ -310,20 +587,7 @@ add_action( 'wp_enqueue_scripts', static function (): void {
 	}
 	wp_register_script( 'foodify-cart', false, [ 'jquery' ], FOODIFY_VERSION, true );
 	wp_enqueue_script( 'foodify-cart' );
-	wp_add_inline_script( 'foodify-cart', <<<'JS'
-(function($){
-  var timer;
-  $(document.body).on('change input', '.woocommerce-cart-form .qty', function(){
-    clearTimeout(timer);
-    // A pause, not a keystroke: typing "12" would otherwise submit "1" first.
-    timer = setTimeout(function(){
-      var $btn = $('.woocommerce-cart-form button[name="update_cart"], .woocommerce-cart-form input[name="update_cart"]');
-      if ($btn.length){ $btn.prop('disabled', false).trigger('click'); }
-    }, 700);
-  });
-})(jQuery);
-JS
-	);
+	wp_add_inline_script( 'foodify-cart', foodify_cart_qty_script() );   // empty / non-whole quantities never submit (BUY-6)
 } );
 
 /**
@@ -351,3 +615,81 @@ add_action( 'woocommerce_review_order_after_order_total', static function (): vo
 		esc_html__( 'GST is included. This is the final amount — no handling, convenience or platform fee is added.', 'foodify' )
 	);
 } );
+
+/**
+ * Flat rate is not offered once free delivery is (review BUY-3). See
+ * foodify_shipping_rates_to_keep(). Late priority, after any plugin adds rates.
+ * When the rate the customer had chosen disappears, WooCommerce falls back to
+ * the first available one — the free one.
+ */
+add_filter( 'woocommerce_package_rates', static function ( $rates ) {
+	if ( ! is_array( $rates ) || count( $rates ) < 2 ) {
+		return $rates;
+	}
+	$methods = [];
+	foreach ( $rates as $id => $rate ) {
+		$methods[ (string) $id ] = is_object( $rate ) && method_exists( $rate, 'get_method_id' ) ? (string) $rate->get_method_id() : '';
+	}
+	$keep = array_flip( foodify_shipping_rates_to_keep( $methods ) );
+	return array_filter( $rates, static fn( $id ): bool => isset( $keep[ (string) $id ] ), ARRAY_FILTER_USE_KEY );
+}, 100 );
+
+/** "Delivery | ₹59", not "Shipping | Delivery: ₹59". See foodify_shipping_method_label(). */
+add_filter( 'woocommerce_shipping_package_name', static function ( $name, $i = 0 ) {
+	return 0 === (int) $i ? foodify_shipping_heading() : $name;
+}, 10, 2 );
+add_filter( 'woocommerce_cart_shipping_method_full_label', static function ( $label, $method = null ) {
+	$title = is_object( $method ) && method_exists( $method, 'get_label' ) ? (string) $method->get_label() : '';
+	return foodify_shipping_method_label( (string) $label, $title );
+}, 10, 2 );
+
+/** A wrong code says which code and what to do (review BUY-9). */
+add_filter( 'woocommerce_coupon_error', static function ( $err, $err_code, $coupon = null ) {
+	$not_exist = defined( 'WC_Coupon::E_WC_COUPON_NOT_EXIST' ) ? (int) WC_Coupon::E_WC_COUPON_NOT_EXIST : 105;
+	$code      = is_object( $coupon ) && method_exists( $coupon, 'get_code' ) ? (string) $coupon->get_code() : '';
+	return foodify_coupon_error_text( (string) $err, (int) $err_code, $code, $not_exist );
+}, 10, 3 );
+
+/**
+ * The order-received page says what happens next, not "thank you" twice
+ * (review BUY-22), including the delivery date for the order's PIN as it was
+ * when the order was placed (BUY-11) — computed from the order's own timestamp,
+ * so a reload tomorrow does not move the date.
+ */
+add_filter( 'woocommerce_thankyou_order_received_text', static function ( $text, $order = null ) {
+	if ( ! $order instanceof WC_Order ) {
+		return $text;
+	}
+	$estimate = '';
+	if ( function_exists( 'foodify_delivery_config' ) && function_exists( 'foodify_delivery_estimate' ) ) {
+		$cfg = foodify_delivery_config();
+		$pin = (string) ( $order->get_shipping_postcode() ?: $order->get_billing_postcode() );
+		$st  = (string) ( $order->get_shipping_state() ?: $order->get_billing_state() );
+		$at  = $order->get_date_created();
+		if ( null !== $cfg && '' !== $pin && $at ) {
+			$est      = foodify_delivery_estimate( preg_replace( '/\D/', '', $pin ), $st, $cfg, new DateTimeImmutable( '@' . $at->getTimestamp() ) );
+			$estimate = $est ? (string) $est['label'] : '';
+		}
+	}
+	$cod_methods = function_exists( 'foodify_payment_config' ) ? (array) ( foodify_payment_config()['cod_methods'] ?? [ 'cod' ] ) : [ 'cod' ];
+	$total       = (float) $order->get_total();
+	return foodify_order_next_text( [
+		'estimate' => $estimate,
+		'is_cod'   => in_array( $order->get_payment_method(), $cod_methods, true ),
+		'paid'     => $order->is_paid(),
+		'total'    => function_exists( 'foodify_order_rupees' ) ? foodify_order_rupees( $total ) : wp_strip_all_tags( wc_price( $total ) ),
+		'email'    => (string) $order->get_billing_email(),
+	] );
+}, 10, 2 );
+
+/**
+ * The order-received page lists the payment method in WooCommerce's overview
+ * AND again in the order-details totals. One is enough (BUY-22): the totals
+ * row goes on that page only — emails and My Account keep theirs.
+ */
+add_filter( 'woocommerce_get_order_item_totals', static function ( $rows ) {
+	if ( is_array( $rows ) && function_exists( 'is_order_received_page' ) && is_order_received_page() ) {
+		unset( $rows['payment_method'] );
+	}
+	return $rows;
+}, 20 );

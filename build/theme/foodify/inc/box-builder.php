@@ -37,10 +37,17 @@
  *      `prepaid_rate`, the eligible figure should subtract
  *      foodify_box_cart_discount_total() — flagged in the handoff, not changed
  *      here (not this lane's file).
- *   Free shipping is decided AFTER the discounts the method is told to count
- *   (ignore_discounts = no, set by bootstrap.sh). A fee is not a coupon, so
- *   WooCommerce's own check would not see the box discount; the filter at the
- *   bottom of this file applies it.
+ *   FREE DELIVERY IS JUDGED AFTER COUPONS AND BEFORE THE BOX DISCOUNT
+ *   (decision 4, UX fix wave 8 Nov 2026 — review BUY-1). The earlier rule
+ *   judged it after the box, and so a box could COST the customer money:
+ *   Rajma ×2 + Idli = ₹615, free delivery; the same three packs as a 3-pack
+ *   box = ₹615 − ₹30 = ₹585, under ₹599, + ₹59 delivery = ₹644. A discount
+ *   that raises the bill is not a discount. WooCommerce's own free-shipping
+ *   check (ignore_discounts = no, set by bootstrap.sh) subtracts coupons and
+ *   does not see fees — and the box discount is a fee — so the native answer
+ *   IS the rule: there is deliberately no free-shipping filter in this file,
+ *   and the progress bar (shortcodes.php) asks foodify_box_free_delivery_basis()
+ *   for the same figure. tests/box-test.php pins both.
  *
  * ROUNDING. The discount is rounded DOWN to the whole rupee, in paise
  * arithmetic, by the same rule in PHP and in the builder's script, so the
@@ -278,16 +285,61 @@ function foodify_box_status_line( int $size, int $packs ): string {
 	return $of . ' · your box is full';
 }
 
-/** "Save ₹105 (10% off)" once full; "10% off once your box is full" before. */
-function foodify_box_saving_line( float $subtotal, int $pct, bool $complete ): string {
+/**
+ * What a box is promised to save, when the cart already holds a coupon
+ * (review BUY-4). The box percentage is taken AFTER coupons, so with NALIN10 in
+ * the cart a ₹1,160 box saves 10% of ₹1,044 = ₹104, not 10% of ₹1,160 = ₹116.
+ * The page must never promise more than the cart gives, so this is a LOWER
+ * bound on the cart's figure, whatever the coupons are restricted to:
+ *
+ *   - a percent coupon can take at most its percentage off any line;
+ *   - a fixed-cart coupon at most its amount off the box's lines together;
+ *   - a fixed-product coupon at most its amount off each pack.
+ *
+ * So the box's lines cost at least sub × (1 − Σ%) − Σfixed − Σeach × packs
+ * after coupons, floored to the rupee (WooCommerce rounds each line), and the
+ * saving is the box percentage of that, rounded down as the cart rounds.
+ * Exact for the common case (one percent code on every product).
+ *
+ * @param array{pct?:float,fixed?:float,each?:float,unknown?:bool} $coupons
+ *        From the live cart (foodify_box_cart_coupons()). `unknown` = a coupon
+ *        type this cannot bound: then there is no rupee promise at all (null).
+ */
+function foodify_box_promised_saving( float $subtotal, int $pct, int $packs, array $coupons = [] ): ?int {
+	if ( ! empty( $coupons['unknown'] ) ) {
+		return null;
+	}
+	$rate = min( 100.0, max( 0.0, (float) ( $coupons['pct'] ?? 0 ) ) );
+	$base = $subtotal * ( 1 - $rate / 100 ) - max( 0.0, (float) ( $coupons['fixed'] ?? 0 ) ) - max( 0.0, (float) ( $coupons['each'] ?? 0 ) ) * max( 0, $packs );
+	$has  = $rate > 0.0 || (float) ( $coupons['fixed'] ?? 0 ) > 0.0 || (float) ( $coupons['each'] ?? 0 ) > 0.0;
+	$base = $has ? floor( max( 0.0, $base ) ) : $subtotal;
+	return foodify_box_percent_of( $base, $pct );
+}
+
+/** Does the cart hold a coupon that changes what a box saves? */
+function foodify_box_has_coupon( array $coupons ): bool {
+	return ! empty( $coupons['unknown'] ) || (float) ( $coupons['pct'] ?? 0 ) > 0.0
+		|| (float) ( $coupons['fixed'] ?? 0 ) > 0.0 || (float) ( $coupons['each'] ?? 0 ) > 0.0;
+}
+
+/**
+ * "Save ₹105 (10% off)" once full; "10% off once your box is full" before.
+ * With a coupon in the cart: "Save ₹104 (10% off, after your code)", or just
+ * "10% off, after your code" when the saving cannot be bounded.
+ */
+function foodify_box_saving_line( float $subtotal, int $pct, bool $complete, array $coupons = [], int $packs = 0 ): string {
 	if ( $pct <= 0 ) {
 		return '';
 	}
+	$after = foodify_box_has_coupon( $coupons ) ? ', after your code' : '';
 	if ( ! $complete ) {
 		return sprintf( '%d%% off once your box is full', $pct );
 	}
-	$save = foodify_box_percent_of( $subtotal, $pct );
-	return $save > 0 ? sprintf( 'Save ₹%s (%d%% off)', number_format( $save ), $pct ) : '';
+	$save = foodify_box_promised_saving( $subtotal, $pct, $packs, $coupons );
+	if ( null === $save ) {
+		return sprintf( '%d%% off%s', $pct, $after );
+	}
+	return $save > 0 ? sprintf( 'Save ₹%s (%d%% off%s)', number_format( $save ), $pct, $after ) : '';
 }
 
 /** Whole rupees when whole, paise when not. (Below ₹1 lakh number_format and en-IN agree.) */
@@ -367,25 +419,21 @@ function foodify_box_new_id(): string {
 }
 
 /**
- * Would free shipping still be earned once the box discount is counted?
+ * The figure free delivery is judged on, given the cart after coupons and the
+ * box discount. It is the after-coupons figure, unchanged: the box discount is
+ * taken AFTER free delivery is decided, so completing a box can never move a
+ * cart below the free-delivery minimum (decision 4; see the header).
  *
- * Only ever turns "available" into "not available": the filter passes
- * WooCommerce's own answer through untouched when it is already "no".
+ * The box discount is an argument on purpose: this function is where that rule
+ * lives, so the one call site (shortcodes.php, the progress bar) cannot quietly
+ * start subtracting it again, and a test can say exactly what is ignored.
  *
- * @param float  $basis    What WooCommerce compared (subtotal − coupons; see shortcodes.php).
- * @param string $requires The free-shipping method's `requires` setting.
+ * @param float $after_coupons Subtotal minus coupons, as WooCommerce's free-shipping check computes it.
+ * @param int   $box_discount  The cart's complete-box discount in rupees (ignored — that is the rule).
  */
-function foodify_box_free_shipping_holds( float $basis, int $box_discount, float $min, string $requires, bool $has_free_coupon, bool $ignore_discounts ): bool {
-	if ( $box_discount <= 0 || $ignore_discounts || $min <= 0.0 ) {
-		return true;
-	}
-	if ( 'either' === $requires && $has_free_coupon ) {
-		return true;   // the coupon earned it; the amount is irrelevant
-	}
-	if ( ! in_array( $requires, [ 'min_amount', 'either', 'both' ], true ) ) {
-		return true;
-	}
-	return round( $basis - $box_discount, 2 ) >= $min;
+function foodify_box_free_delivery_basis( float $after_coupons, int $box_discount ): float {
+	unset( $box_discount );   // judged before the box discount, never after it
+	return round( $after_coupons, 2 );
 }
 
 /**
@@ -393,7 +441,8 @@ function foodify_box_free_shipping_holds( float $basis, int $box_discount, float
  *
  * @param array<int,int> $sizes
  * @param array<int,array{id:int,name:string,price:float,image?:string,image_alt?:string,prep?:string,max:int}> $products
- * @param array{action?:string,nonce?:string,size?:int,selected?:array<int,int>,combos_url?:string,notices?:string} $ctx
+ * @param array{action?:string,nonce?:string,size?:int,selected?:array<int,int>,combos_url?:string,notices?:string,coupons?:array} $ctx
+ *        `coupons`: the cart's coupons (foodify_box_cart_coupons()) — the saving is promised after them.
  */
 function foodify_box_builder_html( array $sizes, array $products, array $ctx = [] ): string {
 	$e = static fn( $s ): string => htmlspecialchars( (string) $s, ENT_QUOTES );
@@ -455,25 +504,43 @@ function foodify_box_builder_html( array $sizes, array $products, array $ctx = [
 		);
 	}
 
+	$coupons  = (array) ( $ctx['coupons'] ?? [] );
 	$pct      = $chosen ? (int) $sizes[ $chosen ] : 0;
 	$complete = $chosen > 0 && $count === $chosen;
-	$save     = $complete ? foodify_box_percent_of( $sub, $pct ) : 0;
+	$save     = $complete ? (int) foodify_box_promised_saving( $sub, $pct, $count, $coupons ) : 0;
 	// The per-meal figure is the combo's rule — rounded down so it cannot flatter.
 	$per      = ( $complete && function_exists( 'foodify_combo_per_meal' ) ) ? foodify_combo_per_meal( $sub - $save, $count ) : 0;
 
-	return '<section class="fd-box" data-fd-box data-sizes="' . $e( (string) json_encode( (object) $sizes ) ) . '">'
+	$coupon_attrs = '';
+	if ( foodify_box_has_coupon( $coupons ) ) {
+		// The cart's coupons, as the bound foodify_box_promised_saving() needs (BUY-4).
+		$coupon_attrs = sprintf(
+			' data-coupon-pct="%s" data-coupon-fixed="%s" data-coupon-each="%s"%s',
+			$e( (string) (float) ( $coupons['pct'] ?? 0 ) ),
+			$e( (string) (float) ( $coupons['fixed'] ?? 0 ) ),
+			$e( (string) (float) ( $coupons['each'] ?? 0 ) ),
+			! empty( $coupons['unknown'] ) ? ' data-coupon-unknown="1"' : ''
+		);
+	}
+	// No size yet: the status is a way to step 1, not just a sentence (BUY-10).
+	// A link, so it works without the script too; the script also focuses the first size.
+	$status = $chosen > 0
+		? $e( foodify_box_status_line( $chosen, $count ) )
+		: '<a class="fd-box__status-go" href="#fd-box-sizes" data-fd-box-go>' . $e( foodify_box_status_line( 0, $count ) ) . '</a>';
+
+	return '<section class="fd-box" data-fd-box data-sizes="' . $e( (string) json_encode( (object) $sizes ) ) . '"' . $coupon_attrs . '>'
 		. $notices
 		. '<form class="fd-box__form" method="post" action="' . $u( $ctx['action'] ?? '' ) . '">'
 		. '<input type="hidden" name="foodify_box_add" value="1">'
 		. '<input type="hidden" name="_fdbox" value="' . $e( $ctx['nonce'] ?? '' ) . '">'
-		. '<fieldset class="fd-box__sizes"><legend class="fd-box__step">1 · Choose a box size</legend>' . $size_html . '</fieldset>'
+		. '<fieldset class="fd-box__sizes" id="fd-box-sizes"><legend class="fd-box__step">1 · Choose a box size</legend>' . $size_html . '</fieldset>'
 		. '<fieldset class="fd-box__packs"><legend class="fd-box__step">2 · Fill it with single packs</legend>'
 		. '<p class="fd-box__hint">Any mix, any number of each. The box discount is taken in your cart, after any coupon.</p>'
 		. '<ul class="fd-box__grid">' . $packs . '</ul></fieldset>'
 		. '<div class="fd-box__bar">'
-		. '<p class="fd-box__status" data-fd-box-status aria-live="polite">' . $e( foodify_box_status_line( $chosen, $count ) ) . '</p>'
-		. '<p class="fd-box__sum"><strong class="fd-box__total" data-fd-box-total>' . $e( foodify_box_rupees( $sub - $save ) ) . '</strong>'
-		. ' <span class="fd-box__saving" data-fd-box-saving>' . $e( foodify_box_saving_line( $sub, $pct, $complete ) ) . '</span>'
+		. '<p class="fd-box__status" data-fd-box-status aria-live="polite" data-state="' . $e( $chosen < 1 ? 'none' : ( $count > $chosen ? 'over' : ( $count === $chosen ? 'full' : 'under' ) ) ) . '">' . $status . '</p>'
+		. '<p class="fd-box__sum"><strong class="fd-box__total" data-fd-box-total>' . $e( foodify_box_rupees( $sub - $save ) . ( foodify_box_has_coupon( $coupons ) ? ' before your code' : '' ) ) . '</strong>'
+		. ' <span class="fd-box__saving" data-fd-box-saving>' . $e( foodify_box_saving_line( $sub, $pct, $complete, $coupons, $count ) ) . '</span>'
 		. ' <span class="fd-box__per" data-fd-box-per>' . ( $per > 0 ? $e( '₹' . number_format( $per ) . ' per meal' ) : '' ) . '</span></p>'
 		. '<button type="submit" class="wp-element-button fd-box__add" data-fd-box-add>Add box to cart</button>'
 		. '</div>'
@@ -497,7 +564,10 @@ function foodify_box_unavailable_html( string $combos_url = '' ): string {
  * input[name=box_size], .fd-box__pack[data-price][data-max] each holding
  * .fd-box__qty, .fd-box__minus, .fd-box__plus; and the outputs
  * [data-fd-box-status], [data-fd-box-total], [data-fd-box-saving],
- * [data-fd-box-per], [data-fd-box-add].
+ * [data-fd-box-per], [data-fd-box-add]; optionally data-coupon-pct /
+ * data-coupon-fixed / data-coupon-each / data-coupon-unknown on the root (the
+ * cart's coupons, BUY-4) and #fd-box-sizes (the step-1 fieldset the "Choose a
+ * box size" link in the status goes to, BUY-10).
  *
  * Returned as a string so the clickable prototype embeds the SAME source.
  */
@@ -507,25 +577,41 @@ function foodify_box_script(): string {
   var root=document.querySelector('[data-fd-box]');if(!root)return;
   var form=root.querySelector('form');if(!form)return;
   var sizes={};try{sizes=JSON.parse(root.getAttribute('data-sizes')||'{}');}catch(e){}
+  function num(a){var v=parseFloat(root.getAttribute(a)||'0');return isNaN(v)||v<0?0:v;}
+  var cp={pct:Math.min(100,num('data-coupon-pct')),fixed:num('data-coupon-fixed'),each:num('data-coupon-each'),unknown:root.getAttribute('data-coupon-unknown')==='1'};
+  var hasCoupon=cp.unknown||cp.pct>0||cp.fixed>0||cp.each>0;
   var packs=[].slice.call(root.querySelectorAll('.fd-box__pack'));
   var radios=[].slice.call(root.querySelectorAll('input[name=box_size]'));
   var out={status:root.querySelector('[data-fd-box-status]'),total:root.querySelector('[data-fd-box-total]'),saving:root.querySelector('[data-fd-box-saving]'),per:root.querySelector('[data-fd-box-per]'),add:root.querySelector('[data-fd-box-add]')};
   function fmt(n){try{return new Intl.NumberFormat('en-IN',{maximumFractionDigits:2}).format(n);}catch(e){return String(n);}}
   function pctOf(amount,pct){if(amount<=0||pct<=0)return 0;return Math.floor(Math.round(amount*100)*pct/10000);}
+  // foodify_box_promised_saving(): never more than the cart gives, after any coupon.
+  function promised(sub,pct,n){if(cp.unknown)return null;var b=hasCoupon?Math.floor(Math.max(0,sub*(1-cp.pct/100)-cp.fixed-cp.each*n)):sub;return pctOf(b,pct);}
   function qtyOf(p){var v=parseInt(p.querySelector('.fd-box__qty').value,10);return isNaN(v)||v<0?0:v;}
   function size(){for(var i=0;i<radios.length;i++){if(radios[i].checked)return parseInt(radios[i].value,10);}return 0;}
   function status(s,n){if(s<1)return 'Choose a box size to start.';var of=n+' of '+s+' packs';if(n<s)return of+' · '+(s-n)+' more to fill';if(n>s)return of+' · take '+(n-s)+' out to fit the box';return of+' · your box is full';}
   function count(){var n=0;packs.forEach(function(p){n+=qtyOf(p);});return n;}
+  function toStep1(ev){if(ev)ev.preventDefault();var f=root.querySelector('#fd-box-sizes');if(f&&f.scrollIntoView)f.scrollIntoView({block:'start',behavior:'smooth'});if(radios[0])radios[0].focus();}
+  function showStatus(s,n){
+    var text=status(s,n),go=out.status.querySelector('[data-fd-box-go]');
+    if(s<1){if(!go){out.status.textContent='';go=document.createElement('a');go.className='fd-box__status-go';go.href='#fd-box-sizes';go.setAttribute('data-fd-box-go','');out.status.appendChild(go);}
+      go.textContent=text;}
+    else if(go||out.status.textContent!==text){out.status.textContent=text;}
+    out.status.setAttribute('data-state',s<1?'none':(n>s?'over':(n===s?'full':'under')));
+  }
   function update(){
     var s=size(),n=0,sub=0;packs.forEach(function(p){var q=qtyOf(p);n+=q;sub+=q*parseFloat(p.getAttribute('data-price')||'0');});
-    var pct=s?parseInt(sizes[s]||0,10):0,full=s>0&&n===s,save=full?pctOf(sub,pct):0;
-    out.status.textContent=status(s,n);
-    out.total.textContent='₹'+fmt(Math.round((sub-save)*100)/100);
-    out.saving.textContent=pct>0?(full?(save>0?'Save ₹'+fmt(save)+' ('+pct+'% off)':''):pct+'% off once your box is full'):'';
+    var pct=s?parseInt(sizes[s]||0,10):0,full=s>0&&n===s,pr=full?promised(sub,pct,n):0,save=pr||0;
+    var after=hasCoupon?', after your code':'';
+    showStatus(s,n);
+    out.total.textContent='₹'+fmt(Math.round((sub-save)*100)/100)+(hasCoupon?' before your code':'');
+    out.saving.textContent=pct>0?(full?(pr===null?pct+'% off'+after:(save>0?'Save ₹'+fmt(save)+' ('+pct+'% off'+after+')':'')):pct+'% off once your box is full'):'';
     out.per.textContent=full&&n>0?'₹'+fmt(Math.floor((sub-save)/n))+' per meal':'';
     out.add.disabled=!full;
     packs.forEach(function(p){var q=qtyOf(p),max=parseInt(p.getAttribute('data-max')||'0',10);
-      p.querySelector('.fd-box__minus').disabled=q<1;
+      // No size yet: nothing in step 2 can be used, the field included (BUY-10).
+      p.querySelector('.fd-box__qty').disabled=s<1;
+      p.querySelector('.fd-box__minus').disabled=s<1||q<1;
       p.querySelector('.fd-box__plus').disabled=s<1||n>=s||q>=max;
       p.classList.toggle('is-in',q>0);});
   }
@@ -537,7 +623,8 @@ function foodify_box_script(): string {
     input.addEventListener('input',update);input.addEventListener('change',function(){set(qtyOf(p));});
   });
   radios.forEach(function(r){r.addEventListener('change',update);});
-  form.addEventListener('submit',function(ev){var s=size();if(s<1||count()!==s){ev.preventDefault();out.status.setAttribute('tabindex','-1');out.status.focus();}});
+  out.status.addEventListener('click',function(ev){if(ev.target&&ev.target.closest&&ev.target.closest('[data-fd-box-go]'))toStep1(ev);});
+  form.addEventListener('submit',function(ev){var s=size();if(s<1){ev.preventDefault();toStep1();return;}if(count()!==s){ev.preventDefault();out.status.setAttribute('tabindex','-1');out.status.focus();}});
   update();
 })();
 JS;
@@ -584,6 +671,42 @@ function foodify_box_cart_discount_total(): int {
 	}
 	$r = foodify_box_discount( foodify_box_cart_lines( WC()->cart ), foodify_box_sizes() );
 	return (int) $r['total'];
+}
+
+/**
+ * The live cart's coupons, in the shape foodify_box_promised_saving() bounds
+ * (BUY-4). The page is uncached (nocache_headers above), so this is current.
+ *
+ * @return array{pct:float,fixed:float,each:float,unknown:bool}
+ */
+function foodify_box_cart_coupons(): array {
+	$out = [ 'pct' => 0.0, 'fixed' => 0.0, 'each' => 0.0, 'unknown' => false ];
+	if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+		return $out;
+	}
+	foreach ( WC()->cart->get_coupons() as $coupon ) {
+		if ( ! $coupon instanceof WC_Coupon ) {
+			continue;
+		}
+		$amount = (float) $coupon->get_amount();
+		switch ( (string) $coupon->get_discount_type() ) {
+			case 'percent':
+				$out['pct'] += $amount;
+				break;
+			case 'fixed_cart':
+				$out['fixed'] += $amount;
+				break;
+			case 'fixed_product':
+				$out['each'] += $amount;
+				break;
+			default:
+				// A type added by a plugin: no bound is known, so no rupee promise.
+				if ( $amount > 0.0 ) {
+					$out['unknown'] = true;
+				}
+		}
+	}
+	return $out;
 }
 
 /** The eligible packs, as value arrays for the renderer and the validator, keyed by id. */
@@ -729,6 +852,7 @@ add_shortcode( 'foodify_box_builder', static function (): string {
 		'size'       => $size,
 		'selected'   => $selected,
 		'combos_url' => $combos_url,
+		'coupons'    => foodify_box_cart_coupons(),
 		'notices'    => function_exists( 'wc_print_notices' ) ? (string) wc_print_notices( true ) : '',
 	] );
 } );
@@ -812,33 +936,12 @@ add_action( 'woocommerce_checkout_create_order_line_item', static function ( $or
 	$order_item->add_meta_data( __( 'Box', 'foodify' ), sprintf( '%d-pack box %s', $size, $id ), true );
 }, 10, 3 );
 
-/** Free shipping is earned after the box discount, as it is after a coupon. */
-add_filter( 'woocommerce_shipping_free_shipping_is_available', static function ( $available, $package, $method ) {
-	if ( ! $available || ! is_object( $method ) || ! method_exists( $method, 'get_option' ) || ! function_exists( 'WC' ) || ! WC()->cart ) {
-		return $available;
-	}
-	$box = foodify_box_cart_discount_total();
-	if ( $box <= 0 ) {
-		return $available;
-	}
-	$has_coupon = false;
-	foreach ( WC()->cart->get_coupons() as $coupon ) {
-		if ( $coupon->get_free_shipping() ) {
-			$has_coupon = true;
-		}
-	}
-	$basis = function_exists( 'foodify_shipping_comparison_subtotal' )
-		? foodify_shipping_comparison_subtotal()
-		: (float) WC()->cart->get_displayed_subtotal();
-	return foodify_box_free_shipping_holds(
-		$basis,
-		$box,
-		(float) $method->get_option( 'min_amount', 0 ),
-		(string) $method->get_option( 'requires', '' ),
-		$has_coupon,
-		'yes' === $method->get_option( 'ignore_discounts', 'no' )
-	);
-}, 20, 3 );
+/*
+ * No `woocommerce_shipping_free_shipping_is_available` filter here, on purpose.
+ * Free delivery is judged before the box discount (decision 4), which is what
+ * WooCommerce does on its own: its check subtracts coupons and never sees fees.
+ * tests/box-test.php fails if a filter that could re-apply the box comes back.
+ */
 
 /** wp-admin names the option while the feature is off. */
 add_action( 'admin_notices', static function (): void {

@@ -13,25 +13,25 @@
 <!-- wp:column -->
 <div class="wp-block-column">
 <!-- wp:paragraph {"fontSize":"base","style":{"typography":{"fontWeight":"600"}},"fontFamily":"display"} --><p class="has-display-font-family has-base-font-size" style="font-weight:600">No preservatives</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm","textColor":"mute"} --><p class="has-mute-color has-text-color has-sm-font-size">Shelf life comes from drying, not chemistry.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"base","textColor":"mute"} --><p class="has-mute-color has-text-color has-base-font-size">Shelf life comes from drying, not chemistry.</p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:column -->
 <!-- wp:column -->
 <div class="wp-block-column">
-<!-- wp:paragraph {"fontSize":"base","style":{"typography":{"fontWeight":"600"}},"fontFamily":"display"} --><p class="has-display-font-family has-base-font-size" style="font-weight:600">9–12 month life</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm","textColor":"mute"} --><p class="has-mute-color has-text-color has-sm-font-size">Printed on every pack and every product page.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"base","style":{"typography":{"fontWeight":"600"}},"fontFamily":"display"} --><p class="has-display-font-family has-base-font-size" style="font-weight:600">9–12 month shelf life</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"base","textColor":"mute"} --><p class="has-mute-color has-text-color has-base-font-size">Printed on every pack and every product page.</p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:column -->
 <!-- wp:column -->
 <div class="wp-block-column">
 <!-- wp:paragraph {"fontSize":"base","style":{"typography":{"fontWeight":"600"}},"fontFamily":"display"} --><p class="has-display-font-family has-base-font-size" style="font-weight:600">FSSAI licensed</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm","textColor":"mute"} --><p class="has-mute-color has-text-color has-sm-font-size"><!--FOODIFY_FSSAI-->, on pack and on invoice.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"base","textColor":"mute"} --><p class="has-mute-color has-text-color has-base-font-size"><!--FOODIFY_FSSAI-->, on pack and on invoice.</p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:column -->
 <!-- wp:column -->
 <div class="wp-block-column">
 <!-- wp:paragraph {"fontSize":"base","style":{"typography":{"fontWeight":"600"}},"fontFamily":"display"} --><p class="has-display-font-family has-base-font-size" style="font-weight:600">Made in Noida</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm","textColor":"mute"} --><p class="has-mute-color has-text-color has-sm-font-size">Our own kitchen. Not white-labelled.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"base","textColor":"mute"} --><p class="has-mute-color has-text-color has-base-font-size">Our own kitchen. Not white-labelled.</p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:column -->
 </div>

@@ -134,5 +134,111 @@ $t = foodify_content_tokens( [ 'fssai' => '' ], '2026', 'x' );
 check( 'the delivery promise is a token',      'Ships across India in 3–5 days' === $t['<!--FOODIFY_DELIVERY-->'] );
 check( 'the claim minutes are a token, from the one function', (string) foodify_claim_minutes() === $t['<!--FOODIFY_CLAIM_MINUTES-->'] );
 
+echo "── PRODUCT-1 (P0): one delivery answer, not two ──\n";
+// With the PIN zones configured the product page answers "when?" per PIN —
+// up to ten days. A fixed "3–5 days" chip above that answer contradicts it.
+$z = foodify_content_tokens( [ 'fssai' => '' ], '2026', 'x', true );
+check( 'zones configured: the promise token is EMPTY',               '' === $z['<!--FOODIFY_DELIVERY-->'] );
+check( 'zones configured: the announcement-bar segment is empty too', '' === $z['<!--FOODIFY_DELIVERY_BAR-->'] );
+check( 'no zones: the promise prints, as before',                     'Ships across India in 3–5 days' === $t['<!--FOODIFY_DELIVERY-->'] );
+check( 'no zones: the bar segment carries its own separator',         ' · Ships across India in 3–5 days' === $t['<!--FOODIFY_DELIVERY_BAR-->'] );
+check( 'the default is "no zones" (callers that do not know keep today\'s page)', $t === foodify_content_tokens( [ 'fssai' => '' ], '2026', 'x', false ) );
+$tpl_pdp = (string) file_get_contents( __DIR__ . '/../theme/foodify/templates/single-product.html' );
+preg_match( '~<p class="fd-promise[^"]*">.*?</p>~', $tpl_pdp, $pill );
+$rendered = str_replace( array_keys( $z ), array_values( $z ), $pill[0] ?? '' );
+check( 'the template\'s pill, rendered with zones on, is removed whole (no empty chip)',
+	'' !== ( $pill[0] ?? '' ) && '' === foodify_drop_empty_promise( $rendered ) );
+check( '… and kept whole when there is a promise to print',
+	str_contains( foodify_drop_empty_promise( str_replace( array_keys( $t ), array_values( $t ), $pill[0] ?? '' ) ), 'Ships across India' ) );
+check( 'sold out: the pill goes whatever it says (no dispatch promise)', '' === foodify_drop_empty_promise( str_replace( array_keys( $t ), array_values( $t ), $pill[0] ?? '' ), true ) );
+$bp = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/business-profile.php' );
+check( 'the render filter asks the zones config, passes it to the tokens, and drops the empty pill',
+	str_contains( $bp, "\$zones  = function_exists( 'foodify_delivery_config' ) && null !== foodify_delivery_config();" )
+	&& (bool) preg_match( "/foodify_content_tokens\\( foodify_business_profile\\(\\), [^;]*, \\\$zones \\);/", $bp )
+	&& str_contains( $bp, 'return foodify_drop_empty_promise( str_replace( array_keys( $tokens )' ) && str_contains( $bp, '$tokens ), $html ), $sold_out );' ) );
+
+echo "── PRODUCT-3/10: the buy column order (decision 5) ──\n";
+$col = substr( $tpl_pdp, (int) strpos( $tpl_pdp, 'fd-pdp__buy' ), (int) strpos( $tpl_pdp, '<!-- /wp:columns -->' ) - (int) strpos( $tpl_pdp, 'fd-pdp__buy' ) );
+$at  = static fn( string $needle ): int => false === strpos( $col, $needle ) ? -1 : (int) strpos( $col, $needle );
+$order = [ 'wp:post-title', 'wp:woocommerce/product-rating', 'wp:woocommerce/product-price', 'wp:woocommerce/add-to-cart-form', 'wp:post-excerpt' ];
+$pos   = array_map( $at, $order );
+check( 'title, rating, price, Add to cart, then the excerpt', ! in_array( -1, $pos, true ) && $pos === array_values( array_unique( $pos ) ) && $pos == ( static function ( $p ) { sort( $p ); return $p; } )( $pos ) );
+check( 'nothing between the price and the add-to-cart form but the stock line',
+	'' === trim( (string) preg_replace( '~<!-- wp:woocommerce/product-stock-indicator /-->~', '', substr( $col, $at( 'wp:woocommerce/product-price {"fontSize":"2xl"} /-->' ) + strlen( 'wp:woocommerce/product-price {"fontSize":"2xl"} /-->' ), $at( '<!-- wp:woocommerce/add-to-cart-form' ) - $at( 'wp:woocommerce/product-price {"fontSize":"2xl"} /-->' ) - strlen( 'wp:woocommerce/product-price {"fontSize":"2xl"} /-->' ) ) ) ) );
+check( 'no assurance is typed into the template any more', ! str_contains( $tpl_pdp, 'fd-assure__item' ) && ! str_contains( $tpl_pdp, '9–12 month' ) && ! str_contains( $tpl_pdp, 'FOODIFY_CLAIM_MINUTES' ) );
+
+echo "── PRODUCT-4: assurances from the product's own data ──\n";
+$al = foodify_assurance_lines( [ 'shelf_life' => '12 months', 'cod' => 'Cash on delivery available', 'in_stock' => true ] );
+check( 'no "Ready in N minutes" line — the yield strip states the product\'s own time', [] === preg_grep( '/ready in|minute/i', $al ) );
+check( 'shelf life is the product\'s, not a typed "9–12 month"', in_array( 'Shelf life: 12 months', $al, true ) && [] === preg_grep( '/9–12/', $al ) );
+check( 'no declared shelf life → no shelf-life line', [] === preg_grep( '/shelf/i', foodify_assurance_lines( [ 'shelf_life' => '' ] ) ) );
+check( 'COD is an assurance', in_array( 'Cash on delivery available', $al, true ) );
+check( 'sold out: no COD (a line about buying)', [ 'No preservatives', 'Shelf life: 12 months' ] === foodify_assurance_lines( [ 'shelf_life' => '12 months', 'cod' => 'Cash on delivery available', 'in_stock' => false ] ) );
+check( 'PRODUCT-14: the note in customer words', 'Delivery charge, if any, shows in your cart. MRP includes all taxes.' === foodify_assurance_note( true ) );
+check( 'sold out: the note drops the delivery half', 'MRP includes all taxes.' === foodify_assurance_note( false ) );
+$ah = foodify_assurance_html( $al, foodify_assurance_note( true ) );
+check( 'rendered as .fd-assure items + one note', 3 === substr_count( $ah, 'class="fd-assure__item"' ) && str_contains( $ah, '<p class="fd-assure__note">' ) );
+check( 'PRODUCT-14: the old "not at the last screen" copy is gone from the theme', ! str_contains( $tpl_pdp, 'not at the last screen' ) );
+
+echo "── PRODUCT-5: diet badges on the product page ──\n";
+check( 'slugs in, labels out, fixed order', [ 'Jain', 'Vegan', 'Gluten free' ] === foodify_diet_tags( [ 'gluten-free', 'vegan', 'jain' ], 'Coconut, red chilli, salt' ) );
+check( 'labels in (the prototype) work too', [ 'Vegan', 'Gluten free', 'Millet based' ] === foodify_diet_tags( [ 'Vegan', 'Gluten free', 'Millet based' ] ) );
+check( 'Jain obeys the ingredient check, as on the card', [ 'Vegan' ] === foodify_diet_tags( [ 'jain', 'vegan' ], 'Rice, onion, salt' ) );
+check( 'an unknown value is dropped, not printed raw', [] === foodify_diet_tags( [ '<script>' ] ) );
+$tags = foodify_pdp_tags_html( 'Bestseller', [ 'Jain', 'Gluten free' ] );
+check( 'Bestseller and the diet tags, as badges', '<p class="fd-pdp-tags"><span class="fd-badge fd-badge--flame">Bestseller</span><span class="fd-badge fd-badge--leaf">Jain</span><span class="fd-badge fd-badge--leaf">Gluten free</span></p>' === $tags );
+check( 'nothing to say, nothing printed', '' === foodify_pdp_tags_html( '', [] ) );
+check( 'the H1 filter prints them on the product page', str_contains( (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' ), 'foodify_pdp_tags_html(' ) );
+
+echo "── BROWSE-1: the card leads with the prep method ──\n";
+$cp = foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 2 );
+check( '"[Hot water · 6 min] Serves 2" — no dot to strand when it wraps', '<p class="fd-card-prep"><span class="fd-chip fd-chip--hot">Hot water · 6 min</span><span class="fd-card-prep__serves">Serves 2</span></p>' === $cp );
+check( 'no servings, just the chip', '<p class="fd-card-prep"><span class="fd-chip">Drinking water · 1 min</span></p>' === foodify_card_prep_html( [ 'label' => 'Drinking water · 1 min', 'modifier' => '' ] ) );
+check( 'no method, no line (the old yield line stays)', '' === foodify_card_prep_html( [] ) );
+$pd = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' );
+check( 'the card filter puts the chip BEFORE the title and drops the duplicate yield line',
+	str_contains( $pd, 'return $lead . $html .' ) && str_contains( $pd, "\$yield = '' !== \$lead ? '' :" ) );
+
+echo "── BROWSE-18: diet tags as text under the card's name ──\n";
+check( 'two tags at most, Jain first, one line', '<p class="fd-card-diet">Jain · Vegan</p>' === foodify_card_diet_html( foodify_diet_tags( [ 'gluten-free', 'vegan', 'jain' ] ) ) );
+check( 'no tags, no line', '' === foodify_card_diet_html( [] ) );
+check( 'the image keeps only the commercial badge', str_contains( $pd, "foodify_render_badges( [ 'dietary' => '' ] + foodify_card_badges(" ) );
+
+echo "── BROWSE-7: the in-cart button says what pressing it does ──\n";
+check( 'WooCommerce\'s "%s in cart" becomes "Add another · %s in cart"', "Add another\u{00A0}· %s in cart" === foodify_in_cart_text() );
+check( '… keeping the %s WooCommerce fills (PHP sprintf) and the ### it swaps (JS)', 1 === substr_count( foodify_in_cart_text(), '%s' ) && '1' === (string) preg_replace( '/\D/', '', sprintf( foodify_in_cart_text(), '1' ) ) );
+check( 'hooked on the woocommerce text domain, that string only', str_contains( $pd, "add_filter( 'gettext_woocommerce'" ) && str_contains( $pd, "'%s in cart' === \$text" ) );
+
+echo "── BROWSE-8: sold out last, in every sort ──\n";
+$c = foodify_sold_out_last_clauses( [ 'join' => '', 'orderby' => 'wp_posts.post_date DESC' ], 'wp_posts', 'wp_wc_product_meta_lookup' );
+check( 'joins the lookup table on the product id', str_contains( $c['join'], 'LEFT JOIN wp_wc_product_meta_lookup fd_stock ON fd_stock.product_id = wp_posts.ID' ) );
+check( 'sold out first key, the chosen sort second', "( fd_stock.stock_status = 'outofstock' ) ASC, wp_posts.post_date DESC" === $c['orderby'] );
+check( 'idempotent — a second pass changes nothing', $c === foodify_sold_out_last_clauses( $c, 'wp_posts', 'wp_wc_product_meta_lookup' ) );
+check( 'an empty ORDER BY gets just the stock key', "( fd_stock.stock_status = 'outofstock' ) ASC" === foodify_sold_out_last_clauses( [ 'join' => '', 'orderby' => '' ], 'p', 'l' )['orderby'] );
+check( 'applied to Product Collection queries and the main catalogue query', str_contains( $pd, "add_filter( 'posts_clauses'" ) && str_contains( $pd, "isProductCollection" ) );
+
+echo "── PRODUCT-16 / BROWSE-21 / PRODUCT-20 ──\n";
+$sp = foodify_sale_price_html( '<span>₹225</span>', '<span>₹185</span>', '₹225' );
+check( 'a reader hears "MRP ₹225, now ₹185"', str_starts_with( $sp, '<span class="fd-sr">MRP ₹225, now </span><del aria-hidden="true">' ) && str_contains( $sp, '<ins><span>₹185</span></ins>' ) );
+check( 'the sale-price filter is hooked', str_contains( $pd, "add_filter( 'woocommerce_format_sale_price'" ) );
+check( 'sold-out card button names what it does', 'Notify me when Masala Oats is back' === foodify_sold_out_button_label( 'Masala Oats', true ) && 'Masala Oats is sold out' === foodify_sold_out_button_label( 'Masala Oats', false ) );
+check( '"Contains: milk, gluten" from the declared allergens',
+	'<p class="fd-allergens"><strong>Contains:</strong> milk, gluten</p>' === foodify_allergen_line_html( 'Milk (ghee), Cereals containing gluten (wheat, in the asafoetida)' ) );
+check( 'none declared → no line', '' === foodify_allergen_line_html( "None of FSSAI's declarable allergens" ) && '' === foodify_allergen_line_html( '' ) );
+check( '"may contain" is never shortened into "contains"', '' === foodify_allergen_line_html( 'May contain traces of peanuts' ) && [ 'milk' ] === foodify_allergen_names( 'Milk; may contain traces of tree nuts' ) );
+$rows = foodify_spec_rows_html( foodify_spec_model( [ 'allergens' => 'Milk' ] )['contents']['rows'] );
+check( 'the allergens row is marked for bold', str_contains( $rows, '<div class="fd-spec__row--allergens"><dt>Allergens</dt>' ) );
+check( 'PRODUCT-14: no "what Google is told" on the page', ! str_contains( foodify_render_pdp_body( [ 'groups' => foodify_spec_model( [ 'mrp' => '₹1' ] ), 'nutrition' => [], 'steps' => [] ] ), 'Google' ) );
+
+echo "── PRODUCT-2: the sticky bar, as behaviour (node tests/pdp-scripts.js) ──\n";
+check( 'the bar waits for the form to leave the TOP of the viewport', str_contains( $js, 'e.isIntersecting||e.boundingClientRect.top>0' ) );
+$node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
+check( 'node is available to run the page scripts', '' !== $node );   // a missing node is a FAIL, not a skip
+if ( '' !== $node ) {
+	exec( escapeshellarg( $node ) . ' ' . escapeshellarg( __DIR__ . '/pdp-scripts.js' ) . ' 2>&1', $ps_out, $ps_rc );
+	$ps_last = (string) preg_replace( '/\e\[[\d;]*m/', '', (string) end( $ps_out ) );
+	check( 'the scripts behave — ' . $ps_last, 0 === $ps_rc && (bool) preg_match( '/^\d+ passed, 0 failed$/', $ps_last ) );
+}
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

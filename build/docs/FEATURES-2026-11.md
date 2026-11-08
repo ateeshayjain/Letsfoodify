@@ -42,9 +42,11 @@ boot test and the click-through, which walks every feature).
 
 ## Integration done after the lanes (outside any one lane)
 
-- `inc/shortcodes.php`: the free-shipping bar now subtracts the box discount, so
-  it judges the same amount checkout does. Without this, the bar could say "free
-  shipping unlocked" while checkout charged ₹59.
+- `inc/shortcodes.php`: the free-delivery bar judges the same amount checkout
+  does — after coupons, BEFORE the box discount (decision 4, 8 Nov 2026). The
+  earlier version subtracted the box discount, and so did checkout, which let a
+  complete box cost the customer free delivery (₹615 loose, ₹644 as a box —
+  review BUY-1). Neither subtracts it now.
 - `inc/product-editor.php`: a **Search keywords** field (meta
   `_foodify_search_keywords`), where the shop enters Hindi and regional names.
 - `parts/footer.html`: "Build a box" link in the Shop column. The header nav is at

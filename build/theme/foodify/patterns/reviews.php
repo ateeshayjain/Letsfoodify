@@ -11,8 +11,8 @@
 <!-- wp:heading {"fontSize":"2xl"} -->
 <h2 class="wp-block-heading has-2-xl-font-size">What customers say</h2>
 <!-- /wp:heading -->
-<!-- wp:paragraph {"fontSize":"sm","textColor":"mute","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|50"}}}} -->
-<p class="has-mute-color has-text-color has-sm-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">Pulled live from our Google Business Profile. Real names, real counts — nothing written in-house.</p>
+<!-- wp:paragraph {"fontSize":"base","textColor":"mute","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|50"}}}} -->
+<p class="has-mute-color has-text-color has-base-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">Pulled live from our Google Business Profile. Real names, real counts — nothing written in-house.</p>
 <!-- /wp:paragraph -->
 <!-- wp:shortcode -->
 [foodify_google_reviews limit="3"]

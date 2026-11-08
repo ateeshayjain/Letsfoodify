@@ -181,11 +181,40 @@ function foodify_delivery_promise(): string {
 	return function_exists( 'apply_filters' ) ? (string) apply_filters( 'foodify_delivery_promise', $default ) : $default;
 }
 
-function foodify_content_tokens( array $p, string $year, string $tagline = '' ): array {
-	$fssai = trim( (string) ( $p['fssai'] ?? '' ) );
+/**
+ * The promise, or nothing — UX review 8 Nov 2026, PRODUCT-1.
+ *
+ * The static promise is one sentence for the whole country. Once the PIN zones
+ * (`foodify_delivery_zones`, inc/delivery-estimate.php) are configured, the
+ * product page answers "when?" per PIN, and that answer can be ten days for
+ * Mumbai on a Sunday — so a fixed "3–5 days" chip printed above it is a second
+ * answer that contradicts the first. With zones configured the PIN check IS the
+ * promise and the static day count is not printed anywhere a zone could
+ * contradict it (product page, announcement bar). Without zones nothing changes.
+ */
+function foodify_delivery_promise_shown( bool $zones_configured ): string {
+	return $zones_configured ? '' : foodify_delivery_promise();
+}
+
+/**
+ * Remove a promise pill whose text came out empty, so the product page does not
+ * keep an empty, padded chip under the title. With $any, remove it whatever it
+ * says: a sold-out product makes no dispatch promise (PRODUCT-19).
+ */
+function foodify_drop_empty_promise( string $html, bool $any = false ): string {
+	$body = $any ? '[^<]*' : '\s*';
+	return (string) preg_replace( '~<p\b[^>]*\bclass="[^"]*\bfd-promise\b[^"]*"[^>]*>' . $body . '</p>\s*~', '', $html );
+}
+
+function foodify_content_tokens( array $p, string $year, string $tagline = '', bool $zones_configured = false ): array {
+	$fssai   = trim( (string) ( $p['fssai'] ?? '' ) );
+	$promise = foodify_delivery_promise_shown( $zones_configured );
 	return [
 		'<!--FOODIFY_YEAR-->'          => $year,
-		'<!--FOODIFY_DELIVERY-->'      => foodify_delivery_promise(),
+		'<!--FOODIFY_DELIVERY-->'      => $promise,
+		// The announcement bar's segment, separator included, so the bar reads
+		// "Free delivery over ₹599 · FSSAI …" — not "· ·" — when the promise is off.
+		'<!--FOODIFY_DELIVERY_BAR-->'  => '' === $promise ? '' : ' · ' . $promise,
 		'<!--FOODIFY_CLAIM_MINUTES-->' => (string) foodify_claim_minutes(),
 		// The site tagline (Settings → General), set by bootstrap.sh. The hero's
 		// H1 reads it, so the claim lives in ONE option, not in a template.
@@ -239,8 +268,15 @@ add_filter( 'render_block', static function ( $html ) {
 	if ( ! is_string( $html ) || false === strpos( $html, '<!--FOODIFY_' ) ) {
 		return $html;   // cheap guard — runs for every block on every page
 	}
-	$tokens = foodify_content_tokens( foodify_business_profile(), wp_date( 'Y' ), (string) get_bloginfo( 'description' ) );
-	return str_replace( array_keys( $tokens ), array_map( 'esc_html', $tokens ), $html );
+	$zones  = function_exists( 'foodify_delivery_config' ) && null !== foodify_delivery_config();
+	$tokens = foodify_content_tokens( foodify_business_profile(), wp_date( 'Y' ), (string) get_bloginfo( 'description' ), $zones );
+	// A sold-out product page makes no dispatch promise (PRODUCT-19).
+	$sold_out = false;
+	if ( str_contains( $html, 'fd-promise' ) && function_exists( 'is_product' ) && is_product() ) {
+		$product  = wc_get_product( get_the_ID() );
+		$sold_out = $product instanceof WC_Product && ! $product->is_in_stock();
+	}
+	return foodify_drop_empty_promise( str_replace( array_keys( $tokens ), array_map( 'esc_html', $tokens ), $html ), $sold_out );
 } );
 
 /** Publish the business node — only when there is a real business to describe. */

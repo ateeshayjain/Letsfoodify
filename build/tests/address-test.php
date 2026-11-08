@@ -196,5 +196,52 @@ check( 'summary joins the parts that identify a doorstep', 'B-402, Sunrise Apart
 $s = foodify_address_summary( foodify_address_normalise( addr( [ 'address_2' => '' ] ) ) );
 check( 'an empty line does not leave a dangling comma', 'B-402, Sunrise Apartments, Noida, 201309' === $s );
 
+echo "── checkout: choosing an address fills the fields in place (BUY-2) ──\n";
+
+$home   = foodify_address_normalise( addr( [ 'id' => 'h' ] ) );
+$office = foodify_address_normalise( addr( [ 'id' => 'o', 'label' => 'Office', 'first_name' => 'Priya S', 'address_1' => 'Tower B, 5th floor', 'address_2' => 'Sector 132', 'city' => 'Noida', 'postcode' => '201304', 'phone' => '9811122233' ] ) );
+$v = foodify_address_checkout_values( $office );
+check( 'the radio carries every checkout field of its address', [ 'first_name', 'phone', 'address_1', 'address_2', 'city', 'state', 'postcode' ] === array_keys( $v ) && '201304' === $v['postcode'] && 'Tower B, 5th floor' === $v['address_1'] );
+check( 'and nothing that is not a checkout field (no id, no label)', ! isset( $v['id'] ) && ! isset( $v['label'] ) && ! isset( $v['is_default'] ) );
+$js = foodify_address_choose_script();
+check( 'the script cannot end its script block early', ! str_contains( $js, '</script' ) );
+check( 'choosing never submits or reloads (WCAG 3.2.2)', ! preg_match( '/\.submit\(|location\.|requestSubmit/', $js ) );
+
+// Run the REAL script against a minimal DOM: Home is in the fields, the
+// customer picks Office and pays without pressing "Use this address".
+$dom = <<<'NODE'
+const els = {};
+function el(id, extra) { const e = Object.assign({ id, value: '', hidden: false, textContent: '', _l: {}, attrs: {},
+  getAttribute(n) { return this.attrs[n] === undefined ? null : this.attrs[n]; },
+  addEventListener(t, f) { (this._l[t] = this._l[t] || []).push(f); },
+  dispatchEvent(ev) { (this._l[ev.type] || []).forEach(f => f(ev)); return true; } }, extra || {}); if (id) els[id] = e; return e; }
+global.Event = class { constructor(t) { this.type = t; } };
+global.window = {};
+const H = JSON.parse(process.argv[1]), O = JSON.parse(process.argv[2]);
+const pre = ['billing', 'shipping'], keys = Object.keys(H);
+pre.forEach(p => keys.forEach(k => { el(p + '_' + k).value = H[k]; }));
+const radios = [H, O].map((f, i) => { const lab = { querySelector: () => ({ textContent: i ? 'Office' : 'Home' }) };
+  return el('', { checked: i === 0, attrs: { 'data-fields': JSON.stringify(f) }, parentNode: lab }); });
+const status = el('status'), use = el('use');
+const form = { querySelectorAll: () => radios, querySelector: s => s.indexOf('status') > -1 ? status : (s.indexOf('use') > -1 ? use : null) };
+global.document = { querySelector: s => s === 'form.fd-address-choose' ? form : null, getElementById: id => els[id] || null };
+eval(process.argv[3]);
+radios[0].checked = false; radios[1].checked = true; radios[1].dispatchEvent(new Event('change'));
+const out = {}; pre.forEach(p => keys.forEach(k => { out[p + '_' + k] = els[p + '_' + k].value; }));
+console.log(JSON.stringify({ out, status: status.textContent, useHidden: use.hidden }));
+NODE;
+$node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
+check( 'node is available to run the chooser script (an absent runner is a FAIL, not a pass)', '' !== $node );
+if ( '' !== $node ) {
+	$res = json_decode( (string) shell_exec( escapeshellarg( $node ) . ' -e ' . escapeshellarg( $dom ) . ' '
+		. escapeshellarg( (string) json_encode( foodify_address_checkout_values( $home ) ) ) . ' '
+		. escapeshellarg( (string) json_encode( $v ) ) . ' ' . escapeshellarg( $js ) . ' 2>&1' ), true );
+	$o = (array) ( $res['out'] ?? [] );
+	check( 'after choosing Office, the billing fields ARE Office', 'Tower B, 5th floor' === ( $o['billing_address_1'] ?? '' ) && '201304' === ( $o['billing_postcode'] ?? '' ) && '9811122233' === ( $o['billing_phone'] ?? '' ) && 'Priya S' === ( $o['billing_first_name'] ?? '' ) );
+	check( 'and the shipping fields too', 'Tower B, 5th floor' === ( $o['shipping_address_1'] ?? '' ) && 'Sector 132' === ( $o['shipping_address_2'] ?? '' ) );
+	check( 'the change is announced, naming the address', 'Delivering to Office. The address below is filled in.' === ( $res['status'] ?? '' ) );
+	check( 'the no-JS "Use this address" button is hidden once the radio does its job', true === ( $res['useHidden'] ?? null ) );
+}
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

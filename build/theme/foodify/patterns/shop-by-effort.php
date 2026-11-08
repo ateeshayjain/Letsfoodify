@@ -22,8 +22,8 @@
 <div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-style:solid;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
 <!-- wp:paragraph {"fontSize":"sm","textColor":"flame-deep","style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"0.1em"}}} --><p class="has-flame-deep-color has-text-color has-sm-font-size" style="font-weight:700;letter-spacing:0.1em;text-transform:uppercase">Just add hot water</p><!-- /wp:paragraph -->
 <!-- wp:heading {"level":3,"fontSize":"lg"} --><h3 class="wp-block-heading has-lg-font-size">Express</h3><!-- /wp:heading -->
-<!-- wp:paragraph {"textColor":"mute","fontSize":"sm"} --><p class="has-mute-color has-text-color has-sm-font-size">Ready in six minutes. For trains, hostels, hotel kettles, and nights when cooking is not happening.</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm"} --><p class="has-sm-font-size"><a href="/product-category/express/">Shop Express →</a></p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"textColor":"mute","fontSize":"base"} --><p class="has-mute-color has-text-color has-base-font-size">Ready in six minutes. For trains, hostels, hotel kettles, and nights when cooking is not happening.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"className":"fd-more","fontSize":"base"} --><p class="fd-more has-base-font-size"><a href="/product-category/express/">Shop Express →</a></p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
 </div>
@@ -32,10 +32,10 @@
 <div class="wp-block-column">
 <!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"width":"1px","style":"solid","radius":"var(--wp--custom--radius--card)"}},"borderColor":"line","backgroundColor":"surface","layout":{"type":"constrained"}} -->
 <div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-style:solid;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
-<!-- wp:paragraph {"fontSize":"sm","textColor":"kraft-deep","style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"0.1em"}}} --><p class="has-kraft-deep-color has-text-color has-sm-font-size" style="font-weight:700;letter-spacing:0.1em;text-transform:uppercase">Five minutes on the stove</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"fontSize":"sm","textColor":"kraft-deep","style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"0.1em"}}} --><p class="has-kraft-deep-color has-text-color has-sm-font-size" style="font-weight:700;letter-spacing:0.1em;text-transform:uppercase">Requires cooking</p><!-- /wp:paragraph -->
 <!-- wp:heading {"level":3,"fontSize":"lg"} --><h3 class="wp-block-heading has-lg-font-size">Hot &amp; Fresh</h3><!-- /wp:heading -->
-<!-- wp:paragraph {"textColor":"mute","fontSize":"sm"} --><p class="has-mute-color has-text-color has-sm-font-size">One pan, one flame, almost no effort. For when you want it to taste like it took an hour.</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm"} --><p class="has-sm-font-size"><a href="/product-category/hot-and-fresh/">Shop Hot &amp; Fresh →</a></p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"textColor":"mute","fontSize":"base"} --><p class="has-mute-color has-text-color has-base-font-size">A few minutes on the stove — one pan, one flame. For when you want it to taste like it took an hour.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"className":"fd-more","fontSize":"base"} --><p class="fd-more has-base-font-size"><a href="/product-category/hot-and-fresh/">Shop Hot &amp; Fresh →</a></p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
 </div>
@@ -46,8 +46,8 @@
 <div class="wp-block-group has-border-color has-line-border-color has-surface-background-color has-background" style="border-width:1px;border-style:solid;border-radius:var(--wp--custom--radius--card);padding:var(--wp--preset--spacing--50)">
 <!-- wp:paragraph {"fontSize":"sm","textColor":"leaf-ink","style":{"typography":{"fontWeight":"700","textTransform":"uppercase","letterSpacing":"0.1em"}}} --><p class="has-leaf-ink-color has-text-color has-sm-font-size" style="font-weight:700;letter-spacing:0.1em;text-transform:uppercase">Stir with drinking water</p><!-- /wp:paragraph -->
 <!-- wp:heading {"level":3,"fontSize":"lg"} --><h3 class="wp-block-heading has-lg-font-size">Flavors</h3><!-- /wp:heading -->
-<!-- wp:paragraph {"textColor":"mute","fontSize":"sm"} --><p class="has-mute-color has-text-color has-sm-font-size">Chutneys without the grinding, the soaking or the mess. Stir, rest a minute, serve.</p><!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm"} --><p class="has-sm-font-size"><a href="/product-category/flavors/">Shop Flavors →</a></p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"textColor":"mute","fontSize":"base"} --><p class="has-mute-color has-text-color has-base-font-size">Chutneys without the grinding, the soaking or the mess. Stir, rest one minute, serve.</p><!-- /wp:paragraph -->
+<!-- wp:paragraph {"className":"fd-more","fontSize":"base"} --><p class="fd-more has-base-font-size"><a href="/product-category/flavors/">Shop Flavors →</a></p><!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
 </div>

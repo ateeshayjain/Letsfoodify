@@ -1,12 +1,19 @@
-<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|80","bottom":"var:preset|spacing|50"}}},"backgroundColor":"char","textColor":"paper","layout":{"type":"constrained"}} -->
-<div class="wp-block-group has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+<!-- Every footer link is a 44px row (style.css, .is-style-plain); on a phone
+     each list is two columns so the taller rows do not double the footer.
+     All text 16px — the address and the GST line included (UX review 8 Nov). -->
+<!-- wp:group {"className":"fd-footer","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","bottom":"var:preset|spacing|50"}}},"backgroundColor":"char","textColor":"paper","layout":{"type":"constrained"}} -->
+<div class="wp-block-group fd-footer has-paper-color has-char-background-color has-text-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--50)">
+<!-- The links and the address share the header's wide rail: inside the 760px
+     content width the Shop column broke "Build a / box" at 1280px. -->
+<!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
+<div class="wp-block-group alignwide">
 <!-- wp:columns {"style":{"spacing":{"blockGap":{"top":"var:preset|spacing|50","left":"var:preset|spacing|60"}}}} -->
 <div class="wp-block-columns">
 <!-- wp:column {"width":"38%"} -->
 <div class="wp-block-column" style="flex-basis:38%">
 <!-- wp:site-title {"level":0,"fontSize":"lg","style":{"typography":{"fontWeight":"700"},"elements":{"link":{"color":{"text":"var:preset|color|paper"}}}},"fontFamily":"display"} /-->
-<!-- wp:paragraph {"fontSize":"sm","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
-<p class="has-sm-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
+<!-- wp:paragraph {"fontSize":"base","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
+<p class="has-base-font-size" style="margin-top:var(--wp--preset--spacing--30)">Home-style Indian food, gently dried. Made in our own kitchen in Noida — no preservatives, 9–12 month shelf life.</p>
 <!-- /wp:paragraph -->
 </div>
 <!-- /wp:column -->
@@ -15,8 +22,8 @@
 <!-- wp:heading {"level":2,"fontSize":"sm","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.12em","fontWeight":"600"}},"fontFamily":"ui"} -->
 <h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Shop</h2>
 <!-- /wp:heading -->
-<!-- wp:list {"className":"is-style-plain","fontSize":"sm"} -->
-<ul class="wp-block-list is-style-plain has-sm-font-size"><!-- wp:list-item --><li><a href="/product-category/express/">Express</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/product-category/flavors/">Flavors</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/build-a-box/">Build a box</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/shop/">All products</a></li><!-- /wp:list-item --></ul>
+<!-- wp:list {"className":"is-style-plain","fontSize":"base"} -->
+<ul class="wp-block-list is-style-plain has-base-font-size"><!-- wp:list-item --><li><a href="/product-category/express/">Express</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/product-category/flavors/">Flavors</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/product-category/combos/">Combos</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/build-a-box/">Build a box</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/shop/">All meals</a></li><!-- /wp:list-item --></ul>
 <!-- /wp:list -->
 </div>
 <!-- /wp:column -->
@@ -25,8 +32,8 @@
 <!-- wp:heading {"level":2,"fontSize":"sm","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.12em","fontWeight":"600"}},"fontFamily":"ui"} -->
 <h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Help</h2>
 <!-- /wp:heading -->
-<!-- wp:list {"className":"is-style-plain","fontSize":"sm"} -->
-<ul class="wp-block-list is-style-plain has-sm-font-size"><!-- wp:list-item --><li><a href="/track-order/">Track order</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/shipping/">Shipping</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/returns/">Returns</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/contact-us/">Contact</a></li><!-- /wp:list-item --></ul>
+<!-- wp:list {"className":"is-style-plain","fontSize":"base"} -->
+<ul class="wp-block-list is-style-plain has-base-font-size"><!-- wp:list-item --><li><a href="/track-order/">Track order</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/shipping/">Delivery</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/returns/">Returns</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/contact-us/">Contact</a></li><!-- /wp:list-item --></ul>
 <!-- /wp:list -->
 </div>
 <!-- /wp:column -->
@@ -35,8 +42,8 @@
 <!-- wp:heading {"level":2,"fontSize":"sm","style":{"typography":{"textTransform":"uppercase","letterSpacing":"0.12em","fontWeight":"600"}},"fontFamily":"ui"} -->
 <h2 class="wp-block-heading has-sm-font-size has-ui-font-family" style="font-weight:600;letter-spacing:0.12em;text-transform:uppercase">Company</h2>
 <!-- /wp:heading -->
-<!-- wp:list {"className":"is-style-plain","fontSize":"sm"} -->
-<ul class="wp-block-list is-style-plain has-sm-font-size"><!-- wp:list-item --><li><a href="/our-story/">Our story</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/privacy-policy/">Privacy</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/terms/">Terms</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/partner/">Partner with us</a></li><!-- /wp:list-item --></ul>
+<!-- wp:list {"className":"is-style-plain","fontSize":"base"} -->
+<ul class="wp-block-list is-style-plain has-base-font-size"><!-- wp:list-item --><li><a href="/our-story/">Our story</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/privacy-policy/">Privacy</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/terms/">Terms</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href="/partner/">Partner with us</a></li><!-- /wp:list-item --></ul>
 <!-- /wp:list -->
 </div>
 <!-- /wp:column -->
@@ -45,11 +52,13 @@
 <!-- wp:separator {"style":{"spacing":{"margin":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|40"}}},"backgroundColor":"kraft","className":"is-style-wide"} -->
 <hr class="wp-block-separator has-text-color has-kraft-color has-alpha-channel-opacity has-kraft-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--40)"/>
 <!-- /wp:separator -->
-<!-- wp:paragraph {"fontSize":"xs"} -->
-<p class="has-xs-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence <!--FOODIFY_FSSAI--> · care@letsfoodify.com</p>
+<!-- wp:paragraph {"fontSize":"base"} -->
+<p class="has-base-font-size">AVAC Ventures · N-7011 Parx Laureate, Sector 108, Noida 201304 · FSSAI licence <!--FOODIFY_FSSAI--> · care@letsfoodify.com</p>
 <!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"xs"} -->
-<p class="has-xs-font-size">© <!--FOODIFY_YEAR--> The Foodify Company. All prices inclusive of GST.</p>
+<!-- wp:paragraph {"fontSize":"base"} -->
+<p class="has-base-font-size">© <!--FOODIFY_YEAR--> The Foodify Company. All prices inclusive of GST.</p>
 <!-- /wp:paragraph -->
+</div>
+<!-- /wp:group -->
 </div>
 <!-- /wp:group -->

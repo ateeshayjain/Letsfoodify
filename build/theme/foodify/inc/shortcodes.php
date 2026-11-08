@@ -119,9 +119,11 @@ function foodify_shipping_comparison_subtotal(): float {
 		$subtotal = round( $subtotal - (float) $cart->get_discount_total(), wc_get_price_decimals() );
 	}
 	// A complete build-your-own box is a negative fee, not a coupon, so it is
-	// not in get_discount_total(). Free shipping is judged after it (box-builder.php).
-	if ( function_exists( 'foodify_box_cart_discount_total' ) ) {
-		$subtotal -= (float) foodify_box_cart_discount_total();
+	// not in get_discount_total() — and free delivery is judged BEFORE it
+	// (decision 4, box-builder.php): completing a box must never cost the
+	// customer free delivery. The rule lives in one pure function.
+	if ( function_exists( 'foodify_box_free_delivery_basis' ) ) {
+		$subtotal = foodify_box_free_delivery_basis( (float) $subtotal, function_exists( 'foodify_box_cart_discount_total' ) ? foodify_box_cart_discount_total() : 0 );
 	}
 
 	return (float) $subtotal;
@@ -137,12 +139,12 @@ function foodify_render_shipping_progress(): string {
 	}
 
 	if ( $state['qualified'] ) {
-		$message = '<strong>' . esc_html__( 'Free shipping unlocked.', 'foodify' ) . '</strong> '
+		$message = '<strong>' . esc_html__( 'Free delivery unlocked.', 'foodify' ) . '</strong> '
 			. esc_html__( 'Delivery is on us.', 'foodify' );
 	} else {
 		$message = sprintf(
 			/* translators: %s: formatted rupee amount still needed */
-			esc_html__( '%s away from free shipping.', 'foodify' ),
+			esc_html__( '%s away from free delivery.', 'foodify' ),
 			'<strong>' . wp_kses_post( wc_price( $state['remaining'] ) ) . '</strong>'
 		);
 	}
@@ -154,7 +156,7 @@ function foodify_render_shipping_progress(): string {
 			. '<i style="width:%2$s%%"></i></div></div>',
 		$message,
 		esc_attr( (string) $state['percent'] ),
-		esc_attr__( 'Progress toward free shipping', 'foodify' )
+		esc_attr__( 'Progress toward free delivery', 'foodify' )
 	);
 }
 

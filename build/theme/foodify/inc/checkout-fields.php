@@ -234,6 +234,13 @@ add_action( 'wp_enqueue_scripts', static function (): void {
 		'andaman and nicobar islands' => 'AN',
 	];
 
+	// The delivery date under the PIN field (review BUY-11): the product page's
+	// rules and the product page's function (delivery-estimate.php), so the two
+	// can never promise different dates. Checkout only — not the address book,
+	// not the order-received page — and only while foodify_delivery_zones is set.
+	$on_checkout = is_checkout() && ! ( function_exists( 'is_order_received_page' ) && is_order_received_page() );
+	$delivery    = ( $on_checkout && function_exists( 'foodify_delivery_config' ) ) ? foodify_delivery_config() : null;
+
 	wp_register_script( 'foodify-pincode', false, [ 'jquery' ], FOODIFY_VERSION, true );
 	wp_enqueue_script( 'foodify-pincode' );
 	wp_add_inline_script(
@@ -242,67 +249,13 @@ add_action( 'wp_enqueue_scripts', static function (): void {
 			[
 				'endpoint' => $endpoint,
 				'aliases'  => $aliases,
+				'delivery' => $delivery,
 			]
-		) . ';',
+		) . ';'
+		. ( null !== $delivery && function_exists( 'foodify_delivery_script' ) ? "\n" . foodify_delivery_script() : '' ),
 		'before'
 	);
-	wp_add_inline_script( 'foodify-pincode', <<<'JS'
-(function($){
-  var cfg    = window.FOODIFY_PIN || {};
-  var cache  = {};
-  var filled = {};   // prefix -> the PIN we last auto-filled from
-  var timer;
-
-  function norm(s){ return (s||'').toString().trim().toLowerCase().replace(/\s+/g,' '); }
-
-  function lookup(pin){
-    if (cache[pin] !== undefined) return Promise.resolve(cache[pin]);
-    return fetch(cfg.endpoint + pin)
-      .then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(j){
-        var po = j && j[0] && j[0].Status === 'Success' && j[0].PostOffice && j[0].PostOffice[0];
-        cache[pin] = po ? { city: po.District, state: po.State } : null;
-        return cache[pin];
-      })
-      .catch(function(){ cache[pin] = null; return null; });
-  }
-
-  function setState($state, apiState){
-    if (!$state.length) return;
-    // The site's own endpoint answers with WooCommerce's state code; a
-    // repointed service may answer with a name.
-    var code = /^[A-Z]{2}$/.test(apiState || '') ? apiState : (cfg.aliases || {})[norm(apiState)];
-    var $opt = code
-      ? $state.find('option[value="' + code + '"]')
-      : $state.find('option').filter(function(){ return norm($(this).text()) === norm(apiState); });
-    if ($opt.length) { $state.val($opt.val()).trigger('change'); }
-  }
-
-  function apply(pre, pin){
-    lookup(pin).then(function(res){
-      if (!res) return;
-      // Overwrite when the PIN itself changed. The original only filled empty
-      // fields, so correcting a mistyped PIN left the old city and state in
-      // place — wrong shipping zone, wrong GST, and nothing visibly broken.
-      if (filled[pre] !== pin) {
-        var $city = $('#' + pre + '_city');
-        if ($city.length) { $city.val(res.city).trigger('change'); }
-        setState($('#' + pre + '_state'), res.state);
-        filled[pre] = pin;
-        $(document.body).trigger('update_checkout');
-      }
-    });
-  }
-
-  $(document.body).on('input change', '#billing_postcode, #shipping_postcode', function(){
-    var $f  = $(this),
-        pin = ($f.val() || '').replace(/\D/g, ''),
-        pre = $f.attr('id').split('_')[0];
-    clearTimeout(timer);
-    if (pin.length !== 6) { filled[pre] = null; return; }
-    timer = setTimeout(function(){ apply(pre, pin); }, 250);   // one call, not one per keystroke
-  });
-})(jQuery);
-JS
-	);
+	// City only when empty, state always, "PIN not found — type your city",
+	// and the date. Source and rules: foodify_checkout_pin_script() (checkout-flow.php).
+	wp_add_inline_script( 'foodify-pincode', foodify_checkout_pin_script() );
 } );

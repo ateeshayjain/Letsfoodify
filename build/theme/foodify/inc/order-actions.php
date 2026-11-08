@@ -241,10 +241,24 @@ function foodify_return_email( array $d ): array {
 }
 
 /**
+ * What happens after "Send report", in one sentence (review ACCOUNT-12). One
+ * name through the whole flow — "Report a problem" → "Send report" →
+ * "Problem reported" — and never "return" in the customer's copy: most of
+ * these are a split pouch or a missing pack, not something sent back. The
+ * reply goes to the email on the order, and the sentence says which.
+ */
+function foodify_report_next_step( string $email ): string {
+	$email = trim( $email );
+	return '' !== $email
+		? 'We will look into it and reply to ' . $email . ', the email on this order.'
+		: 'We will look into it and reply by email.';
+}
+
+/**
  * The block under an order on the view-order page.
  *
  * @param array{order_id:int,number:string,cancel:bool,money?:string,return:array{state:string,closes:int},
- *              closes_label?:string,care_email?:string,nonce_cancel?:string,nonce_return?:string} $s
+ *              closes_label?:string,care_email?:string,customer_email?:string,nonce_cancel?:string,nonce_return?:string} $s
  */
 function foodify_order_actions_html( array $s ): string {
 	$e      = static fn( string $v ): string => htmlspecialchars( $v, ENT_QUOTES, 'UTF-8' );
@@ -278,19 +292,20 @@ function foodify_order_actions_html( array $s ): string {
 			$radios .= '<label class="fd-return__reason"><input type="radio" name="reason" value="' . $e( $key ) . '" required> ' . $e( $label ) . '</label>';
 		}
 		$parts[] = '<details class="fd-order-return" id="fd-return">'
-			. '<summary class="fd-order-actions__toggle">Report a problem with this order</summary>'
+			. '<summary class="fd-order-actions__toggle">Report a problem</summary>'
 			. '<form method="post" class="fd-order-actions__form">'
 			. '<fieldset class="fd-return__reasons"><legend>What went wrong?</legend>' . $radios . '</fieldset>'
 			. '<label class="fd-return__note-label" for="fd-return-note">Anything else we should know? (optional)</label>'
 			. '<textarea class="fd-return__note" id="fd-return-note" name="note" rows="3" maxlength="500"></textarea>'
-			. ( ! empty( $s['closes_label'] ) ? '<p class="fd-order-actions__note">You can ask until ' . $e( (string) $s['closes_label'] ) . '.</p>' : '' )
+			. '<p class="fd-order-actions__note">' . $e( foodify_report_next_step( (string) ( $s['customer_email'] ?? '' ) ) )
+			. ( ! empty( $s['closes_label'] ) ? ' You can report it until ' . $e( (string) $s['closes_label'] ) . '.' : '' ) . '</p>'
 			. $hidden( 'return', (string) ( $s['nonce_return'] ?? '' ) )
-			. '<button type="submit" class="wp-element-button fd-order-actions__confirm">Send return request</button>'
+			. '<button type="submit" class="wp-element-button fd-order-actions__confirm">Send report</button>'
 			. '</form></details>';
 	} elseif ( 'requested' === $state ) {
-		$parts[] = '<p class="fd-order-actions__note">We have your return request for this order. We will reply by email.</p>';
+		$parts[] = '<p class="fd-order-actions__note"><strong>Problem reported.</strong> ' . $e( foodify_report_next_step( (string) ( $s['customer_email'] ?? '' ) ) ) . '</p>';
 	} elseif ( 'closed' === $state && '' !== $mail ) {
-		$parts[] = '<p class="fd-order-actions__note">Returns for this order closed on ' . $e( (string) ( $s['closes_label'] ?? '' ) )
+		$parts[] = '<p class="fd-order-actions__note">Online reports for this order closed on ' . $e( (string) ( $s['closes_label'] ?? '' ) )
 			. '. If something is wrong, contact us: ' . $mail . '</p>';
 	} elseif ( in_array( $state, [ 'off', 'unknown' ], true ) && ! empty( $s['delivered'] ) && '' !== $mail ) {
 		$parts[] = '<p class="fd-order-actions__note">Contact us about a problem with your order: ' . $mail . '</p>';
@@ -365,13 +380,13 @@ function foodify_order_care_email(): string {
 
 add_action( 'init', static function (): void {
 	register_post_status( 'wc-return-requested', [
-		'label'                     => _x( 'Return requested', 'Order status', 'foodify' ),
+		'label'                     => _x( 'Problem reported', 'Order status', 'foodify' ),
 		'public'                    => false,
 		'exclude_from_search'       => false,
 		'show_in_admin_all_list'    => true,
 		'show_in_admin_status_list' => true,
 		/* translators: %s: number of orders */
-		'label_count'               => _n_noop( 'Return requested <span class="count">(%s)</span>', 'Return requested <span class="count">(%s)</span>', 'foodify' ),
+		'label_count'               => _n_noop( 'Problem reported <span class="count">(%s)</span>', 'Problem reported <span class="count">(%s)</span>', 'foodify' ),
 	] );
 } );
 
@@ -380,11 +395,11 @@ add_filter( 'wc_order_statuses', static function ( array $statuses ): array {
 	foreach ( $statuses as $key => $label ) {
 		$out[ $key ] = $label;
 		if ( 'wc-completed' === $key ) {
-			$out['wc-return-requested'] = _x( 'Return requested', 'Order status', 'foodify' );
+			$out['wc-return-requested'] = _x( 'Problem reported', 'Order status', 'foodify' );
 		}
 	}
 	if ( ! isset( $out['wc-return-requested'] ) ) {
-		$out['wc-return-requested'] = _x( 'Return requested', 'Order status', 'foodify' );
+		$out['wc-return-requested'] = _x( 'Problem reported', 'Order status', 'foodify' );
 	}
 	return $out;
 } );
@@ -495,7 +510,7 @@ add_action( 'template_redirect', static function (): void {
 	// Return request.
 	$window = foodify_return_open( $facts, foodify_order_return_window(), time() );
 	if ( ! $window['open'] ) {
-		wc_add_notice( __( 'A return can no longer be requested online for this order.', 'foodify' ), 'error' );
+		wc_add_notice( __( 'A problem can no longer be reported online for this order. Please contact us instead.', 'foodify' ), 'error' );
 		wp_safe_redirect( $back );
 		exit;
 	}
@@ -522,7 +537,7 @@ add_action( 'template_redirect', static function (): void {
 	] );
 	wp_mail( foodify_order_shop_address(), $mail['subject'], $mail['body'] );
 
-	wc_add_notice( __( 'Thanks — we have your return request. We will reply by email.', 'foodify' ), 'success' );
+	wc_add_notice( esc_html( 'Problem reported. ' . foodify_report_next_step( (string) $order->get_billing_email() ) ), 'success' );
 	wp_safe_redirect( $back );
 	exit;
 }, 5 );
@@ -576,6 +591,7 @@ add_action( 'woocommerce_view_order', static function ( $order_id ): void {
 		'delivered'    => 'completed' === $facts['status'],
 		'closes_label' => $return['closes'] ? wp_date( 'D j M', $return['closes'] ) : '',
 		'care_email'   => foodify_order_care_email(),
+		'customer_email' => (string) $order->get_billing_email(),
 		'nonce_cancel' => $cancel ? wp_create_nonce( 'foodify_order_cancel_' . $order->get_id() ) : '',
 		'nonce_return' => $return['open'] ? wp_create_nonce( 'foodify_order_return_' . $order->get_id() ) : '',
 	] );

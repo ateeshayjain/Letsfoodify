@@ -1,8 +1,16 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 <!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
-<!-- wp:post-title {"level":1,"fontSize":"3xl"} /-->
+<!-- The account is on the WIDE rail (UX review 8 Nov, ACCOUNT-8): at content
+     width the nav took 15rem of 760px and the orders table's actions stacked.
+     A default-layout wide group, the same shape as the cart page's. The
+     signed-out sign-in form centres itself at 26rem inside it. -->
+<!-- wp:post-title {"level":1,"align":"wide","fontSize":"3xl"} /-->
+<!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
+<div class="wp-block-group alignwide">
 <!-- wp:woocommerce/classic-shortcode {"shortcode":"my_account"} /-->
+</div>
+<!-- /wp:group -->
 </main>
 <!-- /wp:group -->
 <!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

@@ -111,17 +111,25 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 		return $html;
 	}
 
-	// Wireframe 01, rule 3: the card is two lines — name, then "Serves 2 · 6 min".
-	// The prep chip moved to the product page; on a two-up phone card the yield
-	// line answers the two questions a card gets asked in the space a chip took.
-	$yield = foodify_card_yield( [
+	// UX review 8 Nov 2026, BROWSE-1 — principle 1 again: the card names the
+	// prep method and time FIRST ("Hot water · 6 min · Serves 2"), above the
+	// name. That one line replaces the grey "Serves 2 · 6 min" line that used to
+	// sit under the name, so the card does not grow. No prep method recorded:
+	// the old yield line, under the name, as before.
+	$chip  = foodify_prep_chip_parts( $product );
+	$combo = function_exists( 'foodify_combo_data' ) && null !== foodify_combo_data( $product );
+	$lead  = $chip ? foodify_card_prep_html( $chip, $combo ? 0 : (int) $product->get_meta( '_foodify_servings' ) ) : '';
+	$yield = '' !== $lead ? '' : foodify_card_yield( [
 		'servings'     => (string) $product->get_meta( '_foodify_servings' ),
 		'prep_minutes' => (string) $product->get_meta( '_foodify_prep_minutes' ),
 	] );
-	// A combo answers a different question here — what is in the pack, not how
-	// many one sachet serves — so product-combo.php swaps the line.
+	// A combo answers a different question under its name — what is in the
+	// pack, not how many one sachet serves — so product-combo.php swaps the line.
 	$yield = (string) apply_filters( 'foodify_card_yield_line', $yield, $product );
-	return $html . ( '' !== $yield ? '<p class="fd-yield">' . esc_html( $yield ) . '</p>' : '' );
+	// BROWSE-18: the dietary tags as text under the name, not a badge on the image.
+	$state = foodify_badge_state( $product );
+	$diet  = foodify_card_diet_html( foodify_diet_tags( $state['dietary'], $state['ingredients'] ) );
+	return $lead . $html . ( '' !== $yield ? '<p class="fd-yield">' . esc_html( $yield ) . '</p>' : '' ) . $diet; // $lead and $diet escaped in their builders.
 }, 10, 2 );
 
 /** The declared diet, the one field the veg mark reads. */
@@ -152,6 +160,29 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 	$mark = foodify_veg_mark_html( foodify_product_diet( $product ) );
 	return '' === $mark ? $html : (string) preg_replace( '/^(\s*<h[1-6]\b[^>]*>)/', '$1' . $mark, $html, 1 );
 }, 5, 2 );
+
+/**
+ * The product page's badges, directly under the H1 and its veg mark: the same
+ * Bestseller / New / Sold out the card shows, and every dietary tag (Jain only
+ * when the ingredients allow it). UX review 8 Nov 2026, PRODUCT-5: the card
+ * said "Bestseller · Jain" and the page it opened said neither.
+ */
+add_filter( 'render_block_core/post-title', static function ( string $html, array $block ): string {
+	if ( '' === $html || ! empty( $block['attrs']['__woocommerceNamespace'] ) || 1 !== (int) ( $block['attrs']['level'] ?? 2 )
+		|| ! function_exists( 'is_product' ) || ! is_product() ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
+	if ( ! $product instanceof WC_Product ) {
+		return $html;
+	}
+	$state = foodify_badge_state( $product );
+	$tags  = foodify_pdp_tags_html(
+		foodify_card_badges( $state )['commercial'],
+		foodify_diet_tags( $state['dietary'], $state['ingredients'] )
+	);
+	return $html . $tags; // Escaped in the builder.
+}, 6, 2 );
 
 /* -------------------------------------------------------------------------
  * Wireframes 01–03 (design playbook §4). Pure rules live in product-spec.php;
@@ -192,7 +223,9 @@ add_filter( 'render_block_woocommerce/product-image', static function ( string $
 	if ( ! $product instanceof WC_Product ) {
 		return $html;
 	}
-	$badges = foodify_render_badges( foodify_card_badges( foodify_badge_state( $product ) ) );
+	// Commercial only (Sold out / Bestseller / New): the dietary tag is text
+	// under the name since BROWSE-18 (foodify_card_diet_html()).
+	$badges = foodify_render_badges( [ 'dietary' => '' ] + foodify_card_badges( foodify_badge_state( $product ) ) );
 	if ( '' === $badges ) {
 		return $html;
 	}
@@ -219,11 +252,79 @@ add_filter( 'render_block_woocommerce/product-price', static function ( string $
 	] );
 	// A combo answers this line in meals rather than grams — product-combo.php.
 	$parts = (array) apply_filters( 'foodify_pdp_yield_parts', $parts, $product );
+	// "Contains: milk, gluten" under the strip, when allergens are declared
+	// (PRODUCT-20). The full declaration stays in the Ingredients tab.
+	$allergens = foodify_allergen_line_html( $meta( 'allergens' ) );
 	if ( ! $parts ) {
+		return $html . $allergens;
+	}
+	return $html . '<p class="fd-yield-strip">' . implode( '', array_map( static fn( $p ): string => '<span>' . esc_html( $p ) . '</span>', $parts ) ) . '</p>' . $allergens;
+}, 10, 2 );
+
+/**
+ * The assurances, under the add-to-cart form and after the delivery check and
+ * Offers (priorities 10 and 11) and the sold-out alert form (20). They were
+ * typed into the template, the same on every product; now they read the
+ * product (foodify_assurance_lines()).
+ */
+add_filter( 'render_block_woocommerce/add-to-cart-form', static function ( string $html ): string {
+	if ( ! function_exists( 'is_product' ) || ! is_product() ) {
 		return $html;
 	}
-	return $html . '<p class="fd-yield-strip">' . implode( '', array_map( static fn( $p ): string => '<span>' . esc_html( $p ) . '</span>', $parts ) ) . '</p>';
+	$product = wc_get_product( get_the_ID() );
+	if ( ! $product instanceof WC_Product ) {
+		return $html;
+	}
+	$in_stock = $product->is_in_stock();
+	$cod      = $in_stock && function_exists( 'foodify_offer_config' ) && function_exists( 'foodify_cod_line' )
+		? foodify_cod_line( foodify_offer_config( $product ) )
+		: '';
+	$lines = foodify_assurance_lines( [
+		'shelf_life' => (string) $product->get_meta( '_foodify_shelf_life' ),
+		'cod'        => $cod,
+		'in_stock'   => $in_stock,
+	] );
+	return $html . foodify_assurance_html( $lines, foodify_assurance_note( $in_stock ) ); // Escaped in the builder.
+}, 25 );
+
+/**
+ * A screen reader hears the MRP before the sale price (PRODUCT-16) — see
+ * foodify_sale_price_html(). WooCommerce's own version hides the MRP from
+ * readers and explains it in .screen-reader-text spans this theme does not style.
+ */
+add_filter( 'woocommerce_format_sale_price', static function ( $price, $regular, $sale ) {
+	// wp-admin does not load the theme's .fd-sr, so there the text would show.
+	if ( ( is_admin() && ! wp_doing_ajax() ) || ! is_numeric( $regular ) || ! is_numeric( $sale ) ) {
+		return $price;
+	}
+	$reg = wc_price( (float) $regular );
+	return foodify_sale_price_html( $reg, wc_price( (float) $sale ), wp_strip_all_tags( $reg ) );
+}, 10, 3 );
+
+/** "Add another · 1 in cart" on the card button once the product is in the cart (BROWSE-7). */
+add_filter( 'gettext_woocommerce', static function ( $translation, $text ) {
+	return '%s in cart' === $text ? foodify_in_cart_text() : $translation;
 }, 10, 2 );
+
+/**
+ * Sold-out products last in every listing sort (BROWSE-8) — the shop, the
+ * category pages, search results, and every Product Collection block (home and
+ * related grids), whatever sort is chosen. foodify_sold_out_last_clauses().
+ */
+add_filter( 'posts_clauses', static function ( array $clauses, WP_Query $q ): array {
+	if ( is_admin() || $q->is_singular() ) {
+		return $clauses;
+	}
+	$type     = $q->get( 'post_type' );
+	$products = 'product' === $type || [ 'product' ] === $type;
+	$listing  = ! empty( $q->query_vars['isProductCollection'] )
+		|| ( $q->is_main_query() && ( $products || ( function_exists( 'is_product_taxonomy' ) && is_product_taxonomy() ) ) );
+	if ( ! $listing ) {
+		return $clauses;
+	}
+	global $wpdb;
+	return foodify_sold_out_last_clauses( $clauses, $wpdb->posts, $wpdb->prefix . 'wc_product_meta_lookup' );
+}, 20, 2 );
 
 /** Wireframe 01/02, rule 5: SAVE badge only at or above the floor; below it, the price alone. */
 add_filter( 'woocommerce_get_price_html', static function ( string $html, WC_Product $product ): string {
@@ -256,6 +357,19 @@ add_filter( 'woocommerce_product_add_to_cart_text', static function ( string $te
 	return function_exists( 'foodify_stock_alerts_accepting' ) && foodify_stock_alerts_accepting( $product )
 		? __( 'Notify me', 'foodify' )
 		: __( 'Sold out', 'foodify' );
+}, 10, 2 );
+
+/**
+ * The sold-out card button's accessible name says what it does (BROWSE-21):
+ * "Notify me when Masala Oats is back", not WooCommerce's "Read more about".
+ * ProductButton uses this description as the button's aria-label.
+ */
+add_filter( 'woocommerce_product_add_to_cart_description', static function ( $text, $product ) {
+	if ( ! $product instanceof WC_Product || $product->is_in_stock() ) {
+		return $text;
+	}
+	$accepting = function_exists( 'foodify_stock_alerts_accepting' ) && foodify_stock_alerts_accepting( $product );
+	return foodify_sold_out_button_label( $product->get_name(), $accepting );
 }, 10, 2 );
 
 /**
@@ -318,7 +432,20 @@ add_action( 'wp_footer', static function (): void {
 	if ( ! function_exists( 'is_shop' ) || ! ( is_shop() || is_product_taxonomy() ) ) {
 		return;
 	}
-	echo "<script>if(matchMedia('(max-width:781px)').matches){document.querySelectorAll('details.fd-filters[open]').forEach(function(d){d.removeAttribute('open')})}</script>\n";
+	// The template prints the filters closed and opens them from 782px itself
+	// (UX review BROWSE-2). This only writes how many filters are on into the
+	// closed panel's summary — "Filter · 2" — so a phone shows that it is filtered.
+	echo "<script>(function(){var c=document.querySelector('.fd-filters__count');if(!c)return;var n=document.querySelectorAll('.fd-filters input[type=checkbox]:checked').length;c.textContent=n?String(n):'';})();</script>\n";
+} );
+
+/* The visible "Sort by" label names the select (BROWSE-20); the result count is
+ * announced when filters change it (BROWSE-2). WooCommerce's loop/orderby.php
+ * prints aria-label="Shop order", which the label replaces. */
+add_filter( 'render_block_woocommerce/catalog-sorting', static function ( string $html ): string {
+	return preg_replace( '/<select name="orderby" class="orderby"[^>]*?aria-label="[^"]*"/', '<select name="orderby" class="orderby" id="fd-orderby"', $html, 1 ) ?? $html;
+} );
+add_filter( 'render_block_woocommerce/product-results-count', static function ( string $html ): string {
+	return preg_replace( '/<p class="woocommerce-result-count/', '<p role="status" class="woocommerce-result-count', $html, 1 ) ?? $html;
 } );
 
 /** Per-serving maths under the price. ₹210 reads differently as ₹105 a head. */
@@ -365,7 +492,10 @@ add_filter( 'woocommerce_get_price_html', static function ( string $html, WC_Pro
  * real and genuinely low.
  */
 add_filter( 'woocommerce_get_availability_text', static function ( string $text, WC_Product $product ): string {
-	if ( ! $product->managing_stock() || ! $product->is_in_stock() ) {
+	if ( ! $product->is_in_stock() ) {
+		return __( 'Sold out', 'foodify' );   // one word for it, everywhere (decision 6)
+	}
+	if ( ! $product->managing_stock() ) {
 		return $text;
 	}
 

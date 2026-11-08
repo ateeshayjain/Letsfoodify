@@ -64,9 +64,13 @@ in all)") instead of implying it searched all of them.
   managed stock and sold-individually. The submission is re-validated against
   the live catalogue and added all-or-nothing.
 - **Order of discounts.** Coupons (on lines) → box (% of the box lines' gross
-  AFTER coupons) → prepaid saving (flat, payments.php). Free shipping is judged
-  after the box discount (`woocommerce_shipping_free_shipping_is_available`),
-  matching `ignore_discounts = no`.
+  AFTER coupons) → prepaid saving (flat, payments.php). **Free delivery is
+  judged after coupons and BEFORE the box discount** (decision 4, UX fix wave
+  8 Nov 2026, review BUY-1): judged after it, Rajma ×2 + Idli = ₹615 (free
+  delivery) became a ₹585 box + ₹59 delivery = ₹644 — the box raised the bill.
+  WooCommerce's own check (`ignore_discounts = no`) subtracts coupons and never
+  sees fees, so there is no free-shipping filter; the progress bar reads the
+  same figure through `foodify_box_free_delivery_basis()`.
 - **Rounding.** Down to the whole rupee, in integer paise, identically in PHP and
   in the script — the page's promise and the cart's fee are the same number.
 - **GST.** Fee non-taxable, same conservative choice as the prepaid saving
@@ -84,9 +88,8 @@ in all)") instead of implying it searched all of them.
 - `payments.php` reads `get_cart_contents_total()` for the prepaid saving. With a
   flat amount the box fee is irrelevant; if `prepaid_rate` is ever used, subtract
   `foodify_box_cart_discount_total()` from `$eligible`.
-- `shortcodes.php` free-shipping progress bar compares
-  `foodify_shipping_comparison_subtotal()`; subtract
-  `foodify_box_cart_discount_total()` there too, or the bar can say "unlocked"
-  while checkout charges shipping.
+- ~~`shortcodes.php` should subtract the box discount from the progress bar's
+  figure~~ — reversed by decision 4 (8 Nov 2026): neither the bar nor checkout
+  subtracts it; a box never costs free delivery.
 - The page `/build-a-box/` is created by bootstrap.sh; nothing links to it yet
   (header nav is not this lane's file).

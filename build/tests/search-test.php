@@ -35,6 +35,7 @@ $rows = array_map( 'foodify_search_row', [
 	[ 'id' => 6, 'name' => 'Masala Chai',         'kw' => 'tea ginger elaichi',         'stock' => true ],
 	[ 'id' => 7, 'name' => 'Dal Makhani',         'kw' => 'urad rajma butter',          'stock' => false ],
 	[ 'id' => 8, 'name' => 'Lemon Poha',          'kw' => 'flattened rice peanuts',     'stock' => true ],
+	[ 'id' => 9, 'name' => 'Idli Sambhar',        'kw' => 'rice urad lentil',           'stock' => true ],
 ] );
 
 echo "── normalisation ──\n";
@@ -56,10 +57,13 @@ check( 'every query word must match somewhere ("rice saffron" → Biryani only)'
 check( 'tier 3: one typo on a 5+ letter word ("biryni" → Veg Biryani)', [ 3 ] === ids( foodify_search_rank( $rows, 'biryni' ) ) );
 check( 'tier 3: a swapped pair counts as one typo ("birayni")', [ 3 ] === ids( foodify_search_rank( $rows, 'birayni' ) ) );
 check( 'tier 3: one typo part-way through a word ("biryn")', [ 3 ] === ids( foodify_search_rank( $rows, 'biryn' ) ) );
-check( 'no typo tolerance under 5 letters ("chao" is not "chai")', [] === ids( foodify_search_rank( $rows, 'chao' ) ) );
+check( 'BROWSE-9: one typo from 4 letters ("idly" → Idli Sambhar)', [ 9 ] === ids( foodify_search_rank( $rows, 'idly' ) ) );
+check( 'BROWSE-9: and "chao" now finds Masala Chai (and Rajma Chawal, "chaw…")', [ 2, 6 ] === ids( foodify_search_rank( $rows, 'chao' ) ) );
+check( 'no typo tolerance under 4 letters ("dol" is not "dal")', [] === ids( foodify_search_rank( $rows, 'dol' ) ) );
+check( 'a 4-letter word with two slips is still nothing ("idxy")', [] === ids( foodify_search_rank( $rows, 'idxy' ) ) );
 check( 'two typos is not a match ("bxryxni")',    [] === ids( foodify_search_rank( $rows, 'bxryxni' ) ) );
 check( 'a typo still finds a sold-out product ("panner" → Paneer Butter Masala)', [ 5 ] === ids( foodify_search_rank( $rows, 'panner' ) ) );
-check( 'the middle of a word is not a prefix ("neer" finds nothing; under 5 letters, no typo help)', [] === ids( foodify_search_rank( $rows, 'neer' ) ) );
+check( 'the middle of a word is not a prefix ("neer" finds nothing; one typo cannot reach "paneer")', [] === ids( foodify_search_rank( $rows, 'neer' ) ) );
 
 echo "── sold out goes last ──\n";
 $butter = ids( foodify_search_rank( $rows, 'butter' ) );
@@ -70,7 +74,7 @@ $dalia_gone = $rows;
 $dalia_gone[3]['stock'] = false;
 check( 'a sold-out tier-0 match trails an in-stock tier-1 match ("dal" with Dalia sold out → Dal Fry first)',
 	[ 1, 4, 7 ] === ids( foodify_search_rank( $dalia_gone, 'dal' ) ) );
-check( 'the limit holds ("rice" matches three, two asked for)', 3 === count( foodify_search_rank( $rows, 'rice' ) ) && [ 2, 3 ] === ids( foodify_search_rank( $rows, 'rice', 2 ) ) );
+check( 'the limit holds ("rice" matches four, two asked for)', 4 === count( foodify_search_rank( $rows, 'rice' ) ) && [ 2, 3 ] === ids( foodify_search_rank( $rows, 'rice', 2 ) ) );
 check( 'a limit of zero returns nothing',          [] === foodify_search_rank( $rows, 'dal', 0 ) );
 
 echo "── nothing found ──\n";
@@ -121,6 +125,20 @@ check( 'no results: a static line inc/search.php rewrites', str_contains( $res, 
 check( 'no results: three popular products, in stock', str_contains( $res, '"perPage":3' ) && str_contains( $res, '"orderBy":"popularity"' ) && str_contains( $res, 'instock' ) );
 check( 'no numeric attribute id or other install-specific number in the template', ! preg_match( '/"attributeId":[1-9]/', $res ) );
 
+echo "── BROWSE-9: the last suggestion is every match ──\n";
+check( '"See all 7 results for ‘dal’"', 'See all 7 results for ‘dal’' === foodify_search_see_all_text( ' dal ', 7 ) );
+check( 'one match reads as one', 'See 1 result for ‘idly’' === foodify_search_see_all_text( 'idly', 1 ) );
+
+echo "── BROWSE-10: the results page ──\n";
+$again = foodify_search_results_form_html( 'biryni <x>' );
+check( 'the query sits in an open, labelled field at the top', str_contains( $again, 'value="biryni &lt;x&gt;"' ) && str_contains( $again, '<label class="fd-search-again__label" for="fd-search-again-q">' ) && str_contains( $again, 'id="fd-search-again-q"' ) );
+check( 'a plain GET form for products, no script needed', str_contains( $again, 'method="get" action="/"' ) && str_contains( $again, 'name="post_type" value="product"' ) && str_contains( $again, 'name="s"' ) );
+check( 'no ids collide with the header form', ! str_contains( $again, 'id="fd-search-q"' ) );
+check( '"No products found" is dropped when the fallback shows', true === foodify_search_hide_results_count( true, 0 ) );
+check( 'and kept when there are results, or off a search', false === foodify_search_hide_results_count( true, 3 ) && false === foodify_search_hide_results_count( false, 0 ) );
+$ssrc = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/search.php' );
+check( 'both are wired to the template\'s blocks', str_contains( $ssrc, "add_filter( 'render_block_core/query-title'" ) && str_contains( $ssrc, "add_filter( 'render_block_woocommerce/product-results-count'" ) );
+
 echo "── the script ──\n";
 $js = foodify_search_script();
 foreach ( [
@@ -136,6 +154,8 @@ foreach ( [
 	'window.fdSearchRows'               => 'accepts inline rows (the prototype)',
 	"credentials:'omit'"                => 'fetches the index without cookies (it is public and cacheable)',
 	'textContent=row.name'              => 'writes product names as text, never as HTML',
+	'FDSearch.seeAll(q,all)'            => 'ends the list with "See all N results" (BROWSE-9)',
+	'opts=opts.concat([{url:href}])'    => 'so Enter on it opens the results page',
 ] as $needle => $label ) {
 	check( 'the script ' . $label, str_contains( $js, $needle ) );
 }
@@ -146,13 +166,15 @@ $node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
 check( 'node is available to run the JavaScript half', '' !== $node );
 if ( '' !== $node ) {
 	$queries = [ 'dal', 'fry', 'masala', 'moong', 'राजमा', 'rajma', 'rice saffron', 'biryni', 'birayni', 'biryn', 'chao',
-		'bxryxni', 'panner', 'aneer', 'neer', 'butter', 'ma', 'a', 'RICE', 'dal  f', 'chai-masala', 'po', 'lemon poha', 'xyz', ' ' ];
+		'bxryxni', 'panner', 'aneer', 'neer', 'butter', 'ma', 'a', 'RICE', 'dal  f', 'chai-masala', 'po', 'lemon poha', 'xyz', ' ',
+		// BROWSE-9: the 4-letter typo rule, both engines.
+		'idly', 'idli', 'idxy', 'dol', 'pohq', 'upma', 'sambar', 'tex', 'teaa', 'rce' ];
 	$dir = sys_get_temp_dir() . '/fd-search-' . getmypid();
 	@mkdir( $dir );
 	file_put_contents( $dir . '/engine.js', foodify_search_engine_js() . "\nmodule.exports=FDSearch;\n" );
 	file_put_contents( $dir . '/vectors.json', json_encode( [ 'rows' => $rows, 'queries' => $queries ], JSON_UNESCAPED_UNICODE ) );
 	file_put_contents( $dir . '/run.js', "const S=require('./engine.js');const v=require('./vectors.json');"
-		. "const out={};for(const q of v.queries){out[q]={rank:S.rank(v.rows,q,6).map(r=>r.id),two:S.rank(v.rows,q,2).map(r=>r.id),norm:S.norm(q)};}"
+		. "const out={};for(const q of v.queries){out[q]={rank:S.rank(v.rows,q,6).map(r=>r.id),two:S.rank(v.rows,q,2).map(r=>r.id),norm:S.norm(q),all:S.seeAll(q,S.rank(v.rows,q,200).length)};}"
 		. "out.__popular=S.popular(v.rows,3).map(r=>r.id);process.stdout.write(JSON.stringify(out));" );
 	$raw = (string) shell_exec( escapeshellarg( $node ) . ' ' . escapeshellarg( $dir . '/run.js' ) . ' 2>&1' );
 	$js_out = json_decode( $raw, true );
@@ -160,7 +182,8 @@ if ( '' !== $node ) {
 	if ( is_array( $js_out ) ) {
 		$same = 0;
 		foreach ( $queries as $q ) {
-			$php = [ 'rank' => ids( foodify_search_rank( $rows, $q, 6 ) ), 'two' => ids( foodify_search_rank( $rows, $q, 2 ) ), 'norm' => foodify_search_norm( $q ) ];
+			$php = [ 'rank' => ids( foodify_search_rank( $rows, $q, 6 ) ), 'two' => ids( foodify_search_rank( $rows, $q, 2 ) ), 'norm' => foodify_search_norm( $q ),
+				'all' => foodify_search_see_all_text( $q, count( foodify_search_rank( $rows, $q, 200 ) ) ) ];
 			$ok  = $php === ( $js_out[ $q ] ?? null );
 			if ( ! $ok ) {
 				check( sprintf( 'same answer for %s — PHP %s, JS %s', json_encode( $q, JSON_UNESCAPED_UNICODE ), json_encode( $php ), json_encode( $js_out[ $q ] ?? null ) ), false );

@@ -315,6 +315,65 @@ function foodify_address_seed_from_wc( array $wc, int $now ): array {
 	return [ $a ];
 }
 
+/**
+ * The checkout field values one saved address fills in (review BUY-2).
+ *
+ * The chooser carries these on each radio so choosing an address fills the
+ * checkout fields IN PLACE. Before, choosing "Office" changed only the radio:
+ * the fields still held Home until "Use this address" reloaded the page, and a
+ * customer who paid without pressing it was delivered to Home while the screen
+ * said Office. Keys are WooCommerce field names WITHOUT the billing_/shipping_
+ * prefix; the script writes both.
+ *
+ * @return array<string,string>
+ */
+function foodify_address_checkout_values( array $a ): array {
+	$a   = foodify_address_normalise( $a );
+	$out = [];
+	foreach ( [ 'first_name', 'phone', 'address_1', 'address_2', 'city', 'state', 'postcode' ] as $f ) {
+		$out[ $f ] = $a[ $f ];
+	}
+	return $out;
+}
+
+/**
+ * The chooser's script. Returned as source so the prototype embeds the SAME
+ * code. Expects `form.fd-address-choose` holding radios
+ * input[name=foodify_choose_address][data-fields] (JSON from
+ * foodify_address_checkout_values), a `[data-fd-address-status]` live region,
+ * and the "Use this address" button `[data-fd-address-use]`; and WooCommerce's
+ * #billing_* / #shipping_* fields.
+ *
+ * On change — which arrow keys fire too — it only FILLS FIELDS: no submit, no
+ * reload, focus stays on the radio (WCAG 3.2.2 is about a change of context,
+ * and this is not one). The button stays in the markup for anyone without
+ * JavaScript and is hidden once this runs, since the radio now does its job.
+ */
+function foodify_address_choose_script(): string {
+	return <<<'JS'
+(function(){
+  var form=document.querySelector('form.fd-address-choose');if(!form)return;
+  var radios=[].slice.call(form.querySelectorAll('input[name=foodify_choose_address][data-fields]'));if(!radios.length)return;
+  var status=form.querySelector('[data-fd-address-status]'),use=form.querySelector('[data-fd-address-use]'),$=window.jQuery;
+  function put(el,v){
+    if(!el||el.value===v)return;
+    el.value=v;
+    if($){$(el).trigger('input').trigger('change');}
+    else{['input','change'].forEach(function(t){el.dispatchEvent(new Event(t,{bubbles:true}));});}
+  }
+  function fill(r){
+    var f;try{f=JSON.parse(r.getAttribute('data-fields')||'{}');}catch(e){return;}
+    ['billing','shipping'].forEach(function(pre){Object.keys(f).forEach(function(k){put(document.getElementById(pre+'_'+k),String(f[k]==null?'':f[k]));});});
+    if($)$(document.body).trigger('update_checkout');
+    var name=r.parentNode&&r.parentNode.querySelector('.fd-address-choose__label');
+    if(status)status.textContent='Delivering to '+(name?name.textContent:'this address')+'. The address below is filled in.';
+  }
+  radios.forEach(function(r){r.addEventListener('change',function(){if(r.checked)fill(r);});});
+  if(use)use.hidden=true;
+})();
+JS;
+}
+
 /* -------------------------------------------------------------------------
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
@@ -686,23 +745,34 @@ add_action( 'woocommerce_before_checkout_form', static function (): void {
 		// address is unreachable (WCAG 3.2.2, a change of context on input).
 		// The explicit button below is the mechanism for everyone now; choosing
 		// is choosing, submitting is submitting.
+		// data-fields: choosing fills the checkout fields in place (BUY-2).
 		printf(
-			'<label class="fd-address-choose__option"><input type="radio" name="foodify_choose_address" value="%1$s"%2$s>'
+			'<label class="fd-address-choose__option"><input type="radio" name="foodify_choose_address" value="%1$s"%2$s data-fields="%5$s">'
 			. '<span class="fd-address-choose__label">%3$s</span><span class="fd-address-choose__body">%4$s</span></label>',
 			esc_attr( $a['id'] ),
 			checked( $a['id'], $chosen, false ),
 			esc_html( '' !== $a['label'] ? $a['label'] : $a['first_name'] ),
-			esc_html( foodify_address_summary( $a ) )
+			esc_html( foodify_address_summary( $a ) ),
+			esc_attr( (string) wp_json_encode( foodify_address_checkout_values( $a ) ) )
 		);
 	}
-	printf( '<button type="submit" class="wp-element-button">%s</button>', esc_html__( 'Use this address', 'foodify' ) );
+	echo '<p class="fd-address-choose__status" data-fd-address-status role="status" aria-live="polite"></p>';
+	// The no-JavaScript path. The script hides it: with scripts, the radio fills the fields.
+	printf( '<button type="submit" class="wp-element-button" data-fd-address-use>%s</button>', esc_html__( 'Use this address', 'foodify' ) );
 	printf(
 		'<a class="fd-address-choose__manage" href="%s">%s</a>',
 		esc_url( wc_get_account_endpoint_url( 'address-book' ) ),
 		esc_html__( 'Manage saved addresses', 'foodify' )
 	);
 	echo '</fieldset></form>';
+	$GLOBALS['foodify_address_chooser_printed'] = true;
 } );
+
+add_action( 'wp_footer', static function (): void {
+	if ( ! empty( $GLOBALS['foodify_address_chooser_printed'] ) ) {
+		echo '<script>' . foodify_address_choose_script() . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- static script, no data.
+	}
+}, 25 );
 
 /**
  * A completed order teaches the book.

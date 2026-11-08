@@ -69,7 +69,12 @@ check( 'the filter slugs are exactly the attributes the theme registers', $slugs
 
 echo "── the shop's controls are in the template, not hoped for ──\n";
 
-check( 'a Filter control (details) wraps the filters',       str_contains( $shop, '<details class="wp-block-details fd-filters" open><summary>Filter</summary>' ) );
+check( 'a Filter control (details) wraps the filters, with a slot for the active count', str_contains( $shop, '<details class="wp-block-details fd-filters"><summary>Filter<span class="fd-filters__count"></span></summary>' ) );
+// UX review 8 Nov (BROWSE-2): printed open, a phone showed the whole filter
+// list above the results, so ticking a box changed nothing on screen. It is
+// printed CLOSED and opened from 782px by a script straight after it.
+check( 'the filters are printed closed (no `open` attribute, showContent off)', ! preg_match( '/<details class="wp-block-details fd-filters"[^>]*\bopen\b/', $shop ) && ! str_contains( $shop, '"showContent":true' ) );
+check( 'a script right after the filters opens them from 782px', (bool) preg_match( '#</details>\s*<!-- /wp:details -->\s*<!-- wp:html -->\s*<script>if\(matchMedia\(\'\(min-width:782px\)\'\)\.matches\)#', $shop ) );
 check( 'a visible "Sort by" label precedes the sort select', str_contains( $shop, 'fd-sort__label' ) && str_contains( $shop, 'wp:woocommerce/catalog-sorting' ) );
 check( 'the product grid is the styled loop (fd-products)',  str_contains( $shop, '"className":"fd-products"' ) );
 $home = (string) file_get_contents( $tpl . 'front-page.html' );

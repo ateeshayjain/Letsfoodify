@@ -157,14 +157,35 @@ $v = foodify_box_validate( [ '11' => '6', '12' => '0', '13' => '' ], 6, $SIZES, 
 check( 'zeros and blanks are simply not chosen', $v['ok'] && [ 11 => 6 ] === $v['packs'] );
 check( 'a box id is short, random and safe in markup', (bool) preg_match( '/^[0-9A-F]{8}$/', foodify_box_new_id() ) && foodify_box_new_id() !== foodify_box_new_id() );
 
-echo "── free shipping is earned after the box discount ──\n";
-check( '₹620 − ₹62 = ₹558 is under a ₹599 minimum -> not free', false === foodify_box_free_shipping_holds( 620.0, 62, 599.0, 'min_amount', false, false ) );
-check( '₹700 − ₹70 = ₹630 still clears it', true === foodify_box_free_shipping_holds( 700.0, 70, 599.0, 'min_amount', false, false ) );
-check( 'no box discount -> WooCommerce\'s answer stands', true === foodify_box_free_shipping_holds( 100.0, 0, 599.0, 'min_amount', false, false ) );
-check( 'method set to compare before discounts -> box ignored too', true === foodify_box_free_shipping_holds( 620.0, 62, 599.0, 'min_amount', false, true ) );
-check( '"either" with a free-shipping coupon -> the coupon earned it', true === foodify_box_free_shipping_holds( 620.0, 62, 599.0, 'either', true, false ) );
-check( '"either" without one -> the amount decides', false === foodify_box_free_shipping_holds( 620.0, 62, 599.0, 'either', false, false ) );
-check( 'a coupon-only method is untouched', true === foodify_box_free_shipping_holds( 620.0, 62, 0.0, 'coupon', true, false ) );
+echo "── free delivery is judged before the box discount (decision 4, BUY-1) ──\n";
+// The review's case: Rajma ×2 + Idli = ₹615 qualifies for free delivery at ₹599.
+// As a 3-pack box the cart takes ₹30 off. Judged after the box, ₹585 < ₹599 and
+// ₹59 delivery is added: ₹644 for the box against ₹615 for the same packs loose.
+$loose  = 615.0;
+$boxed  = foodify_box_discount( [ line( 'R', 3, 2, 410.0 ), line( 'R', 3, 1, 205.0 ) ], [ 3 => 5 ] );
+check( 'the 3-pack box earns ₹30 (5% of ₹615, down)', 30 === $boxed['total'] );
+$basis  = foodify_box_free_delivery_basis( $loose, $boxed['total'] );
+check( 'the free-delivery figure ignores the box discount: ₹615, not ₹585', 615.0 === $basis );
+$ship   = static fn( float $b ): float => $b >= 599.0 ? 0.0 : 59.0;   // the test minimum and charge, not the client's
+check( 'so the box still has free delivery', 0.0 === $ship( $basis ) );
+check( 'and the boxed order (₹585) costs LESS than the loose one (₹615), never more', $loose - $boxed['total'] + $ship( $basis ) < $loose + $ship( $loose ) );
+check( 'a box never moves a qualifying cart below the minimum, at any discount', (function (): bool {
+	foreach ( [ 599.0, 600.0, 615.0, 650.0, 1000.0 ] as $b ) {
+		foreach ( [ 1, 30, 60, 90, 200 ] as $d ) {
+			if ( foodify_box_free_delivery_basis( $b, $d ) < 599.0 ) { return false; }
+		}
+	}
+	return true;
+})() );
+check( 'a cart below the minimum stays below it (the box adds nothing either way)', 585.0 === foodify_box_free_delivery_basis( 585.0, 0 ) );
+$src = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/box-builder.php' );
+check( 'box-builder.php registers no free-shipping filter that could re-apply the box', ! preg_match( "/add_filter\(\s*'woocommerce_shipping_free_shipping_is_available'/", $src ) );
+check( 'the old after-the-box rule is gone', ! str_contains( $src, 'function foodify_box_free_shipping_holds' ) );
+$sc = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/shortcodes.php' );
+preg_match( '/function foodify_shipping_comparison_subtotal\(\).*?\n}/s', $sc, $m );
+$cmp = $m[0] ?? '';
+check( 'the progress bar asks the same rule for its figure', str_contains( $cmp, 'foodify_box_free_delivery_basis(' ) );
+check( 'the progress bar does not subtract the box discount itself', ! preg_match( '/-=\s*\(float\)\s*foodify_box_cart_discount_total/', $cmp ) && '' !== $cmp );
 
 echo "── the builder page ──\n";
 $products = [
@@ -190,6 +211,45 @@ $h = foodify_box_builder_html( $SIZES, $products, [ 'size' => 6, 'selected' => [
 check( 'a selection over the stock cap is clamped, not trusted', str_contains( $h, '4 of 6 packs · 2 more to fill' ) );
 check( 'everything sold out -> says so, and nothing can be submitted', ! str_contains( foodify_box_builder_html( $SIZES, [] ), '<form' ) );
 check( 'a javascript: link is never printed', ! str_contains( foodify_box_builder_html( [], [], [ 'combos_url' => 'javascript:alert(1)' ] ), 'javascript' ) );
+
+echo "── the page never promises more than the cart gives (BUY-4) ──\n";
+// The review's case: a 6-pack box worth ₹1,160 at 10% off, NALIN10 (10%) already in the cart.
+// The cart takes the box % after the coupon: 10% of ₹1,044 = ₹104. The page said ₹116.
+$cart = foodify_box_discount( [ line( 'N', 6, 6, 1160.0 * 0.9 ) ], [ 6 => 10 ] );
+check( 'the cart gives ₹104', 104 === $cart['total'] );
+check( 'the page promises ₹104 too, not ₹116', 104 === foodify_box_promised_saving( 1160.0, 10, 6, [ 'pct' => 10.0 ] ) );
+check( 'and says the saving is after the code', 'Save ₹104 (10% off, after your code)' === foodify_box_saving_line( 1160.0, 10, true, [ 'pct' => 10.0 ], 6 ) );
+check( 'no coupon -> the plain promise, unchanged', 'Save ₹116 (10% off)' === foodify_box_saving_line( 1160.0, 10, true ) && 116 === foodify_box_promised_saving( 1160.0, 10, 6, [] ) );
+check( 'a ₹100 fixed-cart code -> at most ₹100 off the box lines -> ₹106, never more', 106 === foodify_box_promised_saving( 1160.0, 10, 6, [ 'fixed' => 100.0 ] ) );
+check( 'a ₹10-per-item code -> at most ₹60 off six packs -> ₹110', 110 === foodify_box_promised_saving( 1160.0, 10, 6, [ 'each' => 10.0 ] ) );
+check( 'a coupon type with no known bound -> no rupee figure at all', null === foodify_box_promised_saving( 1160.0, 10, 6, [ 'unknown' => true ] ) && '10% off, after your code' === foodify_box_saving_line( 1160.0, 10, true, [ 'unknown' => true ], 6 ) );
+check( 'a 100% code -> nothing left to discount -> ₹0, never negative', 0 === foodify_box_promised_saving( 1160.0, 10, 6, [ 'pct' => 150.0 ] ) );
+// Across many baskets and codes, the promise is never above what the cart charges.
+$never_more = true;
+foreach ( [ 525.0, 615.0, 999.5, 1160.0, 2345.75 ] as $sub ) {
+	foreach ( [ 0.0, 5.0, 10.0, 25.0 ] as $cpct ) {
+		foreach ( [ 3 => 5, 6 => 10 ] as $n => $bp ) {
+			$given = foodify_box_discount( [ line( 'X', $n, $n, round( $sub * ( 1 - $cpct / 100 ), 2 ) ) ], [ $n => $bp ] )['total'];
+			if ( foodify_box_promised_saving( $sub, $bp, $n, [ 'pct' => $cpct ] ) > $given ) { $never_more = false; }
+		}
+	}
+}
+check( 'over 40 baskets × codes, the page never promises more than the cart gives', $never_more );
+$h = foodify_box_builder_html( $SIZES, $products, [ 'size' => 3, 'selected' => [ 11 => 3 ], 'coupons' => [ 'pct' => 10.0, 'fixed' => 0.0, 'each' => 0.0, 'unknown' => false ] ] );
+check( 'the page carries the cart\'s coupons for the script', str_contains( $h, 'data-coupon-pct="10"' ) && str_contains( $h, 'data-coupon-fixed="0"' ) );
+check( 'and renders the after-code promise (5% of ₹472 = ₹23)', str_contains( $h, 'Save ₹23 (5% off, after your code)' ) );
+check( 'no coupon -> no coupon attributes', ! str_contains( foodify_box_builder_html( $SIZES, $products ), 'data-coupon-' ) );
+$js = foodify_box_script();
+check( 'the script reads the same bound', str_contains( $js, "data-coupon-pct" ) && str_contains( $js, 'Math.floor(Math.max(0,sub*(1-cp.pct/100)-cp.fixed-cp.each*n))' ) );
+
+echo "── no size chosen: step 2 is closed, and the status leads to step 1 (BUY-10) ──\n";
+$h = foodify_box_builder_html( $SIZES, $products );
+check( 'the status is a link to step 1', str_contains( $h, '<a class="fd-box__status-go" href="#fd-box-sizes" data-fd-box-go>Choose a box size to start.</a>' ) && str_contains( $h, 'id="fd-box-sizes"' ) );
+check( 'once a size is chosen it is plain status text', ! str_contains( foodify_box_builder_html( $SIZES, $products, [ 'size' => 3 ] ), 'data-fd-box-go' ) );
+check( 'the script disables the quantity fields until a size is chosen', str_contains( $js, "p.querySelector('.fd-box__qty').disabled=s<1" ) );
+check( 'and the minus buttons', str_contains( $js, "p.querySelector('.fd-box__minus').disabled=s<1||q<1" ) );
+check( 'the link focuses the first size', str_contains( $js, 'if(radios[0])radios[0].focus();' ) );
+check( 'submitting with no size goes to step 1', str_contains( $js, 'if(s<1){ev.preventDefault();toStep1();return;}' ) );
 
 echo "── status copy, word for word with the script ──\n";
 check( 'short', '4 of 6 packs · 2 more to fill' === foodify_box_status_line( 6, 4 ) );

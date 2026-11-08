@@ -16,7 +16,8 @@
  *  - paying online: foodify_payment_config() — the same config the fee and
  *    the payment-radio label read (payments.php), and only when an online
  *    gateway is actually enabled;
- *  - cash on delivery: only when the COD gateway is enabled, with the cap if
+ *  - cash on delivery (an ASSURANCE line since Nov 2026, foodify_cod_line —
+ *    a way to pay, not an offer): only when the COD gateway is enabled, with the cap if
  *    one is set;
  *  - a coupon: only the one named in the option `foodify_public_offer`, read
  *    from the real WC_Coupon — its type, amount, minimum spend and expiry —
@@ -46,19 +47,24 @@ function foodify_offer_until( string $ymd ): string {
 }
 
 /**
- * The lines, in order: coupon, paying online, free delivery, cash on delivery.
+ * The lines, in order: coupon, paying online, free delivery.
+ *
+ * Cash on delivery is NOT an offer — it is a way to pay, and it used to be
+ * printed here and nowhere else (UX review 8 Nov 2026, PRODUCT-12). It is now
+ * one line among the assurances (foodify_cod_line(), product-display.php).
+ * Each line carries `short`, the few words the collapsed Offers summary uses.
  *
  * @param array{
  *   coupon?:?array{code:string,type:string,amount:float,min_spend?:float,expires?:string,free_shipping?:bool},
  *   payment?:array, prepaid_available?:bool, cod_available?:bool,
  *   free_shipping_min?:?float, shipping_flat?:?float, free_shipping_after_discounts?:bool
  * } $cfg
- * @return array<int,array{key:string,text:string,detail:string}>
+ * @return array<int,array{key:string,text:string,detail:string,short:string}>
  */
 function foodify_offer_lines( array $cfg ): array {
 	$lines = [];
-	$add   = static function ( string $key, string $text, array $detail ) use ( &$lines ): void {
-		$lines[] = [ 'key' => $key, 'text' => $text, 'detail' => trim( implode( ' ', array_filter( $detail ) ) ) ];
+	$add   = static function ( string $key, string $text, array $detail, string $short ) use ( &$lines ): void {
+		$lines[] = [ 'key' => $key, 'text' => $text, 'detail' => trim( implode( ' ', array_filter( $detail ) ) ), 'short' => $short ];
 	};
 
 	$c = $cfg['coupon'] ?? null;
@@ -67,22 +73,27 @@ function foodify_offer_lines( array $cfg ): array {
 		$amount = (float) ( $c['amount'] ?? 0 );
 		$type   = (string) ( $c['type'] ?? '' );
 		$what   = '';
+		$off    = '';
 		if ( $amount > 0 && 'percent' === $type && $amount <= 100 ) {
-			$what = rtrim( rtrim( number_format( $amount, 2, '.', '' ), '0' ), '.' ) . '% off your order';
+			$off  = rtrim( rtrim( number_format( $amount, 2, '.', '' ), '0' ), '.' ) . '% off';
+			$what = $off . ' your order';
 		} elseif ( $amount > 0 && 'fixed_cart' === $type ) {
-			$what = foodify_offer_inr( $amount ) . ' off your order';
+			$off  = foodify_offer_inr( $amount ) . ' off';
+			$what = $off . ' your order';
 		} elseif ( $amount > 0 && 'fixed_product' === $type ) {
-			$what = foodify_offer_inr( $amount ) . ' off each pack';
+			$off  = foodify_offer_inr( $amount ) . ' off each pack';
+			$what = $off;
 		}
 		if ( ! empty( $c['free_shipping'] ) ) {
 			$what = '' === $what ? 'free delivery' : $what . ' and free delivery';
+			$off  = '' === $off ? 'free delivery' : $off . ' + free delivery';
 		}
 		if ( '' !== $what ) {
 			$min = (float) ( $c['min_spend'] ?? 0 );
 			$add( 'coupon', "Use code {$code}: {$what}", [
 				$min > 0 ? 'On orders of ' . foodify_offer_inr( $min ) . ' or more.' : '',
 				foodify_offer_until( (string) ( $c['expires'] ?? '' ) ),
-			] );
+			], "Code {$code}: {$off}" );
 		}
 	}
 
@@ -104,7 +115,7 @@ function foodify_offer_lines( array $cfg ): array {
 			$add( 'prepaid', "Pay online and save {$what}", [
 				'Taken off at checkout when you choose to pay now.',
 				$minc > 0 ? 'On orders of ' . foodify_offer_inr( $minc ) . ' or more.' : '',
-			] );
+			], "Pay online, save {$what}" );
 		}
 	}
 
@@ -115,30 +126,56 @@ function foodify_offer_lines( array $cfg ): array {
 		$below = null !== $flat && (float) $flat > 0 ? foodify_offer_inr( (float) $flat ) . ' delivery below that' : '';
 		$add( 'shipping', 'Free delivery on orders of ' . foodify_offer_inr( (float) $min ) . ' or more', [
 			'' !== $below ? $below . ( $after ? ', counted after any coupon.' : '.' ) : ( $after ? 'Counted after any coupon.' : '' ),
-		] );
-	}
-
-	if ( ! empty( $cfg['cod_available'] ) ) {
-		$cap = (float) ( $p['cod_max_value'] ?? 0 );
-		$add( 'cod', 'Cash on delivery available', [ $cap > 0 ? 'On orders up to ' . foodify_offer_inr( $cap ) . '.' : '' ] );
+		], 'Free delivery from ' . foodify_offer_inr( (float) $min ) );
 	}
 
 	return $lines;
 }
 
-/** The block's markup, or '' when there are no lines. */
+/**
+ * The cash-on-delivery assurance line, or '' when the COD gateway is off.
+ * Same inputs as foodify_offer_lines(): `cod_available` and the payment
+ * config's `cod_max_value`.
+ */
+function foodify_cod_line( array $cfg ): string {
+	if ( empty( $cfg['cod_available'] ) ) {
+		return '';
+	}
+	$cap = (float) ( ( (array) ( $cfg['payment'] ?? [] ) )['cod_max_value'] ?? 0 );
+	return $cap > 0 ? 'Cash on delivery on orders up to ' . foodify_offer_inr( $cap ) : 'Cash on delivery available';
+}
+
+/** "2 offers: Pay online, save ₹25 · Free delivery from ₹599" — the collapsed line. */
+function foodify_offers_summary( array $lines ): string {
+	$n = count( $lines );
+	if ( 0 === $n ) {
+		return '';
+	}
+	$short = array_map( static fn( array $l ): string => (string) ( $l['short'] ?? $l['text'] ), $lines );
+	return ( 1 === $n ? '1 offer: ' : $n . ' offers: ' ) . implode( ' · ', $short );
+}
+
+/**
+ * The block's markup, or '' when there are no lines.
+ *
+ * One line, closed — UX review 8 Nov 2026, PRODUCT-3/10: three offers, each
+ * with a detail sentence, sat between the price and Add to cart and pushed the
+ * button below the first screen. Now a <details> under the button: the summary
+ * names every offer in a few words, the list behind it carries the conditions.
+ * A native <details> needs no script and is keyboard- and reader-operable.
+ */
 function foodify_offers_html( array $lines ): string {
 	if ( ! $lines ) {
 		return '';
 	}
 	$e   = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
-	$out = '<div class="fd-offers"><p class="fd-offers__title">Offers</p><ul class="fd-offers__list">';
+	$out = '<details class="fd-offers"><summary class="fd-offers__title">' . $e( foodify_offers_summary( $lines ) ) . '</summary><ul class="fd-offers__list">';
 	foreach ( $lines as $l ) {
 		$out .= '<li class="fd-offer fd-offer--' . $e( $l['key'] ) . '"><span class="fd-offer__text">' . $e( $l['text'] ) . '</span>'
 			. ( '' !== $l['detail'] ? '<span class="fd-offer__detail">' . $e( $l['detail'] ) . '</span>' : '' )
 			. '</li>';
 	}
-	return $out . '</ul></div>';
+	return $out . '</ul></details>';
 }
 
 /* -------------------------------------------------------------------------
@@ -248,9 +285,13 @@ function foodify_offer_config( WC_Product $product ): array {
 	] + foodify_offer_shipping_facts();
 }
 
-/** Under the price block on the product page, after the yield strip. */
-add_filter( 'render_block_woocommerce/product-price', static function ( string $html, array $block ): string {
-	if ( '' === $html || ! empty( $block['attrs']['isDescendentOfQueryLoop'] ) || ! function_exists( 'is_product' ) || ! is_product() ) {
+/**
+ * Under the add-to-cart form, after the delivery check (priority 10,
+ * delivery-estimate.php) — decision 5 of the UX review. It used to hang off the
+ * price block, between the price and the button.
+ */
+add_filter( 'render_block_woocommerce/add-to-cart-form', static function ( string $html ): string {
+	if ( ! function_exists( 'is_product' ) || ! is_product() ) {
 		return $html;
 	}
 	$product = wc_get_product( get_the_ID() );
@@ -258,4 +299,4 @@ add_filter( 'render_block_woocommerce/product-price', static function ( string $
 		return $html;
 	}
 	return $html . foodify_offers_html( foodify_offer_lines( foodify_offer_config( $product ) ) ); // Escaped in the builder.
-}, 30, 2 );
+}, 11 );

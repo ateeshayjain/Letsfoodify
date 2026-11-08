@@ -170,7 +170,7 @@ function foodify_repeat_config_state( string $lead_raw, string $pct_raw, bool $h
 /** Every customer-facing phrase that depends on whether there is a discount. */
 function foodify_repeat_labels( float $pct, int $lead ): array {
 	$when = 1 === $lead ? 'the day before' : $lead . ' days before';
-	$base = 'We email you ' . $when . ' each date with a one-tap link to check out. Nothing is charged automatically — you confirm and pay each time, and you can skip, pause or cancel whenever you like.';
+	$base = 'We email you ' . $when . ' each date with a one-tap link to check out. Nothing is charged automatically — you confirm and pay each time, and you can skip, pause or stop repeating whenever you like.';
 	if ( $pct > 0 ) {
 		return [
 			'title' => 'Subscribe & save ' . foodify_pct_label( $pct ),
@@ -185,6 +185,29 @@ function foodify_repeat_labels( float $pct, int $lead ): array {
 		'cta'   => 'Set up repeat',
 		'menu'  => 'Repeat orders',
 	];
+}
+
+/**
+ * May an order offer "Repeat this order" yet (review ACCOUNT-11)?
+ *
+ * Only once it has arrived — Completed, which is dispatch-and-done in this
+ * theme (order-actions.php). Offering to repeat an order still being cooked,
+ * on the order-received page or while Processing, asks the customer to commit
+ * to food they have not tasted; on those pages the offer is simply not shown.
+ */
+function foodify_repeat_offer_allowed( string $status ): bool {
+	return 'completed' === strtolower( (string) preg_replace( '/^wc-/', '', trim( $status ) ) );
+}
+
+/**
+ * The confirmation shown where "Set up repeat" was pressed (review ACCOUNT-7):
+ * "Repeat set up — every 4 weeks. First reminder: Fri 4 Dec."
+ * The first reminder is `lead` days before the first repeat, as the reminder
+ * job sends it (foodify_repeat_reminder_due).
+ */
+function foodify_repeat_created_message( int $weeks, string $next, int $lead ): string {
+	$remind = foodify_date_label( foodify_date_add_days( $next, -max( 0, $lead ) ) );
+	return 'Repeat set up — every ' . $weeks . ' weeks.' . ( '' !== $remind ? ' First reminder: ' . $remind . '.' : '' );
 }
 
 /**
@@ -327,7 +350,7 @@ function foodify_repeat_apply( array $schedules, string $id, string $action, arr
 
 			case 'cancel':
 				unset( $schedules[ $i ] );
-				return [ 'schedules' => array_values( $schedules ), 'ok' => true, 'message' => 'Cancelled. No more reminders for this order.', 'drop_coupon' => $drop ];
+				return [ 'schedules' => array_values( $schedules ), 'ok' => true, 'message' => 'Stopped repeating. No more reminders for this order.', 'drop_coupon' => $drop ];
 		}
 		return [ 'schedules' => $schedules, 'ok' => false, 'message' => 'That is not something a repeat order can do.', 'drop_coupon' => '' ];
 	}
@@ -427,15 +450,18 @@ function foodify_repeat_summary( array $named ): string {
 /**
  * The offer on an order page.
  *
- * @param array{order_id:int,labels:array,nonce_field:string,existing?:?array{weeks:int,next:string},manage_url?:string} $d
+ * @param array{order_id:int,labels:array,nonce_field:string,existing?:?array{weeks:int,next:string},manage_url?:string,created?:string} $d
+ *        `created`: foodify_repeat_created_message(), right after "Set up repeat" (shown in place, role=status).
  */
 function foodify_repeat_offer_html( array $d ): string {
 	$e   = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
 	$oid = (int) $d['order_id'];
 	$l   = $d['labels'];
 	if ( ! empty( $d['existing'] ) ) {
-		return '<section class="fd-repeat is-set" aria-labelledby="fd-repeat-title-' . $oid . '">'
+		$done = trim( (string) ( $d['created'] ?? '' ) );
+		return '<section class="fd-repeat is-set" id="fd-repeat-' . $oid . '" aria-labelledby="fd-repeat-title-' . $oid . '">'
 			. '<h2 class="fd-repeat__title" id="fd-repeat-title-' . $oid . '">' . $e( (string) $l['title'] ) . '</h2>'
+			. ( '' !== $done ? '<p class="fd-repeat__done" role="status" tabindex="-1">' . $e( $done ) . '</p>' : '' )
 			. '<p class="fd-repeat__lead">This order repeats every ' . (int) $d['existing']['weeks'] . ' weeks. Next order: ' . $e( foodify_date_label( (string) $d['existing']['next'] ) ) . '.</p>'
 			. '<a class="fd-secondary" href="' . $e( (string) ( $d['manage_url'] ?? '' ) ) . '">Manage repeat orders</a></section>';
 	}
@@ -443,7 +469,7 @@ function foodify_repeat_offer_html( array $d ): string {
 	foreach ( foodify_repeat_intervals() as $w ) {
 		$opts .= '<option value="' . $w . '">' . $w . ' weeks</option>';
 	}
-	return '<section class="fd-repeat" aria-labelledby="fd-repeat-title-' . $oid . '">'
+	return '<section class="fd-repeat" id="fd-repeat-' . $oid . '" aria-labelledby="fd-repeat-title-' . $oid . '">'
 		. '<h2 class="fd-repeat__title" id="fd-repeat-title-' . $oid . '">' . $e( (string) $l['title'] ) . '</h2>'
 		. '<p class="fd-repeat__lead">' . $e( (string) $l['lead'] ) . '</p>'
 		. '<form method="post" class="fd-repeat__form">' . $d['nonce_field']
@@ -502,8 +528,14 @@ function foodify_repeat_list_html( array $rows, array $d ): string {
 			. '<input type="hidden" name="schedule_id" value="' . $e( $id ) . '">'
 			. '<label class="screen-reader-text" for="fd-repeat-weeks-' . $e( $id ) . '">How often</label>'
 			. '<select class="fd-repeat__select" id="fd-repeat-weeks-' . $e( $id ) . '" name="weeks">' . $opts . '</select>'
-			. '<button type="submit" class="fd-secondary">Change</button></form>'
-			. $verb( 'cancel', $id, 'Cancel', 'fd-secondary fd-danger' )
+			// "Save", not "Change": nothing happens until it is pressed (no auto-submit). ACCOUNT-7.
+			. '<button type="submit" class="fd-secondary">Save</button></form>'
+			// Stop repeating: confirmed in place, like cancelling an order (ACCOUNT-2).
+			. '<details class="fd-repeat-item__stop">'
+			. '<summary class="fd-secondary fd-danger">Stop repeating</summary>'
+			. '<p class="fd-repeat-item__stop-note">No more reminders for this order. Orders already placed are not affected.</p>'
+			. $verb( 'cancel', $id, 'Yes, stop reminders', 'wp-element-button fd-order-actions__confirm is-danger' )
+			. '</details>'
 			. '</div></li>';
 	}
 	return $out . '</ul>';
@@ -863,13 +895,18 @@ add_action( 'woocommerce_order_details_after_order_table', static function ( $or
 	if ( ! $cfg['active'] || ! $order instanceof WC_Order || ! is_user_logged_in() ) {
 		return;
 	}
-	if ( (int) $order->get_customer_id() !== get_current_user_id() || ! in_array( $order->get_status(), [ 'processing', 'completed', 'on-hold' ], true ) ) {
-		return;
+	if ( (int) $order->get_customer_id() !== get_current_user_id() || ! foodify_repeat_offer_allowed( (string) $order->get_status() ) ) {
+		return;   // only once it has arrived (ACCOUNT-11)
 	}
 	$existing = null;
+	$created  = '';
 	foreach ( foodify_repeat_get( get_current_user_id() ) as $s ) {
 		if ( (int) $s['source_order'] === $order->get_id() ) {
 			$existing = [ 'weeks' => (int) $s['weeks'], 'next' => (string) $s['next'] ];
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
+			if ( isset( $_GET['fd_repeat'] ) && 'set' === sanitize_key( wp_unslash( $_GET['fd_repeat'] ) ) ) {
+				$created = foodify_repeat_created_message( (int) $s['weeks'], (string) $s['next'], (int) $cfg['lead'] );
+			}
 		}
 	}
 	echo foodify_repeat_offer_html( [ // phpcs:ignore WordPress.Security.EscapeOutput — escaped in the builder.
@@ -878,6 +915,7 @@ add_action( 'woocommerce_order_details_after_order_table', static function ( $or
 		'nonce_field' => foodify_repeat_nonce_input( 'create' ),
 		'existing'    => $existing,
 		'manage_url'  => wc_get_account_endpoint_url( 'repeat-orders' ),
+		'created'     => $created,
 	] );
 }, 20 );
 
@@ -915,7 +953,7 @@ add_action( 'template_redirect', static function (): void {
 			}
 		}
 		if ( count( $schedules ) >= FOODIFY_REPEAT_MAX ) {
-			wc_add_notice( __( 'You have the most repeat orders an account can hold. Cancel one first.', 'foodify' ), 'error' );
+			wc_add_notice( __( 'You have the most repeat orders an account can hold. Stop repeating one first.', 'foodify' ), 'error' );
 			return;
 		}
 		$items = [];
@@ -946,13 +984,10 @@ add_action( 'template_redirect', static function (): void {
 		}
 		$schedules[] = $new;
 		foodify_repeat_save( $uid, $schedules );
-		wc_add_notice( esc_html( sprintf(
-			/* translators: 1: weeks, 2: date such as Thu 12 Nov */
-			__( 'Done. This order repeats every %1$d weeks — next on %2$s. We will email you before each one.', 'foodify' ),
-			$new['weeks'],
-			foodify_date_label( $new['next'] )
-		) ), 'success' );
-		wp_safe_redirect( $back );
+		// The confirmation is printed IN PLACE, where the button was (ACCOUNT-7):
+		// "Repeat set up — every 4 weeks. First reminder: Fri 4 Dec." A notice at
+		// the top of the page is off-screen on a phone, and some pages print none.
+		wp_safe_redirect( add_query_arg( 'fd_repeat', 'set', remove_query_arg( 'fd_repeat', $back ) ) . '#fd-repeat-' . $order->get_id() );
 		exit;
 	}
 

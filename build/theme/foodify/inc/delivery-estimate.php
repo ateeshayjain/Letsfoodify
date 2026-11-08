@@ -425,14 +425,16 @@ function foodify_delivery_script(): string {
         var po=j&&j[0]&&j[0].Status==='Success'&&j[0].PostOffice&&j[0].PostOffice[0];return po?{city:po.District||'',state:po.State||''}:null;});
     }
     function show(a){
-      out.className='fd-deliver__out is-'+(a.status==='ok'?'ok':(a.status==='invalid'||a.status==='error'?'error':'no'));
+      var bad=a.status==='invalid'||a.status==='unknown';
+      out.className='fd-deliver__out is-'+(a.status==='ok'?'ok':(bad||a.status==='error'?'error':'no'));
+      input.classList.toggle('is-invalid',bad);if(bad)input.setAttribute('aria-invalid','true');else input.removeAttribute('aria-invalid');
       out.textContent='';var b=document.createElement('strong');b.className='fd-deliver__msg';b.textContent=a.message;out.appendChild(b);
       if(a.detail){var s=document.createElement('span');s.className='fd-deliver__detail';s.textContent=a.detail;out.appendChild(s);}
     }
     function check(){
       var pin=(input.value||'').replace(/\D/g,''),n=++seq;
       if(!pinOk(pin)){show(answer(pin,null,cfg,Date.now()));return;}
-      out.className='fd-deliver__out';out.textContent='Checking…';
+      out.className='fd-deliver__out';out.textContent='Checking…';input.classList.remove('is-invalid');input.removeAttribute('aria-invalid');
       lookup(pin).then(function(hit){if(n!==seq)return;var a=answer(pin,hit,cfg,Date.now());if(a.status!=='unknown')store(pin);show(a);},
         function(){if(n!==seq)return;show({status:'error',message:"Couldn't check right now.",detail:'Please try again.'});});
     }
@@ -471,7 +473,12 @@ function foodify_delivery_config(): ?array {
 	return foodify_delivery_normalise_config( get_option( 'foodify_delivery_zones', null ) );
 }
 
-/** The widget goes directly above the add-to-cart form, on an in-stock product. */
+/**
+ * The widget goes directly UNDER the add-to-cart form, on an in-stock product.
+ * UX review 8 Nov 2026, decision 5: quantity + Add to cart first, then the
+ * delivery check, then Offers (offers.php, priority 11), then the assurances.
+ * Above the form it pushed Add to cart below the first screen on a phone.
+ */
 add_filter( 'render_block_woocommerce/add-to-cart-form', static function ( string $html ): string {
 	if ( ! function_exists( 'is_product' ) || ! is_product() ) {
 		return $html;
@@ -482,7 +489,7 @@ add_filter( 'render_block_woocommerce/add-to-cart-form', static function ( strin
 		return $html;
 	}
 	$GLOBALS['foodify_delivery_widget_printed'] = true;
-	return foodify_delivery_widget_html( $cfg, rest_url( 'foodify/v1/pin/' ) ) . $html; // Escaped in the builder.
+	return $html . foodify_delivery_widget_html( $cfg, rest_url( 'foodify/v1/pin/' ) ); // Escaped in the builder.
 }, 10 );
 
 add_action( 'wp_footer', static function (): void {

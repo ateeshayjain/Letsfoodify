@@ -218,6 +218,14 @@ $done = foodify_stock_alert_form_html( [ 'product_id' => 7, 'product' => 'Dal <b
 check( 'after signing up: the confirmation names the address', str_contains( $done, 'We&#039;ll email a@b.in once when Dal &lt;b&gt; is back' ) );
 check( '… and offers a cancel button (POST, token)',  str_contains( $done, 'value="foodify_stock_alert_cancel"' ) && str_contains( $done, 'name="token" value="' . str_repeat( 'f', 32 ) . '"' ) );
 check( 'an error re-shows the form with the reason', str_contains( foodify_stock_alert_form_html( [ 'product_id' => 7, 'product' => 'x', 'action' => '/a', 'nonce' => 'n', 'status' => 'invalid' ] ), 'role="alert">Please enter a valid email address.' ) );
+// PRODUCT-19
+$err = foodify_stock_alert_form_html( [ 'product_id' => 7, 'product' => 'x', 'action' => '/a', 'nonce' => 'n', 'status' => 'limited', 'email' => 'a"b@c.in' ] );
+check( 'after a server error the address comes back, escaped', str_contains( $err, 'value="a&quot;b@c.in"' ) );
+check( '… and the error is in the field\'s description', str_contains( $err, 'id="fd-notify-error"' ) && str_contains( $err, 'aria-describedby="fd-notify-error fd-notify-privacy"' ) );
+check( 'no error, no stale address and no error id',  ! preg_match( '/id="fd-notify-email"[^>]*\bvalue=/', $f ) && str_contains( $f, 'aria-describedby="fd-notify-privacy"' ) && ! str_contains( $f, 'fd-notify-error' ) );
+check( 'the form says "Sold out", the one word for it', str_contains( $f, '<p class="fd-notify__title">Sold out</p>' ) && ! str_contains( $f, 'Sold out for now' ) );
+check( 'the form and the confirmation can take focus (tabindex=-1)', str_contains( $f, 'id="fd-notify" tabindex="-1"' ) && str_contains( $done, 'id="fd-notify" tabindex="-1"' ) );
+check( 'the product script focuses #fd-notify on arrival', str_contains( foodify_pdp_script(), "location.hash==='#fd-notify'" ) && str_contains( foodify_pdp_script(), 'nt.focus()' ) );
 
 /* ======================================================================== */
 echo "── offers: only what checkout charges ──\n";
@@ -233,10 +241,12 @@ check( '… and equals what the fee takes on a ₹599 cart',
 	'Pay online and save ₹' . (int) foodify_prepaid_discount( 599, 'razorpay', $pay ) === $by['prepaid']['text'] );
 check( 'free delivery names the zone\'s threshold',  'Free delivery on orders of ₹599 or more' === $by['shipping']['text'] );
 check( '… the charge below it, and the coupon rule', '₹59 delivery below that, counted after any coupon.' === $by['shipping']['detail'] );
-check( 'COD with no cap is just "available"',        'Cash on delivery available' === $by['cod']['text'] && '' === $by['cod']['detail'] );
-check( 'order: prepaid, shipping, cod',              [ 'prepaid', 'shipping', 'cod' ] === array_column( $lines, 'key' ) );
+// PRODUCT-12: cash on delivery is a way to pay, not an offer — an assurance line.
+check( 'COD is never an Offers line, even when the gateway is on', ! isset( $by['cod'] ) );
+check( 'order: prepaid, shipping',                   [ 'prepaid', 'shipping' ] === array_column( $lines, 'key' ) );
+check( 'COD with no cap is just "available" (assurance)', 'Cash on delivery available' === foodify_cod_line( [ 'payment' => $pay, 'cod_available' => true ] ) );
+check( 'no COD gateway → no COD assurance',          '' === foodify_cod_line( [ 'payment' => $pay, 'prepaid_available' => true ] ) );
 check( 'no online gateway → no prepaid line',        ! in_array( 'prepaid', array_column( foodify_offer_lines( [ 'payment' => $pay, 'cod_available' => true ] ), 'key' ), true ) );
-check( 'no COD gateway → no COD line',               ! in_array( 'cod', array_column( foodify_offer_lines( [ 'payment' => $pay, 'prepaid_available' => true ] ), 'key' ), true ) );
 check( 'unknown threshold → no shipping line',       ! in_array( 'shipping', array_column( foodify_offer_lines( [ 'free_shipping_min' => null ] ), 'key' ), true ) );
 check( 'a formula flat rate is not printed',         'Counted after any coupon.' === foodify_offer_lines( [ 'free_shipping_min' => 599.0, 'shipping_flat' => null, 'free_shipping_after_discounts' => true ] )[0]['detail'] );
 $rate = [ 'prepaid_flat' => 0.0, 'prepaid_rate' => 0.05, 'prepaid_max' => 40.0, 'prepaid_min_cart' => 300.0 ] + $pay;
@@ -244,8 +254,7 @@ $pl   = foodify_offer_lines( [ 'payment' => $rate, 'prepaid_available' => true ]
 check( 'a rate reads as the rate and its cap',       'Pay online and save 5% (up to ₹40)' === $pl['text'] );
 check( '… with its minimum cart',                    str_contains( $pl['detail'], 'On orders of ₹300 or more.' ) );
 check( '… and the cap is the one the fee applies',   40.0 === foodify_prepaid_discount( 5000, 'razorpay', $rate ) && 0.0 === foodify_prepaid_discount( 299, 'razorpay', $rate ) );
-$cap = foodify_offer_lines( [ 'payment' => [ 'cod_max_value' => 2000.0 ] + $pay, 'cod_available' => true ] )[0];
-check( 'a COD cap is stated',                        'On orders up to ₹2,000.' === $cap['detail'] );
+check( 'a COD cap is stated',                        'Cash on delivery on orders up to ₹2,000' === foodify_cod_line( [ 'payment' => [ 'cod_max_value' => 2000.0 ] + $pay, 'cod_available' => true ] ) );
 check( 'a zero discount is not an offer',            [] === foodify_offer_lines( [ 'payment' => [ 'prepaid_flat' => 0.0, 'prepaid_rate' => 0.0 ] + $pay, 'prepaid_available' => true ] ) );
 
 echo "── offers: the public coupon ──\n";
@@ -259,6 +268,30 @@ check( 'an unknown coupon type is not shown',        [] === foodify_offer_lines(
 check( 'the coupon comes first',                     'coupon' === foodify_offer_lines( [ 'payment' => $pay, 'prepaid_available' => true, 'coupon' => [ 'code' => 'A', 'type' => 'percent', 'amount' => 5.0 ] ] )[0]['key'] );
 $html = foodify_offers_html( foodify_offer_lines( [ 'coupon' => [ 'code' => '<b>', 'type' => 'percent', 'amount' => 5.0 ] ] ) );
 check( 'the block escapes what it prints',           str_contains( $html, 'Use code &lt;B&gt;' ) && str_contains( $html, 'class="fd-offers"' ) );
+
+echo "── offers: one closed line under Add to cart (PRODUCT-3/10) ──\n";
+$all  = foodify_offer_lines( [
+	'coupon' => [ 'code' => 'diwali10', 'type' => 'percent', 'amount' => 10.0 ],
+	'payment' => $pay, 'prepaid_available' => true, 'cod_available' => true,
+	'free_shipping_min' => 599.0, 'shipping_flat' => 59.0, 'free_shipping_after_discounts' => true,
+] );
+$oh   = foodify_offers_html( $all );
+check( 'the block is a <details>, closed by default',  str_starts_with( $oh, '<details class="fd-offers">' ) && ! str_contains( $oh, '<details class="fd-offers" open' ) && str_ends_with( $oh, '</details>' ) );
+check( 'the summary counts and names every offer in a few words',
+	'3 offers: Code DIWALI10: 10% off · Pay online, save ₹25 · Free delivery from ₹599' === foodify_offers_summary( $all ) );
+check( '… and is the <summary>',                       str_contains( $oh, '<summary class="fd-offers__title">3 offers: Code DIWALI10: 10% off · Pay online, save ₹25 · Free delivery from ₹599</summary>' ) );
+check( 'one offer is singular',                        '1 offer: Free delivery from ₹599' === foodify_offers_summary( foodify_offer_lines( [ 'free_shipping_min' => 599.0 ] ) ) );
+check( 'the conditions are still behind it',           str_contains( $oh, '₹59 delivery below that, counted after any coupon.' ) );
+// The order on the page is decided by filter priority on the add-to-cart form:
+// delivery 10, combo panel 9, offers 11, alert form 20, assurances 25 — all
+// APPENDED, so the button comes first (decision 5).
+$src = static fn( string $f ): string => (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/' . $f );
+check( 'Offers hang off the add-to-cart form at 11, no longer off the price block',
+	(bool) preg_match( "/add_filter\\( 'render_block_woocommerce\\/add-to-cart-form'.*?foodify_offers_html.*?\\}, 11 \\);/s", $src( 'offers.php' ) )
+	&& ! str_contains( $src( 'offers.php' ), "render_block_woocommerce/product-price" ) );
+check( 'the delivery check is APPENDED after the form (it was prepended, above the button)',
+	str_contains( $src( 'delivery-estimate.php' ), "return \$html . foodify_delivery_widget_html(" )
+	&& ! str_contains( $src( 'delivery-estimate.php' ), ") . \$html; // Escaped" ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

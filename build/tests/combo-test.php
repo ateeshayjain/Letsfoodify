@@ -13,6 +13,7 @@
 declare( strict_types = 1 );
 
 define( 'ABSPATH', __DIR__ );
+require __DIR__ . '/../theme/foodify/inc/product-spec.php';
 require __DIR__ . '/../theme/foodify/inc/product-combo.php';
 
 $pass = 0; $fail = 0;
@@ -41,7 +42,13 @@ echo "── the saving, which may not be invented ──\n";
 check( '₹615 separately vs ₹525 saves ₹90', [ 'amount' => 90, 'percent' => 14 ] === foodify_combo_saving( 615, 525 ) );
 check( 'no stated separate price, no saving', [ 'amount' => 0, 'percent' => 0 ] === foodify_combo_saving( 0, 525 ) );
 check( 'a pack that is not cheaper claims nothing', [ 'amount' => 0, 'percent' => 0 ] === foodify_combo_saving( 500, 525 ) );
-check( 'the badge reads "Save ₹90"',      'Save ₹90' === foodify_combo_saving_badge( 615, 525 ) );
+// BROWSE-13: one floor and one format for packs and boxes. It was ₹25 and
+// "Save ₹90" here, against 15% and "Save 17%" on a single pack.
+check( 'the box floor IS the pack floor (15%)', foodify_save_badge_min() === foodify_combo_saving_min() && 15 === foodify_combo_saving_min() );
+check( 'the badge reads "Save 15%" — the same format as a pack', 'Save 15%' === foodify_combo_saving_badge( 1125, 949 ) );
+check( '₹615 → ₹525 is 14.6%: under the floor, no badge (it said "Save ₹90")', '' === foodify_combo_saving_badge( 615, 525 ) );
+check( 'a ₹25 saving on a ₹1,600 box is not a badge any more', '' === foodify_combo_saving_badge( 1600, 1575 ) );
+check( 'floors, never rounds up to the floor', '' === foodify_combo_saving_badge( 100, 85.1 ) && 'Save 15%' === foodify_combo_saving_badge( 100, 85 ) );
 check( 'a saving under the floor is not a badge', '' === foodify_combo_saving_badge( 545, 525 ) );
 check( 'no separate price means no badge', '' === foodify_combo_saving_badge( 0, 525 ) );
 
@@ -57,12 +64,27 @@ echo "── the panel ──\n";
 $html = foodify_combo_panel_html( $items, [ 'price' => 525, 'separate' => 615 ] );
 check( 'every item is listed',            3 === substr_count( $html, 'fd-combo__item' ) );
 check( 'the per-meal price is printed',   str_contains( $html, '₹105 per meal' ) );
-check( 'the saving names what it is against', str_contains( $html, 'Save ₹90 against ₹615 bought separately' ) );
+check( 'below the floor the panel claims no saving', ! str_contains( $html, 'Save' ) );
+$big = foodify_combo_panel_html( $items, [ 'price' => 500, 'separate' => 615 ] );
+check( 'the saving names what it is against', str_contains( $big, 'Save 18% (₹115) against ₹615 bought separately' ) );
 $plain = foodify_combo_panel_html( $items, [ 'price' => 525 ] );
 check( 'with no separate price the panel still renders, minus the saving',
 	str_contains( $plain, 'fd-combo__list' ) && ! str_contains( $plain, 'Save ₹' ) );
 check( 'a name is escaped',               str_contains( foodify_combo_panel_html( [ [ 'name' => '<b>x</b>', 'qty' => 1 ] ] ), '&lt;b&gt;' ) );
 check( 'not a combo, no panel',           '' === foodify_combo_panel_html( [] ) );
+
+echo "── each item links to its product (PRODUCT-11) ──\n";
+$linked = foodify_combo_panel_html( [ [ 'name' => 'Express Dal Fry', 'qty' => 2, 'url' => '/product/express-dal-fry/' ], [ 'name' => 'Idli Sambhar', 'qty' => 1 ] ] );
+check( 'an item with a page is a link to it', str_contains( $linked, '<a class="fd-combo__link" href="/product/express-dal-fry/">Express Dal Fry</a>' ) );
+check( 'an item with no page stays plain text', str_contains( $linked, '<span>Idli Sambhar</span>' ) );
+check( 'a javascript: URL is never printed as a link', ! str_contains( foodify_combo_panel_html( [ [ 'name' => 'X', 'qty' => 1, 'url' => 'javascript:alert(1)' ] ] ), '<a ' ) );
+
+echo "── packs, not meals, for a box of chai and chutneys (BROWSE-13) ──\n";
+$chai = foodify_combo_items( "Masala Chai × 2\nCoconut Red Chutney × 2" );
+check( 'unit "pack": the card line counts packs', '4 packs · Masala Chai, Coconut Red Chutney' === foodify_combo_card_line( $chai, 3, 'pack' ) );
+check( 'unit "pack": the strip prices per pack', [ '4 packs', '₹262 per pack' ] === foodify_combo_yield_parts( $chai, 1050, '', 'pack' ) );
+check( 'unit "pack": the panel prices per pack', str_contains( foodify_combo_panel_html( $chai, [ 'price' => 1050, 'unit' => 'pack' ] ), '₹262 per pack' ) );
+check( 'no unit / an unknown unit is "meal", as before', '3 meals' === foodify_combo_count_label( 3 ) && '1 meal' === foodify_combo_count_label( 1, 'bogus' ) && '1 pack' === foodify_combo_count_label( 1, 'Pack' ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

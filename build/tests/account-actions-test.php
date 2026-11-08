@@ -14,6 +14,7 @@
 declare( strict_types = 1 );
 
 define( 'ABSPATH', __DIR__ );
+require __DIR__ . '/../theme/foodify/inc/product-spec.php';   // the grid card's helpers the shelf reuses (BROWSE-7)
 require __DIR__ . '/../theme/foodify/inc/buy-again.php';
 require __DIR__ . '/../theme/foodify/inc/order-actions.php';
 
@@ -84,6 +85,17 @@ check( 'adding is announced',                            str_contains( $shelf, '
 $bjs = foodify_buy_again_script();
 check( 'the script tells the mini-cart block',           str_contains( $bjs, 'wc-blocks_added_to_cart' ) );
 check( 'on any failure the script follows the link (WooCommerce reports the error)', 2 === substr_count( $bjs, 'location.href=b.href' ) );
+// BROWSE-7 / ACCOUNT-20 / BROWSE-17: the card carries what the grid card carries, and says when it is in the cart.
+$card = foodify_buy_again_html( [ [ 'id' => 5, 'name' => 'Dal Fry', 'url' => '/p/', 'price' => '₹175', 'add_url' => '/?add-to-cart=5',
+	'chip' => [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 'servings' => 2, 'veg' => true, 'in_cart' => 0 ] ], '/e' );
+check( 'BROWSE-7: the prep line is the grid card\'s own', str_contains( $card, foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 2 ) ) && str_contains( $card, 'Hot water · 6 min' ) && str_contains( $card, 'Serves 2' ) );
+check( 'BROWSE-7: the veg mark sits before the name', str_contains( $card, '<span class="fd-again__name">' . foodify_veg_mark_html( 'vegetarian' ) . 'Dal Fry</span>' ) );
+check( 'BROWSE-7: no veg mark without a vegetarian declaration', ! str_contains( foodify_buy_again_html( [ [ 'id' => 6, 'name' => 'X', 'url' => '', 'price' => '', 'add_url' => '', 'veg' => false ] ] ), 'fd-veg' ) );
+$inc = foodify_buy_again_html( [ [ 'id' => 5, 'name' => 'Dal Fry', 'url' => '/p/', 'price' => '₹175', 'add_url' => '/?add-to-cart=5', 'in_cart' => 1 ] ], '/e' );
+check( 'BROWSE-17: already in the cart -> the grid\'s in-cart text', str_contains( $inc, ">Add another\u{00A0}· 1 in cart</a>" ) && str_contains( $inc, 'is-in-cart' ) && str_contains( $inc, 'data-in-cart="1"' ) );
+check( 'BROWSE-17: the script writes "Added <name>" into the live region', str_contains( $bjs, "st.textContent='Added '+name;" ) );
+check( 'BROWSE-17: and keeps the in-cart state instead of flipping back to "Add to cart"', str_contains( $bjs, "b.textContent=tpl.replace('%s',String(n));" ) && ! str_contains( $bjs, "b.textContent='Add to cart'" ) );
+check( 'BROWSE-17: from the same text the grid uses', str_contains( $card, 'data-in-cart-text="' . htmlspecialchars( foodify_in_cart_text(), ENT_QUOTES ) . '"' ) );
 
 /* ========================================================================
  * 10 · Cancel
@@ -174,7 +186,7 @@ check( 'no return form on an order still being packed',  ! str_contains( $c, 'fd
 
 $r = foodify_order_actions_html( $base + [ 'cancel' => false, 'return' => [ 'state' => 'open', 'closes' => 1 ], 'closes_label' => 'Thu 12 Nov', 'delivered' => true ] );
 check( 'an open return is a form with the four reasons, one required', 4 === substr_count( $r, 'type="radio" name="reason"' ) && 4 === substr_count( $r, ' required>' ) );
-check( 'it says until when',                             str_contains( $r, 'You can ask until Thu 12 Nov.' ) );
+check( 'it says until when',                             str_contains( $r, 'You can report it until Thu 12 Nov.' ) );
 check( 'the note is optional and capped in the browser too', str_contains( $r, 'maxlength="500"' ) && str_contains( $r, '(optional)' ) );
 check( 'no cancel on a dispatched order',                ! str_contains( $r, 'fd-cancel' ) );
 check( 'no photo upload (out of scope)',                 ! str_contains( $r, 'type="file"' ) );
@@ -186,7 +198,17 @@ check( 'returns off: no form',                           ! str_contains( $off, '
 check( 'returns off and no care address: nothing, rather than a dead line',
 	'' === foodify_order_actions_html( [ 'care_email' => '' ] + $base + [ 'cancel' => false, 'return' => [ 'state' => 'off', 'closes' => 0 ], 'delivered' => true ] ) );
 check( 'requested: says so, no second form',
-	str_contains( foodify_order_actions_html( $base + [ 'cancel' => false, 'return' => [ 'state' => 'requested', 'closes' => 0 ] ] ), 'We have your return request' ) );
+	str_contains( foodify_order_actions_html( $base + [ 'cancel' => false, 'return' => [ 'state' => 'requested', 'closes' => 0 ] ] ), 'Problem reported.' ) );
+// ACCOUNT-12: one name through the flow, the next step in one sentence, no "return" in customer copy.
+$r2 = foodify_order_actions_html( $base + [ 'customer_email' => 'priya@example.com', 'cancel' => false, 'return' => [ 'state' => 'open', 'closes' => 1 ], 'closes_label' => 'Thu 12 Nov', 'delivered' => true ] );
+check( 'ACCOUNT-12: "Report a problem" opens it, "Send report" sends it', str_contains( $r2, '>Report a problem</summary>' ) && str_contains( $r2, '>Send report</button>' ) );
+check( 'ACCOUNT-12: it says what happens next and where the reply goes', str_contains( $r2, 'We will look into it and reply to priya@example.com, the email on this order.' ) );
+$q2 = foodify_order_actions_html( $base + [ 'customer_email' => 'priya@example.com', 'cancel' => false, 'return' => [ 'state' => 'requested', 'closes' => 0 ] ] );
+check( 'ACCOUNT-12: after sending, "Problem reported" + the same next step', str_contains( $q2, '<strong>Problem reported.</strong> We will look into it and reply to priya@example.com' ) );
+$closed2 = foodify_order_actions_html( $base + [ 'cancel' => false, 'return' => [ 'state' => 'closed', 'closes' => 1 ], 'closes_label' => 'Mon 2 Nov' ] );
+$visible = static fn( string $h ): string => (string) preg_replace( '/<[^>]+>/', ' ', $h );   // text, not class names or field values
+check( 'ACCOUNT-12: the word "return" appears in no customer copy (open, sent, closed)', ! preg_match( '/return/i', $visible( $r2 . $q2 . $closed2 ) ) );
+check( 'ACCOUNT-12: the next step without an email still says how', 'We will look into it and reply by email.' === foodify_report_next_step( '' ) );
 check( 'closed: says when it closed and how to reach a person',
 	str_contains( foodify_order_actions_html( $base + [ 'cancel' => false, 'return' => [ 'state' => 'closed', 'closes' => 1 ], 'closes_label' => 'Mon 2 Nov' ] ), 'closed on Mon 2 Nov' ) );
 check( 'a cancelled order shows nothing',                '' === foodify_order_actions_html( $base + [ 'cancel' => false, 'return' => [ 'state' => 'not_yet', 'closes' => 0 ] ] ) );
@@ -203,6 +225,7 @@ check( 'the status is set to cancelled before any refund is attempted',
 check( 'the refund goes through the gateway',            str_contains( $oa, "'refund_payment' => true" ) );
 check( 'a failed refund emails the shop',                1 === preg_match( '~if \( ! is_wp_error\( \$refund \) \) \{\s*return true;\s*\}.*wp_mail\(~s', $oa ) );
 check( 'the Return requested status is registered and listed', str_contains( $oa, "register_post_status( 'wc-return-requested'" ) && str_contains( $oa, "\$out['wc-return-requested']" ) );
+check( 'ACCOUNT-12: the customer sees it as "Problem reported" in their orders list', str_contains( $oa, "_x( 'Problem reported', 'Order status', 'foodify' )" ) && ! str_contains( $oa, "_x( 'Return requested', 'Order status'" ) );
 check( 'the return window is read from the option, never a number in the theme', str_contains( $oa, "get_option( 'foodify_return_window_days', '' )" ) );
 check( 'wp-admin names the option when returns are off', str_contains( $oa, '<code>foodify_return_window_days</code>' ) );
 

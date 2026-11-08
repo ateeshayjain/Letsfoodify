@@ -1,7 +1,7 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 <!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--80)">
-<!-- wp:woocommerce/breadcrumbs {"align":"wide","fontSize":"sm"} /-->
+<!-- wp:woocommerce/breadcrumbs {"align":"wide"} /-->
 
 <!-- wp:columns {"align":"wide","className":"fd-pdp","style":{"spacing":{"blockGap":{"left":"var:preset|spacing|70"},"margin":{"top":"var:preset|spacing|40"}}}} -->
 <div class="wp-block-columns alignwide fd-pdp" style="margin-top:var(--wp--preset--spacing--40)">
@@ -14,38 +14,28 @@
 <!-- wp:column {"className":"fd-pdp__buy"} -->
 <div class="wp-block-column fd-pdp__buy">
 <!-- wp:post-title {"level":1,"fontSize":"3xl"} /-->
-<!-- wp:paragraph {"className":"fd-promise","fontSize":"xs"} -->
-<p class="fd-promise has-xs-font-size"><!--FOODIFY_DELIVERY--></p>
+<!-- UX review 8 Nov 2026 (decision 5): the buy column reads, top to bottom,
+     title (veg mark + diet badges, product-display.php), rating, price + unit
+     price + yield strip (+ "Contains:" when allergens are declared), then
+     quantity + Add to cart — which must land in the first screen and a half on
+     a phone — then, appended to the add-to-cart form by PHP and in this order:
+     the PIN delivery check (delivery-estimate.php), the Offers line
+     (offers.php), the sold-out alert form (stock-alerts.php) and the
+     assurances (product-display.php, from the product's own shelf life and the
+     COD gateway — no longer typed here, where one prep time and one shelf
+     life were printed on every product, a 1-minute chutney included). The
+     excerpt follows, then the tabs.
+     The promise pill below prints only while foodify_delivery_zones is unset:
+     once the PIN check can answer, a second, fixed answer above it is a
+     contradiction (business-profile.php drops the empty pill). -->
+<!-- wp:paragraph {"className":"fd-promise","fontSize":"base"} -->
+<p class="fd-promise has-base-font-size"><!--FOODIFY_DELIVERY--></p>
 <!-- /wp:paragraph -->
 <!-- wp:woocommerce/product-rating /-->
-<!-- wp:post-excerpt {"fontSize":"md","excerptLength":36} /-->
 <!-- wp:woocommerce/product-price {"fontSize":"2xl"} /-->
 <!-- wp:woocommerce/product-stock-indicator /-->
 <!-- wp:woocommerce/add-to-cart-form /-->
-
-<!-- wp:group {"className":"fd-assure","layout":{"type":"constrained"}} -->
-<div class="wp-block-group fd-assure">
-<!-- Wireframe 02, rule 8: directly under the button, one line each, the same
-     on every product page. Only facts the site already stands behind
-     elsewhere: the claim, the trust strip, the checkout.
-     Nov 2026: the COD and free-shipping lines moved
-     to the Offers list under the price (inc/offers.php), which reads them from
-     the gateway and the shipping zone that charge the money. Typed here they
-     were two commercial numbers no setting could change, printed twice. -->
-<!-- wp:paragraph {"fontSize":"sm","className":"fd-assure__item"} -->
-<p class="fd-assure__item has-sm-font-size">Ready in <!--FOODIFY_CLAIM_MINUTES--> minutes</p>
-<!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm","className":"fd-assure__item"} -->
-<p class="fd-assure__item has-sm-font-size">No preservatives</p>
-<!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"sm","className":"fd-assure__item"} -->
-<p class="fd-assure__item has-sm-font-size">9–12 month shelf life</p>
-<!-- /wp:paragraph -->
-<!-- wp:paragraph {"fontSize":"xs","textColor":"mute"} -->
-<p class="has-mute-color has-text-color has-xs-font-size">Shipping is shown in the cart, not at the last screen. MRP is inclusive of all taxes.</p>
-<!-- /wp:paragraph -->
-</div>
-<!-- /wp:group -->
+<!-- wp:post-excerpt {"fontSize":"md","excerptLength":36} /-->
 </div>
 <!-- /wp:column -->
 </div>
@@ -64,11 +54,13 @@
 
 <!-- wp:group {"align":"wide","className":"fd-pdp__reviews","style":{"spacing":{"padding":{"top":"var:preset|spacing|70"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group alignwide fd-pdp__reviews" style="padding-top:var(--wp--preset--spacing--70)">
-<!-- wp:heading {"fontSize":"2xl"} -->
-<h2 class="wp-block-heading has-2-xl-font-size">What people said</h2>
+<!-- With no reviews yet, reviews.php renames this heading "Reviews" and
+     replaces the line with how to leave one (PRODUCT-24). -->
+<!-- wp:heading {"className":"fd-reviews__title","fontSize":"2xl"} -->
+<h2 class="wp-block-heading fd-reviews__title has-2-xl-font-size">What people said</h2>
 <!-- /wp:heading -->
-<!-- wp:paragraph {"fontSize":"sm","textColor":"mute"} -->
-<p class="has-mute-color has-text-color has-sm-font-size">Only people who ordered this can review it.</p>
+<!-- wp:paragraph {"className":"fd-reviews__sub","fontSize":"base","textColor":"mute"} -->
+<p class="fd-reviews__sub has-mute-color has-text-color has-base-font-size">Only people who ordered this can review it.</p>
 <!-- /wp:paragraph -->
 <!-- wp:woocommerce/product-reviews /-->
 </div>
@@ -86,7 +78,7 @@
 <!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
 <!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
 <!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->
-<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true,"fontSize":"sm"} /-->
+<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true} /-->
 <!-- /wp:post-template -->
 </div>
 <!-- /wp:woocommerce/related-products -->

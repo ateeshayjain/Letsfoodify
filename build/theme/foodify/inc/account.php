@@ -104,7 +104,7 @@ add_filter( 'woocommerce_my_account_my_orders_actions', static function ( array 
 add_action( 'woocommerce_before_edit_account_address_form', static function (): void {
 	printf(
 		'<p class="fd-account-lead">%s</p>',
-		esc_html__( 'Your shipping address is the one checkout fills in. Change it here and your next order picks it up automatically.', 'foodify' )
+		esc_html__( 'Your delivery address is the one checkout fills in. Change it here and your next order picks it up automatically.', 'foodify' )
 	);
 } );
 

@@ -44,9 +44,33 @@ button, [role="button"], input[type="submit"], input[type="button"],
   justify-content: center;
 }
 .wp-block-navigation-item__content { display: inline-flex; align-items: center; }
+/* A bare <button> takes the browser's 13.3px system font unless told otherwise
+   (UX review 8 Nov, ACCOUNT-1: Pause, Skip next, Copy link rendered in Arial).
+   Classes that want another size set it; this only removes the UA default. */
+button { font: inherit; }
+input, select, textarea { font-family: inherit; }
 
 body { font-size: var(--wp--preset--font-size--base); }   /* 16px floor, never smaller */
+
+/* Visible focus, everywhere (UX decision 3). One ring: 2px flame-ink, 2px out.
+   The :root + :is() form is deliberate — :is() takes the specificity of its
+   most specific argument ([tabindex], 0,1,0), so this is 0,3,0 for every
+   control and beats the `input:focus { outline: none }`-shaped rules that
+   plugins and WooCommerce's own sheets ship. Nothing in this file may set
+   outline:none without an equally visible replacement. */
 :focus-visible { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+:root :is(a, button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px;
+}
+/* On a charcoal ground flame-ink is 2.9:1 — under the 3:1 a focus ring needs.
+   The header strip, the footer and the sticky bar take a paper ring instead. */
+:root :is(.has-char-background-color, .fd-sticky-atc) :is(a, button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+  outline-color: var(--wp--preset--color--paper);
+}
+/* A chip whose whole label is the control shows the ring on the chip, not on
+   the 13px dot inside it. */
+.fd-box__size:has(input:focus-visible) { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--wp--preset--color--flame-ink); }
 
 /* Motion: one curve, and honour the OS setting */
 a, button, .fd-card {
@@ -74,7 +98,7 @@ a, button, .fd-card {
 .fd-chip {
   display: inline-flex; align-items: center;
   gap: var(--wp--preset--spacing--20);
-  font-size: var(--wp--preset--font-size--xs); font-weight: 600; line-height: 1.25;
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; line-height: 1.25;   /* the card's lead fact: 16px floor */
   font-family: var(--wp--preset--font-family--ui);
   color: var(--wp--preset--color--char);
   background: var(--wp--preset--color--surface);
@@ -93,7 +117,7 @@ a, button, .fd-card {
 /* Per-serving price — reframes ₹210 against a delivery order */
 .fd-per-serving {
   display: block;
-  font-size: var(--wp--preset--font-size--sm);
+  font-size: var(--wp--preset--font-size--base);
   color: var(--wp--preset--color--mute);
   font-weight: 400;
 }
@@ -135,10 +159,14 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea,
   min-height: var(--wp--custom--tap-target);
   font-size: var(--wp--preset--font-size--base);   /* 16px stops iOS zooming on focus */
 }
-input:focus, select:focus, textarea:focus {
+/* The focused field's border turns flame-ink — a second cue, ON TOP of the
+   ring above, never instead of it. Until 8 Nov this rule set outline:none and
+   relied on a flame-wash halo measuring 1.13:1 against paper (invisible), and
+   at 0,1,1 it lost to the 0,2,1 border rule above, so even the border change
+   never showed. Same :not() chain here so the two rules compare as equals. */
+input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus,
+.wc-block-components-text-input input:focus {
   border-color: var(--wp--preset--color--flame-ink);
-  box-shadow: 0 0 0 3px var(--wp--preset--color--flame-wash);
-  outline: none;
 }
 /* Small uppercase badge text on the flame wash needs the deeper ink to clear AA. */
 .fd-badge--flame {
@@ -149,8 +177,19 @@ input:focus, select:focus, textarea:focus {
 /* Free-shipping progress — [foodify_free_shipping_progress].
    The bar reads its threshold from the shipping method that would actually
    apply, so what it promises is what checkout charges. */
-.fd-ship { margin: 0 0 var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--sm); }
-.fd-shipping-progress { display: grid; gap: var(--wp--preset--spacing--20); }
+.fd-ship { margin: 0; font-size: var(--wp--preset--font-size--base); }
+/* The band lives on the shortcode's own wrapper, not on the pattern group
+   around it: the shortcode prints nothing for an empty cart, and a styled
+   group around nothing was an empty green box on the empty cart (BUY-17). */
+.fd-shipping-progress {
+  display: grid; gap: var(--wp--preset--spacing--20);
+  padding: var(--wp--preset--spacing--40);
+  background: var(--wp--preset--color--leaf-wash);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+}
+.fd-shipping-progress[hidden] { display: none; }   /* the [hidden] escape: the cart script hides it */
+.fd-ship-band:not(:has(.fd-shipping-progress:not([hidden]))) { display: none; }
 
 /* Google Business Profile reviews — [foodify_google_reviews].
    Renders nothing when there are no real reviews; there is no sample state. */
@@ -175,7 +214,7 @@ input:focus, select:focus, textarea:focus {
 }
 .fd-review figcaption {
   margin-top: auto;
-  font-size: var(--wp--preset--font-size--sm);
+  font-size: var(--wp--preset--font-size--base);
   color: var(--wp--preset--color--mute);
 }
 .fd-review figcaption a { color: inherit; }
@@ -199,7 +238,10 @@ input:focus, select:focus, textarea:focus {
 }
 .woocommerce-form-login h2 { font-size: var(--wp--preset--font-size--2xl); margin: 0 0 var(--wp--preset--spacing--20); }
 .woocommerce-form-login .woocommerce-form-row { margin: 0 0 var(--wp--preset--spacing--40); }
-.woocommerce-form-login label { display: block; font-weight: 600; font-size: var(--wp--preset--font-size--sm); margin-bottom: var(--wp--preset--spacing--10); }
+.woocommerce-form-login label { display: block; font-weight: 600; font-size: var(--wp--preset--font-size--base); margin-bottom: var(--wp--preset--spacing--10); }
+/* Every WooCommerce form label is read before it is typed into: 16px. */
+.woocommerce form .form-row label, .woocommerce-form-row label, .woocommerce-address-fields label,
+.woocommerce-EditAccountForm label, .woocommerce-form-track-order label { font-size: var(--wp--preset--font-size--base); }
 .woocommerce-form-login .input-text { width: 100%; padding: 0 var(--wp--preset--spacing--30); }
 .woocommerce-form-login .wp-element-button { width: 100%; }
 
@@ -256,15 +298,36 @@ input:focus, select:focus, textarea:focus {
 }
 .woocommerce-orders-table__cell-order-total { font-variant-numeric: tabular-nums; }
 .fd-reorder { /* inherits .wp-element-button */ }
-.fd-secondary {
+.fd-secondary,
+.woocommerce-orders-table .foodify-cancel,
+.woocommerce-orders-table .foodify-return {
   /* HIG audit: this is Edit on every address card and Details on every order —
-     a ~20px link beside a 44px button. Same floor for both. */
+     a ~20px link beside a 44px button. Same floor for both.
+     UX review 8 Nov (ACCOUNT-1, BUY-8): as a <button> (Pause, Skip next,
+     Change, Copy link, Stop WhatsApp updates, the address form's Cancel) it
+     set no font and no shape, so it rendered as 13.3px Arial in a 2px outset
+     box. It now carries the whole pill itself — the same one an <a> Details
+     button gets — instead of hoping .wp-element-button is also on it. */
   min-height: var(--wp--custom--tap-target);
-  display: inline-flex; align-items: center;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 var(--wp--preset--spacing--50);
   background: transparent;
   color: var(--wp--preset--color--char);
-  border-color: var(--wp--preset--color--line-strong);
+  border: 1px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--pill);
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; line-height: 1.2;
+  text-decoration: none; cursor: pointer;
 }
+/* theme.json's button :hover paints the ground charcoal — under charcoal text
+   that is a blank pill. A secondary action brightens its edge instead. */
+.fd-secondary:hover, .wp-element-button.fd-secondary:hover,
+.woocommerce-orders-table .foodify-cancel:hover, .woocommerce-orders-table .foodify-return:hover {
+  background: transparent; color: var(--wp--preset--color--flame-ink); border-color: var(--wp--preset--color--flame-ink);
+}
+/* Destructive verbs (Delete an address, Stop repeating) read in the error
+   colour, not the action colour: flame-ink is what every other button is. */
+.fd-danger, .fd-secondary.fd-danger { color: var(--wp--preset--color--danger); }
 .woocommerce-orders-table__cell-order-actions { display: flex; gap: var(--wp--preset--spacing--20); flex-wrap: wrap; }
 
 /* Addresses */
@@ -302,11 +365,12 @@ input:focus, select:focus, textarea:focus {
 .fd-address__verb { margin: 0; }
 .fd-address__verb button {
   min-height: var(--wp--custom--tap-target); background: none; border: 1px solid var(--wp--preset--color--line-strong);
-  border-radius: var(--wp--custom--radius--control); padding: 0 var(--wp--preset--spacing--30);
-  font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--char); cursor: pointer;
+  border-radius: var(--wp--custom--radius--pill); padding: 0 var(--wp--preset--spacing--40);
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; color: var(--wp--preset--color--char); cursor: pointer;
 }
-.fd-address__verb .fd-danger { color: var(--wp--preset--color--flame-ink); }
-.fd-address-note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-address__verb button:hover { border-color: var(--wp--preset--color--flame-ink); }
+.fd-address__verb .fd-danger { color: var(--wp--preset--color--danger); }
+.fd-address-note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
 .fd-address-form__title { font-size: var(--wp--preset--font-size--lg); margin: var(--wp--preset--spacing--60) 0 var(--wp--preset--spacing--30); }
 
 /* Checkout chooser — the whole point of the book is that this replaces typing. */
@@ -322,14 +386,14 @@ input:focus, select:focus, textarea:focus {
 }
 .fd-address-choose__option input { grid-row: span 2; margin-top: .2em; }
 .fd-address-choose__label { font-weight: 600; }
-.fd-address-choose__body { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+.fd-address-choose__body { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
 /* The button and the manage link are siblings the PHP prints one after the
    other. They need a row with a gap, and the link needs a real tap height —
    it asked for the custom key by its camelCase name (tapTarget), which does not exist: theme.json's
    custom keys reach CSS kebab-cased (--wp--custom--tap-target), so the
    min-height was silently invalid and the link sat flush against the button. */
 .fd-address-choose fieldset > .wp-element-button { margin-top: var(--wp--preset--spacing--30); margin-right: var(--wp--preset--spacing--40); }
-.fd-address-choose__manage { display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); margin-top: var(--wp--preset--spacing--30); font-size: var(--wp--preset--font-size--sm); }
+.fd-address-choose__manage { display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); margin-top: var(--wp--preset--spacing--30); font-size: var(--wp--preset--font-size--base); }
 
 /* Post-purchase account claim, on the order-received page. */
 .fd-claim {
@@ -337,7 +401,7 @@ input:focus, select:focus, textarea:focus {
   background: var(--wp--preset--color--kraft-pale); border-radius: var(--wp--custom--radius--card);
 }
 .fd-claim h2 { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
-.fd-claim__note { color: var(--wp--preset--color--kraft-deep); font-size: var(--wp--preset--font-size--sm); margin-bottom: 0; }   /* same band, same 4.98:1 fix */
+.fd-claim__note { color: var(--wp--preset--color--kraft-deep); font-size: var(--wp--preset--font-size--base); margin-bottom: 0; }   /* same band, same 4.98:1 fix */
 
 /* Checkout shell — WP-06. The audited site ran the full site chrome here and
    switched between boxes with injected JavaScript. This is one page, stripped:
@@ -349,7 +413,7 @@ input:focus, select:focus, textarea:focus {
    foodify_cart_promise(). An estimate must not look like a guarantee. */
 .fd-cart-promise {
   margin: var(--wp--preset--spacing--30) 0 0;
-  font-size: var(--wp--preset--font-size--sm);
+  font-size: var(--wp--preset--font-size--base);
   color: var(--wp--preset--color--mute);
   line-height: 1.6;
 }
@@ -357,7 +421,7 @@ input:focus, select:focus, textarea:focus {
 
 /* Final-amount line, inside the order review where the number is. */
 .fd-order-note td {
-  font-size: var(--wp--preset--font-size--sm);
+  font-size: var(--wp--preset--font-size--base);
   color: var(--wp--preset--color--mute);
   padding-top: var(--wp--preset--spacing--30);
   border-top: 1px solid var(--wp--preset--color--line);
@@ -368,7 +432,7 @@ input:focus, select:focus, textarea:focus {
 .woocommerce-form-coupon-toggle .woocommerce-info {
   background: none; border: 0; padding: 0;
   margin: 0 0 var(--wp--preset--spacing--40);
-  font-size: var(--wp--preset--font-size--sm);
+  font-size: var(--wp--preset--font-size--base);
   color: var(--wp--preset--color--mute);
 }
 .woocommerce-form-coupon-toggle .woocommerce-info::before { content: none; }
@@ -382,6 +446,17 @@ input:focus, select:focus, textarea:focus {
 
 /* An error the customer is sent to must be visible when they arrive there. */
 .woocommerce-error:focus { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+/* Notices are sentences the customer has to read: 16px, whatever the plugin
+   sheet says. And their in-sentence actions (Undo, View cart) are still the
+   only control on the line, so they get the tap height. */
+.woocommerce-message, .woocommerce-info, .woocommerce-error, .woocommerce-error li,
+.wc-block-components-notice-banner, .wc-block-components-notice-banner__content {
+  font-size: var(--wp--preset--font-size--base);
+}
+.woocommerce-message .restore-item, .woocommerce-message a.button, .woocommerce-info a.button,
+.wc-block-components-notice-banner a {
+  display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target);
+}
 
 /* Payment options — WP-07. The saving is named on the radio itself, and the
    number comes from the same function as the fee, so the label cannot drift
@@ -389,7 +464,7 @@ input:focus, select:focus, textarea:focus {
 .fd-pay-saving {
   display: inline-block;
   margin-left: var(--wp--preset--spacing--20);
-  font-size: var(--wp--preset--font-size--xs);
+  font-size: var(--wp--preset--font-size--base);   /* "Save ₹25" is mixed case — a sentence, not a badge */
   font-weight: 600;
   color: var(--wp--preset--color--leaf-ink);
   background: var(--wp--preset--color--kraft-pale);
@@ -403,7 +478,7 @@ input:focus, select:focus, textarea:focus {
    place Google issues manual actions for. */
 .fd-rating-count {
   display: block;
-  font-size: var(--wp--preset--font-size--xs);
+  font-size: var(--wp--preset--font-size--base);
   color: var(--wp--preset--color--mute);
 }
 
@@ -483,12 +558,12 @@ input:focus, select:focus, textarea:focus {
   background: var(--wp--preset--color--flame-deep);
   color: var(--wp--preset--color--paper);
   font-family: var(--wp--preset--font-family--ui);
-  font-size: var(--wp--preset--font-size--sm);
+  font-size: var(--wp--preset--font-size--base);
   font-weight: 700;
 }
 .fd-prep__body { display: flex; flex-direction: column; gap: var(--wp--preset--spacing--10); }
 .fd-prep__body strong { font-size: var(--wp--preset--font-size--md); }
-.fd-prep__body span { color: var(--wp--preset--color--kraft-deep); font-size: var(--wp--preset--font-size--sm); line-height: 1.55; }   /* kraft-deep, not mute: 4.98:1 on the kraft band vs mute's 3.97 */
+.fd-prep__body span { color: var(--wp--preset--color--kraft-deep); font-size: var(--wp--preset--font-size--base); line-height: 1.55; }   /* kraft-deep, not mute: 4.98:1 on the kraft band vs mute's 3.97 */
 
 /* Fact tables. There is ONE set of table rules, keyed on .fd-spec__list, used
    by the contents table inside the Ingredients tab and by the always-open Pack
@@ -502,8 +577,8 @@ input:focus, select:focus, textarea:focus {
   padding-bottom: var(--wp--preset--spacing--20);
   border-bottom: 1px solid var(--wp--preset--color--line-strong);
 }
-.fd-spec__group.is-label dd { font-size: var(--wp--preset--font-size--sm); }
-.fd-spec__note { margin-top: var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--xs); line-height: 1.6; }
+.fd-spec__group.is-label dd { font-size: var(--wp--preset--font-size--base); }
+.fd-spec__note { margin-top: var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); line-height: 1.6; }
 
 .fd-spec__nutrition-title {
   font-size: var(--wp--preset--font-size--base);
@@ -513,7 +588,7 @@ input:focus, select:focus, textarea:focus {
 .fd-nutrition th, .fd-nutrition td {
   text-align: left; padding: var(--wp--preset--spacing--20) 0;
   border-bottom: 1px solid var(--wp--preset--color--line);
-  font-size: var(--wp--preset--font-size--sm); font-weight: 400;
+  font-size: var(--wp--preset--font-size--base); font-weight: 400;
 }
 .fd-nutrition th { color: var(--wp--preset--color--mute); }
 .fd-nutrition td { text-align: right; font-variant-numeric: tabular-nums; }
@@ -538,7 +613,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 @media (max-width: 900px) {
-  .woocommerce-account.logged-in .woocommerce { grid-template-columns: 1fr; }
+  .woocommerce-account.logged-in .woocommerce { grid-template-columns: minmax(0, 1fr); }   /* minmax: the chip row scrolls, it must not widen the column */
   .woocommerce-orders-table thead { display: none; }
   .woocommerce-orders-table tr { display: grid; gap: var(--wp--preset--spacing--10); padding: var(--wp--preset--spacing--40) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
   .woocommerce-orders-table td { border: 0; padding: 0; }
@@ -591,9 +666,8 @@ input:focus, select:focus, textarea:focus {
 /* "My account" as a menu item exists for the phone overlay (header.html). From
    600px — core's overlay breakpoint — the menu is a row beside the labelled
    account button, and a second "My account" there would be the same door twice. */
-@media (min-width: 600px) {
-  .wp-block-navigation .fd-nav-account { display: none; }
-}
+/* (Hidden from 900px now, with the other overlay-only items — see the UX
+   review block: the menu button stays up to 900px.) */
 @media (max-width: 1023px) {
   .wc-block-customer-account .wc-block-customer-account__account-link { width: var(--wp--custom--tap-target); padding: 0; }
   .wc-block-customer-account__account-link .label {
@@ -643,7 +717,7 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: var(--wp--preset--spacing--50);
 }
 .fd-shop__toolbar .woocommerce-result-count {
-  margin: 0; color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm);
+  margin: 0; color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base);
 }
 /* Pagination under the grid (12 a page). Core prints the markup; every page
    number is a tap-sized pill, the current one filled. */
@@ -689,20 +763,38 @@ input:focus, select:focus, textarea:focus {
   transform: translateY(-70%) rotate(45deg);
 }
 
-/* Filters. On desktop the details element is open and its summary hidden, so
-   the sidebar is simply present. Below core's stacking breakpoint the summary
-   becomes a 44px "Filter" control and the script in product-display.php closes
-   the element on load. */
-.fd-filters > summary { display: none; list-style: none; }
+/* Filters. The template prints the details element CLOSED (UX review 8 Nov,
+   BROWSE-2: printed open, a phone showed 600px of checkboxes above the
+   results, so ticking one changed nothing on screen). A one-line script right
+   after it in the template opens it from 782px, before first paint. So:
+   desktop with script — open, summary hidden, the sidebar is simply there;
+   phone — a 44px "Filter · 2" control; desktop WITHOUT script — the same
+   control, because a closed details with a hidden summary would hide the
+   filters altogether. */
+.fd-filters[open] > summary { display: none; }
+.fd-filters > summary { list-style: none; }
 .fd-filters > summary::-webkit-details-marker { display: none; }
+.fd-filters__count:empty { display: none; }
+.fd-filters__count::before { content: "·"; margin: 0 var(--wp--preset--spacing--10); }
+.fd-filters:not([open]) > summary {
+  display: flex; align-items: center; gap: var(--wp--preset--spacing--10);
+  min-height: var(--wp--custom--tap-target);
+  padding: 0 var(--wp--preset--spacing--40);
+  background: var(--wp--preset--color--surface);
+  border: 1.5px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control);
+  font-weight: 600; cursor: pointer;
+}
+.fd-filters__count { font-variant-numeric: tabular-nums; }
 .wp-block-woocommerce-filter-wrapper { margin-bottom: var(--wp--preset--spacing--50); }
 .wc-block-attribute-filter__title, .wc-block-price-filter__title,
 .wp-block-woocommerce-filter-wrapper h3 {
+  /* A heading the customer reads to choose, not a column label: 16px, sentence
+     case, charcoal (was 12px uppercase mute — BROWSE-4). */
   font-family: var(--wp--preset--font-family--ui);
-  font-size: var(--wp--preset--font-size--xs); font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase;
-  color: var(--wp--preset--color--mute);
-  margin: 0 0 var(--wp--preset--spacing--20);
+  font-size: var(--wp--preset--font-size--base); font-weight: 700;
+  color: var(--wp--preset--color--char);
+  margin: 0 0 var(--wp--preset--spacing--10);
 }
 .wc-block-checkbox-list { list-style: none; margin: 0; padding: 0; }
 .wc-block-checkbox-list__item { margin: 0; }
@@ -720,7 +812,7 @@ input:focus, select:focus, textarea:focus {
 .wc-filter-element-label-list-count { color: var(--wp--preset--color--mute); }
 .wc-block-price-filter__controls {
   display: flex; justify-content: space-between;
-  font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute);
+  font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute);
   margin-top: var(--wp--preset--spacing--20);
 }
 
@@ -753,7 +845,7 @@ input:focus, select:focus, textarea:focus {
 .fd-products .wp-block-post-title a { color: inherit; text-decoration: none; }
 .fd-products .wp-block-post-title a:hover { color: var(--wp--preset--color--flame-ink); }
 .fd-products .wc-block-components-product-rating {
-  margin: 0; font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute);
+  margin: 0; font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute);
 }
 .fd-products .wc-block-components-product-price {
   margin: auto 0 0; padding-top: var(--wp--preset--spacing--30);
@@ -763,12 +855,33 @@ input:focus, select:focus, textarea:focus {
   color: var(--wp--preset--color--mute); font-weight: 400; margin-right: var(--wp--preset--spacing--20);
 }
 .fd-products .wc-block-components-product-price ins { text-decoration: none; }
+/* Two rows on every card: the price (was/now) on the first, the unit price
+   and SAVE on the second. With SAVE inline after the price, cards with and
+   without a discount put their prices on different lines (BROWSE-18). The
+   ::after is a zero-height, full-width flex item — a line break that needs no
+   markup change in the price filter. */
+.fd-products .wc-block-components-product-price {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  column-gap: var(--wp--preset--spacing--20); row-gap: var(--wp--preset--spacing--10);
+}
+.fd-products .wc-block-components-product-price::after { content: ""; order: 1; flex-basis: 100%; height: 0; }
+.fd-products .wc-block-components-product-price .fd-unit-price,
+.fd-products .wc-block-components-product-price .fd-per-serving { order: 2; }
+.fd-products .wc-block-components-product-price .fd-save { order: 3; margin-left: 0; }
+/* Where a card is too narrow for unit price + SAVE on one line (a two-up
+   phone card is ~150px), SAVE moves ABOVE the price instead of below it. The
+   price block is pinned to the card's bottom, so the extra row grows upward
+   into the space under the title and every card's price stays on one line. */
+@media (max-width: 1023px) {
+  .fd-products .wc-block-components-product-price::before { content: ""; order: -1; flex-basis: 100%; height: 0; }
+  .fd-products .wc-block-components-product-price .fd-save { order: -2; }
+}
 .fd-products .wc-block-components-product-button { margin: var(--wp--preset--spacing--30) 0 0; }
 .fd-products .wc-block-components-product-button .wp-block-button__link { width: 100%; }
 
 /* Cart — WooCommerce's classic cart markup: two columns, the totals a card. */
 .woocommerce-cart .woocommerce {
-  display: grid; grid-template-columns: 1.6fr 1fr;
+  display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   gap: var(--wp--preset--spacing--60); align-items: start;
 }
 .woocommerce-cart .woocommerce > .woocommerce-notices-wrapper { grid-column: 1 / -1; }
@@ -803,7 +916,7 @@ input:focus, select:focus, textarea:focus {
 .woocommerce-cart table.shop_table td.product-name a { color: inherit; text-decoration: none; }
 .woocommerce-cart table.shop_table td.product-name .variation {
   display: block; margin: 0; font-weight: 400;
-  font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute);
+  font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute);
 }
 .woocommerce-cart table.shop_table td.product-price,
 .woocommerce-cart table.shop_table td.product-subtotal {
@@ -858,9 +971,14 @@ input:focus, select:focus, textarea:focus {
 .woocommerce-cart .cart_totals table.shop_table th { font-weight: 400; color: var(--wp--preset--color--char); padding-right: var(--wp--preset--spacing--30); }
 .woocommerce-cart .cart_totals table.shop_table td { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
 .woocommerce-cart .cart_totals tr.cart-discount { color: var(--wp--preset--color--leaf-ink); }
+.woocommerce-remove-coupon { display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); font-weight: 400; }
+/* The rule above the total is drawn on the ROW (BUY-19). On a phone the row is
+   a flex line with a gap between its two cells, and a border on each cell left
+   a break in the middle of the rule. With border-collapse a <tr> border draws
+   as one line on desktop too. */
+.woocommerce-cart .cart_totals tr.order-total { border-top: 1px solid var(--wp--preset--color--line-strong); }
 .woocommerce-cart .cart_totals tr.order-total th,
 .woocommerce-cart .cart_totals tr.order-total td {
-  border-top: 1px solid var(--wp--preset--color--line-strong);
   padding-top: var(--wp--preset--spacing--40);
   font-family: var(--wp--preset--font-family--display);
   font-size: var(--wp--preset--font-size--lg); font-weight: 700;
@@ -883,21 +1001,24 @@ input:focus, select:focus, textarea:focus {
   }
   .fd-products .wp-block-post-title { font-size: var(--wp--preset--font-size--base); }
   .fd-products .wc-block-components-product-price { font-size: var(--wp--preset--font-size--md); }
-  /* A two-up card is ~150px inside; the chip keeps its words on one line by
-     giving up the colour dot and half its padding, not by truncating. */
-  .fd-products .fd-chip { padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20); gap: 0; white-space: nowrap; max-width: 100%; }
+  /* A two-up card is ~150px inside. The chip gives up the colour dot and half
+     its padding first; at 16px "Drinking water · 1 min" still needs a second
+     line, and it takes one — a wrapped chip reads, a 12px one did not. */
+  .fd-products .fd-chip { padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--20); gap: 0; max-width: 100%; }
   .fd-products .fd-chip::before { display: none; }
-  /* Same arithmetic for the button: "Add to cart" broken across two lines in a
-     150px card reads as a squeezed layout, and the words are the one thing on
-     the card that must not look uncertain. It gives up side padding instead. */
+  /* Same arithmetic for the button: it gives up side padding first. "Add to
+     cart" (~90px) then fits one line in the narrowest card (~100px at 320).
+     It may wrap, balanced: the in-cart wording "Add another · 1 in cart" is
+     longer than any two-up card, and nowrap clipped it at both ends. */
   .fd-products .wc-block-components-product-button .wp-block-button__link {
-    padding-inline: var(--wp--preset--spacing--20); white-space: nowrap;
+    padding-inline: var(--wp--preset--spacing--20); white-space: normal; text-wrap: balance; line-height: 1.2;
   }
 
   /* The filter control. */
   .fd-shop__filters { margin-bottom: var(--wp--preset--spacing--40); }
-  .fd-filters > summary {
-    display: flex; align-items: center; justify-content: space-between;
+  .fd-filters > summary,
+  .fd-filters[open] > summary {
+    display: flex; align-items: center; gap: var(--wp--preset--spacing--10);
     min-height: var(--wp--custom--tap-target);
     padding: 0 var(--wp--preset--spacing--40);
     background: var(--wp--preset--color--surface);
@@ -906,7 +1027,7 @@ input:focus, select:focus, textarea:focus {
     font-weight: 600; cursor: pointer;
   }
   .fd-filters > summary::after {
-    content: ""; width: .5em; height: .5em;
+    content: ""; width: .5em; height: .5em; margin-left: auto;
     border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
     transform: translateY(-25%) rotate(45deg);
   }
@@ -928,7 +1049,10 @@ input:focus, select:focus, textarea:focus {
 }
 
 @media (max-width: 900px) {
-  .woocommerce-cart .woocommerce { grid-template-columns: 1fr; }
+  /* minmax(0, …): a bare 1fr has an auto minimum, and under it the cart row's
+     own 1fr column counts at max-content — a long box line pushed the page
+     to 527px at 390. */
+  .woocommerce-cart .woocommerce { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 768px) {
   /* WooCommerce's small-screen sheet turns every cell into a labelled block
@@ -943,7 +1067,7 @@ input:focus, select:focus, textarea:focus {
   .woocommerce-cart .woocommerce-cart-form table.shop_table_responsive tr:not(.cart_item) { display: block; width: 100%; }
   .woocommerce-cart table.shop_table_responsive tr.cart_item {
     display: grid;
-    grid-template-columns: 4rem 1fr auto;
+    grid-template-columns: 4rem minmax(0, 1fr) auto;
     grid-template-areas: "thumb name remove" "thumb qty subtotal";
     column-gap: var(--wp--preset--spacing--30); row-gap: var(--wp--preset--spacing--20);
     align-items: center;
@@ -993,6 +1117,12 @@ input:focus, select:focus, textarea:focus {
 }
 .fd-badge--leaf { background: var(--wp--preset--color--leaf-wash); color: var(--wp--preset--color--leaf-ink); margin-left: auto; }
 .fd-badge--out  { background: var(--wp--preset--color--char); color: var(--wp--preset--color--paper); }
+/* ONE badge on a card image (BROWSE-18): Sold out, else Bestseller/New, else
+   the dietary tag. foodify_render_badges() prints at most one commercial
+   word (Sold out or a merchandising one), so only the dietary badge has to
+   give way when there is one. It is
+   not lost: it belongs as text under the name (product group, markup). */
+.fd-products .fd-badges:has(.fd-badge--out, .fd-badge--flame) > .fd-badge--leaf { display: none; }
 
 /* A sold-out card reads as unavailable before the eye reaches the button.
    WooCommerce puts `outofstock` on the loop item (wc_product_post_class), so
@@ -1008,7 +1138,7 @@ input:focus, select:focus, textarea:focus {
   pointer-events: none; cursor: not-allowed;
 }
 /* The card's second line. */
-.fd-products .fd-yield { margin: 0; font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute); }
+.fd-products .fd-yield { margin: 0; font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
 
 /* SAVE — only ever rendered at the floor or above (foodify_save_badge). */
 .fd-save {
@@ -1023,8 +1153,11 @@ input:focus, select:focus, textarea:focus {
 
 /* Product page: the promise pill under the title, the yield strip under the price. */
 .fd-promise {
+  /* The delivery promise is a sentence, not a badge: 16px and sentence case
+     (UX review 8 Nov). Uppercase 12px is allowed for one-word badges only. */
   display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--20);
-  font-family: var(--wp--preset--font-family--ui); font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  font-family: var(--wp--preset--font-family--ui); font-weight: 600;
+  font-size: var(--wp--preset--font-size--base); line-height: 1.35;
   color: var(--wp--preset--color--leaf-ink); background: var(--wp--preset--color--leaf-wash);
   padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--30);
   border-radius: var(--wp--custom--radius--pill);
@@ -1033,7 +1166,7 @@ input:focus, select:focus, textarea:focus {
 .fd-yield-strip {
   display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--10) 0;
   margin: var(--wp--preset--spacing--30) 0 0;
-  font-size: var(--wp--preset--font-size--sm); font-weight: 600; line-height: 1.4;
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; line-height: 1.4;
   font-variant-numeric: tabular-nums;
 }
 .fd-yield-strip span { padding: 0 var(--wp--preset--spacing--30); border-left: 1px solid var(--wp--preset--color--line-strong); }
@@ -1069,18 +1202,23 @@ input:focus, select:focus, textarea:focus {
   display: grid; grid-template-columns: 11rem 1fr; gap: var(--wp--preset--spacing--30);
   padding: var(--wp--preset--spacing--30) 0; border-bottom: 1px solid var(--wp--preset--color--line);
 }
-.fd-spec__list dt { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm); }
+/* A term label, the one place below 16px is allowed (decision 1): uppercase,
+   sm, mute — and the value beside it is the thing at 16px. */
+.fd-spec__list dt {
+  color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--sm);
+  font-weight: 600; letter-spacing: .06em; text-transform: uppercase; line-height: 1.5;
+}
 .fd-spec__list dd { margin: 0; line-height: 1.55; }
 .fd-spec__list > div.is-missing dd { color: var(--wp--preset--color--flame-ink); font-style: italic; }
 .fd-spec__list > div.is-missing dd::after {
   content: " — ask us before ordering if this matters to you";
-  color: var(--wp--preset--color--mute); font-style: normal; font-size: var(--wp--preset--font-size--xs);
+  color: var(--wp--preset--color--mute); font-style: normal; font-size: var(--wp--preset--font-size--base);
 }
 .fd-tab__panel .fd-prep__steps { grid-template-columns: repeat(3, 1fr); }
 .fd-taste { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20); margin: var(--wp--preset--spacing--40) 0 0; }
-.fd-taste__label { font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--mute); margin-right: var(--wp--preset--spacing--10); }
+.fd-taste__label { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); margin-right: var(--wp--preset--spacing--10); }
 .fd-taste__chip {
-  font-size: var(--wp--preset--font-size--sm); font-weight: 600;
+  font-size: var(--wp--preset--font-size--base); font-weight: 600;
   background: var(--wp--preset--color--kraft-pale); color: var(--wp--preset--color--kraft-deep);
   padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--30); border-radius: var(--wp--custom--radius--pill);
 }
@@ -1145,7 +1283,7 @@ input:focus, select:focus, textarea:focus {
 .fd-combo__facts {
   margin: var(--wp--preset--spacing--40) 0 0; padding-top: var(--wp--preset--spacing--30);
   border-top: 1px solid var(--wp--preset--color--line);
-  font-size: var(--wp--preset--font-size--sm); font-weight: 600; color: var(--wp--preset--color--kraft-deep);
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; color: var(--wp--preset--color--kraft-deep);
 }
 /* On a card the same list is one muted line, like the yield line it replaces. */
 .fd-products .fd-yield { font-variant-numeric: tabular-nums; }
@@ -1168,10 +1306,183 @@ input:focus, select:focus, textarea:focus {
 .fd-sticky-atc[hidden] { display: none; }
 .fd-sticky-atc__price { display: flex; flex-direction: column; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .fd-sticky-atc__total { font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); }
-.fd-sticky-atc__qty { font-size: var(--wp--preset--font-size--xs); opacity: .8; }
+.fd-sticky-atc__qty { font-size: var(--wp--preset--font-size--base); }
 .fd-sticky-atc .wp-element-button { flex: 0 0 auto; }
 @media (min-width: 782px) { .fd-sticky-atc { display: none; } }
 
+
+/* ===========================================================================
+   UX REVIEW FIX WAVE — 8 Nov 2026 (fix group LOOK)
+   Decisions: 16px floor for anything read, 44px for every control that is not
+   a link inside a sentence, visible focus everywhere, one name per thing.
+   =========================================================================== */
+
+/* ---- 44px: standalone links that WooCommerce prints as bare <a> ---------- */
+.woocommerce-breadcrumb { font-size: var(--wp--preset--font-size--base); }   /* the nav's own size beats the wrapper's preset class */
+.woocommerce-breadcrumb a,
+.woocommerce-review-link,
+.woocommerce-orders-table__cell-order-number a,
+.fd-cart-back a,
+.fd-more a {
+  display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target);
+}
+.woocommerce-review-link { font-size: var(--wp--preset--font-size--base); }
+/* The mini-cart drawer. The theme had no drawer rules at all, so its "Remove
+   item" was WooCommerce's 12px underlined word in a 73×19 box (BUY-12). */
+.wc-block-cart-item__remove-link {
+  display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target);
+  padding: 0; background: none; border: 0;
+  font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute);
+  text-decoration: underline; cursor: pointer;
+}
+.wc-block-cart-item__remove-link:hover { color: var(--wp--preset--color--flame-deep); }
+.wc-block-mini-cart__drawer .wc-block-components-product-metadata,
+.wc-block-mini-cart__drawer .wc-block-cart-item__prices,
+.wc-block-mini-cart__drawer .wc-block-components-product-details { font-size: var(--wp--preset--font-size--base); }
+
+/* ---- Order received, track order: WooCommerce's own small print ---------- */
+/* woocommerce.css sets the order overview at .715em (11.4px on this theme). */
+.woocommerce ul.order_details li, .woocommerce-order-overview li,
+.woocommerce-table--order-details .includes_tax, .includes_tax,
+.woocommerce-form-track-order .form-row label, form.track_order label { font-size: var(--wp--preset--font-size--base); }
+
+/* ---- Product page: the reading sizes the template cannot set ------------- */
+.fd-assure__item { font-size: var(--wp--preset--font-size--base); }
+.fd-pdp__buy .stock, .fd-pdp__buy .wc-block-components-product-stock-indicator { font-size: var(--wp--preset--font-size--base); }
+/* A price is not an insertion: the browser's <ins> underline read as a link. */
+:is(.price, .wc-block-components-product-price, .fd-sticky-atc__price, .woocommerce-Price-amount) ins,
+ins:has(> .woocommerce-Price-amount) { text-decoration: none; }
+/* Quantity and Add to cart: one height (PRODUCT-22). Both are set, not left to
+   stretch — the button's padding and the field's own box disagreed by 12px. */
+.fd-pdp__buy form.cart { align-items: stretch; }
+.fd-pdp__buy form.cart .quantity { align-self: stretch; }
+.fd-pdp__buy form.cart .quantity .qty,
+.fd-pdp__buy form.cart .single_add_to_cart_button {
+  box-sizing: border-box;
+  height: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--20));
+  min-height: 0; padding-block: 0;
+}
+/* Long-form reading on a laptop: a panel the width of the page is a 150-
+   character line (PRODUCT-21). The tab row keeps the full width; what is IN a
+   panel, and the Pack & label table after the tabs, share one measure. */
+.fd-tab__panel > *, .fd-tab__panel .fd-nutrition, .fd-tab__panel .fd-spec__list { max-width: 45rem; }
+.fd-label { max-width: 45rem; }
+/* The sticky bar must not sit on the page's last lines (PRODUCT-17): while it
+   shows, the page grows by its height; and a hairline separates it from the
+   charcoal footer it ends up over. */
+.fd-sticky-atc { border-top: 1px solid var(--wp--preset--color--kraft); }
+@media (max-width: 781px) {
+  body:has(.fd-sticky-atc:not([hidden])) {
+    padding-bottom: calc(var(--wp--custom--tap-target) + 2 * var(--wp--preset--spacing--30) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---- Header -------------------------------------------------------------- */
+/* The strip. 16px, one line on a phone: below 782px only the first fact shows
+   (free delivery — the one that changes what a customer puts in the cart);
+   the dispatch promise and the licence are on every product page and in the
+   footer. Hidden from sight only — still in the page. */
+.fd-strip { margin: 0; line-height: 1.4; }
+@media (max-width: 781px) {
+  .fd-strip__more { display: none; }
+}
+/* Between 600px (core's overlay breakpoint) and 900px the five links, the
+   logo and the actions do not fit one row, and the nav wrapped to two or
+   three (BROWSE-16). Core's breakpoint is moved, not fought: the menu button
+   stays until 900px, where measurement shows the row fits. */
+@media (min-width: 600px) and (max-width: 899px) {
+  .fd-header .wp-block-navigation__responsive-container-open:not(.always-shown) { display: flex; }
+  .fd-header .wp-block-navigation__responsive-container:not(.hidden-by-default):not(.is-menu-open) { display: none; }
+}
+/* The overlay: the interface font, at reading size, one 52px row per link. */
+.wp-block-navigation__responsive-container .wp-block-navigation-item__content {
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--md); font-weight: 600;
+  min-height: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--20));
+}
+/* Items that exist for the overlay only (My account, All meals, Build a box).
+   Wherever the menu is a row they would be the same door twice, or a sixth
+   link the row has no room for. */
+@media (min-width: 900px) {
+  .wp-block-navigation .fd-nav-account, .wp-block-navigation .fd-nav-extra { display: none; }
+}
+
+/* ---- Footer -------------------------------------------------------------- */
+/* is-style-plain is the footer's list style. Nothing registered it, so on the
+   site the lists would have been bulleted flame-ink links on charcoal (2.9:1).
+   Every link is a 44px row; on a phone each list is two columns, so the
+   taller rows do not double the footer's length (BROWSE-5). */
+.wp-block-list.is-style-plain { list-style: none; margin: 0; padding: 0; }
+.wp-block-list.is-style-plain li { margin: 0; padding: 0; }
+.wp-block-list.is-style-plain a {
+  display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target);
+  color: inherit; text-decoration: none;
+}
+.wp-block-list.is-style-plain a:hover { text-decoration: underline; }
+/* From 782px a list fills four rows and then starts a second column, so the
+   six-link Shop list is no taller than the four-link ones beside it. */
+.fd-footer .wp-block-list.is-style-plain {
+  display: grid; grid-template-rows: repeat(4, auto); grid-auto-flow: column;
+  justify-content: start; column-gap: var(--wp--preset--spacing--50);
+}
+/* On a tablet the Shop column is ~150px: a second column there broke "Build a
+   box" in two. One column, six rows, until there is room. */
+@media (min-width: 782px) and (max-width: 1099px) {
+  .fd-footer .wp-block-list.is-style-plain { grid-template-rows: none; grid-auto-flow: row; }
+}
+@media (max-width: 781px) {
+  .fd-footer .wp-block-list.is-style-plain {
+    grid-template-rows: none; grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--wp--preset--spacing--40);
+  }
+  .fd-footer .wp-block-columns { gap: var(--wp--preset--spacing--40); }
+}
+
+/* ---- Home ---------------------------------------------------------------- */
+.fd-again { padding-bottom: var(--wp--preset--spacing--60); }
+/* Buy again sits on the wide rail; four columns of 1200px made 262px images,
+   bigger than the best-seller cards' below it (BROWSE-17). */
+@media (min-width: 782px) {
+  .fd-again__list { grid-template-columns: repeat(4, minmax(0, 14rem)); }
+}
+
+/* ---- Cart ---------------------------------------------------------------- */
+.fd-ship-band { margin-bottom: var(--wp--preset--spacing--50); }
+
+/* ---- Account ------------------------------------------------------------- */
+/* On a phone the six account links stacked 306px above every panel
+   (ACCOUNT-10). Under 900px — where the two columns become one — they are a
+   row of 44px chips that scrolls sideways; the current one is filled. */
+@media (max-width: 900px) {
+  .woocommerce-account.logged-in .woocommerce-MyAccount-navigation ul {
+    display: flex; gap: var(--wp--preset--spacing--20);
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
+    padding: var(--wp--preset--spacing--10) var(--wp--preset--spacing--10) var(--wp--preset--spacing--20);
+    margin: 0 calc(-1 * var(--wp--preset--spacing--10));
+  }
+  .woocommerce-account.logged-in .woocommerce-MyAccount-navigation { min-width: 0; }
+  .woocommerce-account.logged-in .woocommerce-MyAccount-navigation li { flex: 0 0 auto; scroll-snap-align: start; }
+  .woocommerce-account.logged-in .woocommerce-MyAccount-navigation li a {
+    display: inline-flex; align-items: center; white-space: nowrap;
+    padding: 0 var(--wp--preset--spacing--40);
+    border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--pill);
+    background: var(--wp--preset--color--surface);
+  }
+  .woocommerce-account.logged-in .woocommerce-MyAccount-navigation li.is-active a {
+    background: var(--wp--preset--color--char); color: var(--wp--preset--color--paper);
+    border-color: var(--wp--preset--color--char);
+  }
+}
+
+/* ---- Build a box --------------------------------------------------------- */
+/* Disabled is an outline, not a half-transparent button (2:1 at opacity .5,
+   BUY-20): the words stay AA, the missing fill says "not yet". */
+.fd-box__add:disabled, .fd-box__add[aria-disabled="true"] {
+  opacity: 1; cursor: not-allowed;
+  background: var(--wp--preset--color--paper); color: var(--wp--preset--color--mute);
+  border: 1px solid var(--wp--preset--color--line-strong); box-shadow: none;
+}
+.fd-box__status[data-state="over"] { color: var(--wp--preset--color--danger); }
 
 /* ==== LANE A: delivery-estimate, stock-alerts, offers — append this lane's rules ABOVE this line's end marker ==== */
 /* FSSAI vegetarian mark: green square outline, filled green dot. Drawn, not an
@@ -1192,14 +1503,13 @@ input:focus, select:focus, textarea:focus {
 h1 > .fd-veg { width: var(--wp--preset--spacing--50); height: var(--wp--preset--spacing--50); }
 h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--preset--spacing--30); }
 
-/* Unit price. 16px on the product page, where it is read; on a card it is
-   secondary meta like .fd-yield (sm), in char rather than mute so the small
-   size keeps full contrast. */
+/* Unit price. 16px everywhere — on a card too (was sm until the 8 Nov UX
+   review: a unit price is how two packs are compared, which is reading). */
 .fd-unit-price {
   display: block; font-weight: 400; font-variant-numeric: tabular-nums;
   font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute);
 }
-.fd-products .fd-unit-price { font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--char); }
+.fd-products .fd-unit-price { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
 
 /* Offers, under the price: one bordered list, each line a fact and its condition. */
 .fd-offers {
@@ -1348,7 +1658,7 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
   .fd-search.is-enhanced > .fd-search__toggle { display: none; }
   .fd-search.is-enhanced .fd-search__panel {
     position: relative; top: auto; left: auto; right: auto;
-    width: 15rem; padding: 0; background: none; border: 0;
+    width: 17rem; padding: 0; background: none; border: 0;   /* 17rem: the field shows its whole placeholder (BROWSE-16) */
   }
   .fd-search.is-enhanced .fd-search__pop {
     position: absolute; right: 0; top: 100%; z-index: 30; width: 24rem;
@@ -1536,7 +1846,6 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 .fd-box__per { display: block; color: var(--wp--preset--color--mute); }
 .fd-box__saving:empty, .fd-box__per:empty { display: none; }
 .fd-box__add { min-height: var(--wp--custom--tap-target); white-space: nowrap; }
-.fd-box__add:disabled { opacity: .5; cursor: not-allowed; }
 @media (min-width: 782px) {
   .fd-box__bar {
     margin: 0; border: 1px solid var(--wp--preset--color--line-strong);
@@ -1579,7 +1888,7 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 .fd-rsum__chip[aria-pressed="true"] { background: var(--wp--preset--color--char); border-color: var(--wp--preset--color--char); color: var(--wp--preset--color--paper); }
 .fd-rsum__count { margin: 0; font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
 .fd-rsum__clear {
-  justify-self: start; min-height: var(--wp--custom--tap-target); padding: 0;
+  justify-self: start; min-height: var(--wp--custom--tap-target); min-width: var(--wp--custom--tap-target); padding: 0 var(--wp--preset--spacing--20);
   background: none; border: 0; font: inherit; font-size: var(--wp--preset--font-size--base);
   color: var(--wp--preset--color--flame-ink); text-decoration: underline; cursor: pointer;
 }
@@ -1622,8 +1931,8 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 /* Block, not flex: WooCommerce prints the label as a bare text node plus a
    separate "(optional)" span, and flex made those two columns. The box sits
    in the label's start padding so the words wrap as one sentence. */
-.fd-optin label.checkbox, label.fd-optin { display: block; position: relative; padding-inline-start: calc(var(--wp--custom--tap-target) / 2 + var(--wp--preset--spacing--10)); min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); cursor: pointer; }
-.fd-optin input[type="checkbox"] { position: absolute; inset-inline-start: 0; top: .3em; margin: 0; }
+.fd-optin label.checkbox, label.fd-optin { display: block; position: relative; padding-inline-start: calc(1.25rem + var(--wp--preset--spacing--30)); min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); cursor: pointer; }
+.fd-optin input[type="checkbox"] { position: absolute; inset-inline-start: 0; top: .2em; margin: 0; width: 1.25rem; height: 1.25rem; accent-color: var(--wp--preset--color--flame-ink); }
 .fd-optin .description, .fd-optin__note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
 .fd-account-optin { border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card); padding: var(--wp--preset--spacing--40); margin: var(--wp--preset--spacing--50) 0; }
 .fd-account-optin legend { font-weight: 600; padding: 0 var(--wp--preset--spacing--20); }
@@ -1648,7 +1957,7 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 .fd-repeat-item__next { color: var(--wp--preset--color--mute); }
 .fd-repeat-item__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20); margin-top: var(--wp--preset--spacing--30); }
 .fd-repeat-item__verb { margin: 0; display: flex; gap: var(--wp--preset--spacing--20); align-items: center; }
-.fd-repeat-item__actions .fd-danger { color: var(--wp--preset--color--flame-ink); }
+.fd-repeat-item__actions .fd-danger { color: var(--wp--preset--color--danger); }
 
 /* Refer a friend. */
 .fd-refer { padding: var(--wp--preset--spacing--50); background: var(--wp--preset--color--kraft-pale); border-radius: var(--wp--custom--radius--card); }
@@ -1668,3 +1977,95 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 .fd-refer__reward-code { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: .06em; }
 .fd-refer__reward.is-revoked, .fd-refer__reward.is-used { color: var(--wp--preset--color--mute); }
 /* ==== END LANE D ==== */
+
+/* ==== UX FIX WAVE (8 Nov 2026) — product page and cards (fix-product handoff) ==== */
+/* PRODUCT-3/10: Offers is one closed line under Add to cart. */
+.fd-offers > summary.fd-offers__title {
+  display: flex; align-items: center; gap: var(--wp--preset--spacing--20);
+  min-height: var(--wp--custom--tap-target); margin: 0; cursor: pointer; list-style: none;
+  font-weight: 600; font-size: var(--wp--preset--font-size--base);
+}
+.fd-offers > summary.fd-offers__title::-webkit-details-marker { display: none; }
+.fd-offers > summary.fd-offers__title::after { content: "▾"; margin-left: auto; }
+.fd-offers[open] > summary.fd-offers__title::after { content: "▴"; }
+.fd-offers > summary:focus-visible { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+.fd-offers[open] .fd-offers__list { margin-top: var(--wp--preset--spacing--20); }
+
+/* PRODUCT-4/14: the note under the assurances, at the 16px floor. */
+.fd-assure__note { margin: 0; color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
+
+/* PRODUCT-5: badges under the H1 (the card's .fd-badge, laid out inline). */
+.fd-pdp-tags { display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--10); margin: var(--wp--preset--spacing--20) 0 0; }
+.fd-pdp-tags .fd-badge { margin-left: 0; }
+
+/* BROWSE-1: the card leads with method + time, base/600, one line. */
+/* The chip's own border separates it from "Serves 2"; on a narrow card the
+   servings move under the chip instead of leaving a "·" at a line end. */
+.fd-products .fd-card-prep { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--wp--preset--spacing--20); row-gap: var(--wp--preset--spacing--10); margin: 0 0 var(--wp--preset--spacing--10); font-size: var(--wp--preset--font-size--base); font-weight: 600; line-height: 1.3; }
+.fd-products .fd-card-prep .fd-chip { font-size: inherit; }
+.fd-products .fd-card-prep__serves { color: var(--wp--preset--color--char); font-variant-numeric: tabular-nums; }
+/* BROWSE-18: diet tags as text under the name. */
+.fd-products .fd-card-diet { margin: 0; font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--leaf-ink); }
+
+/* PRODUCT-20 */
+.fd-allergens { margin: var(--wp--preset--spacing--20) 0 0; font-size: var(--wp--preset--font-size--base); }
+.fd-spec__list > div.fd-spec__row--allergens dt,
+.fd-spec__list > div.fd-spec__row--allergens dd { font-weight: 700; }
+
+/* PRODUCT-15: stars and histogram in flame-ink; the PDP rating row. */
+.fd-stars { color: var(--wp--preset--color--flame-ink); }            /* was flame-deep */
+.fd-rsum__bar > i { background: var(--wp--preset--color--flame-ink); } /* was flame */
+.fd-rating { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--wp--preset--spacing--10); font-size: var(--wp--preset--font-size--base); }
+.fd-rating__score { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* PRODUCT-18 */
+.fd-deliver__input.is-invalid, .fd-deliver__input[aria-invalid="true"] { border-color: var(--wp--preset--color--danger); }
+
+/* PRODUCT-19: focus lands on the alert form after a redirect. */
+.fd-notify:focus { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+
+/* PRODUCT-6: the script hides chips with none on the page ([hidden] escape —
+   reviews-test now checks .fd-rsum__chip too). */
+.fd-rsum__chip[hidden] { display: none; }
+
+/* PRODUCT-11: combo items are links; the panel now sits under Add to cart. */
+.fd-combo { margin-top: var(--wp--preset--spacing--40); }
+.fd-combo__link { color: inherit; text-decoration: underline; }
+
+/* BROWSE-21: a sold-out card's unit price reads as muted. */
+.fd-products > .wp-block-post.outofstock .fd-unit-price { color: var(--wp--preset--color--mute); }
+
+/* WooCommerce prints .screen-reader-text in many places (price, pagination,
+   notices) and the theme defines only .fd-sr. Alias it, or those texts show. */
+.screen-reader-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: -1px; padding: 0; border: 0; }
+
+/* ==== UX FIX WAVE — cart, checkout, box, account (fix-buy handoff) ==== */
+/* BUY-11/16: the PIN note under the checkout PIN field */
+.fd-pin-note { display: block; margin-top: var(--wp--preset--spacing--10); font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--char); }
+.fd-pin-note:empty { display: none; }
+.fd-pin-note.is-ok .fd-pin-note__msg { color: var(--wp--preset--color--leaf-ink); }
+.fd-pin-note.is-no, .fd-pin-note.is-error { color: var(--wp--preset--color--flame-deep); }
+/* BUY-2 */
+.fd-address-choose__status { margin: var(--wp--preset--spacing--20) 0 0; font-size: var(--wp--preset--font-size--base); }
+.fd-address-choose__status:empty { display: none; }
+/* BUY-10: the status is a way to step 1 */
+.fd-box__status-go { display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); font-weight: 600; color: var(--wp--preset--color--flame-ink); }
+.fd-box__qty:disabled { opacity: 1; background: var(--wp--preset--color--paper); color: var(--wp--preset--color--mute); }
+/* BUY-25 */
+.fd-cart-prepaid td { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--leaf-ink); }
+/* ACCOUNT-2 / -7 */
+.fd-repeat-item__stop > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target); }
+.fd-repeat-item__stop > summary::-webkit-details-marker { display: none; }
+.fd-repeat-item__stop[open] { flex-basis: 100%; display: grid; gap: var(--wp--preset--spacing--20); }
+.fd-repeat-item__stop-note { margin: 0; font-size: var(--wp--preset--font-size--base); }
+.fd-repeat__done { margin: 0 0 var(--wp--preset--spacing--20); font-weight: 600; font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--leaf-ink); }
+/* BROWSE-7: the shelf card's prep line */
+.fd-again .fd-card-prep { margin: var(--wp--preset--spacing--10) 0 0; }
+.fd-again__name .fd-veg { margin-right: var(--wp--preset--spacing--10); vertical-align: middle; }
+/* BROWSE-9 */
+.fd-search__all .fd-search__link { font-weight: 600; color: var(--wp--preset--color--flame-ink); border-top: 1px solid var(--wp--preset--color--line); }
+/* BROWSE-10 */
+.fd-search-again { display: grid; gap: var(--wp--preset--spacing--10); margin: var(--wp--preset--spacing--30) 0 var(--wp--preset--spacing--40); max-width: 40rem; }
+.fd-search-again__label { font-weight: 600; font-size: var(--wp--preset--font-size--base); }
+.fd-search-again__row { display: flex; gap: var(--wp--preset--spacing--20); }
+.fd-search-again__input { flex: 1; min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--card); padding: 0 var(--wp--preset--spacing--30); }

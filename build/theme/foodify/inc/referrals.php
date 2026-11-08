@@ -318,10 +318,12 @@ function foodify_referral_panel_html( array $d ): string {
 		. '<p class="fd-refer__code"><span class="fd-refer__code-label">Your code</span> <strong class="fd-refer__code-value">' . $e( (string) $d['code'] ) . '</strong></p>'
 		. '<p class="fd-refer__link"><label class="fd-refer__code-label" for="fd-refer-link">Your link</label>'
 		. '<input id="fd-refer-link" class="fd-refer__input" type="text" readonly value="' . $e( $link ) . '"></p>'
+		// WhatsApp is how this is actually shared in India, so it is the main
+		// button; Copy link and the browser's Share are the alternatives (ACCOUNT-13).
 		. '<div class="fd-refer__actions">'
-		. '<button type="button" class="wp-element-button" data-fd-share data-text="' . $e( $text ) . '" data-url="' . $e( $link ) . '" hidden>Share</button>'
+		. '<a class="wp-element-button fd-refer__wa" href="https://wa.me/?text=' . $e( rawurlencode( $text ) ) . '">Send on WhatsApp</a>'
 		. '<button type="button" class="fd-secondary" data-fd-copy data-url="' . $e( $link ) . '">Copy link</button>'
-		. '<a class="fd-secondary" href="https://wa.me/?text=' . $e( rawurlencode( $text ) ) . '">Send on WhatsApp</a>'
+		. '<button type="button" class="fd-secondary" data-fd-share data-text="' . $e( $text ) . '" data-url="' . $e( $link ) . '" hidden>Share</button>'
 		. '</div>'
 		. '<p class="fd-refer__status" role="status" aria-live="polite"></p>'
 		. '<p class="fd-refer__rules">' . $e( (string) $l['rules'] ) . '</p>';

@@ -158,6 +158,32 @@ function foodify_gateway_saving_label( float $eligible, string $gateway_id, arra
 	return sprintf( 'Save ₹%s', number_format( $amount, 0, '.', ',' ) );
 }
 
+/**
+ * The cart's nudge toward paying online (review BUY-25): "Pay online at
+ * checkout and save ₹25".
+ *
+ * The same function, the same config and the same eligible figure as the fee,
+ * so the cart cannot promise a saving the checkout does not give. Shown only
+ * when at least one ONLINE gateway is actually available — a store running on
+ * cash on delivery alone must not advertise a saving nobody can take.
+ *
+ * @param array<int,string> $gateway_ids The ids WooCommerce would offer at checkout.
+ */
+function foodify_cart_prepaid_hint( float $eligible, array $gateway_ids, array $cfg ): string {
+	$cfg = array_merge( foodify_payment_defaults(), $cfg );
+	foreach ( $gateway_ids as $id ) {
+		$id = (string) $id;
+		if ( '' === $id || foodify_is_cod( $id, $cfg ) ) {
+			continue;
+		}
+		$amount = foodify_prepaid_discount( $eligible, $id, $cfg );
+		if ( $amount > 0.0 ) {
+			return sprintf( 'Pay online at checkout and save ₹%s', number_format( $amount, 0, '.', ',' ) );
+		}
+	}
+	return '';
+}
+
 /* -------------------------------------------------------------------------
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
@@ -322,3 +348,18 @@ add_filter( 'woocommerce_gateway_title', static function ( $title, $gateway_id )
  * Whatever path a COD order takes to being real, the partner is credited once —
  * late at worst, rather than never. See inc/coupon-attribution.php.
  */
+
+/** The prepaid saving, named in the cart (BUY-25). See foodify_cart_prepaid_hint(). */
+add_action( 'woocommerce_cart_totals_after_order_total', static function (): void {
+	if ( ! function_exists( 'WC' ) || ! WC()->cart || ! WC()->payment_gateways() ) {
+		return;
+	}
+	$hint = foodify_cart_prepaid_hint(
+		(float) WC()->cart->get_cart_contents_total(),
+		array_keys( (array) WC()->payment_gateways()->get_available_payment_gateways() ),
+		foodify_payment_config()
+	);
+	if ( '' !== $hint ) {
+		printf( '<tr class="fd-cart-prepaid"><td colspan="2">%s</td></tr>', esc_html( $hint ) );
+	}
+} );

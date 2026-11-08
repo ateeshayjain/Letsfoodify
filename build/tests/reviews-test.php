@@ -333,12 +333,61 @@ check( 'it cannot end the script block early', ! str_contains( $js, '</script' )
 check( 'photos open in a <dialog>, not a lightbox library', str_contains( $js, "createElement('dialog')" ) && str_contains( $js, 'showModal()' ) );
 check( 'the filter reveals itself only when it can work', str_contains( $js, 'bar.hidden=false' ) );
 $css = (string) file_get_contents( __DIR__ . '/../theme/foodify/style.css' );
-foreach ( [ 'fd-rsum__filter', 'fd-rsum__clear', 'fd-rv' ] as $cls ) {
+foreach ( [ 'fd-rsum__filter', 'fd-rsum__clear', 'fd-rv', 'fd-rsum__chip' ] as $cls ) {
 	$sets_display = (bool) preg_match( '/\.' . preg_quote( $cls, '/' ) . '(?![\w-])[^{}]*\{[^{}]*display:\s*(?!none)/', $css );
 	$has_escape   = (bool) preg_match( '/\.' . preg_quote( $cls, '/' ) . '\[hidden\][^{}]*\{[^{}]*display:\s*none/', $css );
 	check( ".$cls: hidden by the script, and CSS lets it be", $has_escape || ! $sets_display );
 }
 check( 'filter chips are tap-target high', (bool) preg_match( '/\.fd-rsum__chip\s*\{[^}]*min-height:\s*var\(--wp--custom--tap-target\)/', $css ) );
+
+echo "── PRODUCT-15: one star rule, title and summary ──\n";
+check( '4.7 is ★★★★☆ — floor, never rounded up into a fifth star', '★★★★☆' === foodify_star_glyphs( 4.7 ) );
+check( '4.0 is four, 5.0 is five, 0.4 is none', '★★★★☆' === foodify_star_glyphs( 4.0 ) && '★★★★★' === foodify_star_glyphs( 5.0 ) && '☆☆☆☆☆' === foodify_star_glyphs( 0.4 ) );
+check( 'out-of-range input is clamped', '★★★★★' === foodify_star_glyphs( 7.0 ) && '☆☆☆☆☆' === foodify_star_glyphs( -1.0 ) );
+$sum = foodify_review_summary_html( foodify_review_histogram( array_merge( array_fill( 0, 62, 5 ), array_fill( 0, 22, 4 ) ) ), 0 );
+check( 'the summary for 4.7 shows ★★★★☆ (it showed ★★★★★ under a ★★★★☆ title)', str_contains( $sum, '<span class="fd-stars" aria-hidden="true">★★★★☆</span>' ) );
+$pr = foodify_pdp_rating_html( 4.74, 84 );
+check( 'the title row: the same glyphs, hidden from readers', str_contains( $pr, '<span class="fd-stars" aria-hidden="true">★★★★☆</span>' ) );
+check( '… and a reader hears "Rated 4.7 out of 5"', str_contains( $pr, '<span class="fd-sr">Rated 4.7 out of 5</span>' ) );
+check( '… with the count linking to the reviews', str_contains( $pr, '<a href="#reviews" class="woocommerce-review-link" rel="nofollow">(84 reviews)</a>' ) );
+check( 'no reviews, no row', '' === foodify_pdp_rating_html( 0.0, 0 ) );
+check( 'title and summary call the same rule', str_contains( (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/reviews.php' ), '$stars = foodify_star_glyphs( $avg );' ) );
+
+echo "── PRODUCT-6: the chips say what they will show ──\n";
+check( 'all reviews on the page: "Filter reviews"', 'Filter reviews' === foodify_review_filter_label( 84, 84 ) );
+check( 'five of 84 on the page: "Filter the 5 reviews shown"', 'Filter the 5 reviews shown' === foodify_review_filter_label( 5, 84 ) );
+check( 'one of 84: singular', 'Filter the 1 review shown' === foodify_review_filter_label( 1, 84 ) );
+check( 'the summary ships the label where the script can rewrite it', str_contains( $sum, '<p class="fd-rsum__label" id="fd-rsum-label" data-fd-filter-label>Filter reviews</p>' ) );
+check( 'the script uses the same words', str_contains( $js, "'Filter the '+items.length+' '+word(items.length)+' shown'" ) );
+check( 'the histogram keeps the totals (62 five-star)', str_contains( $sum, '5 stars: 62 reviews' ) );
+$node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
+check( 'node is available to run the review script', '' !== $node );
+if ( '' !== $node ) {
+	exec( escapeshellarg( $node ) . ' ' . escapeshellarg( __DIR__ . '/pdp-scripts.js' ) . ' 2>&1', $rs_out, $rs_rc );
+	$rs_last = (string) preg_replace( '/\e\[[\d;]*m/', '', (string) end( $rs_out ) );
+	check( 'paged chips recount, as behaviour (tests/pdp-scripts.js) — ' . $rs_last, 0 === $rs_rc && (bool) preg_match( '/^\d+ passed, 0 failed$/', $rs_last ) );
+}
+
+echo "── PRODUCT-23: photos ──\n";
+$two = foodify_review_photos_html( [
+	[ 'thumb' => '/u/1t.jpg', 'full' => '/u/1.jpg' ],
+	[ 'thumb' => 'javascript:x', 'full' => '/u/x.jpg' ],
+	[ 'thumb' => '/u/2t.jpg', 'full' => '/u/2.jpg' ],
+], 'Rakesh M.' );
+check( 'numbered alts, counting only the photos printed', str_contains( $two, 'alt="Photo 1 of 2 from Rakesh&#039;s review"' ) && str_contains( $two, 'alt="Photo 2 of 2 from Rakesh&#039;s review"' ) );
+check( 'one photo is not numbered', "Photo from Priya's review" === foodify_review_photo_alt( 'Priya', 1, 1 ) );
+check( 'the photo dialog is named "Review photo"', str_contains( $js, "dlg.setAttribute('aria-label','Review photo')" ) );
+
+echo "── PRODUCT-24: no reviews yet ──\n";
+check( 'no reviews: heading "Reviews"', 'Reviews' === foodify_review_section_copy( 0 )['title'] );
+check( 'no reviews: one line on how to leave one', 'Bought it? You can review it from My account → Orders.' === foodify_review_section_copy( 0 )['sub'] );
+check( 'with reviews: as before', 'What people said' === foodify_review_section_copy( 3 )['title'] );
+$wc_empty = '<div id="reviews" class="woocommerce-Reviews"><div id="comments"><h2 class="woocommerce-Reviews-title">Reviews</h2><p class="woocommerce-noreviews">There are no reviews yet.</p></div><div id="review_form_wrapper">form</div></div>';
+$stripped = foodify_review_strip_empty_state( $wc_empty );
+check( 'WooCommerce\'s second "Reviews" heading and "no reviews yet" go', ! str_contains( $stripped, 'woocommerce-Reviews-title' ) && ! str_contains( $stripped, 'There are no reviews yet' ) );
+check( '… the form for a verified buyer stays', str_contains( $stripped, 'review_form_wrapper' ) && str_contains( $stripped, 'id="reviews"' ) );
+$tpl = (string) file_get_contents( __DIR__ . '/../theme/foodify/templates/single-product.html' );
+check( 'the template\'s heading and line carry the classes the filter swaps', str_contains( $tpl, '"className":"fd-reviews__title"' ) && str_contains( $tpl, '"className":"fd-reviews__sub"' ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

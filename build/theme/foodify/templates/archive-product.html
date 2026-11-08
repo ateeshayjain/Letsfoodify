@@ -18,8 +18,14 @@
 <div class="wp-block-columns alignwide fd-shop">
 <!-- wp:column {"width":"232px","className":"fd-shop__filters"} -->
 <div class="wp-block-column fd-shop__filters" style="flex-basis:232px">
-<!-- wp:details {"showContent":true,"className":"fd-filters"} -->
-<details class="wp-block-details fd-filters" open><summary>Filter</summary>
+<!-- Printed CLOSED (UX review 8 Nov, BROWSE-2): open on a phone, the filters
+     filled the screen above the results, so ticking one showed no change. The
+     script straight after this block opens it from 782px BEFORE first paint
+     (it runs as the parser reaches it — no flash, no layout shift). Without
+     JavaScript the summary is a "Filter" control at every width (style.css).
+     .fd-filters__count holds the number of active filters ("Filter · 2"). -->
+<!-- wp:details {"className":"fd-filters"} -->
+<details class="wp-block-details fd-filters"><summary>Filter<span class="fd-filters__count"></span></summary>
 <!-- wp:woocommerce/filter-wrapper {"filterType":"attribute-filter","heading":"Prep method"} -->
 <div class="wp-block-woocommerce-filter-wrapper">
 <!-- wp:woocommerce/attribute-filter {"attributeId":0,"foodifyAttribute":"prep","heading":"Prep method","displayStyle":"list","showCounts":true} /-->
@@ -37,6 +43,9 @@
 <!-- /wp:woocommerce/filter-wrapper -->
 </details>
 <!-- /wp:details -->
+<!-- wp:html -->
+<script>if(matchMedia('(min-width:782px)').matches){document.querySelectorAll('details.fd-filters').forEach(function(d){d.open=true})}</script>
+<!-- /wp:html -->
 </div>
 <!-- /wp:column -->
 <!-- wp:column {"className":"fd-shop__results"} -->
@@ -46,9 +55,12 @@
 <!-- wp:woocommerce/product-results-count /-->
 <!-- wp:group {"className":"fd-sort","layout":{"type":"flex","flexWrap":"nowrap"}} -->
 <div class="wp-block-group fd-sort">
-<!-- wp:paragraph {"className":"fd-sort__label","fontSize":"sm"} -->
-<p class="fd-sort__label has-sm-font-size">Sort by</p>
-<!-- /wp:paragraph -->
+<!-- A real <label>, 16px. The select is WooCommerce's (catalog-sorting); it
+     needs id="fd-orderby" from the catalog-sorting render filter for the label
+     to bind — see the LOOK handoff. -->
+<!-- wp:html -->
+<label class="fd-sort__label" for="fd-orderby">Sort by</label>
+<!-- /wp:html -->
 <!-- wp:woocommerce/catalog-sorting /-->
 </div>
 <!-- /wp:group -->
@@ -61,10 +73,10 @@
 <!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
 <!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
 <!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->
-<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true,"fontSize":"sm"} /-->
+<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true} /-->
 <!-- /wp:post-template -->
 <!-- wp:query-pagination {"layout":{"type":"flex","justifyContent":"center"}} -->
-<!-- wp:query-pagination-previous /--><!-- wp:query-pagination-numbers /--><!-- wp:query-pagination-next /-->
+<!-- wp:query-pagination-previous {"label":"Previous"} /--><!-- wp:query-pagination-numbers /--><!-- wp:query-pagination-next {"label":"Next"} /-->
 <!-- /wp:query-pagination -->
 <!-- wp:query-no-results -->
 <!-- wp:paragraph --><p>No products match those filters. <a href="/shop/">Clear them and start again.</a></p><!-- /wp:paragraph -->
