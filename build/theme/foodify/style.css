@@ -1171,3 +1171,497 @@ input:focus, select:focus, textarea:focus {
 .fd-sticky-atc__qty { font-size: var(--wp--preset--font-size--xs); opacity: .8; }
 .fd-sticky-atc .wp-element-button { flex: 0 0 auto; }
 @media (min-width: 782px) { .fd-sticky-atc { display: none; } }
+
+
+/* ==== LANE A: delivery-estimate, stock-alerts, offers — append this lane's rules ABOVE this line's end marker ==== */
+/* FSSAI vegetarian mark: green square outline, filled green dot. Drawn, not an
+   image. The outline is two 1px rings (border + inset shadow) so it reads at
+   card size without a non-token border width. */
+.fd-veg {
+  display: inline-grid; place-items: center; vertical-align: middle; flex: none;
+  width: var(--wp--preset--spacing--40); height: var(--wp--preset--spacing--40);
+  margin-right: var(--wp--preset--spacing--20);
+  border: 1px solid var(--wp--preset--color--leaf);
+  box-shadow: inset 0 0 0 1px var(--wp--preset--color--leaf);
+  background: var(--wp--preset--color--surface);
+}
+.fd-veg::after {
+  content: ""; border-radius: 50%; background: var(--wp--preset--color--leaf);
+  width: var(--wp--preset--spacing--20); height: var(--wp--preset--spacing--20);
+}
+h1 > .fd-veg { width: var(--wp--preset--spacing--50); height: var(--wp--preset--spacing--50); }
+h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--preset--spacing--30); }
+
+/* Unit price. 16px on the product page, where it is read; on a card it is
+   secondary meta like .fd-yield (sm), in char rather than mute so the small
+   size keeps full contrast. */
+.fd-unit-price {
+  display: block; font-weight: 400; font-variant-numeric: tabular-nums;
+  font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute);
+}
+.fd-products .fd-unit-price { font-size: var(--wp--preset--font-size--sm); color: var(--wp--preset--color--char); }
+
+/* Offers, under the price: one bordered list, each line a fact and its condition. */
+.fd-offers {
+  margin: var(--wp--preset--spacing--40) 0 0;
+  padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--40);
+  border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card);
+  background: var(--wp--preset--color--surface);
+}
+.fd-offers__title { margin: 0 0 var(--wp--preset--spacing--20); font-family: var(--wp--preset--font-family--ui); font-weight: 700; font-size: var(--wp--preset--font-size--base); }
+.fd-offers__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--20); }
+.fd-offer { position: relative; padding-left: var(--wp--preset--spacing--50); font-size: var(--wp--preset--font-size--base); line-height: 1.4; }
+.fd-offer::before {
+  content: ""; position: absolute; left: 0; top: var(--wp--preset--spacing--10);
+  width: var(--wp--preset--spacing--30); height: var(--wp--preset--spacing--30);
+  border-radius: 50%; background: var(--wp--preset--color--leaf);
+}
+.fd-offer__text { display: block; font-weight: 600; color: var(--wp--preset--color--char); }
+.fd-offer__detail { display: block; color: var(--wp--preset--color--mute); }
+
+/* Delivery by PIN, above Add to cart. The field holds six digits, so it is
+   not the widest thing in the row; the button is secondary to Add to cart. */
+.fd-deliver { margin: var(--wp--preset--spacing--40) 0 0; }
+.fd-deliver__label, .fd-notify__label { display: block; margin-bottom: var(--wp--preset--spacing--20); font-weight: 600; font-size: var(--wp--preset--font-size--base); }
+.fd-deliver__row, .fd-notify__row { display: flex; gap: var(--wp--preset--spacing--20); }
+.fd-deliver__input, .fd-notify__input { flex: 1 1 0; min-width: 0; padding: 0 var(--wp--preset--spacing--30); }
+.fd-deliver__input { font-variant-numeric: tabular-nums; letter-spacing: .08em; }
+.fd-deliver__go {
+  flex: none; padding: 0 var(--wp--preset--spacing--50);
+  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--flame-ink);
+  border: 1px solid var(--wp--preset--color--line-strong); box-shadow: inset 0 0 0 1px var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--pill);
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+.fd-deliver__go:hover { border-color: var(--wp--preset--color--flame-ink); }
+.fd-deliver__out { margin: var(--wp--preset--spacing--20) 0 0; font-size: var(--wp--preset--font-size--base); line-height: 1.4; }
+.fd-deliver__out:empty { display: none; }
+.fd-deliver__msg { display: block; }
+.fd-deliver__out.is-ok .fd-deliver__msg { color: var(--wp--preset--color--leaf-ink); }
+.fd-deliver__out.is-error .fd-deliver__msg { color: var(--wp--preset--color--danger); }
+.fd-deliver__detail { display: block; color: var(--wp--preset--color--mute); }
+
+/* Notify me, on a sold-out product page. */
+.fd-notify {
+  margin: var(--wp--preset--spacing--40) 0 0; padding: var(--wp--preset--spacing--40);
+  border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--card);
+  background: var(--wp--preset--color--surface);
+}
+.fd-notify__title { margin: 0 0 var(--wp--preset--spacing--20); font-weight: 700; font-size: var(--wp--preset--font-size--md); }
+.fd-notify__go { flex: none; }
+.fd-notify__privacy { margin: var(--wp--preset--spacing--20) 0 0; font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+.fd-notify__error { margin: 0 0 var(--wp--preset--spacing--20); font-weight: 600; color: var(--wp--preset--color--danger); }
+.fd-notify__msg { margin: 0 0 var(--wp--preset--spacing--20); font-weight: 600; color: var(--wp--preset--color--leaf-ink); }
+.fd-notify.is-done .fd-notify__msg { margin: 0; }
+.fd-notify__cancel { margin: var(--wp--preset--spacing--20) 0 0; }
+.fd-notify__undo {
+  padding: 0; background: none; border: 0; font: inherit; cursor: pointer;
+  color: var(--wp--preset--color--flame-ink); text-decoration: underline;
+}
+/* A sold-out card whose product takes alerts: its button is a real link again
+   (the rule above greys and disables every sold-out button). */
+.fd-products > .wp-block-post.outofstock .wc-block-components-product-button .wp-block-button__link[href$="#fd-notify"] {
+  pointer-events: auto; cursor: pointer;
+  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--flame-ink);
+  box-shadow: inset 0 0 0 1px var(--wp--preset--color--line-strong);
+}
+/* ==== END LANE A ==== */
+
+/* ==== LANE B: search, buy-again, order-actions — append this lane's rules ABOVE this line's end marker ==== */
+/* Visually hidden, still read aloud. The same clip the account label uses. */
+.fd-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: -1px; padding: 0; border: 0; }
+
+/* ---- 2 · header search (inc/search.php, parts/header.html) --------------
+   A <details>: closed it is a 44px icon; open, the field drops under the
+   header row at the row's full width. From 1200px, once the script has run
+   (.is-enhanced), it sits open beside the account as an ordinary field. */
+.wp-block-group.fd-header { position: relative; }
+.fd-search { flex: 0 0 auto; }
+.fd-search__toggle {
+  list-style: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  border: 1px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--pill);
+  color: var(--wp--preset--color--char);
+}
+.fd-search__toggle::-webkit-details-marker { display: none; }
+.fd-search__toggle:hover { color: var(--wp--preset--color--flame-ink); border-color: var(--wp--preset--color--flame-ink); }
+.fd-search__toggle > span { display: inline-flex; }
+.fd-search[open] .fd-search__when-closed,
+.fd-search:not([open]) .fd-search__when-open { display: none; }
+.fd-search__icon { width: 1.35rem; height: 1.35rem; flex: 0 0 auto; }
+.fd-search__panel {
+  position: absolute; left: 0; right: 0; z-index: 30;
+  top: calc(100% + var(--wp--preset--spacing--30));
+  padding: var(--wp--preset--spacing--30) 0;
+  background: var(--wp--preset--color--paper);
+  border-bottom: 1px solid var(--wp--preset--color--line);
+}
+.fd-search__form { display: flex; gap: var(--wp--preset--spacing--20); margin: 0; }
+.fd-search__input {
+  flex: 1 1 auto; min-width: 0;
+  min-height: var(--wp--custom--tap-target);
+  padding: 0 var(--wp--preset--spacing--30);
+  border: 1px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--surface);
+  color: var(--wp--preset--color--char);
+  font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--base);   /* 16px: also stops iOS zooming the page */
+}
+.fd-search__input::placeholder { color: var(--wp--preset--color--mute); opacity: 1; }
+.fd-search__go {
+  flex: 0 0 auto; width: var(--wp--custom--tap-target); padding: 0;
+  border: 0; border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--flame-ink); color: var(--wp--preset--color--surface); cursor: pointer;
+}
+.fd-search__go:hover { background: var(--wp--preset--color--char); }
+.fd-search__pop {
+  margin-top: var(--wp--preset--spacing--20);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  padding: var(--wp--preset--spacing--20);
+}
+.fd-search__pop[hidden], .fd-search__none[hidden] { display: none; }
+.fd-search__none { margin: var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--30); font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--char); }
+.fd-search__list { list-style: none; margin: 0; padding: 0; }
+.fd-search__link {
+  display: flex; align-items: center; gap: var(--wp--preset--spacing--30);
+  min-height: var(--wp--custom--tap-target);
+  padding: var(--wp--preset--spacing--20);
+  border-radius: var(--wp--custom--radius--control);
+  color: var(--wp--preset--color--char); text-decoration: none;
+}
+.fd-search__opt[aria-selected="true"] .fd-search__link,
+.fd-search__link:hover { background: var(--wp--preset--color--kraft-pale); }
+.fd-search__img {
+  flex: 0 0 auto; width: 3rem; height: 3rem; object-fit: cover; display: block;
+  border-radius: var(--wp--custom--radius--control); background: var(--wp--preset--color--kraft-pale);
+}
+.fd-search__text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.fd-search__name { font-weight: 600; font-size: var(--wp--preset--font-size--base); line-height: 1.3; }
+.fd-search__meta { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); font-variant-numeric: tabular-nums; }
+.fd-search__sold { flex: 0 0 auto; font-size: var(--wp--preset--font-size--base); font-weight: 600; color: var(--wp--preset--color--danger); }
+@media (min-width: 1200px) {
+  .fd-search.is-enhanced > .fd-search__toggle { display: none; }
+  .fd-search.is-enhanced .fd-search__panel {
+    position: relative; top: auto; left: auto; right: auto;
+    width: 15rem; padding: 0; background: none; border: 0;
+  }
+  .fd-search.is-enhanced .fd-search__pop {
+    position: absolute; right: 0; top: 100%; z-index: 30; width: 24rem;
+  }
+}
+/* A phone has 328px of header row at 360. Logo, menu, search, account and the
+   cart pill fit only once the row tightens: smaller gaps, and the cart pill
+   drops its amount (still announced, and shown in the drawer one tap away). */
+@media (max-width: 599px) {
+  .wp-block-group.fd-header { gap: var(--wp--preset--spacing--20); }
+  .fd-header__actions { gap: var(--wp--preset--spacing--10); }
+  .wc-block-mini-cart .wc-block-mini-cart__button { padding: 0 var(--wp--preset--spacing--30) 0 var(--wp--preset--spacing--20); }
+  .wc-block-mini-cart .wc-block-mini-cart__amount {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
+
+/* The results page: the no-match line above the three popular products. */
+.fd-search-none { margin: 0 0 var(--wp--preset--spacing--40); }
+
+/* ---- 7 · buy again (inc/buy-again.php, templates/front-page.html) ------- */
+.fd-again { padding-top: var(--wp--preset--spacing--70); }
+.fd-again__title { margin: 0; font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--2xl); }
+.fd-again__lede { margin: var(--wp--preset--spacing--20) 0 var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
+.fd-again__list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--wp--preset--spacing--40);
+}
+.fd-again__item {
+  display: flex; flex-direction: column; gap: var(--wp--preset--spacing--20);
+  padding: var(--wp--preset--spacing--30);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+}
+.fd-again__link { display: flex; flex-direction: column; gap: var(--wp--preset--spacing--20); color: var(--wp--preset--color--char); text-decoration: none; }
+.fd-again__link:hover .fd-again__name { color: var(--wp--preset--color--flame-ink); }
+.fd-again__img {
+  display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover;
+  border-radius: var(--wp--custom--radius--control); background: var(--wp--preset--color--kraft-pale);
+}
+.fd-again__name { font-weight: 600; font-size: var(--wp--preset--font-size--base); line-height: 1.3; }
+.fd-again__price { font-weight: 600; font-size: var(--wp--preset--font-size--base); font-variant-numeric: tabular-nums; }
+.fd-again__add { margin-top: auto; width: 100%; box-sizing: border-box; padding-left: var(--wp--preset--spacing--30); padding-right: var(--wp--preset--spacing--30); text-decoration: none; }
+.fd-again__add[aria-disabled="true"] { background: var(--wp--preset--color--leaf-ink); }
+/* A phone gets a row to swipe — two and a bit cards — not a 2×2 block that
+   pushes everything under it a screen further down. */
+@media (max-width: 781px) {
+  .fd-again__list {
+    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(9.5rem, 44%);
+    overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: var(--wp--preset--spacing--20);
+  }
+  .fd-again__item { scroll-snap-align: start; }
+}
+
+/* ---- 10 · cancel / return (inc/order-actions.php, view-order) ----------- */
+.fd-order-actions {
+  display: grid; gap: var(--wp--preset--spacing--30);
+  margin-top: var(--wp--preset--spacing--60); padding-top: var(--wp--preset--spacing--50);
+  border-top: 1px solid var(--wp--preset--color--line);
+}
+.fd-order-actions__title { margin: 0; font-size: var(--wp--preset--font-size--lg); }
+.fd-order-actions details {
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+}
+.fd-order-actions__toggle {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--wp--preset--spacing--30);
+  min-height: var(--wp--custom--tap-target); padding: 0 var(--wp--preset--spacing--40);
+  font-weight: 600; font-size: var(--wp--preset--font-size--base);
+}
+.fd-order-actions__toggle::-webkit-details-marker { display: none; }
+.fd-order-actions__toggle::after { content: "+"; font-size: var(--wp--preset--font-size--lg); color: var(--wp--preset--color--mute); }
+.fd-order-actions details[open] > .fd-order-actions__toggle::after { content: "−"; }
+.fd-order-actions__form { display: grid; gap: var(--wp--preset--spacing--30); padding: 0 var(--wp--preset--spacing--40) var(--wp--preset--spacing--40); margin: 0; }
+.fd-order-actions__form p { margin: 0; }
+.fd-order-actions__confirm { justify-self: start; }
+.fd-order-actions__confirm.is-danger { background: var(--wp--preset--color--danger); color: var(--wp--preset--color--surface); }
+.fd-order-actions__confirm.is-danger:hover { background: var(--wp--preset--color--char); }
+.fd-order-actions__note { margin: 0; font-size: var(--wp--preset--font-size--base); }
+.fd-return__reasons { margin: 0; padding: 0; border: 0; display: grid; gap: var(--wp--preset--spacing--10); }
+.fd-return__reasons legend { font-weight: 600; margin-bottom: var(--wp--preset--spacing--20); padding: 0; }
+.fd-return__reason { display: flex; align-items: center; gap: var(--wp--preset--spacing--20); min-height: var(--wp--custom--tap-target); cursor: pointer; }
+.fd-return__reason input { width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--wp--preset--color--flame-ink); }
+.fd-return__note-label { font-weight: 600; }
+.fd-return__note {
+  width: 100%; box-sizing: border-box; padding: var(--wp--preset--spacing--30);
+  border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--char);
+  font-family: var(--wp--preset--font-family--ui); font-size: var(--wp--preset--font-size--base);
+}
+/* The orders list: Cancel and Report a problem read as secondary, like Details. */
+.woocommerce-orders-table .foodify-cancel,
+.woocommerce-orders-table .foodify-return {
+  background: transparent; color: var(--wp--preset--color--char);
+  border: 1px solid var(--wp--preset--color--line-strong);
+}
+/* ==== END LANE B ==== */
+
+/* ==== LANE C: box-builder — append this lane's rules ABOVE this line's end marker ==== */
+/* Lane C also owns the review summary, filter and photos (inc/reviews.php). */
+
+/* Text for screen readers only (this theme defines no .screen-reader-text). */
+.fd-sr {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ---- Build your own box: /build-a-box/ ---------------------------------- */
+.fd-box { display: grid; gap: var(--wp--preset--spacing--50); }
+.fd-box__form { display: grid; gap: var(--wp--preset--spacing--50); }
+.fd-box fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.fd-box__step {
+  padding: 0; margin-bottom: var(--wp--preset--spacing--30);
+  font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--xl);
+}
+.fd-box__hint { margin: 0 0 var(--wp--preset--spacing--30); font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+.fd-box__sizes { display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--20); }
+.fd-box__sizes > legend { width: 100%; }
+.fd-box__size {
+  display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--20);
+  min-height: var(--wp--custom--tap-target); padding: 0 var(--wp--preset--spacing--40);
+  border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--pill);
+  background: var(--wp--preset--color--surface); font-size: var(--wp--preset--font-size--base); cursor: pointer;
+}
+.fd-box__size input { accent-color: var(--wp--preset--color--flame-ink); margin: 0; }
+.fd-box__size:has(input:checked) { border-color: var(--wp--preset--color--flame-ink); background: var(--wp--preset--color--flame-wash); }
+.fd-box__size-n { font-weight: 600; }
+.fd-box__size-off { color: var(--wp--preset--color--leaf-ink); font-weight: 600; }
+
+.fd-box__grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: var(--wp--preset--spacing--30);
+}
+.fd-box__pack {
+  display: grid; align-content: start; gap: var(--wp--preset--spacing--10);
+  padding: var(--wp--preset--spacing--30);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card);
+}
+.fd-box__pack.is-in { border-color: var(--wp--preset--color--flame-ink); }
+.fd-box__img {
+  width: 100%; height: auto; aspect-ratio: 1; object-fit: cover;
+  background: var(--wp--preset--color--kraft-pale); border-radius: var(--wp--custom--radius--control);
+}
+.fd-box__name { font-weight: 600; font-size: var(--wp--preset--font-size--base); line-height: 1.3; }
+.fd-box__meta { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+.fd-box__price { font-size: var(--wp--preset--font-size--base); font-variant-numeric: tabular-nums; color: var(--wp--preset--color--flame-ink); font-weight: 600; }
+.fd-box__stepper { display: flex; align-items: center; justify-content: space-between; gap: var(--wp--preset--spacing--10); margin-top: var(--wp--preset--spacing--20); }
+.fd-box__minus, .fd-box__plus {
+  flex: none; width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--pill);
+  background: var(--wp--preset--color--paper); color: var(--wp--preset--color--char);
+  font: inherit; font-size: var(--wp--preset--font-size--lg); line-height: 1; cursor: pointer;
+}
+.fd-box__minus:disabled, .fd-box__plus:disabled { opacity: .4; cursor: not-allowed; }
+/* The field takes what the two buttons leave: at 360px two cards share a row
+   and a fixed-width field pushed the + out of its card. */
+.fd-box__qty {
+  flex: 1 1 0; width: 0; min-width: 0; max-width: calc(var(--wp--custom--tap-target) * 1.5);
+  min-height: var(--wp--custom--tap-target); appearance: textfield; -moz-appearance: textfield;
+  text-align: center; font: inherit; font-size: var(--wp--preset--font-size--base); font-variant-numeric: tabular-nums;
+  border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--paper);
+}
+.fd-box__qty::-webkit-inner-spin-button, .fd-box__qty::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* The summary. On a phone it is a bar stuck to the bottom of the screen, so
+   the count, the total and the button stay in reach while the grid scrolls. */
+.fd-box__bar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  gap: var(--wp--preset--spacing--10) var(--wp--preset--spacing--30);
+  margin: 0 calc(-1 * var(--wp--preset--spacing--40));
+  padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--40);
+  background: var(--wp--preset--color--paper);
+  border-top: 1px solid var(--wp--preset--color--line-strong);
+}
+.fd-box__status { grid-column: 1 / -1; margin: 0; font-weight: 600; font-size: var(--wp--preset--font-size--base); }
+.fd-box__sum { margin: 0; font-size: var(--wp--preset--font-size--base); line-height: 1.35; }
+.fd-box__total { font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); font-variant-numeric: tabular-nums; }
+.fd-box__saving { color: var(--wp--preset--color--leaf-ink); font-weight: 600; }
+.fd-box__per { display: block; color: var(--wp--preset--color--mute); }
+.fd-box__saving:empty, .fd-box__per:empty { display: none; }
+.fd-box__add { min-height: var(--wp--custom--tap-target); white-space: nowrap; }
+.fd-box__add:disabled { opacity: .5; cursor: not-allowed; }
+@media (min-width: 782px) {
+  .fd-box__bar {
+    margin: 0; border: 1px solid var(--wp--preset--color--line-strong);
+    border-radius: var(--wp--custom--radius--card); grid-template-columns: 1fr auto auto;
+  }
+  .fd-box__status { grid-column: auto; }
+}
+.fd-box--soon {
+  padding: var(--wp--preset--spacing--50);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card);
+}
+.fd-box__soon { margin: 0; font-size: var(--wp--preset--font-size--md); }
+
+/* ---- Reviews: the average, the histogram, the filter -------------------- */
+.fd-rsum { display: grid; gap: var(--wp--preset--spacing--30); margin-bottom: var(--wp--preset--spacing--50); max-width: 36rem; }
+.fd-rsum__avg { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--base); }
+.fd-rsum__score { font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--2xl); line-height: 1; }
+.fd-rsum__basis { color: var(--wp--preset--color--mute); }
+.fd-rsum__bars { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--10); }
+.fd-rsum__row {
+  display: grid; grid-template-columns: 2.5em 1fr 2.5em; align-items: center; gap: var(--wp--preset--spacing--20);
+  font-size: var(--wp--preset--font-size--base); font-variant-numeric: tabular-nums;
+}
+.fd-rsum__n { text-align: right; color: var(--wp--preset--color--mute); }
+.fd-rsum__bar {
+  display: block; height: var(--wp--preset--spacing--20); overflow: hidden;
+  background: var(--wp--custom--track); border-radius: var(--wp--custom--radius--pill);
+}
+.fd-rsum__bar > i { display: block; height: 100%; background: var(--wp--preset--color--flame); border-radius: inherit; }
+.fd-rsum__filter { display: grid; gap: var(--wp--preset--spacing--20); }
+.fd-rsum__label { margin: 0; font-weight: 600; font-size: var(--wp--preset--font-size--base); }
+.fd-rsum__chips { display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--20); }
+.fd-rsum__chip {
+  min-height: var(--wp--custom--tap-target); padding: 0 var(--wp--preset--spacing--40);
+  border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--pill);
+  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--char);
+  font: inherit; font-size: var(--wp--preset--font-size--base); cursor: pointer;
+}
+.fd-rsum__chip[aria-pressed="true"] { background: var(--wp--preset--color--char); border-color: var(--wp--preset--color--char); color: var(--wp--preset--color--paper); }
+.fd-rsum__count { margin: 0; font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+.fd-rsum__clear {
+  justify-self: start; min-height: var(--wp--custom--tap-target); padding: 0;
+  background: none; border: 0; font: inherit; font-size: var(--wp--preset--font-size--base);
+  color: var(--wp--preset--color--flame-ink); text-decoration: underline; cursor: pointer;
+}
+/* The [hidden] escapes. The script hides with el.hidden; any class rule that
+   sets display outranks the browser's own [hidden], so each one is restated.
+   Review items carry WooCommerce's list styles, hence the !important there. */
+.fd-rsum__filter[hidden], .fd-rsum__clear[hidden] { display: none; }
+.fd-rv[hidden] { display: none !important; }
+
+/* ---- Reviews: photos ---------------------------------------------------- */
+.fd-rv-photos { list-style: none; margin: var(--wp--preset--spacing--30) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--20); }
+.fd-rv-photo {
+  display: block; width: var(--wp--preset--spacing--80); height: var(--wp--preset--spacing--80);
+  overflow: hidden; border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--kraft-pale); border: 1px solid var(--wp--preset--color--line);
+}
+.fd-rv-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fd-rv-dialog {
+  max-width: min(92vw, 50rem); padding: var(--wp--preset--spacing--30); border: 0;
+  border-radius: var(--wp--custom--radius--card); background: var(--wp--preset--color--paper);
+}
+.fd-rv-dialog::backdrop { background: color-mix(in srgb, var(--wp--preset--color--char) 75%, transparent); }
+.fd-rv-dialog img { display: block; max-width: 100%; max-height: 78vh; height: auto; margin: 0 auto; border-radius: var(--wp--custom--radius--control); }
+.fd-rv-dialog form { margin: var(--wp--preset--spacing--20) 0 0; text-align: center; }
+.fd-rv-dialog__close {
+  min-height: var(--wp--custom--tap-target); padding: 0 var(--wp--preset--spacing--50);
+  border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--pill);
+  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--char);
+  font: inherit; font-size: var(--wp--preset--font-size--base); cursor: pointer;
+}
+.fd-rv-upload { display: grid; gap: var(--wp--preset--spacing--10); }
+.fd-rv-upload label { font-weight: 600; font-size: var(--wp--preset--font-size--base); }
+.fd-rv-upload__hint { font-weight: 400; color: var(--wp--preset--color--mute); }
+.fd-rv-upload input[type="file"] { min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); }
+.fd-rv-upload__note { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+/* ==== END LANE C ==== */
+
+/* ==== LANE D: whatsapp, repeat-orders, cart-recovery, referrals — append this lane's rules ABOVE this line's end marker ==== */
+/* Consent boxes (checkout + Your details): a 44px row, 16px words, never pre-ticked by the theme. */
+.fd-optin label.checkbox, label.fd-optin { display: flex; gap: var(--wp--preset--spacing--20); align-items: flex-start; min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); cursor: pointer; }
+.fd-optin input[type="checkbox"] { flex: 0 0 auto; margin-top: .2em; }
+.fd-optin .description, .fd-optin__note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
+.fd-account-optin { border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card); padding: var(--wp--preset--spacing--40); margin: var(--wp--preset--spacing--50) 0; }
+.fd-account-optin legend { font-weight: 600; padding: 0 var(--wp--preset--spacing--20); }
+.fd-optin-stop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--30); margin: var(--wp--preset--spacing--40) 0; }
+.fd-optin-stop__text { margin: 0; font-size: var(--wp--preset--font-size--base); }
+
+/* Repeat orders: the offer on an order, and the account list. */
+.fd-repeat { margin: var(--wp--preset--spacing--60) 0; padding: var(--wp--preset--spacing--50); background: var(--wp--preset--color--surface); border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card); }
+.fd-repeat__title, .fd-refer__title { font-size: var(--wp--preset--font-size--lg); margin: 0 0 var(--wp--preset--spacing--20); }
+.fd-repeat__lead, .fd-refer__lead { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); max-width: 52ch; }
+.fd-repeat__form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--30); }
+.fd-repeat__label { font-size: var(--wp--preset--font-size--base); font-weight: 600; }
+.fd-repeat__select { min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--control); padding: 0 var(--wp--preset--spacing--30); background: var(--wp--preset--color--paper); color: var(--wp--preset--color--char); }
+.fd-repeat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--40); }
+.fd-repeat-item { background: var(--wp--preset--color--surface); border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card); padding: var(--wp--preset--spacing--50); }
+.fd-repeat-item.is-paused { border-style: dashed; }
+.fd-repeat-item__head { display: flex; justify-content: space-between; align-items: center; gap: var(--wp--preset--spacing--20); }
+.fd-repeat-item__title { font-weight: 600; font-size: var(--wp--preset--font-size--md); }
+.fd-repeat-item__status { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--leaf-ink); }
+.fd-repeat-item.is-paused .fd-repeat-item__status { color: var(--wp--preset--color--mute); }
+.fd-repeat-item__items, .fd-repeat-item__next { margin: var(--wp--preset--spacing--20) 0; font-size: var(--wp--preset--font-size--base); }
+.fd-repeat-item__next { color: var(--wp--preset--color--mute); }
+.fd-repeat-item__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wp--preset--spacing--20); margin-top: var(--wp--preset--spacing--30); }
+.fd-repeat-item__verb { margin: 0; display: flex; gap: var(--wp--preset--spacing--20); align-items: center; }
+.fd-repeat-item__actions .fd-danger { color: var(--wp--preset--color--flame-ink); }
+
+/* Refer a friend. */
+.fd-refer { padding: var(--wp--preset--spacing--50); background: var(--wp--preset--color--kraft-pale); border-radius: var(--wp--custom--radius--card); }
+.fd-refer .fd-refer__lead { color: var(--wp--preset--color--char); }   /* mute fails on kraft-pale */
+.fd-refer__code { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--base); }
+.fd-refer__code-label { display: block; font-weight: 600; font-size: var(--wp--preset--font-size--base); }
+.fd-refer__code-value { font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--xl); letter-spacing: .08em; }
+.fd-refer__input { width: 100%; min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--control); padding: 0 var(--wp--preset--spacing--30); background: var(--wp--preset--color--paper); color: var(--wp--preset--color--char); }
+.fd-refer__actions { display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--20); margin: var(--wp--preset--spacing--30) 0; }
+.fd-refer__actions [data-fd-share][hidden] { display: none; }   /* the [hidden] escape: .wp-element-button sets display */
+.fd-refer__status:empty { display: none; }
+.fd-refer__status, .fd-refer__rules, .fd-refer__reward { font-size: var(--wp--preset--font-size--base); }
+.fd-refer__rules { color: var(--wp--preset--color--kraft-deep); }
+.fd-refer__subtitle { font-size: var(--wp--preset--font-size--md); margin: var(--wp--preset--spacing--50) 0 var(--wp--preset--spacing--20); }
+.fd-refer__rewards { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--20); }
+.fd-refer__reward { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--wp--preset--spacing--20); padding: var(--wp--preset--spacing--30) 0; border-bottom: 1px solid var(--wp--preset--color--line); }
+.fd-refer__reward-code { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: .06em; }
+.fd-refer__reward.is-revoked, .fd-refer__reward.is-used { color: var(--wp--preset--color--mute); }
+/* ==== END LANE D ==== */

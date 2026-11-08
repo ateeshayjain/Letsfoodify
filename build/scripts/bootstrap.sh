@@ -450,6 +450,154 @@ if [[ "$PHASE" == "all" ]]; then
 
 fi
 
+# ==== LANE A settings (delivery-estimate, stock-alerts, offers) ====
+# Three options, all CLIENT POLICY, none written here until the client confirms
+# a value (docs/FEATURES-A-NOTES.md has the suggested values to confirm). Each
+# feature is simply absent while its option is unset; this block only reports.
+#
+# When confirmed, set them like this (shape only — the numbers are the client's):
+#   wp option update foodify_delivery_zones --format=json '{"zones":[{"label":"<zone>",
+#     "states":["<WC state code>"],"pin_prefixes":["<digits>"],"min_days":<n>,"max_days":<n>}],
+#     "cutoff_hour":<0-23 IST>,"no_dispatch_weekdays":[<1=Mon..7=Sun>],"no_delivery_weekdays":[],
+#     "holidays":["YYYY-MM-DD"]}'
+#   wp option update foodify_stock_alert_retention_days <days>
+#   wp option update foodify_public_offer <COUPON CODE>     # must be a live WooCommerce coupon
+if [[ "$PHASE" == "all" ]]; then
+  log "Lane A · Product page: delivery dates, stock alerts, offers"
+  if [[ $DRY -eq 0 ]]; then
+    if command wp option get foodify_delivery_zones >/dev/null 2>&1; then
+      ok "foodify_delivery_zones is set — product pages show the PIN delivery check"
+    else
+      warn "foodify_delivery_zones NOT set — no delivery check on product pages (client to confirm zones, transit days, cut-off, dispatch days)"
+    fi
+    if command wp option get foodify_stock_alert_retention_days >/dev/null 2>&1; then
+      ok "foodify_stock_alert_retention_days is set — unsent stock alerts expire"
+    else
+      warn "foodify_stock_alert_retention_days NOT set — unsent stock alerts are kept until cancelled (client to confirm a period)"
+    fi
+    if command wp option get foodify_public_offer >/dev/null 2>&1; then
+      ok "foodify_public_offer is set — its coupon is listed under Offers while it is live"
+    else
+      ok "foodify_public_offer unset — no coupon is advertised on product pages"
+    fi
+  else
+    echo "    [dry-run] wp option get foodify_delivery_zones / foodify_stock_alert_retention_days / foodify_public_offer"
+  fi
+fi
+# ==== END LANE A ====
+# ==== LANE B settings (search, buy-again, order-actions) ====
+log "Lane B · search, buy again, cancel and returns"
+# Search needs no setting: the index is built from the catalogue and rebuilt on
+# any product change. Hindi/regional names go in each product's
+# _foodify_search_keywords meta (see docs/FEATURES-B-NOTES.md).
+# Returns are a POLICY number and the client has not given one. Unset, the
+# account says "Contact us about a problem with your order". Never default it.
+if [[ $DRY -eq 0 ]] && command wp option get foodify_return_window_days >/dev/null 2>&1; then
+  ok "returns window: $(command wp option get foodify_return_window_days) days"
+else
+  warn "foodify_return_window_days NOT SET — online return requests are off (client to confirm the window, then: wp option update foodify_return_window_days <days>)"
+fi
+# ==== END LANE B ====
+# ==== LANE C settings (box-builder) ====
+# Build-your-own box (inc/box-builder.php) and review photos (inc/reviews.php).
+#
+# foodify_box_sizes is CLIENT POLICY — box sizes and their percent off — and is
+# NOT written here. Unset, /build-a-box/ says boxes are coming soon and sells
+# nothing. When the client confirms, set it like this (shape only):
+#   wp option update foodify_box_sizes --format=json '{"<packs>":<percent off>, ...}'
+# (docs/FEATURES-C-NOTES.md has the suggestion to confirm.)
+if [[ "$PHASE" == "all" ]]; then
+  log "Lane C · Build-a-box page, review photos"
+
+  # The page. Its template is templates/page-build-a-box.html, chosen by slug,
+  # so the page needs no content of its own.
+  BOX_PID="$(command wp post list --post_type=page --name=build-a-box --field=ID --posts_per_page=1 2>/dev/null | head -1 || true)"
+  if [[ -n "$BOX_PID" ]]; then
+    ok "page /build-a-box/ present (#$BOX_PID)"
+  elif [[ $DRY -eq 1 ]]; then
+    echo "    [dry-run] wp post create --post_type=page --post_title=\"Build your own box\" --post_name=build-a-box"
+  else
+    BOX_PID="$(command wp post create --post_type=page --post_status=publish \
+               --post_title="Build your own box" --post_name=build-a-box --porcelain)"
+    ok "created page Build your own box (#$BOX_PID)"
+  fi
+
+  if [[ $DRY -eq 0 ]]; then
+    BOX_SIZES="$(command wp option get foodify_box_sizes --format=json 2>/dev/null || true)"
+    if [[ -n "$BOX_SIZES" && "$BOX_SIZES" != "[]" && "$BOX_SIZES" != '""' ]]; then
+      ok "foodify_box_sizes = $BOX_SIZES — /build-a-box/ sells boxes"
+    else
+      warn "foodify_box_sizes not set — /build-a-box/ says 'coming soon'. Pending client: box sizes and % off."
+    fi
+
+    # Review photos are up to 5 MB each, three per review. PHP's own limits
+    # refuse a larger upload before the theme sees it; the theme then reports
+    # "larger than 5 MB", which is wrong if the real cap is PHP's 2 MB default.
+    UPL="$(command wp eval 'echo ini_get("upload_max_filesize")."|".ini_get("post_max_size")."|".(function_exists("imagewebp")?"webp":"nowebp");' 2>/dev/null || true)"
+    if [[ -n "$UPL" ]]; then
+      ok "PHP upload_max_filesize|post_max_size|GD WebP = $UPL (need >= 5M | >= 16M | webp)"
+    else
+      warn "could not read PHP upload limits — check upload_max_filesize >= 5M and post_max_size >= 16M by hand"
+    fi
+  fi
+fi
+# ==== END LANE C ====
+# ==== LANE D settings (whatsapp, repeat-orders, cart-recovery, referrals) ====
+# Every value here is CLIENT POLICY or a running cost, so this block WRITES
+# NOTHING — it reports. Each feature is absent from the storefront until its
+# options are complete (docs/FEATURES-D-NOTES.md has the suggested values).
+#
+# When the client confirms, set them like this (shape only — values are theirs):
+#   # 9 WhatsApp — credentials go in wp-config.php ONLY, never an option:
+#   #   define( 'FOODIFY_WA_TOKEN', '…' ); define( 'FOODIFY_WA_PHONE_ID', '…' );
+#   wp option update foodify_whatsapp_templates --format=json \
+#     '{"order_confirmed":"<approved name>","order_shipped":"<approved name>","repeat_reminder":"<approved name>"}'
+#   wp option update foodify_whatsapp_language <code, e.g. en>
+#   wp option update foodify_whatsapp_graph_version <vNN.N from the Meta app dashboard>
+#   wp option update foodify_whatsapp_enabled yes          # only after the per-message cost is approved
+#   # 12 repeat orders
+#   wp option update foodify_repeat_reminder_days <1-7>
+#   wp option update foodify_repeat_discount <percent>     # leave unset for no discount
+#   # 13 cart reminder
+#   wp option update foodify_cart_reminder_delay_minutes <15-1440>
+#   # 14 referrals — all four, or the feature does not exist
+#   wp option update foodify_referral_give <rupees>; wp option update foodify_referral_get <rupees>
+#   wp option update foodify_referral_min_order <rupees>; wp option update foodify_referral_monthly_cap <n, 0 = no cap>
+if [[ "$PHASE" == "all" ]]; then
+  log "Lane D · Retention: WhatsApp, repeat orders, cart reminder, referrals"
+  if [[ $DRY -eq 0 ]]; then
+    lane_d_opt() {   # $1 option, $2 what it switches on — reports set/unset, never the value of a secret
+      if command wp option get "$1" >/dev/null 2>&1; then ok "$1 is set — $2"
+      else warn "$1 NOT set — $2 stays OFF (client to confirm)"; fi
+    }
+    for C in FOODIFY_WA_TOKEN FOODIFY_WA_PHONE_ID; do
+      if command wp config has "$C" --type=constant >/dev/null 2>&1; then ok "$C defined in wp-config.php"
+      else warn "$C not in wp-config.php — WhatsApp updates stay OFF"; fi
+    done
+    lane_d_opt foodify_whatsapp_templates        "WhatsApp template names"
+    lane_d_opt foodify_whatsapp_language         "WhatsApp template language"
+    lane_d_opt foodify_whatsapp_graph_version    "WhatsApp Cloud API version"
+    if [[ "$(command wp option get foodify_whatsapp_enabled 2>/dev/null || true)" == "yes" ]]; then
+      ok "foodify_whatsapp_enabled = yes — Meta bills per message; confirm the client approved the cost"
+    else
+      warn "foodify_whatsapp_enabled is not 'yes' — WhatsApp updates OFF (needs the client's OK on Meta's per-message charge)"
+    fi
+    lane_d_opt foodify_repeat_reminder_days      "repeat orders"
+    if command wp option get foodify_repeat_discount >/dev/null 2>&1; then ok "foodify_repeat_discount is set — copy reads 'Subscribe & save'"
+    else warn "foodify_repeat_discount NOT set — repeat orders carry no discount and say 'Repeat this order' (client to confirm)"; fi
+    lane_d_opt foodify_cart_reminder_delay_minutes "the abandoned-cart reminder"
+    for O in foodify_referral_give foodify_referral_get foodify_referral_min_order foodify_referral_monthly_cap; do
+      lane_d_opt "$O" "referrals (all four needed)"
+    done
+    # The two account screens are rewrite endpoints; assert them, a dead menu link is invisible to everyone but the customer.
+    for EP in repeat-orders refer-a-friend; do
+      if command wp rewrite list --format=csv 2>/dev/null | grep -q "$EP"; then ok "$EP endpoint present in the rewrite table"
+      else warn "$EP endpoint NOT in the rewrite table — run: wp rewrite flush (with the foodify theme active)"; fi
+    done
+  fi
+fi
+# ==== END LANE D ====
+
 log "Verifying"
 if [[ $DRY -eq 0 ]]; then
   command wp option get woocommerce_enable_reviews | grep -q yes && ok "reviews: on" || warn "reviews: OFF"

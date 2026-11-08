@@ -28,6 +28,14 @@
 <!-- /wp:navigation -->
 <!-- wp:group {"className":"fd-header__actions","layout":{"type":"flex","flexWrap":"nowrap"}} -->
 <div class="wp-block-group fd-header__actions">
+<!-- Search: an icon that opens a full-width field on a phone, a field beside
+     the account from 1200px. Plain GET to ?s=&post_type=product, so it works
+     with no JavaScript. This markup is foodify_search_form_html() VERBATIM —
+     tests/search-test.php fails if the two differ. inc/search.php adds the
+     suggestions. -->
+<!-- wp:html -->
+<details class="fd-search" data-fd-search><summary class="fd-search__toggle"><span class="fd-search__when-closed"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Search</span></span><span class="fd-search__when-open"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Close search</span></span></summary><div class="fd-search__panel"><form class="fd-search__form" role="search" method="get" action="/"><label class="fd-sr" for="fd-search-q">Search the menu</label><input class="fd-search__input" id="fd-search-q" type="search" name="s" placeholder="Search meals, ingredients" autocomplete="off" enterkeyhint="search"><input type="hidden" name="post_type" value="product"><button class="fd-search__go" type="submit"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Search</span></button></form><div class="fd-search__pop" hidden><p class="fd-search__none" hidden></p><ul class="fd-search__list" id="fd-search-list" role="listbox" aria-label="Suggestions"></ul></div><p class="fd-sr" role="status" aria-live="polite" data-fd-search-status></p></div></details>
+<!-- /wp:html -->
 <!-- wp:woocommerce/customer-account {"displayStyle":"icon_and_text","iconClass":"wc-block-customer-account__account-icon"} /-->
 <!-- wp:woocommerce/mini-cart {"miniCartIcon":"cart","hasHiddenPrice":false,"productCountVisibility":"always","addToCartBehaviour":"open_drawer"} /-->
 </div>

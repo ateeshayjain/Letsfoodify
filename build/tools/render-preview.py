@@ -571,6 +571,7 @@ def price_html(p, size_cls=""):
         save = php("echo foodify_save_badge((float)$a[0], (float)$a[1])", was, price) if was else ""
     if save:
         inner += f' <span class="fd-save">{html.escape(save)}</span>'
+    inner += unit_price_html(p)
     return f'<div class="wc-block-components-product-price wp-block-woocommerce-product-price {size_cls}">{inner}</div>'
 
 
@@ -623,6 +624,135 @@ PDP = None        # the product row a product screen shows
 LISTING = None    # the rows a shop / category screen lists
 CAT = None        # (title, intro, crumb label, screen id) of a listing screen
 PAGE = None       # (title, content html) of an information page
+
+# FIXTURE — foodify_delivery_zones. The courier's real zones and SLAs are
+# Foodify's to supply (FEATURES-A-NOTES.md); these exist so the PIN check can be
+# tried. Every state is in exactly one zone; NCR towns by PIN prefix.
+DEMO_DELIVERY = {
+    "zones": [
+        {"label": "Delhi NCR", "states": ["DL"], "pin_prefixes": ["2013", "2010", "2012", "1220", "1210"], "min_days": 1, "max_days": 2},
+        {"label": "North India", "states": ["UP", "HR", "PB", "RJ", "UK", "HP", "CH", "JK", "LA"], "pin_prefixes": [], "min_days": 2, "max_days": 4},
+        {"label": "Rest of India", "states": ["MH", "KA", "TN", "GJ", "WB", "KL", "TS", "AP", "GA", "MP", "CT", "OR", "BR", "JH", "DN", "DD", "PY"], "pin_prefixes": [], "min_days": 3, "max_days": 6},
+        {"label": "North East and islands", "states": ["AS", "AR", "MN", "ML", "MZ", "NL", "SK", "TR", "AN", "LD"], "pin_prefixes": [], "min_days": 5, "max_days": 8},
+    ],
+    "cutoff_hour": 14, "no_dispatch_weekdays": [7], "no_delivery_weekdays": [7], "holidays": [],
+}
+# The offers the prototype's cart already charges: free delivery from ₹599
+# after codes, ₹59 below, ₹25 off for paying online, COD on every order.
+OFFER_CFG = {"prepaid_available": True, "cod_available": True, "free_shipping_min": 599,
+             "shipping_flat": 59, "free_shipping_after_discounts": True}
+
+
+# FIXTURE — foodify_box_sizes (pack count → % off). Foodify to confirm.
+DEMO_BOX_SIZES = {"3": 5, "6": 10, "9": 12}
+
+
+def box_products():
+    """The packs a box can hold: in-stock singles, as foodify_box_eligible() allows."""
+    rows = [p for p in by_popularity(PRODUCTS) if "soldout" not in p[9]]
+    return [{"id": i + 1, "slug": slug_of(p), "name": p[0], "price": p[3], "max": 9,
+             "prep": f"Ready in {p[2].split()[0]} minutes"} for i, p in enumerate(rows)]
+
+
+def review_hist(rating, n, shown):
+    """FIXTURE star counts for a product: n reviews averaging `rating` (to 1 dp),
+    holding at least the stars of the reviews the page shows."""
+    import math
+    r = float(rating)
+    lo, hi = 0.0, 6.0
+    for _ in range(60):   # weights e^(-a·(5-k)); find a so the mean is r
+        a_ = (lo + hi) / 2
+        w = {k: math.exp(-a_ * (5 - k)) for k in range(1, 6)}
+        mean = sum(k * w[k] for k in w) / sum(w.values())
+        lo, hi = (a_, hi) if mean > r else (lo, a_)
+    raw = {k: n * w[k] / sum(w.values()) for k in w}
+    c = {k: int(raw[k]) for k in raw}
+    for k in sorted(raw, key=lambda k: raw[k] - c[k], reverse=True)[: n - sum(c.values())]:
+        c[k] += 1
+    for _q, _w, st in shown:
+        need = sum(1 for x in shown if x[2] == st)
+        while c[st] < need:
+            donor = max((k for k in c if c[k] > sum(1 for x in shown if x[2] == k)), key=lambda k: c[k])
+            c[donor] -= 1; c[st] += 1
+    avg = lambda: round(sum(k * v for k, v in c.items()) / n + 1e-9, 1)
+    for _ in range(50):   # nudge one review a star at a time until the 1-dp average is the rating
+        if avg() == round(r, 1):
+            break
+        up = avg() < r
+        for k in (range(1, 5) if up else range(5, 1, -1)):
+            dst = k + 1 if up else k - 1
+            if c[k] > sum(1 for x in shown if x[2] == k):
+                c[k] -= 1; c[dst] += 1; break
+    return [k for k in range(1, 6) for _ in range(c[k])]
+
+
+def review_photo(hue, n):
+    # Customer photos stand in as bowls, like every other image here.
+    svg = (f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 150'><rect width='150' height='150' fill='%23F4EBDF'/>"
+           f"<circle cx='75' cy='80' r='{46 + n * 4}' fill='{hue.replace('#', '%23')}' opacity='.85'/></svg>")
+    return "data:image/svg+xml;utf8," + svg
+
+
+# FIXTURE — foodify_return_window_days, and the referral options. Foodify to confirm.
+DEMO_RETURN_DAYS = 7
+DEMO_REFERRAL = {"give": "100", "get": "100", "min": "499", "cap": "5"}
+
+
+def search_rows():
+    """foodify_search_row() for every product, in popularity order (the rank reads that order)."""
+    rows = []
+    for i, p in enumerate(by_popularity(PRODUCTS + COMBOS)):
+        info = info_of(p)
+        kw = php("echo foodify_search_keywords($a[0], $a[1])", p[0],
+                 [info.get("ingredients", ""), info.get("taste", ""), p[1], " ".join(info.get("diet", []))]) if info else ""
+        rows.append(php("echo json_encode(foodify_search_row($a[0]), JSON_UNESCAPED_UNICODE)", {
+            "id": i + 1, "name": p[0], "url": "#" + screen_of(p), "price": f"₹{p[3]:,}",
+            "prep": f"{CHIP[p[1]][1]} · {p[2].split()[0]} min" if p[1] in CHIP else f"{p[2].split()[0]} min",
+            "kw": kw, "stock": "soldout" not in p[9]}))
+    return "[" + ",".join(rows) + "]"
+
+
+def bd_templates():
+    """Theme markup the page script re-uses with an order's own numbers."""
+    base = {"order_id": 99999, "number": "99999", "cancel": False, "money": "", "return": {"state": "off"},
+            "closes_label": "", "delivered": False, "care_email": "care@letsfoodify.com", "nonce_cancel": "x", "nonce_return": "x"}
+    oa = lambda **k: php("echo foodify_order_actions_html($a[0])", dict(base, **k))
+    st = json.loads(php("echo json_encode(foodify_referral_config_state($a[0]))", DEMO_REFERRAL))
+    link = "https://letsfoodify.com/cart/?ref=REF7K2M9Q"
+    return {
+        "cancel": oa(cancel=True, money="__MONEY__"),
+        "open": oa(**{"return": {"state": "open", "closes": 1}, "closes_label": "__CLOSES__", "delivered": True}),
+        "closed": oa(**{"return": {"state": "closed", "closes": 1}, "closes_label": "__CLOSES__", "delivered": True}),
+        "requested": oa(**{"return": {"state": "requested"}, "delivered": True}),
+        "moneyPaid": php("echo foodify_cancel_money_line(['refund'=>true,'amount'=>77777], false)"),
+        "moneyCod": php("echo foodify_cancel_money_line(['refund'=>false,'amount'=>0], true)"),
+        "msgPaid": php("echo foodify_cancel_message('99999', ['refund'=>true,'amount'=>77777], true)"),
+        "msgCod": php("echo foodify_cancel_message('99999', ['refund'=>false,'amount'=>0], null)"),
+        "repeatOffer": php("echo foodify_repeat_offer_html(['order_id'=>99999,'labels'=>foodify_repeat_labels(0, 2),'nonce_field'=>''])"),
+        "waStop": php("echo foodify_wa_stop_form_html(99999, '')"),
+        "refer": php("$st=$a[0]; $l=foodify_referral_labels($st); echo foodify_referral_panel_html(['labels'=>$l,'eligible'=>true,"
+                     "'code'=>'REF7K2M9Q','link'=>$a[1],'share_text'=>foodify_referral_share_text($st,'REF7K2M9Q',$a[1]),"
+                     "'rewards'=>[['code'=>'RWD4XQ8PL','amount'=>100,'status'=>'ready']]])", st, link),
+        "referSelf": json.loads(php("echo json_encode(foodify_referral_friend_check(['user_id'=>5,'email'=>'a@b.in','phone'=>'9876543210','address_fp'=>'x','subtotal'=>600],"
+                                    "['user_id'=>5,'email'=>'a@b.in','phone'=>'9876543210','address_fps'=>['x']],['prior_orders'=>3,'already_referred'=>false],"
+                                    "['active'=>true,'give'=>100,'min'=>499]))"))["message"],
+        "returnThanks": "Thanks — we have your return request. We will reply by email.",
+        "waStopped": "Done — no more WhatsApp messages about this order.",
+        "returnDays": DEMO_RETURN_DAYS,
+    }
+
+
+def veg_mark():
+    # Every Foodify product declares "Vegetarian" in its spec (pdp_values).
+    return php("echo foodify_veg_mark_html($a[0])", PDP_VALUES["diet"])
+
+
+def unit_price_html(p):
+    if combo_of(p):
+        return ""
+    u = php("echo (string) foodify_unit_price((float)$a[0], $a[1])", p[3], info_of(p)["net"])
+    return f'<span class="fd-unit-price">{html.escape(u)}</span>' if u else ""
+
 
 PREP_TERM = {"Express": "Just add hot water", "Flavors": "Stir with drinking water",
              "Hot & Fresh": "Requires cooking"}
@@ -742,6 +872,11 @@ PDP_REVIEWS = {
 
 
 def shortcode(code):
+    if "foodify_buy_again" in code:
+        return '<div class="fx-again" data-fx-again></div>'
+    if "foodify_box_builder" in code:
+        return php("echo foodify_box_builder_html(foodify_box_sizes_parse($a[0]), $a[1], ['action'=>'/build-a-box/','nonce'=>'x','combos_url'=>'/product-category/combos/'])",
+                   DEMO_BOX_SIZES, [{k: v for k, v in b.items() if k != "slug"} for b in box_products()])
     if "google_reviews" in code:
         cards = "".join(
             f'<figure class="fd-review"><blockquote>{html.escape(q)}</blockquote>'
@@ -848,7 +983,7 @@ def dynamic(name, attrs, inner):
     if name == "post-title":
         lvl = a.get("level", 2)
         if CUR and a.get("__woocommerceNamespace"):
-            return (f'<h{lvl} class="wp-block-post-title {cls_for(a)}"><a href="/product/{slug_of(CUR)}/" '
+            return (f'<h{lvl} class="wp-block-post-title {cls_for(a)}">{veg_mark()}<a href="/product/{slug_of(CUR)}/" '
                     f'data-s="{screen_of(CUR)}">{html.escape(CUR[0])}</a></h{lvl}>' + card_yield(CUR))
         # The page's own title. It always said "Express Dal Fry", so the cart
         # screen was headed with a product name — a fixture artefact that reads
@@ -856,7 +991,8 @@ def dynamic(name, attrs, inner):
         titles = {"cart": "Cart", "checkout": "Checkout", "order": "Order received", "account": "My account",
                   "signin": "My account", "notfound": "Page not found"}
         if PDP:
-            title = PDP[0]
+            # inc/product-display.php puts the veg mark first in the product H1.
+            return f'<h{lvl} class="fx-posttitle {cls_for(a)}">{veg_mark()}{html.escape(PDP[0])}</h{lvl}>'
         elif PAGE:
             title = PAGE[0]
         else:
@@ -897,10 +1033,11 @@ def dynamic(name, attrs, inner):
                 f'{BOWL.format(hue=CUR[5], time=CUR[2])}</a>{badges}</div>')
     if name == "woocommerce/product-button" and CUR:
         if "soldout" in CUR[9]:
-            # Out of stock: WooCommerce links the button to the product page
-            # with "Read more"; the theme relabels it and greys the card.
+            # Out of stock: inc/stock-alerts.php relabels the button "Notify me"
+            # and points it at the alert form on the product page.
             return ('<div class="wp-block-button wc-block-components-product-button">'
-                    f'<a href="/product/{slug_of(CUR)}/" data-s="{screen_of(CUR)}" class="wp-block-button__link wp-element-button">Sold out</a></div>')
+                    f'<a href="/product/{slug_of(CUR)}/#fd-notify" data-s="{screen_of(CUR)}" data-anchor="fd-notify" '
+                    'class="wp-block-button__link wp-element-button">Notify me</a></div>')
         return ('<div class="wp-block-button wc-block-components-product-button">'
                 f'<a href="?add-to-cart={slug_of(CUR)}" data-add="{slug_of(CUR)}" class="wp-block-button__link wp-element-button '
                 'add_to_cart_button ajax_add_to_cart">Add to cart</a></div>')
@@ -913,12 +1050,8 @@ def dynamic(name, attrs, inner):
         # There is no photography. Rather than a grey box, the placeholder states
         # the brief — four shots, in order, with what each one has to prove. That
         # is a deliverable the client can act on; "image goes here" is not.
-        shots = [
-            ("1", "Pack, front", "Straight on, label legible. This is the Merchant Center image."),
-            ("2", "Prepared, in a bowl", "The actual portion, natural light, no styling props."),
-            ("3", "Ingredients, laid out", "Proves it is food, not powder. Answers the real objection."),
-            ("4", "In a hand or beside a mug", "Scale. 80 g means nothing without something next to it."),
-        ]
+        shots = [(str(x["n"]), x["title"], x["detail"])
+                 for x in json.loads(php("echo json_encode(foodify_gallery_shots())"))]
         hue = PDP[5]
         thumbs = "".join(
             f'<div class="fx-shot">{BOWL.format(hue=hue, time="")}'
@@ -930,9 +1063,9 @@ def dynamic(name, attrs, inner):
             # Folded: open, it put ~800px of brief between the photo and the
             # product's name on a phone, so a tapped product looked like it had
             # opened on nothing.
-            + '<details class="fx-brief"><summary>Photo brief: the four shots this page needs</summary>'
+            + f'<details class="fx-brief"><summary>Photo brief: the {len(shots)} shots this page needs</summary>'
             + '<div class="fx-shotlist">' + thumbs + '</div>'
-            + '<p class="fx-ph">No photography supplied yet. Four shots per product, in this '
+            + f'<p class="fx-ph">No photography supplied yet. {len(shots)} shots per product, in this '
               'order — shot 1 is what Google Shopping uses, so it is the one that cannot wait.</p>'
             + '</details></div>'
         )
@@ -961,19 +1094,33 @@ def dynamic(name, attrs, inner):
         else:
             parts = json.loads(php("echo json_encode(foodify_yield_parts($a[0]))", pdp_values(PDP)))
         strip = "".join(f"<span>{html.escape(x)}</span>" for x in parts)
-        return price_html(PDP, "fx-price--lg " + cls_for(a)) + f'<p class="fd-yield-strip">{strip}</p>'
+        offers = "" if "soldout" in PDP[9] else php(
+            "$c=$a[0]; $c['payment']=foodify_payment_defaults(); echo foodify_offers_html(foodify_offer_lines($c))", OFFER_CFG)
+        return price_html(PDP, "fx-price--lg " + cls_for(a)) + f'<p class="fd-yield-strip">{strip}</p>' + offers
     if name == "woocommerce/product-stock-indicator":
         if "soldout" in PDP[9]:
             return '<p class="fx-stock stock out-of-stock">Out of stock</p>'
         return '<p class="fx-stock stock in-stock">In stock</p>'
     if name == "woocommerce/add-to-cart-form":
-        # WooCommerce prints no form at all for an out-of-stock simple product.
+        # WooCommerce prints no form at all for an out-of-stock simple product;
+        # inc/stock-alerts.php puts the back-in-stock form there instead. The
+        # confirmation and cancelled states are the theme's own markup, parked
+        # in <template>s for the page script (the site redirects to them).
         if "soldout" in PDP[9]:
-            return ''
+            base = {"product_id": 1, "product": PDP[0], "action": "#", "nonce": "x", "privacy_url": "/privacy-policy/"}
+            form = php("echo foodify_stock_alert_form_html($a[0])", base)
+            done = php("echo foodify_stock_alert_form_html($a[0])", dict(base, status="added", email="__EMAIL__", token="0" * 32))
+            bad = php("echo foodify_stock_alert_form_html($a[0])", dict(base, status="invalid", email="__EMAIL__"))
+            gone = php("echo foodify_stock_alert_form_html($a[0])", dict(base, status="cancelled"))
+            return (form.replace('id="fd-notify"', 'id="fd-notify" data-fx-notify') +
+                    f'<template class="fx-notify-done">{done}</template><template class="fx-notify-bad">{bad}</template>'
+                    f'<template class="fx-notify-gone">{gone}</template>')
+        deliver = php("echo foodify_delivery_widget_html(foodify_delivery_normalise_config($a[0]), $a[1])",
+                      DEMO_DELIVERY, "/wp-json/foodify/v1/pin/")
         # WooCommerce's form: a number input for quantity and the real button.
         # A <form class="cart"> so the theme's sticky bar can watch it here too.
         qid = "qty-" + slug_of(PDP)
-        return ('<form class="cart fx-atc"><div class="quantity">'
+        return (deliver + '<form class="cart fx-atc"><div class="quantity">'
                 f'<label class="screen-reader-text" for="{qid}">Quantity</label>'
                 f'<input type="number" id="{qid}" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div>'
                 f'<button type="submit" data-add="{slug_of(PDP)}" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">'
@@ -1010,11 +1157,26 @@ def dynamic(name, attrs, inner):
                     'Reviews open to customers who have bought it.</p></div>')
         key = "combo" if combo_of(PDP) else (PDP[0] if PDP[0] in PDP_REVIEWS else PREP_TERM[PDP[1]])
         shown = PDP_REVIEWS[key]
+        # The first and fourth reviews carry photos (FIXTURE). The theme's
+        # renderer only prints http(s) or /-relative URLs, so the preview hands
+        # it placeholders and swaps in drawn bowls afterwards.
+        def photos(i, who):
+            if i not in (0, 3):
+                return ""
+            out = php("echo foodify_review_photos_html($a[0], $a[1])",
+                      [{"thumb": f"/fx-photo-{i}-{k}.svg", "full": f"/fx-photo-{i}-{k}.svg"} for k in range(2 if i == 0 else 1)], who)
+            for k in range(2):
+                out = out.replace(f"/fx-photo-{i}-{k}.svg", review_photo(PDP[5], k + i))
+            return out
         cards = "".join(
-            f'<figure class="fd-review"><blockquote>{html.escape(q)}</blockquote>'
+            f'<figure class="fd-review fd-rv fd-rv--{n}{" fd-rv--photos" if i in (0, 3) else ""}"><blockquote>{html.escape(q)}</blockquote>'
+            f'{photos(i, who)}'
             f'<figcaption><span class="fd-stars" aria-label="{n} out of 5">{"★"*n}{"☆"*(5-n)}</span> · {who} · '
             f'<span class="fd-verified">Verified purchase</span></figcaption></figure>'
-            for q, who, n in shown)
+            for i, (q, who, n) in enumerate(shown))
+        hist = review_hist(PDP[6], PDP[7], shown)
+        summary = php("echo foodify_review_summary_html(foodify_review_histogram($a[0]), (int)$a[1])",
+                      hist, max(2, PDP[7] // 12))
         more = ""
         if PDP[7] > len(shown):
             # WooCommerce's block pages reviews; the prototype carries five per
@@ -1022,8 +1184,7 @@ def dynamic(name, attrs, inner):
             more = (f'<p class="fx-rev-more"><span>Showing {len(shown)} of {PDP[7]} reviews</span> '
                     f'<button type="button" class="wp-element-button fd-secondary" data-note="On the site the next reviews load here, ten at a time. '
                     f'The prototype carries the first {len(shown)} for each product.">More reviews</button></p>')
-        return (f'<div id="reviews" class="woocommerce-Reviews fd-reviews-block">'
-                f'<p class="fx-rev-summary">{stars(PDP[6])} <strong>{PDP[6]} out of 5</strong> · {PDP[7]} reviews</p>'
+        return (f'<div id="reviews" class="woocommerce-Reviews fd-reviews-block">{summary}'
                 f'<div class="fd-reviews">{cards}</div>{more}</div>')
     if name == "woocommerce/catalog-sorting":
         # WooCommerce's ordering form; option labels are the theme's shortened
@@ -1103,13 +1264,23 @@ def cls_for(a):
     return " ".join(out)
 
 
-INDIAN_STATES = ["Andhra Pradesh", "Bihar", "Delhi", "Goa", "Gujarat", "Haryana", "Karnataka", "Kerala",
-                 "Madhya Pradesh", "Maharashtra", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana",
-                 "Uttar Pradesh", "West Bengal"]
+# WooCommerce's states for India: code → name (the codes the PIN table returns).
+STATE_CODES = {
+    "AN": "Andaman and Nicobar Islands", "AP": "Andhra Pradesh", "AR": "Arunachal Pradesh", "AS": "Assam",
+    "BR": "Bihar", "CH": "Chandigarh", "CT": "Chhattisgarh", "DN": "Dadra and Nagar Haveli", "DD": "Daman and Diu",
+    "DL": "Delhi", "GA": "Goa", "GJ": "Gujarat", "HR": "Haryana", "HP": "Himachal Pradesh", "JK": "Jammu and Kashmir",
+    "JH": "Jharkhand", "KA": "Karnataka", "KL": "Kerala", "LA": "Ladakh", "LD": "Lakshadweep", "MP": "Madhya Pradesh",
+    "MH": "Maharashtra", "MN": "Manipur", "ML": "Meghalaya", "MZ": "Mizoram", "NL": "Nagaland", "OR": "Odisha",
+    "PY": "Puducherry", "PB": "Punjab", "RJ": "Rajasthan", "SK": "Sikkim", "TN": "Tamil Nadu", "TS": "Telangana",
+    "TR": "Tripura", "UP": "Uttar Pradesh", "UK": "Uttarakhand", "WB": "West Bengal",
+}
+INDIAN_STATES = sorted(STATE_CODES.values())
 
 
 def state_select(id_, label="State"):
-    opts = '<option value="">Choose a state</option>' + "".join(f"<option>{s}</option>" for s in INDIAN_STATES)
+    code = {v: k for k, v in STATE_CODES.items()}
+    opts = '<option value="">Choose a state</option>' + "".join(
+        f'<option data-code="{code[s]}">{s}</option>' for s in INDIAN_STATES)
     return (f'<p class="form-row form-row-wide"><label for="{id_}">{label} <abbr class="required" title="required">*</abbr></label>'
             f'<select id="{id_}" name="state" class="input-text" required>{opts}</select></p>')
 
@@ -1159,15 +1330,28 @@ def cart_or_checkout(which):
               ("fx-co-addr1", "Address", "text", "", True),
               ("fx-co-addr2", "Address line 2 (optional)", "text", "", False),
               ("fx-co-notes", "Order notes (optional)", "text", "", False)]
+    optin = {
+        "fx-co-mobile": ("foodify_wa_optin", json.loads(php("echo json_encode(foodify_wa_optin_field())"))),
+        "fx-co-email": ("foodify_cart_consent", json.loads(php("echo json_encode(foodify_cart_consent_field(60))"))),
+    }
     inputs = []
     for fid, label, typ, mode, req in fields:
         if fid == "fx-co-state":
+            code = {v: k for k, v in STATE_CODES.items()}
             ctl = (f'<select id="{fid}"><option value="">Choose a state</option>'
-                   + "".join(f"<option>{s}</option>" for s in INDIAN_STATES) + '</select>')
+                   + "".join(f'<option data-code="{code[s]}">{s}</option>' for s in INDIAN_STATES) + '</select>')
         else:
             im = f' inputmode="{mode}"' if mode else ""
             ctl = f'<input id="{fid}" type="{typ}"{im}{" required" if req else ""}>'
         inputs.append(f'<label class="fx-field" for="{fid}"><span>{html.escape(label)}</span>{ctl}</label>')
+        if fid in optin:
+            name, fd = optin[fid]
+            desc = (f'<span class="description" id="{name}-description">{html.escape(fd["description"])}</span>'
+                    if fd.get("description") else "")
+            inputs.append(f'<p class="form-row {" ".join(fd["class"])}" id="{name}_field"><span class="woocommerce-input-wrapper">'
+                          f'<label class="checkbox"><input type="checkbox" class="input-checkbox" name="{name}" id="{name}" value="1"'
+                          f'{f" aria-describedby={chr(34)}{name}-description{chr(34)}" if desc else ""}> {html.escape(fd["label"])}'
+                          f'&nbsp;<span class="optional">(optional)</span></label>{desc}</span></p>')
     return f'''<div class="fx-checkout">
 <div><div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout" hidden></div>
 <div class="woocommerce-form-coupon-toggle"><div class="woocommerce-info">Have a code from a
@@ -1214,6 +1398,7 @@ def order_received():
 <tbody class="fx-o-lines"></tbody><tfoot class="fx-o-totals"></tfoot></table></section>
 <section class="woocommerce-customer-details"><h2 class="woocommerce-column__title">Delivery address</h2>
 <address class="fx-o-address"></address></section>
+<div class="fx-o-repeat"></div><div class="fx-o-wa"></div>
 <p class="fx-o-actions"><a href="/shop/" data-s="shop" class="wp-element-button">Continue shopping</a>
 <a href="/my-account/" data-s="account" class="fd-secondary">See your orders</a></p>
 </div></div>'''
@@ -1254,8 +1439,11 @@ DLT-registered. Guest checkout stays the default path either way.</div>
     nav = "".join(
         f'<li class="woocommerce-MyAccount-navigation-link woocommerce-MyAccount-navigation-link--{key}">'
         f'<a href="#" data-panel="{key}">{label}</a></li>'
-        for key, label in [("orders", "Orders &amp; reorder"), ("address-book", "Saved addresses"),
-                           ("edit-account", "Your details"), ("customer-logout", "Log out")])
+        for key, label in [("orders", "Orders &amp; reorder"), ("repeat-orders", "Repeat orders"),
+                           ("address-book", "Saved addresses"), ("edit-account", "Your details"),
+                           ("refer-a-friend", "Refer a friend"), ("customer-logout", "Log out")])
+    refer = bd_templates()["refer"]
+    cart_optin = php("echo foodify_cart_account_field_html(false, 60)")
     states = state_select("fd-state")
     return f'''<div class="woocommerce">
 <nav class="woocommerce-MyAccount-navigation" aria-label="Account pages"><ul>{nav}</ul></nav>
@@ -1276,6 +1464,7 @@ DLT-registered. Guest checkout stays the default path either way.</div>
 <tbody class="fx-vo-lines"></tbody><tfoot class="fx-vo-totals"></tfoot></table></section>
 <section class="woocommerce-customer-details"><h2 class="woocommerce-column__title">Delivery address</h2>
 <address class="fx-vo-address"></address></section>
+<div class="fx-vo-actions"></div><div class="fx-vo-repeat"></div><div class="fx-vo-wa"></div>
 <p class="fx-o-actions"><button type="button" class="wp-element-button fd-reorder fx-vo-reorder">Reorder these items</button>
 <a href="#" class="woocommerce-button button invoice wp-element-button fd-secondary" data-note="On the live site this downloads the order&#8217;s GST invoice as a PDF, from the free PDF Invoices &amp; Packing Slips plugin. It needs Foodify&#8217;s GSTIN before it can be issued.">Download invoice (PDF)</a></p>
 </section>
@@ -1305,9 +1494,12 @@ own — you only choose when it is going somewhere else.</p>
 <p class="form-row form-row-wide"><label for="fx-d-name">Full name</label><input type="text" class="input-text" id="fx-d-name" autocomplete="name"></p>
 <p class="form-row form-row-wide"><label for="fx-d-mobile">Mobile number</label><input type="text" class="input-text" id="fx-d-mobile" inputmode="numeric" disabled></p>
 <p class="form-row form-row-wide"><label for="fx-d-email">Email for receipts</label><input type="email" class="input-text" id="fx-d-email" autocomplete="email"></p>
+{cart_optin}
 <p><button type="submit" class="wp-element-button">Save changes</button></p>
 </form>
 </section>
+<section data-panel-body="repeat-orders" hidden><div class="fx-repeats"></div></section>
+<section data-panel-body="refer-a-friend" hidden>{refer}</section>
 </div></div>'''
 
 
@@ -1345,11 +1537,16 @@ MOCK_SCRIPT = r'''<script>
   var PDP_SRC = __PDP_SCRIPT__;
   var THRESHOLD = 599, FLAT = 59, PREPAID = 25;
   var COUPONS = { NALIN10: { rate: 0.10, label: 'partner code' } };
-  var KEY = 'foodify-prototype-v2';
+  var KEY = 'foodify-prototype-v3';
 
   // ── state ────────────────────────────────────────────────────────────────
   // A returning customer, signed in, with two saved addresses and three past
   // orders — the person WP-05 was built for. Log out to walk the guest path.
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function dmy(d) { return ('0' + d.getDate()).slice(-2) + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+  // foodify_date_label(): "Thu 12 Nov"
+  function dayLabel(ms) { var d = new Date(ms); return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
   function seed() {
     return {
       cart: [{ s: 'express-dal-fry', q: 1 }, { s: 'idli-sambhar', q: 1 }, { s: 'express-dal-khichdi', q: 1 }],
@@ -1360,42 +1557,72 @@ MOCK_SCRIPT = r'''<script>
       ],
       chosen: 'a1',
       orders: [
-        order(1194, '22 Aug 2026', 'Delivered', [['express-dal-fry', 2], ['masala-chai', 1]], null, 'razorpay', 'a1'),
-        order(1121, '31 Jul 2026', 'Delivered', [['idli-sambhar', 1], ['coconut-red-chutney', 1]], null, 'cod', 'a1'),
-        order(1088, '09 Jul 2026', 'Delivered', [['week-box-6-meals', 1], ['coconut-red-chutney', 1]], null, 'razorpay', 'a2')
+        // Dated from today, so the newest is still inside the return window.
+        order(1194, 4, 'Delivered', [['express-dal-fry', 2], ['masala-chai', 1]], null, 'razorpay', 'a1'),
+        order(1121, 30, 'Delivered', [['idli-sambhar', 1], ['coconut-red-chutney', 1]], null, 'cod', 'a1'),
+        order(1088, 52, 'Delivered', [['week-box-6-meals', 1], ['coconut-red-chutney', 1]], null, 'razorpay', 'a2')
       ],
-      nextNo: 1195, last: null
+      nextNo: 1195, last: null, repeats: [], cartOptin: false
     };
-    function order(no, date, status, lines, coupon, pay, addrId) {
+    function order(no, daysAgo, status, lines, coupon, pay, addrId) {
+      var when = new Date(Date.now() - (daysAgo + 2) * 864e5), date = dmy(when);
       var L = lines.map(function (l) { return { s: l[0], q: l[1], price: CATALOG[l[0]].price }; });
       var t = totals(L, coupon, pay);
       var a = { a1: ['Ateeshay Jain', '9876543210', 'N-7011 Parx Laureate', 'Sector 108', 'Noida', 'Uttar Pradesh', '201304'],
                 a2: ['Ateeshay Jain', '9876543210', 'Tower C, 9th floor', 'Sector 16', 'Noida', 'Uttar Pradesh', '201301'] }[addrId];
       return { no: no, date: date, status: status, lines: L, coupon: coupon, pay: pay, t: t, email: 'you@example.com',
+               delivered: Date.now() - daysAgo * 864e5,
                addr: { name: a[0], phone: a[1], l1: a[2], l2: a[3], city: a[4], state: a[5], pin: a[6] } };
     }
   }
   var S;
   try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; }
   if (!S || !S.cart) S = seed();
+  S.repeats = S.repeats || [];
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
   // ── arithmetic: the rules bootstrap.sh and inc/payments.php configure ─────
   // Free shipping at ₹599 compared AFTER discounts, ₹59 below it, ₹25 off for
   // paying now. One function, so the cart, the drawer, checkout and the order
   // all agree — the way WooCommerce computes them once on the site.
+  // inc/box-builder.php: a box's packs are separate lines carrying the box id;
+  // its % off applies to their after-coupon total only while the box holds
+  // exactly its size, rounded DOWN to the rupee (foodify_box_percent_of).
+  function boxes(lines, rate) {
+    var by = {};
+    lines.forEach(function (l) {
+      if (!l.box) return;
+      var b = by[l.box.id] || (by[l.box.id] = { id: l.box.id, size: l.box.size, packs: 0, sub: 0 });
+      b.packs += l.q; b.sub += l.price * l.q;
+    });
+    return Object.keys(by).map(function (k) {
+      var b = by[k], pct = (window.FX_BOX_SIZES || {})[b.size] || 0, after = b.sub - Math.round(b.sub * rate);
+      b.pct = pct; b.complete = b.packs === b.size && pct > 0;
+      b.discount = b.complete ? Math.floor(after * pct / 100 + 1e-9) : 0;
+      return b;
+    });
+  }
+  function boxFeeLabel(bs) {
+    var n = bs.length, b = bs[0];
+    return (n > 1 ? 'Your ' + n + ' boxes (' + b.size + ' packs each)' : 'Your box (' + b.size + ' packs)') + ' — ' + b.pct + '% off';
+  }
   function totals(lines, coupon, pay) {
     var sub = 0, count = 0;
     lines.forEach(function (l) { sub += l.price * l.q; count += l.q; });
     var disc = coupon ? Math.round(sub * COUPONS[coupon].rate) : 0;
-    var after = sub - disc;
+    var bx = boxes(lines, coupon ? COUPONS[coupon].rate : 0), boxDisc = 0, fees = {};
+    bx.forEach(function (b) { if (!b.discount) return; boxDisc += b.discount; var k = b.size + '/' + b.pct; (fees[k] = fees[k] || []).push(b); });
+    var feeRows = Object.keys(fees).map(function (k) {
+      return { label: boxFeeLabel(fees[k]), amount: fees[k].reduce(function (s, b) { return s + b.discount; }, 0) };
+    });
+    var after = sub - disc - boxDisc;
     var ship = !lines.length ? 0 : (after >= THRESHOLD ? 0 : FLAT);
     var pre = pay === 'razorpay' && lines.length ? Math.min(PREPAID, after) : 0;
-    return { sub: sub, count: count, disc: disc, after: after, ship: ship, pre: pre, total: after + ship - pre };
+    return { sub: sub, count: count, disc: disc, box: bx, boxDisc: boxDisc, fees: feeRows, after: after, ship: ship, pre: pre, total: after + ship - pre };
   }
   function cartLines() {
     return S.cart.filter(function (l) { return CATALOG[l.s]; })
-      .map(function (l) { return { s: l.s, q: l.q, price: CATALOG[l.s].price }; });
+      .map(function (l) { return { s: l.s, q: l.q, price: CATALOG[l.s].price, box: l.box || null, k: lineKey(l) }; });
   }
   function payMethod() { var r = document.querySelector('#s-checkout input[name=fx-pay]:checked'); return r ? r.value : 'razorpay'; }
   function rs(n) { try { return '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n); } catch (e) { return '₹' + Math.round(n); } }
@@ -1422,6 +1649,8 @@ MOCK_SCRIPT = r'''<script>
     current = id;
     var R = RENDER[id] || (id.indexOf('p-') === 0 ? RENDER.product : null);
     if (R) R(screen(id));
+    if (id.indexOf('p-') === 0) prefillPin(screen(id));
+    if (id === 'home') paintAgain();
     closeDrawer(); closeMenu();
     if (anchor) { var t = screen(id).querySelector('#' + anchor); if (t) { t.scrollIntoView(); } else window.scrollTo(0, 0); }
     else window.scrollTo(0, 0);
@@ -1459,7 +1688,7 @@ MOCK_SCRIPT = r'''<script>
     // ("2 in cart") and still adds one more on each press. The card is where the
     // shopper's eye is when they press it; the header pill is usually scrolled away.
     var inCart = {};
-    S.cart.forEach(function (l) { inCart[l.s] = l.q; });
+    S.cart.forEach(function (l) { inCart[l.s] = (inCart[l.s] || 0) + l.q; });
     $$('.add_to_cart_button[data-add]').forEach(function (b) {
       var q = inCart[b.getAttribute('data-add')] || 0;
       b.textContent = q ? q + ' in cart' : 'Add to cart';
@@ -1469,14 +1698,65 @@ MOCK_SCRIPT = r'''<script>
   }
 
   // ── the cart ─────────────────────────────────────────────────────────────
+  function lineKey(l) { return l.s + (l.box ? '@' + l.box.id : ''); }
+  function lineByKey(k) { return S.cart.filter(function (l) { return lineKey(l) === k; })[0]; }
+  // ── the account's forms that post (order actions, repeat orders, WhatsApp stop) ──
+  document.addEventListener('submit', function (e) {
+    var f = e.target, act = f.querySelector('[name=foodify_order_action]'), rpt = f.querySelector('[name=foodify_repeat_action]');
+    if (!act && !rpt && !f.matches('.fd-optin-stop')) return;
+    e.preventDefault(); e.stopPropagation();
+    var root = f.closest('.fx-shell'), noEl = f.querySelector('[name=order_id]'), o = noEl && S.orders.filter(function (x) { return x.no === +noEl.value; })[0];
+    if (f.matches('.fd-optin-stop')) {
+      var so = S.orders.concat(S.last ? [S.last] : []).filter(function (x) { return x.no === +f.querySelector('[name=foodify_wa_stop]').value; });
+      so.forEach(function (x) { x.wa = false; }); save(); f.remove(); notice(root, 'message', FX_BD.waStopped); return;
+    }
+    if (act && o && act.value === 'cancel') {
+      var msg = (o.pay === 'cod' ? FX_BD.msgCod : FX_BD.msgPaid.replace('₹77,777', rs(o.t.total))).split('99999').join(String(o.no));
+      o.status = 'Cancelled'; S.repeats.forEach(function (r) { if (r.src === o.no) r.status = 'cancelled'; }); save();
+      RENDER.account(screen('account'), true); notice(screen('account'), 'message', esc(msg)); window.scrollTo(0, 0); return;
+    }
+    if (act && o && act.value === 'return') {
+      if (!f.querySelector('[name=reason]:checked')) return notice(screen('account'), 'error', 'Choose what went wrong.');
+      o.status = 'Return requested'; save();
+      RENDER.account(screen('account'), true); notice(screen('account'), 'message', esc(FX_BD.returnThanks)); window.scrollTo(0, 0); return;
+    }
+    if (rpt) {
+      var a = rpt.value, today = Date.now();
+      if (a === 'create') {
+        var src = S.orders.filter(function (x) { return x.no === +f.querySelector('[name=order_id]').value; })[0] || S.last;
+        var w = +f.querySelector('[name=weeks]').value;
+        S.repeats.push({ id: 'r' + Math.random().toString(16).slice(2, 12), src: src.no, weeks: w, next: today + w * 7 * 864e5, status: 'active',
+          summary: src.lines.map(function (l) { return CATALOG[l.s].name + (l.q > 1 ? ' × ' + l.q : ''); }).join(', ') });
+        save(); if (current === 'order') RENDER.order(screen('order')); else RENDER.account(screen('account'), true); return;
+      }
+      var r = S.repeats.filter(function (x) { return x.id === f.querySelector('[name=schedule_id]').value; })[0]; if (!r) return;
+      var said = '';
+      if (a === 'pause') { r.status = 'paused'; said = 'Paused. No reminders until you resume.'; }
+      if (a === 'resume') { r.status = 'active'; r.next = Math.max(r.next, today + r.weeks * 7 * 864e5); said = 'Resumed. Next order: ' + dayLabel(r.next) + '.'; }
+      if (a === 'skip') { r.next = Math.max(r.next, today) + r.weeks * 7 * 864e5; said = 'Skipped. Next order: ' + dayLabel(r.next) + '.'; }
+      if (a === 'interval') { r.weeks = +f.querySelector('[name=weeks]').value; said = 'This order now repeats every ' + r.weeks + ' weeks.'; }
+      if (a === 'cancel') { r.status = 'cancelled'; said = 'Repeat order cancelled. Nothing more will be sent.'; }
+      save(); RENDER.account(screen('account'), true); notice(screen('account'), 'message', esc(said));
+    }
+  }, true);
+  // Header search: Enter with no suggestion chosen opens the results page.
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('form.fd-search__form'); if (!f) return;
+    e.preventDefault();
+    // An empty ?s= is still a search in WordPress: it lists every product.
+    var q = f.querySelector('input[name=s]').value.trim();
+    var d = f.closest('details'); if (d) d.open = false;
+    lastQuery = q; show('search');
+  }, true);
+
   function add(slug, q) {
     var p = CATALOG[slug]; if (!p || !p.stock) return;
-    var line = S.cart.filter(function (l) { return l.s === slug; })[0];
+    var line = S.cart.filter(function (l) { return l.s === slug && !l.box; })[0];
     if (line) line.q += q; else S.cart.push({ s: slug, q: q });
     save(); paintHeader(); openDrawer(p.name + (q > 1 ? ' × ' + q : '') + ' added to your cart.');
   }
-  function setQty(slug, q) {
-    S.cart = S.cart.map(function (l) { if (l.s === slug) l.q = q; return l; }).filter(function (l) { return l.q > 0; });
+  function setQty(key, q) {
+    S.cart = S.cart.map(function (l) { if (lineKey(l) === key) l.q = q; return l; }).filter(function (l) { return l.q > 0; });
     if (!S.cart.length) S.coupon = null;
     save(); paintHeader();
   }
@@ -1504,10 +1784,10 @@ MOCK_SCRIPT = r'''<script>
     paintShipBar(root, t);
     $('.fx-lines', root).innerHTML = L.map(function (l, i) {
       var p = CATALOG[l.s];
-      return '<tr class="woocommerce-cart-form__cart-item cart_item" data-s-line="' + l.s + '">' +
+      return '<tr class="woocommerce-cart-form__cart-item cart_item" data-s-line="' + l.k + '">' +
         '<td class="product-remove"><a href="#" class="remove" aria-label="Remove ' + esc(p.name) + ' from cart">×</a></td>' +
         '<td class="product-thumbnail"><a href="#" data-s="' + p.screen + '">' + bowl(p.hue) + '</a></td>' +
-        '<td class="product-name" data-title="Product"><a href="#" data-s="' + p.screen + '">' + esc(p.name) + '</a></td>' +
+        '<td class="product-name" data-title="Product"><a href="#" data-s="' + p.screen + '">' + esc(p.name) + '</a>' + boxMeta(l) + '</td>' +
         '<td class="product-price" data-title="Price">' + amt(p.price) + '</td>' +
         '<td class="product-quantity" data-title="Quantity"><div class="quantity">' +
         '<label class="screen-reader-text" for="cq-' + i + '">Quantity</label>' +
@@ -1516,6 +1796,24 @@ MOCK_SCRIPT = r'''<script>
     }).join('');
     paintCartTotals(root);
   };
+  // WooCommerce prints cart item data under the name: "Box: 6-pack box".
+  function boxMeta(l) {
+    if (!l.box) return '';
+    var ids = [], n; S.cart.forEach(function (c) { if (c.box && ids.indexOf(c.box.id) < 0) ids.push(c.box.id); });
+    n = ids.length;
+    return '<dl class="variation"><dt>Box:</dt><dd>' + (n > 1 ? 'Box ' + (ids.indexOf(l.box.id) + 1) + ' · ' + l.box.size + ' packs' : l.box.size + '-pack box') + '</dd></dl>';
+  }
+  function feeRowsHtml(t) {
+    return t.fees.map(function (f) { return '<tr class="fee fx-fee"><th>' + esc(f.label) + '</th><td data-title="' + esc(f.label) + '">−' + amt(f.amount) + '</td></tr>'; }).join('');
+  }
+  // foodify_box_broken_notice(): a box that no longer holds its size says why its discount went.
+  function boxNotices(t) {
+    return t.box.filter(function (b) { return !b.complete && b.pct; }).map(function (b) {
+      var m = b.size - b.packs;
+      return 'Your ' + b.size + '-pack box has ' + b.packs + ' of ' + b.size + ' packs now, so its ' + b.pct + '% off is not applied. ' +
+        (m > 0 ? 'Add ' + m + ' more to any pack marked "' + b.size + '-pack box" to bring it back.' : 'Take ' + (-m) + ' out to bring it back.');
+    });
+  }
   function paintCartTotals(root) {
     var L = cartLines(), t = totals(L, S.coupon, null);
     paintShipBar(root, t);
@@ -1526,12 +1824,22 @@ MOCK_SCRIPT = r'''<script>
       $('th', dr).textContent = 'Coupon: ' + S.coupon.toLowerCase();
       $('td', dr).innerHTML = '−' + amt(t.disc) + ' <a href="#" class="woocommerce-remove-coupon">[Remove]</a>';
     }
+    $$('.fx-fee', root).forEach(function (r) { r.remove(); });
+    $('.shipping', root).insertAdjacentHTML('beforebegin', feeRowsHtml(t));
+    var bn = boxNotices(t), w = $('.woocommerce-notices-wrapper', root), bw = $('.fx-box-notices', root);
+    if (w && !bw) { w.insertAdjacentHTML('afterend', '<div class="fx-box-notices" hidden></div>'); bw = $('.fx-box-notices', root); }
+    if (bw) {
+      bw.hidden = !bn.length;
+      bw.innerHTML = bn.length ? '<ul class="woocommerce-info" role="status">' + bn.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>' : '';
+    }
     $('.shipping td', root).innerHTML = t.ship ? 'Flat rate: ' + amt(t.ship) : 'Free shipping';
     $('.order-total td', root).innerHTML = '<strong>' + amt(t.total) + '</strong>';
   }
   function applyCoupon(code, root) {
     code = (code || '').trim().toUpperCase();
     if (!code) return notice(root, 'error', 'Please enter a coupon code.');
+    // inc/referrals.php: a customer's own referral code is refused by name.
+    if (code === 'REF7K2M9Q') return notice(root, 'error', esc(FX_BD.referSelf));
     if (!COUPONS[code]) return notice(root, 'error', 'Coupon "' + esc(code.toLowerCase()) + '" does not exist!');
     if (S.coupon === code) return notice(root, 'error', 'Coupon code already applied!');
     S.coupon = code; save();
@@ -1575,9 +1883,9 @@ MOCK_SCRIPT = r'''<script>
     $('.fx-dr-body', drawer).innerHTML =
       '<ul class="wc-block-mini-cart__items">' + L.map(function (l) {
         var p = CATALOG[l.s];
-        return '<li class="wc-block-cart-items__row" data-s-line="' + l.s + '">' +
+        return '<li class="wc-block-cart-items__row" data-s-line="' + l.k + '">' +
           '<a href="#" data-s="' + p.screen + '" class="fx-dr-img" tabindex="-1">' + bowl(p.hue) + '</a>' +
-          '<div class="fx-dr-main"><a href="#" data-s="' + p.screen + '" class="wc-block-components-product-name">' + esc(p.name) + '</a>' +
+          '<div class="fx-dr-main"><a href="#" data-s="' + p.screen + '" class="wc-block-components-product-name">' + esc(p.name) + '</a>' + boxMeta(l) +
           '<div class="wc-block-components-quantity-selector">' +
           '<button type="button" class="wc-block-components-quantity-selector__button--minus" aria-label="Reduce quantity of ' + esc(p.name) + '">−</button>' +
           '<span class="fx-dr-q" aria-live="polite">' + l.q + '</span>' +
@@ -1587,6 +1895,7 @@ MOCK_SCRIPT = r'''<script>
       }).join('') + '</ul>' +
       '<div class="wc-block-mini-cart__footer">' +
       '<div class="wc-block-mini-cart__footer-subtotal"><span>Subtotal</span><span class="fx-num">' + rs(t.sub) + '</span></div>' +
+      t.fees.map(function (f) { return '<div class="wc-block-mini-cart__footer-subtotal fx-fee"><span>' + esc(f.label) + '</span><span class="fx-num">−' + rs(f.amount) + '</span></div>'; }).join('') +
       '<p class="fx-dr-ship">' + shipMessage(t) + '</p>' +
       '<div class="wc-block-mini-cart__footer-actions">' +
       '<a href="/cart/" data-s="cart" class="wc-block-mini-cart__footer-cart wp-element-button fx-outline">View my cart</a>' +
@@ -1596,11 +1905,11 @@ MOCK_SCRIPT = r'''<script>
     if (e.target === drawer || e.target.closest('.wc-block-components-drawer__close')) { e.preventDefault(); e.stopPropagation(); closeDrawer(); return; }
     var row = e.target.closest('[data-s-line]');
     if (!row) return;
-    var slug = row.getAttribute('data-s-line'), line = S.cart.filter(function (l) { return l.s === slug; })[0];
+    var slug = row.getAttribute('data-s-line'), line = lineByKey(slug);
     if (!line) return;
     if (e.target.closest('.wc-block-components-quantity-selector__button--minus')) { e.stopPropagation(); setQty(slug, line.q - 1); paintDrawer(); }
     else if (e.target.closest('.wc-block-components-quantity-selector__button--plus')) { e.stopPropagation(); setQty(slug, line.q + 1); paintDrawer(); }
-    else if (e.target.closest('.wc-block-cart-item__remove-link')) { e.preventDefault(); e.stopPropagation(); setQty(slug, 0); paintDrawer(CATALOG[slug].name + ' removed.'); }
+    else if (e.target.closest('.wc-block-cart-item__remove-link')) { e.preventDefault(); e.stopPropagation(); setQty(slug, 0); paintDrawer(CATALOG[line.s].name + ' removed.'); }
   });
 
   // ── the phone menu (overlayMenu: "mobile" in header.html) ────────────────
@@ -1658,15 +1967,21 @@ MOCK_SCRIPT = r'''<script>
     if (mode !== checkoutMode) {
       checkoutMode = mode;
       if (S.signedIn) fillFrom(chosenAddress());
-      else ['mobile', 'email', 'name', 'pin', 'city', 'state', 'l1', 'l2'].forEach(function (k) { field(k).value = ''; });
+      else {
+        ['mobile', 'email', 'name', 'pin', 'city', 'state', 'l1', 'l2'].forEach(function (k) { field(k).value = ''; });
+        // foodify_pin_prefill_script(): a PIN checked on a product page fills an empty PIN field.
+        field('pin').value = rememberedPin(); autofillCity(field('pin'), field('city'), field('state'));
+      }
     }
     $('.fx-co-lines', root).innerHTML = L.map(function (l) {
       var p = CATALOG[l.s];
-      return '<div class="fx-row"><span>' + esc(p.name) + ' <span class="fx-meta-inline">× ' + l.q + '</span></span><span class="fx-num">' + rs(p.price * l.q) + '</span></div>';
+      return '<div class="fx-row"><span>' + esc(p.name) + ' <span class="fx-meta-inline">× ' + l.q + (l.box ? ' · ' + l.box.size + '-pack box' : '') + '</span></span><span class="fx-num">' + rs(p.price * l.q) + '</span></div>';
     }).join('');
     $('.fx-co-sub', root).textContent = rs(t.sub);
     var cr = $('.fx-co-coupon-row', root); cr.hidden = !S.coupon;
     if (S.coupon) { cr.firstChild.textContent = 'Coupon ' + S.coupon; cr.lastChild.textContent = '−' + rs(t.disc); }
+    $$('.fx-co-fee', root).forEach(function (r) { r.remove(); });
+    cr.insertAdjacentHTML('afterend', t.fees.map(function (f) { return '<div class="fx-row fx-disc fx-co-fee"><span>' + esc(f.label) + '</span><span class="fx-num">−' + rs(f.amount) + '</span></div>'; }).join(''));
     $('.fx-co-prepaid-row', root).hidden = !t.pre;
     $('.fx-co-ship', root).textContent = t.ship ? rs(t.ship) : 'Free';
     $('.fx-co-total', root).textContent = rs(t.total);
@@ -1691,7 +2006,8 @@ MOCK_SCRIPT = r'''<script>
     var addr = { name: v('name'), phone: v('mobile').replace(/\D/g, ''), l1: v('l1'), l2: v('l2'), city: v('city'), state: v('state'), pin: v('pin') };
     var d = new Date(), months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var o = { no: S.nextNo++, date: ('0' + d.getDate()).slice(-2) + ' ' + months[d.getMonth()] + ' ' + d.getFullYear(),
-              status: 'Processing', lines: L, coupon: S.coupon, pay: pay, t: t, email: v('email'), addr: addr, fresh: true };
+              status: 'Processing', lines: L, coupon: S.coupon, pay: pay, t: t, email: v('email'), addr: addr, fresh: true,
+              wa: !!($('#foodify_wa_optin') || {}).checked };
     // A completed order teaches the book (inc/address-book.php): a signed-in
     // customer who typed a new address finds it saved next time.
     if (S.signedIn) {
@@ -1708,11 +2024,13 @@ MOCK_SCRIPT = r'''<script>
     lines.innerHTML = o.lines.map(function (l) {
       var p = CATALOG[l.s] || { name: l.s, screen: 'home' };
       return '<tr class="woocommerce-table__line-item order_item"><td class="woocommerce-table__product-name product-name">' +
-        '<a href="#" data-s="' + p.screen + '">' + esc(p.name) + '</a> <strong class="product-quantity">×&nbsp;' + l.q + '</strong></td>' +
+        '<a href="#" data-s="' + p.screen + '">' + esc(p.name) + '</a> <strong class="product-quantity">×&nbsp;' + l.q + '</strong>' +
+        (l.box ? '<ul class="wc-item-meta"><li><strong class="wc-item-meta-label">Box:</strong> ' + l.box.size + '-pack box</li></ul>' : '') + '</td>' +
         '<td class="woocommerce-table__product-total product-total">' + amt(l.price * l.q) + '</td></tr>';
     }).join('');
     var rows = [['Subtotal:', amt(o.t.sub)]];
     if (o.coupon) rows.push(['Coupon ' + o.coupon + ':', '−' + amt(o.t.disc)]);
+    (o.t.fees || []).forEach(function (f) { rows.push([esc(f.label) + ':', '−' + amt(f.amount)]); });
     if (o.t.pre) rows.push(['Prepaid saving:', '−' + amt(o.t.pre)]);
     rows.push(['Shipping:', o.t.ship ? amt(o.t.ship) + ' <small class="shipped_via">via Flat rate</small>' : 'Free shipping']);
     rows.push(['Payment method:', o.pay === 'cod' ? 'Cash on delivery' : 'Paid online (Razorpay)']);
@@ -1735,7 +2053,98 @@ MOCK_SCRIPT = r'''<script>
     orderTable(o, $('.fx-o-lines', root), $('.fx-o-totals', root));
     $('.fx-o-address', root).innerHTML = addressHTML(o.addr);
     $('.fx-o-actions a[data-s=account]', root).hidden = !S.signedIn;
+    $('.fx-o-repeat', root).innerHTML = S.signedIn ? repeatOffer(o) : '';
+    $('.fx-o-wa', root).innerHTML = o.wa ? FX_BD.waStop.split('99999').join(String(o.no)) : '';
   };
+
+  // ── lane B/D: order actions, repeat orders, buy again, search ────────────
+  var FX_BD = window.FX_BD || {};
+  function returnState(o) {
+    if (o.status === 'Return requested') return 'requested';
+    if (o.status !== 'Delivered' || !o.delivered) return 'off';
+    return Date.now() <= o.delivered + FX_BD.returnDays * 864e5 ? 'open' : 'closed';
+  }
+  function orderActions(o) {
+    var no = String(o.no), h;
+    if (o.status === 'Processing') {
+      var money = o.pay === 'cod' ? FX_BD.moneyCod : FX_BD.moneyPaid.replace('₹77,777', rs(o.t.total));
+      h = FX_BD.cancel.replace('__MONEY__', esc(money));
+    } else {
+      var st = returnState(o); if (st === 'off') return '';
+      h = FX_BD[st].replace('__CLOSES__', dayLabel(o.delivered + FX_BD.returnDays * 864e5));
+    }
+    return h.split('99999').join(no);
+  }
+  function repeatOffer(o) {
+    if (['Processing', 'Delivered'].indexOf(o.status) < 0) return '';
+    var r = S.repeats.filter(function (x) { return x.src === o.no && x.status !== 'cancelled'; })[0];
+    if (r) return '<section class="fd-repeat is-set" aria-labelledby="fd-repeat-title-' + o.no + '"><h2 class="fd-repeat__title" id="fd-repeat-title-' + o.no + '">Repeat this order</h2>' +
+      '<p class="fd-repeat__lead">This order repeats every ' + r.weeks + ' weeks. Next order: ' + dayLabel(r.next) + '.</p>' +
+      '<a class="fd-secondary" href="#" data-s="account" data-panel-go="repeat-orders">Manage repeat orders</a></section>';
+    return FX_BD.repeatOffer.split('99999').join(String(o.no));
+  }
+  function repeatList() {
+    var rows = S.repeats.filter(function (r) { return r.status !== 'cancelled'; });
+    if (!rows.length) return '<p class="fd-account-lead">No repeat orders yet. Open any order and choose “Repeat this order”.</p>';
+    var verb = function (r, action, label, cls) {
+      return '<form method="post" class="fd-repeat-item__verb"><input type="hidden" name="foodify_repeat_action" value="' + action + '">' +
+        '<input type="hidden" name="schedule_id" value="' + r.id + '"><button type="submit" class="fd-secondary' + (cls || '') + '">' + label + '</button></form>';
+    };
+    return '<p class="fd-account-lead">We email you 2 days before each date with a one-tap link to check out. Nothing is charged automatically — you confirm and pay each time.</p>' +
+      '<ul class="fd-repeat-list">' + rows.map(function (r) {
+        var paused = r.status === 'paused';
+        var sel = '<form method="post" class="fd-repeat-item__verb fd-repeat-item__interval"><input type="hidden" name="foodify_repeat_action" value="interval">' +
+          '<input type="hidden" name="schedule_id" value="' + r.id + '"><label class="screen-reader-text" for="fd-repeat-weeks-' + r.id + '">How often</label>' +
+          '<select class="fd-repeat__select" id="fd-repeat-weeks-' + r.id + '" name="weeks">' + [2, 4, 6].map(function (w) {
+            return '<option value="' + w + '"' + (w === r.weeks ? ' selected' : '') + '>' + w + ' weeks</option>'; }).join('') +
+          '</select><button type="submit" class="fd-secondary">Change</button></form>';
+        return '<li class="fd-repeat-item' + (paused ? ' is-paused' : '') + '" id="repeat-' + r.id + '"><div class="fd-repeat-item__head">' +
+          '<span class="fd-repeat-item__title">Every ' + r.weeks + ' weeks</span><span class="fd-repeat-item__status">' + (paused ? 'Paused' : 'Active') + '</span></div>' +
+          '<p class="fd-repeat-item__items">' + esc(r.summary) + '</p>' +
+          '<p class="fd-repeat-item__next">' + (paused ? 'Paused — no reminders until you resume.' : 'Next order: ' + dayLabel(r.next) + ' · reminder ' + dayLabel(r.next - 2 * 864e5)) + '</p>' +
+          '<div class="fd-repeat-item__actions">' + (paused ? verb(r, 'resume', 'Resume') : verb(r, 'pause', 'Pause') + verb(r, 'skip', 'Skip next')) +
+          sel + verb(r, 'cancel', 'Cancel', ' fd-danger') + '</div></li>';
+      }).join('') + '</ul>';
+  }
+  // foodify_buy_again_ids(): newest order first, each product once, only what can be bought, four at most.
+  function paintAgain() {
+    $$('[data-fx-again]').forEach(function (slot) {
+      var ids = [];
+      if (S.signedIn) S.orders.forEach(function (o) {
+        if (['Delivered', 'Processing'].indexOf(o.status) < 0) return;
+        o.lines.forEach(function (l) { if (ids.indexOf(l.s) < 0 && CATALOG[l.s] && CATALOG[l.s].stock) ids.push(l.s); });
+      });
+      ids = ids.slice(0, 4);
+      slot.innerHTML = !ids.length ? '' :
+        '<section class="fd-again alignwide" aria-labelledby="fd-again-title" data-fd-again><h2 class="fd-again__title" id="fd-again-title">Buy again</h2>' +
+        '<p class="fd-again__lede">From your recent orders.</p><ul class="fd-again__list">' + ids.map(function (sl) {
+          var p = CATALOG[sl];
+          return '<li class="fd-again__item"><a class="fd-again__link" href="#" data-s="' + p.screen + '">' + bowl(p.hue).replace('fx-bowl', 'fx-bowl fd-again__img') +
+            '<span class="fd-again__name">' + esc(p.name) + '</span></a><span class="fd-again__price">' + rs(p.price) + '</span>' +
+            '<a class="wp-element-button fd-again__add" href="#" data-add="' + sl + '" aria-label="Add ' + esc(p.name) + ' to cart">Add to cart</a></li>';
+        }).join('') + '</ul><p class="fd-sr" role="status" aria-live="polite" data-fd-again-status></p></section>';
+    });
+  }
+  // The results page: the same ranking as the header suggestions (inc/search.php).
+  var lastQuery = 'dal';
+  RENDER.search = function () { runSearch(lastQuery); };
+  function runSearch(q) {
+    lastQuery = q;
+    var root = screen('search'), grid = $('.fd-products', root), rows = window.fdSearchRows || [];
+    var hits = q ? FDSearch.rank(rows, q, 100) : rows.slice(), byId = {};
+    hits.forEach(function (r, i) { byId[r.url.slice(1)] = i + 1; });
+    var lis = $$('li.wp-block-post', grid);
+    lis.forEach(function (li) { var k = byId['p-' + li.getAttribute('data-slug')]; li.hidden = !k; li.style.order = k || 0; });
+    lis.filter(function (li) { return !li.hidden; }).sort(function (a, b) { return a.style.order - b.style.order; }).forEach(function (li) { grid.appendChild(li); });
+    $('h1', root).textContent = q ? 'Search results: “' + q + '”' : 'Search results';
+    var n = hits.length, rc = $('.woocommerce-result-count', root);
+    rc.textContent = n === 1 ? 'Showing the single result' : n ? 'Showing all ' + n + ' results' : 'No products found';
+    var nr = $('.fx-noresults', root); nr.hidden = n > 0;
+    var none = $('.fd-search-none', nr); if (none) none.textContent = 'No match for ‘' + q + '’. Popular right now:';
+    grid.hidden = !n;
+    $$('.wp-block-query-pagination', root).forEach(function (p) { p.hidden = true; });
+    var inp = $('.fd-search__input', root); if (inp) inp.value = q;
+  }
 
   // ── my account ───────────────────────────────────────────────────────────
   var panel = 'orders', viewing = null;
@@ -1752,12 +2161,19 @@ MOCK_SCRIPT = r'''<script>
         '<td class="woocommerce-orders-table__cell-order-total">' + rs(o.t.total) + '<span class="fx-meta">' + o.t.count + (o.t.count === 1 ? ' item' : ' items') + '</span></td>' +
         '<td class="woocommerce-orders-table__cell-order-actions">' +
         '<button type="button" class="wp-element-button fd-reorder" data-reorder="' + o.no + '">Reorder</button>' +
+        // inc/order-actions.php adds these two to WooCommerce's orders table.
+        (o.status === 'Processing' ? '<a href="#" class="woocommerce-button button foodify-cancel fd-secondary" data-view="' + o.no + '" data-open="fd-cancel">Cancel</a>' : '') +
+        (returnState(o) === 'open' ? '<a href="#" class="woocommerce-button button foodify-return fd-secondary" data-view="' + o.no + '" data-open="fd-return">Report a problem</a>' : '') +
         '<button type="button" class="wp-element-button fd-secondary" data-view="' + o.no + '">Details</button>' +
         // PDF Invoices & Packing Slips adds this action to the orders table.
         '<a href="#" class="woocommerce-button button invoice wp-element-button fd-secondary" data-note="On the live site this downloads the order&#8217;s GST invoice as a PDF, from the free PDF Invoices &amp; Packing Slips plugin. It needs Foodify&#8217;s GSTIN before it can be issued.">Invoice</a></td></tr>';
     }).join('') : '<tr><td colspan="5">No order has been made yet. <a href="#" data-s="shop">Browse products</a></td></tr>';
+    $('.fx-repeats', root).innerHTML = repeatList();
     var o = S.orders.filter(function (x) { return x.no === viewing; })[0];
     if (o) {
+      $('.fx-vo-actions', root).innerHTML = orderActions(o);
+      $('.fx-vo-repeat', root).innerHTML = repeatOffer(o);
+      $('.fx-vo-wa', root).innerHTML = o.wa ? FX_BD.waStop.split('99999').join(String(o.no)) : '';
       $('.fx-vo-head', root).innerHTML = 'Order <mark class="order-number">#' + o.no + '</mark> was placed on <mark class="order-date">' + o.date + '</mark> and is currently <mark class="order-status">' + o.status + '</mark>.';
       orderTable(o, $('.fx-vo-lines', root), $('.fx-vo-totals', root));
       $('.fx-vo-address', root).innerHTML = addressHTML(o.addr);
@@ -1773,6 +2189,7 @@ MOCK_SCRIPT = r'''<script>
         '</div></li>';
     }).join('') : '<li class="fd-address-note">No saved addresses yet. Add one below, or it is saved from your first order.</li>';
     $('#fx-d-name', root).value = S.name; $('#fx-d-mobile', root).value = S.mobile; $('#fx-d-email', root).value = S.email;
+    if ($('#foodify_cart_optin', root)) $('#foodify_cart_optin', root).checked = !!S.cartOptin;
   };
   function addrForm(a) {
     var f = $('#s-account .fd-address-form');
@@ -1880,6 +2297,48 @@ MOCK_SCRIPT = r'''<script>
     applyFilters(root);
   }
 
+  // ── build your own box: foodify_box_script() refuses an incomplete box;
+  // a complete one is added as one line per pack carrying the box id. ───────
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('form.fd-box__form'); if (!f) return;
+    e.preventDefault();
+    var size = +((f.querySelector('input[name=box_size]:checked') || {}).value || 0), packs = [], n = 0;
+    $$('.fd-box__pack', f).forEach(function (li) {
+      var q = +li.querySelector('.fd-box__qty').value || 0; if (q > 0) { packs.push([window.FX_BOX_IDS[li.getAttribute('data-id')], q]); n += q; }
+    });
+    if (!size || n !== size) return;
+    var id = Math.random().toString(16).slice(2, 10).toUpperCase();
+    packs.forEach(function (p) { S.cart.push({ s: p[0], q: p[1], box: { id: id, size: size } }); });
+    save(); paintHeader();
+    $$('.fd-box__qty', f).forEach(function (i) { i.value = 0; i.dispatchEvent(new Event('input', { bubbles: true })); });
+    show('cart');
+    notice(screen('cart'), 'message', 'Your box of ' + size + ' packs is in the cart, with ' + window.FX_BOX_SIZES[size] + '% off while the box stays complete.');
+  });
+
+  // ── back-in-stock: the site posts and redirects to one of these states ────
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('form.fd-notify'); if (!f) return;
+    e.preventDefault();
+    var em = f.querySelector('input[type=email]').value.trim(), tg;
+    var ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em);
+    tg = f.parentNode.querySelector(ok ? 'template.fx-notify-done' : 'template.fx-notify-bad');
+    f.outerHTML = tg.innerHTML.split('__EMAIL__').join(esc(em.toLowerCase()));
+  }, true);
+  // A PIN checked on one product page is remembered (localStorage foodify_pin);
+  // the theme pre-fills it on the next product and at checkout when empty.
+  function rememberedPin() { try { return localStorage.getItem('foodify_pin') || ''; } catch (e) { return ''; } }
+  function prefillPin(root) {
+    var pin = rememberedPin(), i = root.querySelector('.fd-deliver__input');
+    if (pin && i && !i.value) { i.value = pin; i.dispatchEvent(new Event('input', { bubbles: true })); }
+  }
+  function autofillCity(pinField, cityField, stateField) {
+    var hit = /^\d{6}$/.test(pinField.value) && window.foodifyPinLookup && window.foodifyPinLookup(pinField.value);
+    if (!hit) return;
+    if (hit.city && !cityField.value) cityField.value = hit.city.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    var opt = stateField && [].find.call(stateField.options || [], function (o) { return o.value === hit.state || o.getAttribute('data-code') === hit.state; });
+    if (opt && !stateField.value) stateField.value = opt.value;
+  }
+
   // ── one click handler for the whole document ─────────────────────────────
   var toast = document.createElement('div'); toast.className = 'fx-toast'; toast.hidden = true; toast.setAttribute('role', 'status');
   document.body.appendChild(toast); var tt;
@@ -1889,6 +2348,15 @@ MOCK_SCRIPT = r'''<script>
     var t = e.target, root = t.closest('.fx-shell');
     var el;
     if ((el = t.closest('.proto-reset'))) { e.preventDefault(); S = seed(); save(); checkoutMode = null; viewing = null; paintHeader(); show('home'); say('Prototype reset: three items in the cart, signed in as a returning customer.'); return; }
+    if ((el = t.closest('a.fd-search__link'))) {
+      e.preventDefault(); var dd = el.closest('details'); if (dd) dd.open = false;
+      show(el.getAttribute('href').slice(1)); return;
+    }
+    if ((el = t.closest('.fd-notify__undo'))) {
+      e.preventDefault();
+      var box = el.closest('.fd-notify'), tg = box.parentNode.querySelector('template.fx-notify-gone');
+      box.outerHTML = tg.innerHTML; return;
+    }
     if ((el = t.closest('[data-page]'))) {
       e.preventDefault(); paginate(root, +el.getAttribute('data-page'));
       var top = $('.fd-shop__results', root); if (top) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1903,7 +2371,13 @@ MOCK_SCRIPT = r'''<script>
     if (t.closest('.fx-burger')) { e.preventDefault(); openMenu(); return; }
     if (t.closest('.wp-block-navigation__responsive-container-close')) { e.preventDefault(); closeMenu(); return; }
     if ((el = t.closest('[data-reorder]'))) { e.preventDefault(); reorder(+el.getAttribute('data-reorder')); return; }
-    if ((el = t.closest('[data-view]'))) { e.preventDefault(); viewing = +el.getAttribute('data-view'); clearNotice(screen('account')); goPanel('view-order'); window.scrollTo(0, 0); return; }
+    if ((el = t.closest('[data-view]'))) {
+      e.preventDefault(); viewing = +el.getAttribute('data-view'); clearNotice(screen('account')); goPanel('view-order'); window.scrollTo(0, 0);
+      // foodify_order_actions_script(): the link's #fd-cancel / #fd-return opens that panel.
+      var open = el.getAttribute('data-open'), d = open && document.querySelector('#s-account #' + open);
+      if (d) { d.open = true; d.scrollIntoView(); }
+      return;
+    }
     if ((el = t.closest('[data-panel]'))) {
       e.preventDefault();
       var p = el.getAttribute('data-panel');
@@ -1928,12 +2402,12 @@ MOCK_SCRIPT = r'''<script>
     // cart
     if ((el = t.closest('.woocommerce-cart-form a.remove'))) {
       e.preventDefault();
-      var slug = el.closest('tr').getAttribute('data-s-line'), name = CATALOG[slug].name;
+      var slug = el.closest('tr').getAttribute('data-s-line'), gone = lineByKey(slug), name = CATALOG[gone.s].name;
       setQty(slug, 0); RENDER.cart(screen('cart'));
       notice(screen('cart'), 'message', '“' + esc(name) + '” removed. <a href="#" class="restore-item" data-restore="' + slug + '">Undo?</a>');
       return;
     }
-    if ((el = t.closest('[data-restore]'))) { e.preventDefault(); var rsl = el.getAttribute('data-restore'); S.cart.push({ s: rsl, q: 1 }); save(); paintHeader(); clearNotice(screen('cart')); RENDER.cart(screen('cart')); return; }
+    if ((el = t.closest('[data-restore]'))) { e.preventDefault(); var rsl = el.getAttribute('data-restore').split('@'), bxs = S.cart.filter(function (c) { return c.box && c.box.id === rsl[1]; })[0]; S.cart.push(rsl[1] && bxs ? { s: rsl[0], q: 1, box: bxs.box } : { s: rsl[0], q: 1 }); save(); paintHeader(); clearNotice(screen('cart')); RENDER.cart(screen('cart')); return; }
     if (t.closest('.woocommerce-remove-coupon')) { e.preventDefault(); S.coupon = null; save(); RENDER.cart(screen('cart')); notice(screen('cart'), 'message', 'Coupon has been removed.'); return; }
     // checkout
     if (t.closest('.showcoupon')) { e.preventDefault(); var cf = $('#s-checkout .fx-co-coupon'); cf.hidden = !cf.hidden; if (!cf.hidden) $('#fx-co-code').focus(); return; }
@@ -1975,6 +2449,10 @@ MOCK_SCRIPT = r'''<script>
     el = t.closest('a, button, input[type=submit]');
     if (!el || el.closest('.proto') || el.closest('.fx-menu') || el.closest('.fx-drawer-overlay')) return;
     if (el.matches('.fd-tab__button, .fd-sticky-atc button, .tab, summary') || el.type === 'submit' || el.closest('form.cart')) return;
+    // Controls the theme's own scripts answer (reviews, box builder, search, referral sharing).
+    if (el.matches('.fd-rsum__chip, .fd-rsum__clear, [data-fd-photo], .fd-rv-dialog__close, .fd-box__minus, .fd-box__plus, ' +
+                   '[data-fd-copy], [data-fd-share], .fd-search__toggle, .fd-search__go, .fd-deliver__go')) return;
+    if (el.matches('a[href^="https://wa.me/"]')) { e.preventDefault(); say('On the site this opens WhatsApp with the message ready to send.'); return; }
     if (el.hasAttribute('data-note')) { e.preventDefault(); say(el.getAttribute('data-note')); return; }
     e.preventDefault();
     say('Not built into this prototype — on the live site this works.');
@@ -2018,7 +2496,8 @@ MOCK_SCRIPT = r'''<script>
       notice(root, 'message', id ? 'Address updated.' : 'Address saved.'); return;
     }
     if (f.matches('.fx-details')) {
-      S.name = $('#fx-d-name').value.trim() || S.name; S.email = $('#fx-d-email').value.trim() || S.email; checkoutMode = null; save();
+      S.name = $('#fx-d-name').value.trim() || S.name; S.email = $('#fx-d-email').value.trim() || S.email; checkoutMode = null;
+      S.cartOptin = !!($('#foodify_cart_optin') || {}).checked; save();
       notice(root, 'message', 'Account details changed successfully.'); return;
     }
     if (f.matches('.fx-otp-1')) {
@@ -2051,6 +2530,9 @@ MOCK_SCRIPT = r'''<script>
   });
   document.addEventListener('input', function (e) {
     var t = e.target, root = t.closest('.fx-shell');
+    // checkout-fields.php's PIN autofill, answered from the on-site table.
+    if (t.id === 'fx-co-pin') autofillCity(t, document.getElementById('fx-co-city'), document.getElementById('fx-co-state'));
+    if (t.id === 'fd-postcode') autofillCity(t, document.getElementById('fd-city'), document.getElementById('fd-state'));
     if (t.matches('#s-cart input.qty')) {
       // inc/checkout-flow.php: the quantity applies itself after a 700 ms
       // pause, so typing "12" does not submit "1" first.
@@ -2060,8 +2542,9 @@ MOCK_SCRIPT = r'''<script>
         var tr = t.closest('tr'); if (!tr) return;
         var slug = tr.getAttribute('data-s-line');
         setQty(slug, q);
-        if (q === 0) { RENDER.cart(screen('cart')); notice(screen('cart'), 'message', '“' + esc(CATALOG[slug].name) + '” removed.'); }
-        else { $('.product-subtotal', tr).innerHTML = amt(CATALOG[slug].price * q); paintCartTotals(screen('cart')); notice(screen('cart'), 'message', 'Cart updated.'); }
+        var ps = CATALOG[slug.split('@')[0]];
+        if (q === 0) { RENDER.cart(screen('cart')); notice(screen('cart'), 'message', '“' + esc(ps.name) + '” removed.'); }
+        else { $('.product-subtotal', tr).innerHTML = amt(ps.price * q); paintCartTotals(screen('cart')); notice(screen('cart'), 'message', 'Cart updated.'); }
       }, 700);
       return;
     }
@@ -2113,6 +2596,7 @@ def wire_links(body):
         m = re.match(r"/product-category/([^/?#]+)", href)
         if m:                               return "combos" if m.group(1) == "combos" else "cat-" + m.group(1)
         if href.startswith(("/shop", "/?orderby")): return "shop"
+        if href.startswith("/build-a-box"): return "box"
         m = re.match(r"/([a-z-]+)/?$", href)
         if m and m.group(1) in PAGES:       return "page-" + m.group(1)
         if href in ("/", "") or href.startswith("/#"): return "home"
@@ -2139,8 +2623,10 @@ def loop_rows(related, query):
         picks = [PRODUCTS[i] for i in FIXTURE_PAIRINGS if PRODUCTS[i] is not PDP]
         rest = [r for r in by_popularity(PRODUCTS) if r is not PDP and r not in picks and "soldout" not in r[9]]
         return (picks + rest)[:4]
-    if LISTING is not None:
+    if LISTING is not None and query.get("inherit", True):
         return LISTING
+    if query.get("inherit") is False and query.get("__woocommerceStockStatus"):
+        return [r for r in by_popularity(PRODUCTS) if "soldout" not in r[9]]
     # The home page's best-sellers row: orderBy popularity.
     return by_popularity(PRODUCTS)
 
@@ -2185,7 +2671,9 @@ def render(markup, depth=0):
             bg = (a.get("style", {}).get("spacing", {}) or {}).get("blockGap")
             if isinstance(bg, str) and bg.startswith("var:preset|"):
                 bg = "var(--wp--preset--" + bg[len("var:preset|"):].replace("|", "--") + ")"
-            style += f'gap:{bg or "var(--wp--style--block-gap)"}'
+            # Without one, core's default gap is a zero-specificity :where() rule,
+            # which the theme's own CSS overrides — so it must not be inline here.
+            style += f'gap:{bg}' if bg else ""
             tail = markup[pos:]
             tail = re.sub(r'<div\s+class="', f'<div style="{style}" class="is-layout-flex ', tail, count=1)
             markup = markup[:pos] + tail
@@ -2297,6 +2785,7 @@ img{max-width:100%}
 main>.wp-block-group,main>section,main>div{margin:0}
 .wp-block-group.has-background,.wp-block-group[style*=background]{width:100%}
 /* Flex layouts (injected inline by render()); children are not block-wide. */
+:where(.is-layout-flex){gap:var(--wp--style--block-gap)}
 .is-layout-flex>*{width:auto;margin:0}
 /* Cover: full-bleed, centred inner container that is itself a constrained layout. */
 .fx-shell main>.alignfull{max-width:none;margin-left:calc(-1 * var(--wp--preset--spacing--40));margin-right:calc(-1 * var(--wp--preset--spacing--40))}
@@ -2697,6 +3186,9 @@ def screen_specs():
     for slug, (title, content) in PAGES.items():
         specs.append(("page-" + slug, "Info page" if slug == "shipping" else None, "page.html",
                       dict(page=(html.unescape(title), content))))
+    specs.append(("box", "Build a box", "page-build-a-box.html", dict(page=("Build your own box", ""))))
+    specs.append(("search", "Search", "product-search-results.html",
+                  dict(listing=by_popularity(PRODUCTS + COMBOS), cat=("Search results", ""))))
     specs.append(("notfound", "404", "404.html", {}))
     return specs
 
@@ -2718,6 +3210,13 @@ def body_class(sid, setup):
             "signin": "woocommerce-account woocommerce-page"}.get(sid, "page" if sid.startswith("page-") else "")
 
 
+# Pure halves the preview also renders from (added with each feature lane).
+BRIDGE_EXTRA = ["payments", "pincodes", "delivery-estimate", "stock-alerts", "offers", "box-builder", "reviews",
+                "address-book", "order-actions", "whatsapp", "repeat-orders", "cart-recovery", "referrals",
+                "search", "buy-again"]
+PHP_CACHE = {}
+
+
 def php(expr, *args):
     """Evaluate one PHP expression against the theme's PURE halves and return its
     output. The card badges, yield lines, SAVE badge and the whole tabbed PDP
@@ -2725,17 +3224,22 @@ def php(expr, *args):
     preview cannot drift from the theme because it does not reimplement it.
     `args` are passed as JSON in $argv and decoded into $a[0], $a[1], ..."""
     import subprocess
+    key = (expr, json.dumps(args, sort_keys=True, default=str))
+    if key in PHP_CACHE:
+        return PHP_CACHE[key]
     inc = os.path.join(THEME, "inc")
     prelude = (
         "define('ABSPATH', __DIR__);"
         f"require '{inc}/product-spec.php'; require '{inc}/business-profile.php';"
         f"require '{inc}/product-combo.php'; require '{inc}/checkout-flow.php';"
-        "$a = array_map(fn($j) => json_decode($j, true), array_slice($argv, 1));"
+        + "".join(f"require '{inc}/{f}.php';" for f in BRIDGE_EXTRA)
+        + "$a = array_map(fn($j) => json_decode($j, true), array_slice($argv, 1));"
     )
     r = subprocess.run(["php", "-r", prelude + expr + ";"] + [json.dumps(x) for x in args],
                        capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit(f"php bridge failed for {expr}:\n{r.stderr}")
+    PHP_CACHE[key] = r.stdout
     return r.stdout
 
 
@@ -2812,6 +3316,34 @@ def main():
              'family=Fraunces:opsz,wght@9..144,300..700&'
              'family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap">')
 
+    pins = json.load(open(os.path.join(THEME, "assets", "data", "pincodes.json")))
+    pins = {"states": pins["states"], "districts": pins["districts"], "pins": pins["pins"]}
+    theme_js = "".join(f"<script>{src}</script>" for src in [
+        # The site answers /wp-json/foodify/v1/pin/ from this same table; the
+        # prototype has no server, so it reads the table in the page.
+        "window.FX_PINS=" + json.dumps(pins, separators=(",", ":")) + ";"
+        "window.foodifyPinLookup=function(p){var h=window.FX_PINS.pins[p];if(!h)return null;"
+        "return{city:h[0]>=0?window.FX_PINS.districts[h[0]]:'',state:h[1]>=0?window.FX_PINS.states[h[1]]:''};};",
+        php("echo foodify_delivery_script()"),
+        php("echo foodify_box_script()"),
+        "(function(){var src=" + json.dumps(php("echo foodify_review_filter_script()")).replace("</", "<\\/") + ";"
+        "[].forEach.call(document.querySelectorAll('[id^=s-p-]'),function(el){try{(new Function('document',src))({"
+        "querySelector:function(q){return el.querySelector(q);},querySelectorAll:function(q){return el.querySelectorAll(q);},"
+        "createElement:function(t){return document.createElement(t);},body:document.body});}catch(e){}});})();",
+        "window.fdSearchRows=" + search_rows() + ";",
+        # The results page ranks with the same engine as the header (FDSearch).
+        php("echo foodify_search_engine_js()") + ";window.FDSearch=FDSearch;",
+        ""
+        "(function(){var src=" + json.dumps(php("echo foodify_search_script()")).replace("</", "<\\/") + ";"
+        "[].forEach.call(document.querySelectorAll('.fx-shell'),function(el){try{(new Function('document',src))({"
+        "querySelector:function(q){return el.querySelector(q);},querySelectorAll:function(q){return el.querySelectorAll(q);},"
+        "createElement:function(t){return document.createElement(t);},body:document.body,"
+        "get activeElement(){return document.activeElement;}});}catch(e){}});})();",
+        php("echo foodify_referral_script()"),
+        "window.FX_BD=" + json.dumps(bd_templates(), ensure_ascii=False) + ";"
+        "window.FX_BOX_IDS=" + json.dumps({str(b["id"]): b["slug"] for b in box_products()}) + ";"
+        "window.FX_BOX_SIZES=" + json.dumps(DEMO_BOX_SIZES) + ";",
+    ])
     script = (MOCK_SCRIPT.replace('__SCREENS__', json.dumps(ids))
               .replace('__CATALOG__', json.dumps(catalog_json(), ensure_ascii=False))
               .replace('__PDP_SCRIPT__', json.dumps(PDP_SCRIPT).replace("</", "<\\/")))
@@ -2874,10 +3406,17 @@ and the partner code. The shop holds 44 products, as the live site does, but onl
 (Dal Fry, Dal Makhni, Idli Sambhar, Pav Bhaji, Palak Gravy, Dal Khichdi, Aloo ka Mazaa, Super Millet Idli, the
 millet-beetroot cheela, Masala Chai, Lemon Masala Tea, Coconut Red Chutney, Schezwan Rice); the rest stand in
 until Foodify sends its list. Allergens are worked out from each ingredient list against FSSAI's declarable
-allergens, so they are only as right as the ingredients.
+allergens, so they are only as right as the ingredients.</p>
+<p><b>Settings Foodify has to choose, filled in here so the features can be tried:</b> delivery zones and days
+for the PIN check, box sizes and discounts (3 · 6 · 9 packs at 5 · 10 · 12% off), a 7-day window to report a
+problem, referral amounts (give ₹100, get ₹100 on a first order over ₹499), and the review photos (drawn
+bowls). On the live site each of these features stays hidden until its setting is entered. WhatsApp updates,
+repeat-order reminders and cart reminders also send real messages, so they ship switched off; nothing here is
+sent anywhere.
 The live site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
 live until you confirm it.</p></details></div>
 {''.join(panels)}
+{theme_js}
 {script}"""
     open(OUT, "w").write(doc)
     print(f"rendered {len(ids)} screens -> {OUT}  ({len(doc):,} bytes)")

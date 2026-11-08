@@ -111,6 +111,7 @@ function foodify_editor_fields(): array {
 		'net_quantity' => [ 'label' => 'Net quantity',           'type' => 'text', 'hint' => 'e.g. 80 g' ],
 		'servings'     => [ 'label' => 'Servings per pack',      'type' => 'text' ],
 		'cooked_weight'=> [ 'label' => 'Makes (cooked weight)',  'type' => 'text', 'hint' => 'e.g. 260 g — what the pack becomes once made. Answers "80 g is nothing" before it is asked.' ],
+		'search_keywords' => [ 'label' => 'Search keywords',    'type' => 'text', 'hint' => 'Other names people type: Hindi, regional, e.g. राजमा, rajma chawal. Searched, never shown.' ],
 		'taste'        => [ 'label' => 'Taste profile',          'type' => 'text', 'hint' => 'Up to four words, comma-separated: e.g. Savoury, Mildly spicy, Tangy' ],
 		'faq'          => [ 'label' => 'FAQ',                    'type' => 'textarea', 'hint' => 'Alternate lines "Q: …" and "A: …". A question without an answer is dropped.' ],
 		'combo_items'  => [ 'label' => "Combo — what's inside",  'type' => 'textarea', 'hint' => 'Combos only. One meal per line, with an optional count: "Express Dal Fry × 2". Leave empty for a single pack.' ],

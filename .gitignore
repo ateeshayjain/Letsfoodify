@@ -17,3 +17,4 @@ build/tools/design-book/design-book.html
 # Theme zips are build output. scripts/package-theme.sh rebuilds one from any
 # commit and refuses to produce one that does not boot in WordPress.
 build/dist/
+__pycache__/

@@ -1,0 +1,53 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<!-- Product search results: WooCommerce picks this template by its slug,
+     product-search-results, for ?s=…&post_type=product. The order of the
+     matches is inc/search.php's ranking — the same rule as the suggestions in
+     the header — and the cards are the shop's card loop (fd-products). -->
+<!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
+<div class="wp-block-group alignwide">
+<!-- wp:query-title {"type":"search","fontSize":"3xl"} /-->
+<!-- wp:woocommerce/product-results-count /-->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:query {"queryId":0,"query":{"perPage":12,"pages":0,"offset":0,"postType":"product","order":"asc","orderBy":"title","inherit":true},"namespace":"woocommerce/product-query","align":"wide","layout":{"type":"default"}} -->
+<div class="wp-block-query alignwide">
+<!-- wp:post-template {"className":"fd-products","layout":{"type":"grid","columnCount":4}} -->
+<!-- wp:woocommerce/product-image {"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
+<!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
+<!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
+<!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->
+<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true,"fontSize":"sm"} /-->
+<!-- /wp:post-template -->
+<!-- wp:query-pagination {"layout":{"type":"flex","justifyContent":"center"}} -->
+<!-- wp:query-pagination-previous /--><!-- wp:query-pagination-numbers /--><!-- wp:query-pagination-next /-->
+<!-- /wp:query-pagination -->
+<!-- wp:query-no-results -->
+<!-- The line below is static on purpose: inc/search.php rewrites it to
+     "No match for ‘xyz’. Popular right now:" on a search. If that filter is
+     ever missing, this still reads correctly. -->
+<!-- wp:paragraph {"className":"fd-search-none","fontSize":"md"} -->
+<p class="fd-search-none has-md-font-size">No match for that search. Popular right now:</p>
+<!-- /wp:paragraph -->
+<!-- wp:query {"queryId":2,"query":{"perPage":3,"pages":0,"offset":0,"postType":"product","order":"desc","orderBy":"popularity","inherit":false,"__woocommerceStockStatus":["instock","onbackorder"]},"namespace":"woocommerce/product-query","layout":{"type":"default"}} -->
+<div class="wp-block-query">
+<!-- wp:post-template {"className":"fd-products","layout":{"type":"grid","columnCount":3}} -->
+<!-- wp:woocommerce/product-image {"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
+<!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
+<!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
+<!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->
+<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true,"fontSize":"sm"} /-->
+<!-- /wp:post-template -->
+</div>
+<!-- /wp:query -->
+<!-- wp:paragraph -->
+<p><a href="/shop/">See the whole menu</a></p>
+<!-- /wp:paragraph -->
+<!-- /wp:query-no-results -->
+</div>
+<!-- /wp:query -->
+</main>
+<!-- /wp:group -->
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

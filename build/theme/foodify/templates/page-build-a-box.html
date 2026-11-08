@@ -1,0 +1,18 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<!-- wp:post-title {"level":1,"align":"wide","fontSize":"3xl"} /-->
+<!-- Everything a customer reads on this page comes from [foodify_box_builder]
+     (inc/box-builder.php), because what it can truthfully say depends on the
+     option foodify_box_sizes: with no sizes set, the page says boxes are coming
+     soon and sells nothing. A fixed intro here could not know that. -->
+<!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
+<div class="wp-block-group alignwide">
+<!-- wp:shortcode -->
+[foodify_box_builder]
+<!-- /wp:shortcode -->
+</div>
+<!-- /wp:group -->
+</main>
+<!-- /wp:group -->
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

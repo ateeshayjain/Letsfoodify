@@ -118,6 +118,11 @@ function foodify_shipping_comparison_subtotal(): float {
 	} else {
 		$subtotal = round( $subtotal - (float) $cart->get_discount_total(), wc_get_price_decimals() );
 	}
+	// A complete build-your-own box is a negative fee, not a coupon, so it is
+	// not in get_discount_total(). Free shipping is judged after it (box-builder.php).
+	if ( function_exists( 'foodify_box_cart_discount_total' ) ) {
+		$subtotal -= (float) foodify_box_cart_discount_total();
+	}
 
 	return (float) $subtotal;
 }

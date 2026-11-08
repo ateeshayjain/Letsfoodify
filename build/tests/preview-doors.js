@@ -316,9 +316,89 @@ const path = require('path');
   await click('#s-p-trial-box-3-meals .woocommerce-review-link'); await wait(900);
   const rev = await page.evaluate(() => { const r = document.querySelector('#s-p-trial-box-3-meals #reviews');
     return { top: Math.round(r.getBoundingClientRect().top), cards: r.querySelectorAll('.fd-review').length,
-             summary: r.querySelector('.fx-rev-summary').textContent }; });
+             summary: r.querySelector('.fd-rsum__avg').textContent }; });
   check('the review count jumps to the reviews, landing in view', rev.top > 0 && rev.top < 400, rev);
   check('there are reviews to read, with the rating and count', rev.cards >= 3 && /out of 5/.test(rev.summary) && /46/.test(rev.summary), rev);
+
+  // ── the Nov 2026 features (FEATURES-A…D-NOTES.md), each through its own door ──
+  const feat = await page.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms)), r = {};
+    document.querySelector('.proto-reset').click();
+    // 1 · delivery date by PIN, remembered on the next product
+    window.fxShow('p-express-dal-fry', false);
+    const w = document.querySelector('#s-p-express-dal-fry .fd-deliver');
+    w.querySelector('input').value = '201304'; w.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await sl(200); r.pin = w.querySelector('.fd-deliver__msg')?.textContent || '';
+    window.fxShow('p-rajma-chawal', false); await sl(200);
+    r.pinNext = document.querySelector('#s-p-rajma-chawal .fd-deliver__msg')?.textContent || '';
+    r.pinBad = window.foodifyDelivery.answer('999999', null, JSON.parse(w.getAttribute('data-config')), Date.now()).status;
+    // 3 · veg mark and unit price; 6 · offers that match the cart's own rules
+    const d = document.getElementById('s-p-express-dal-fry');
+    r.veg = !!d.querySelector('h1 .fd-veg'); r.unit = d.querySelector('.fd-unit-price')?.textContent;
+    r.offers = [...d.querySelectorAll('.fd-offer__text')].map(e => e.textContent).join(' | ');
+    // 5 · the photo brief asks for the back of the pack
+    r.brief = d.querySelector('.fx-brief summary').textContent + ' ' + d.querySelector('.fx-brief').textContent.includes('Back of pack');
+    // 4 · notify me on a sold-out product
+    window.fxShow('p-aloo-ka-mazaa', false);
+    const a = document.getElementById('s-p-aloo-ka-mazaa'); a.querySelector('.fd-notify__input').value = 'a@b.in';
+    a.querySelector('.fd-notify__go').click(); r.notify = a.querySelector('.fd-notify.is-done')?.textContent || '';
+    // 2 · search: the results page uses the header's ranking
+    window.fxShow('home', false);
+    const f = document.querySelector('#s-home .fd-search__form'); f.querySelector('input[name=s]').value = 'rajma';
+    f.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    r.search = [...document.querySelectorAll('#s-search .fd-products li.wp-block-post')].filter(l => !l.hidden).map(l => l.getAttribute('data-slug'));
+    f.querySelector('input[name=s]').value = 'zzqx'; f.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    r.searchNone = !document.querySelector('#s-search .fx-noresults').hidden && document.querySelectorAll('#s-search .fx-noresults li.wp-block-post').length === 3;
+    // 7 · buy again, from the seeded orders
+    window.fxShow('home', false); r.again = document.querySelectorAll('#s-home .fd-again__add').length;
+    const before = +document.querySelector('.wc-block-mini-cart__badge').textContent;
+    document.querySelector('#s-home .fd-again__add').click(); r.againAdds = +document.querySelector('.wc-block-mini-cart__badge').textContent - before;
+    // 11 · the review filter
+    window.fxShow('p-express-dal-fry', false);
+    d.querySelector('.fd-rsum__chip[data-fd-filter="photos"]').click();
+    r.photos = [...d.querySelectorAll('.fd-rv')].filter(x => !x.hidden).every(x => x.querySelector('.fd-rv-photo')) && d.querySelector('[data-fd-review-count]').textContent;
+    // 8 · a full box gets its discount in the cart; one pack out and it goes
+    window.fxSetCart([], null); window.fxShow('box', false);
+    const bx = document.getElementById('s-box');
+    bx.querySelector('input[name=box_size][value="3"]').click();
+    const plus = bx.querySelectorAll('.fd-box__plus'); plus[0].click(); plus[0].click(); plus[0].click();
+    bx.querySelector('[data-fd-box-add]').click(); await sl(50);
+    const c = document.getElementById('s-cart');
+    r.boxFee = c.querySelector('.fx-fee')?.textContent || '';
+    const q = c.querySelector('.fx-lines tr input.qty'); q.value = 2; q.dispatchEvent(new Event('input', { bubbles: true })); await sl(900);
+    r.boxBroken = !c.querySelector('.fx-fee') && /not applied/.test(c.querySelector('.fx-box-notices')?.textContent || '');
+    // 10 · cancel a processing order; report a problem with a recent delivery
+    window.fxSetCart([['pav-bhaji', 1]], null); window.fxShow('account', false);
+    document.querySelector('#s-account [data-view="1194"]').click();
+    r.returnForm = !!document.querySelector('#s-account #fd-return form');
+    // 12 · repeat this order
+    document.querySelector('#s-account .fd-repeat__form button').click();
+    r.repeat = document.querySelector('#s-account .fd-repeat.is-set')?.textContent || '';
+    // 14 · refer a friend, and your own code refused in the cart
+    document.querySelector('#s-account [data-panel="refer-a-friend"]').click();
+    r.refer = document.querySelector('#s-account .fd-refer__code-value')?.textContent;
+    // 9 + 13 · opt-ins at checkout are unticked
+    window.fxShow('checkout', false);
+    r.optins = [...document.querySelectorAll('#s-checkout .fd-optin input[type=checkbox]')].map(i => i.checked);
+    return r;
+  });
+  check('a PIN on a product page gives a delivery date', /^Delivers /.test(feat.pin), feat.pin);
+  check('the PIN is remembered on the next product page', feat.pinNext === feat.pin, feat);
+  check('an unknown PIN is said to be unknown, not given a date', feat.pinBad === 'unknown', feat.pinBad);
+  check('the product page shows the veg mark and the price per 100 g', feat.veg && feat.unit === '₹231.25/100 g', feat);
+  check('the offers are the cart\'s own rules (₹599, ₹25 online, COD)', /599/.test(feat.offers) && /₹25/.test(feat.offers) && /Cash on delivery/.test(feat.offers), feat.offers);
+  check('the photo brief asks for the back-of-pack label', /5 shots/.test(feat.brief) && /true$/.test(feat.brief), feat.brief);
+  check('a sold-out product takes an email for one back-in-stock alert', /email a@b\.in once/.test(feat.notify), feat.notify);
+  check('search finds Rajma Chawal for "rajma"', feat.search[0] === 'rajma-chawal', feat.search);
+  check('a search with no match offers three popular products', feat.searchNone, feat);
+  check('buy again offers past items on the home page, and adds one', feat.again > 0 && feat.againAdds === 1, feat);
+  check('the "With photos" filter leaves only reviews with photos', !!feat.photos && /Showing 2 of/.test(feat.photos), feat.photos);
+  check('a full box shows its discount in the cart', /Your box \(3 packs\) — 5% off/.test(feat.boxFee), feat.boxFee);
+  check('a box that no longer fits loses the discount and says why', feat.boxBroken, feat);
+  check('a recent delivery can be reported as a problem', feat.returnForm, feat);
+  check('an order can be set to repeat', /repeats every 2 weeks/.test(feat.repeat), feat.repeat);
+  check('refer a friend shows a code', /^REF/.test(feat.refer || ''), feat.refer);
+  check('the WhatsApp and cart-reminder opt-ins start unticked', feat.optins.length === 2 && feat.optins.every(x => x === false), feat.optins);
 
   // On a phone: the product page opens on the product, and the account is in the menu.
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });

@@ -124,6 +124,35 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 	return $html . ( '' !== $yield ? '<p class="fd-yield">' . esc_html( $yield ) . '</p>' : '' );
 }, 10, 2 );
 
+/** The declared diet, the one field the veg mark reads. */
+function foodify_product_diet( WC_Product $product ): string {
+	return (string) $product->get_meta( '_foodify_diet' );
+}
+
+/**
+ * FSSAI's vegetarian mark beside the name — on every card, and on the product
+ * page's H1. Read from the declared diet (foodify_diet_is_veg), never assumed:
+ * every Foodify product is vegetarian today, and the day one is not, the mark
+ * must not follow it there. Inside the heading, before the name, where Indian
+ * packs and menus put it.
+ */
+add_filter( 'render_block_core/post-title', static function ( string $html, array $block ): string {
+	if ( '' === $html || ! function_exists( 'wc_get_product' ) ) {
+		return $html;
+	}
+	$card = ! empty( $block['attrs']['__woocommerceNamespace'] );
+	$pdp  = ! $card && 1 === (int) ( $block['attrs']['level'] ?? 2 ) && function_exists( 'is_product' ) && is_product();
+	if ( ! $card && ! $pdp ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
+	if ( ! $product instanceof WC_Product ) {
+		return $html;
+	}
+	$mark = foodify_veg_mark_html( foodify_product_diet( $product ) );
+	return '' === $mark ? $html : (string) preg_replace( '/^(\s*<h[1-6]\b[^>]*>)/', '$1' . $mark, $html, 1 );
+}, 5, 2 );
+
 /* -------------------------------------------------------------------------
  * Wireframes 01–03 (design playbook §4). Pure rules live in product-spec.php;
  * these are the hooks that read the product and call them.
@@ -215,9 +244,18 @@ add_filter( 'woocommerce_get_price_html', static function ( string $html, WC_Pro
  * store does not have yet, and a button that promises a notification it will
  * never send is the fake-viewer-counter class. So: the plain truth, until the
  * mechanism exists.
+ *
+ * Nov 2026: the mechanism exists (inc/stock-alerts.php). Where it can take a
+ * subscription for this product, the button says "Notify me" and opens the
+ * product page at the form (#fd-notify); where it cannot, still "Sold out".
  */
 add_filter( 'woocommerce_product_add_to_cart_text', static function ( string $text, WC_Product $product ): string {
-	return $product->is_in_stock() ? $text : __( 'Sold out', 'foodify' );
+	if ( $product->is_in_stock() ) {
+		return $text;
+	}
+	return function_exists( 'foodify_stock_alerts_accepting' ) && foodify_stock_alerts_accepting( $product )
+		? __( 'Notify me', 'foodify' )
+		: __( 'Sold out', 'foodify' );
 }, 10, 2 );
 
 /**
@@ -305,6 +343,21 @@ add_filter( 'woocommerce_get_price_html', static function ( string $html, WC_Pro
 		) )
 	);
 }, 10, 2 );
+
+/**
+ * Unit price — "₹231.25/100 g" — under the price on the card and the product
+ * page, from the price the customer is actually shown and the declared net
+ * quantity. Nothing when the quantity cannot be read with certainty
+ * (foodify_net_quantity), and nothing on a variable product, whose variations
+ * have different quantities.
+ */
+add_filter( 'woocommerce_get_price_html', static function ( string $html, WC_Product $product ): string {
+	if ( ( is_admin() && ! wp_doing_ajax() ) || '' === $html || $product->is_type( 'variable' ) ) {
+		return $html;
+	}
+	$unit = foodify_unit_price( (float) wc_get_price_to_display( $product ), (string) $product->get_meta( '_foodify_net_quantity' ) );
+	return null === $unit ? $html : $html . '<span class="fd-unit-price">' . esc_html( $unit ) . '</span>';
+}, 11, 2 );
 
 /**
  * Honest scarcity only. The audited site displayed a hardcoded "70 people are viewing

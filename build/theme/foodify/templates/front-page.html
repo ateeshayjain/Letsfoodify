@@ -3,6 +3,12 @@
 <main class="wp-block-group">
 
 <!-- wp:pattern {"slug":"foodify/hero"} /-->
+<!-- Buy again: signed-in customers with past orders only (inc/buy-again.php).
+     Renders nothing for guests, so the cached guest page never contains it,
+     and a signed-in front page is sent no-store. -->
+<!-- wp:shortcode -->
+[foodify_buy_again]
+<!-- /wp:shortcode -->
 <!-- wp:pattern {"slug":"foodify/trust-strip"} /-->
 <!-- wp:pattern {"slug":"foodify/how-it-works"} /-->
 <!-- wp:pattern {"slug":"foodify/shop-by-effort"} /-->

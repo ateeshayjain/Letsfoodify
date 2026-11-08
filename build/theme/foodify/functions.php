@@ -260,3 +260,16 @@ require_once FOODIFY_DIR . '/inc/shortcodes.php';
 require_once FOODIFY_DIR . '/inc/account.php';
 require_once FOODIFY_DIR . '/inc/address-book.php';   // WP-05: several addresses, one default
 require_once FOODIFY_DIR . '/inc/otp-throttle.php';   // WP-05: the rule, ahead of the gateway
+
+// Retention and discovery features (Nov 2026). Each file owns one feature.
+require_once FOODIFY_DIR . '/inc/delivery-estimate.php';  // 1: delivery date by PIN on the product page
+require_once FOODIFY_DIR . '/inc/stock-alerts.php';       // 4: notify me when back in stock
+require_once FOODIFY_DIR . '/inc/offers.php';             // 6: offers on the product page
+require_once FOODIFY_DIR . '/inc/search.php';             // 2: product search + suggestions
+require_once FOODIFY_DIR . '/inc/buy-again.php';          // 7: buy again on the home page
+require_once FOODIFY_DIR . '/inc/order-actions.php';      // 10: cancel before dispatch, request a return
+require_once FOODIFY_DIR . '/inc/box-builder.php';        // 8: build your own box
+require_once FOODIFY_DIR . '/inc/whatsapp.php';           // 9: WhatsApp order updates, ships OFF
+require_once FOODIFY_DIR . '/inc/repeat-orders.php';      // 12: repeat orders (subscribe & save, no auto-debit)
+require_once FOODIFY_DIR . '/inc/cart-recovery.php';      // 13: abandoned-cart reminder, consent first
+require_once FOODIFY_DIR . '/inc/referrals.php';          // 14: give-get referral coupons

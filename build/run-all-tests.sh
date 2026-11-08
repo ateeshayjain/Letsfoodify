@@ -32,10 +32,13 @@ run "bash-syntax"     bash -c 'for f in scripts/*.sh run-all-tests.sh; do bash -
 run "theme.json"      python3 -c "import json;json.load(open('theme/foodify/theme.json'));print('valid')"
 
 echo "── pure suites ──"
-for t in perf shortcode otp address checkout payments reviews partner admin product-spec wp11 wp12 wp13 shop pdp combo; do
+for t in perf shortcode otp address checkout payments reviews partner admin product-spec wp11 wp12 wp13 shop pdp combo lane-a search account-actions box retention; do
   run "$t" php "tests/$t-test.php"
 done
 run "undefined-functions" php tests/undefined-functions.php
+# php -l and undefined-functions cannot see a function defined twice — a fatal
+# "cannot redeclare" at boot. Two lanes nearly shipped one (foodify_inr).
+run "duplicate-functions" bash -c 'd=$(grep -rhoE "^\s*function\s+foodify_[a-z0-9_]+" theme/foodify --include=*.php | awk "{print \$2}" | sort | uniq -d); if [ -n "$d" ]; then echo "defined twice: $d"; exit 1; fi; echo "1 passed, 0 failed"'
 run "contrast"            python3 tests/contrast-test.py
 run "claim"               python3 tests/claim-test.py
 run "fixture-leak"        python3 tests/fixture-leak-test.py

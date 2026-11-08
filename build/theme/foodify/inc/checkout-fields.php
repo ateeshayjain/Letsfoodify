@@ -93,6 +93,21 @@ add_filter( 'woocommerce_checkout_fields', static function ( array $fields ): ar
 		$billing['billing_address_2']['required']    = false;
 	}
 
+	// 6. Consent, never assumed (DPDP: affirmative, unticked). Each box exists
+	//    only while its feature is fully configured, and sits under the field it
+	//    is about: WhatsApp under the mobile number (inc/whatsapp.php), the cart
+	//    reminder under email (inc/cart-recovery.php). Keys are NOT billing_*,
+	//    so the smoke test's nine-field budget still counts only what is typed.
+	if ( function_exists( 'foodify_wa_active' ) && foodify_wa_active() ) {
+		$billing['foodify_wa_optin'] = foodify_wa_optin_field();
+	}
+	if ( function_exists( 'foodify_cart_recovery_active' ) && foodify_cart_recovery_active() ) {
+		$billing['foodify_cart_consent'] = foodify_cart_consent_field(
+			foodify_cart_state()['delay'],
+			foodify_cart_user_optin( get_current_user_id() )   // pre-ticked only by the customer's own earlier "yes"
+		);
+	}
+
 	$fields['billing'] = $billing;
 
 	// Shipping mirrors billing; the "deliver elsewhere" toggle handles the rare case.

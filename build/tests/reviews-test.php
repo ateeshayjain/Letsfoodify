@@ -176,5 +176,169 @@ $t = foodify_content_tokens( array_merge( $profile, [ 'fssai' => '10012345678901
 check( 'and so does the dummy, rather than passing through',
 	'NOT CONFIGURED' === $t['<!--FOODIFY_FSSAI-->'] );
 
+echo "── 11 · the histogram: the average with its evidence ──\n";
+
+$ratings = array_merge( array_fill( 0, 32, 5 ), array_fill( 0, 9, '4' ), [ 3, 3, 2, 1, 1 ] );
+$h = foodify_review_histogram( $ratings );
+check( 'counts per star, 5 down to 1', [ 5 => 32, 4 => 9, 3 => 2, 2 => 1, 1 => 2 ] === $h['counts'] );
+check( 'the order is 5 -> 1, as the bars are drawn', [ 5, 4, 3, 2, 1 ] === array_keys( $h['counts'] ) );
+check( 'the total is every rating counted', 46 === $h['total'] );
+// (32×5 + 9×4 + 2×3 + 2 + 2) / 46 = 206 / 46 = 4.478… -> 4.5
+check( 'the average is to one decimal (206 / 46 = 4.478 -> 4.5)', 4.5 === $h['average'] );
+check( 'bar widths are shares of the total', 70 === $h['percents'][5] && 20 === $h['percents'][4] );
+$h = foodify_review_histogram( [ 5, '0', '4.5', 6, null, 'five', '', 4 ] );
+check( 'a "0", a "4.5", a 6 or junk is not a star rating and does not drag the average', 2 === $h['total'] && 4.5 === $h['average'] );
+$h = foodify_review_histogram( [] );
+check( 'no reviews -> zeroes, not a division by zero', 0 === $h['total'] && 0.0 === $h['average'] && 0 === $h['percents'][5] );
+
+echo "── the filter chips ──\n";
+
+$h     = foodify_review_histogram( $ratings );
+$chips = foodify_review_filter_chips( $h, 4 );
+check( 'chips read like the brief: "5★ (32)"', '5★ (32)' === $chips[0]['label'] );
+check( 'photos last: "With photos (4)"', 'With photos (4)' === end( $chips )['label'] && 'photos' === end( $chips )['key'] );
+check( 'a chip has a name a screen reader can say', '5 stars, 32 reviews' === $chips[0]['aria'] );
+$chips = foodify_review_filter_chips( foodify_review_histogram( [ 5, 5, 4 ] ), 0 );
+check( 'a star with no reviews gets no chip (it would filter to nothing)', [ '5', '4' ] === array_column( $chips, 'key' ) );
+check( 'no photos -> no photo chip', ! in_array( 'photos', array_column( $chips, 'key' ), true ) );
+
+echo "── the count line says what it looked at ──\n";
+
+check( 'filtered: "Showing 9 of 46 reviews"', 'Showing 9 of 46 reviews' === foodify_review_count_line( 9, 46, 46 ) );
+check( 'unfiltered: "Showing all 46 reviews"', 'Showing all 46 reviews' === foodify_review_count_line( 46, 46, 46 ) );
+check( 'one review is one review', 'Showing 1 review' === foodify_review_count_line( 1, 1, 1 ) );
+// WooCommerce may page reviews. Three matches among the ten on this page is
+// not three matches among forty-six, and the line must not imply it.
+check( 'paged: it names the page, not the whole set', 'Showing 3 of the 10 reviews on this page (46 in all)' === foodify_review_count_line( 3, 10, 46 ) );
+check( 'paged, unfiltered', 'Showing 10 of 46 reviews' === foodify_review_count_line( 10, 10, 46 ) );
+check( 'an unrated review on the page is still counted, never "11 of 10"', 'Showing all 11 reviews' === foodify_review_count_line( 11, 11, 10 ) );
+$js = foodify_review_filter_script();
+check( 'the script carries the same phrases', str_contains( $js, "'Showing all '+total+' reviews'" ) && str_contains( $js, "' reviews on this page ('" ) );
+
+echo "── the summary block ──\n";
+
+$html = foodify_review_summary_html( foodify_review_histogram( $ratings ), 4 );
+check( 'the average, out of 5, with its count', str_contains( $html, '<span class="fd-rsum__score">4.5</span>' ) && str_contains( $html, 'out of 5 · 46 reviews' ) );
+check( 'five bars, 5 to 1', 5 === substr_count( $html, 'class="fd-rsum__row"' ) && strpos( $html, '>5★<' ) < strpos( $html, '>1★<' ) );
+check( 'each bar is spoken, not only drawn', str_contains( $html, '5 stars: 32 reviews' ) && str_contains( $html, '1 star: 2 reviews' ) );
+check( 'the filter ships hidden: without the script there is no dead button', (bool) preg_match( '/data-fd-review-filter hidden>/', $html ) );
+check( 'Clear ships hidden until something is filtered', str_contains( $html, 'data-fd-filter-clear hidden>Clear<' ) );
+check( 'chips start un-pressed', ! str_contains( $html, 'aria-pressed="true"' ) && str_contains( $html, 'data-fd-filter="photos"' ) );
+check( 'no reviews -> no summary at all (never "0 out of 5")', '' === foodify_review_summary_html( foodify_review_histogram( [] ), 0 ) );
+
+echo "── photos: who may attach them ──\n";
+
+$ok = [ 'count' => 2, 'is_product' => true, 'is_reply' => false, 'bought' => true, 'gate_ok' => true ];
+check( 'a verified buyer may attach photos', foodify_review_photo_allowed( $ok )['allowed'] );
+check( 'someone who did not buy may not', 'not_verified' === foodify_review_photo_allowed( [ 'bought' => false ] + $ok )['reason'] );
+check( 'four photos is one too many', 'too_many' === foodify_review_photo_allowed( [ 'count' => 4 ] + $ok )['reason'] );
+check( 'three is the limit, and allowed', foodify_review_photo_allowed( [ 'count' => 3 ] + $ok )['allowed'] );
+check( 'a reply cannot carry photos', 'reply' === foodify_review_photo_allowed( [ 'is_reply' => true ] + $ok )['reason'] );
+check( 'over the rate limit -> refused', 'rate_limited' === foodify_review_photo_allowed( [ 'gate_ok' => false ] + $ok )['reason'] );
+check( 'not-verified outranks the rate limit (no hint the limit exists)', 'not_verified' === foodify_review_photo_allowed( [ 'bought' => false, 'gate_ok' => false ] + $ok )['reason'] );
+check( 'every refusal has words a customer can act on',
+	'' !== foodify_review_photo_refusal( 'not_verified' ) && str_contains( foodify_review_photo_refusal( 'too_many' ), 'up to 3' ) );
+
+echo "── photos: judged by their bytes ──\n";
+
+$tmp = sys_get_temp_dir() . '/fd-rv-' . getmypid();
+@mkdir( $tmp );
+$im = imagecreatetruecolor( 40, 30 );
+imagejpeg( $im, "$tmp/real.jpg" );
+imagepng( $im, "$tmp/real.png" );
+imagewebp( $im, "$tmp/real.webp" );
+imagegif( $im, "$tmp/real.gif" );
+copy( "$tmp/real.png", "$tmp/png-named.jpg" );
+file_put_contents( "$tmp/script.jpg", "<?php echo 'hi'; ?>" );
+file_put_contents( "$tmp/torn.jpg", "\xFF\xD8\xFF\xE0" . str_repeat( 'x', 64 ) );
+check( 'a JPEG is a JPEG', [ 'mime' => 'image/jpeg', 'width' => 40, 'height' => 30 ] === foodify_review_photo_sniff( "$tmp/real.jpg" ) );
+check( 'a PNG and a WebP are read too', 'image/png' === foodify_review_photo_sniff( "$tmp/real.png" )['mime'] && 'image/webp' === foodify_review_photo_sniff( "$tmp/real.webp" )['mime'] );
+check( 'a PNG called .jpg is a PNG (the name is not consulted)', 'image/png' === foodify_review_photo_sniff( "$tmp/png-named.jpg" )['mime'] );
+check( 'a PHP file called .jpg is nothing', '' === foodify_review_photo_sniff( "$tmp/script.jpg" )['mime'] );
+check( 'a JPEG header on garbage is nothing', '' === foodify_review_photo_sniff( "$tmp/torn.jpg" )['mime'] );
+check( 'a missing file is nothing', '' === foodify_review_photo_sniff( "$tmp/nope.jpg" )['mime'] );
+
+$v = static fn( string $file, array $over = [] ): array => foodify_review_photo_verdict( $over + [ 'error' => 0, 'size' => (int) filesize( $file ) ] + foodify_review_photo_sniff( $file ), 1 );
+check( 'a real JPEG passes', $v( "$tmp/real.jpg" )['ok'] );
+check( 'a real WebP passes', $v( "$tmp/real.webp" )['ok'] );
+check( 'a GIF is refused, by name of what is allowed', ! $v( "$tmp/real.gif" )['ok'] && str_contains( $v( "$tmp/real.gif" )['error'], 'not a JPEG, PNG or WebP' ) );
+check( 'a script named .jpg is refused', ! $v( "$tmp/script.jpg" )['ok'] );
+check( 'over 5 MB is refused, saying the size and the limit', str_contains( $v( "$tmp/real.jpg", [ 'size' => 6 * 1048576 ] )['error'], 'is 6.0 MB; the limit is 5 MB' ) );
+check( 'exactly 5 MB is allowed', $v( "$tmp/real.jpg", [ 'size' => 5 * 1048576 ] )['ok'] );
+check( 'PHP\'s own size limit is reported as too large, not as a failure', str_contains( $v( "$tmp/real.jpg", [ 'error' => 1 ] )['error'], 'larger than 5 MB' ) );
+check( 'a broken upload says to try again', str_contains( $v( "$tmp/real.jpg", [ 'error' => 3 ] )['error'], 'try again' ) );
+check( 'a decompression bomb (declared 10,000 × 10,000) is refused',
+	! foodify_review_photo_verdict( [ 'error' => 0, 'size' => 1000, 'mime' => 'image/png', 'width' => 10000, 'height' => 10000 ], 1 )['ok'] );
+check( 'the message names which photo', str_starts_with( foodify_review_photo_verdict( [ 'error' => 0, 'size' => 0 ], 2 )['error'], 'Photo 2 ' ) );
+check( 'the glue never trusts the browser type: verdict reads the sniffed mime only',
+	! foodify_review_photo_verdict( [ 'error' => 0, 'size' => 10, 'type' => 'image/jpeg' ], 1 )['ok'] );
+
+echo "── photos: EXIF is gone after the re-encode ──\n";
+
+// The mechanism foodify_review_photo_store() relies on, proved rather than
+// assumed: GD decodes to pixels and writes a fresh file with no metadata. A
+// JPEG is built here with an APP1/EXIF block carrying a camera Make, which
+// stands in for the GPS block a phone writes.
+$tiff = "II*\x00" . pack( 'V', 8 ) . pack( 'v', 1 )
+	. pack( 'vvVV', 0x010F, 2, 5, 26 ) . pack( 'V', 0 ) . "LEAK\x00";
+$app1 = "Exif\x00\x00" . $tiff;
+$jpeg = (string) file_get_contents( "$tmp/real.jpg" );
+file_put_contents( "$tmp/exif.jpg", substr( $jpeg, 0, 2 ) . "\xFF\xE1" . pack( 'n', strlen( $app1 ) + 2 ) . $app1 . substr( $jpeg, 2 ) );
+$before = function_exists( 'exif_read_data' ) ? @exif_read_data( "$tmp/exif.jpg" ) : false;
+check( 'the fixture really carries EXIF (else this proves nothing)', is_array( $before ) && 'LEAK' === ( $before['Make'] ?? '' ) );
+imagejpeg( imagecreatefromjpeg( "$tmp/exif.jpg" ), "$tmp/clean.jpg", 82 );
+$after = @exif_read_data( "$tmp/clean.jpg" );
+check( 'after a GD re-encode the camera data is gone', ! is_array( $after ) || ! isset( $after['Make'] ) );
+check( 'and no byte of it survives', ! str_contains( (string) file_get_contents( "$tmp/clean.jpg" ), 'LEAK' ) );
+$src = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/reviews.php' );
+check( 'the store path forces the GD editor (Imagick can carry EXIF through a save)',
+	str_contains( $src, "return [ 'WP_Image_Editor_GD' ];" ) && str_contains( $src, "add_filter( 'wp_image_editors', 'foodify_review_force_gd', 999 );" ) );
+check( 'and saves a NEW file through the editor, never copying the upload',
+	str_contains( $src, '$editor->save(' ) && ! preg_match( '/\b(copy|move_uploaded_file|rename)\s*\(\s*\$tmp/', $src ) );
+check( 'a review with photos always waits for a human', str_contains( $src, "add_filter( 'pre_comment_approved'" ) );
+check( 'and photos show only once it is approved', str_contains( $src, "'1' === (string) \$comment->comment_approved" ) );
+array_map( 'unlink', glob( "$tmp/*" ) ?: [] );
+@rmdir( $tmp );
+
+echo "── photos: the rest ──\n";
+
+$files = foodify_review_photo_files( [
+	'name' => [ 'a.jpg', '', 'b.png' ], 'type' => [ 'image/jpeg', '', 'image/png' ],
+	'tmp_name' => [ '/tmp/x', '', '/tmp/y' ], 'error' => [ 0, 4, 0 ], 'size' => [ 10, 0, 20 ],
+] );
+check( '$_FILES column-wise -> one array per file, empty slot dropped', 2 === count( $files ) && 'b.png' === $files[1]['name'] && 20 === $files[1]['size'] );
+check( 'nothing chosen -> no files', [] === foodify_review_photo_files( [ 'name' => [ '' ], 'type' => [ '' ], 'tmp_name' => [ '' ], 'error' => [ 4 ], 'size' => [ 0 ] ] ) );
+check( 'no field at all -> no files', [] === foodify_review_photo_files( null ) );
+
+$g = foodify_review_photo_gate( [ $NOW - 100, $NOW - 200, $NOW - 300 ], $NOW, 3, 86400 );
+check( 'three photo reviews in a day blocks the fourth', ! $g['allowed'] && 86400 - 300 === $g['retry_after'] );
+check( 'a day later it is allowed again', foodify_review_photo_gate( [ $NOW - 86500, $NOW - 86600, $NOW - 86700 ], $NOW, 3, 86400 )['allowed'] );
+
+check( 'alt text uses the first name only', "Photo from Priya's review" === foodify_review_photo_alt( 'Priya Sharma' ) );
+check( 'an initial is dropped with its full stop', "Photo from Rakesh's review" === foodify_review_photo_alt( 'Rakesh M.' ) );
+check( 'an email address is never put in alt text', "Photo from a customer's review" === foodify_review_photo_alt( 'priya@example.org' ) );
+check( 'no name -> "a customer"', "Photo from a customer's review" === foodify_review_photo_alt( '  ' ) );
+
+$p = foodify_review_photos_html( [
+	[ 'thumb' => '/u/r-1-150x150.jpg', 'full' => '/u/r-1.jpg', 'width' => 150, 'height' => 150 ],
+	[ 'thumb' => 'javascript:alert(1)', 'full' => '/u/x.jpg' ],
+], 'Priya <b>S</b>' );
+check( 'a thumbnail links to the full photo (works with no script)', str_contains( $p, '<a class="fd-rv-photo" href="/u/r-1.jpg" data-fd-photo><img src="/u/r-1-150x150.jpg" width="150" height="150"' ) );
+check( 'with the alt text the brief asks for', str_contains( $p, 'alt="Photo from Priya&#039;s review"' ) );
+check( 'a javascript: URL is never printed', ! str_contains( $p, 'javascript' ) && 1 === substr_count( $p, '<li>' ) );
+check( 'no photos -> no markup', '' === foodify_review_photos_html( [], 'Priya' ) );
+
+echo "── the script and its [hidden] escapes ──\n";
+check( 'it cannot end the script block early', ! str_contains( $js, '</script' ) );
+check( 'photos open in a <dialog>, not a lightbox library', str_contains( $js, "createElement('dialog')" ) && str_contains( $js, 'showModal()' ) );
+check( 'the filter reveals itself only when it can work', str_contains( $js, 'bar.hidden=false' ) );
+$css = (string) file_get_contents( __DIR__ . '/../theme/foodify/style.css' );
+foreach ( [ 'fd-rsum__filter', 'fd-rsum__clear', 'fd-rv' ] as $cls ) {
+	$sets_display = (bool) preg_match( '/\.' . preg_quote( $cls, '/' ) . '(?![\w-])[^{}]*\{[^{}]*display:\s*(?!none)/', $css );
+	$has_escape   = (bool) preg_match( '/\.' . preg_quote( $cls, '/' ) . '\[hidden\][^{}]*\{[^{}]*display:\s*none/', $css );
+	check( ".$cls: hidden by the script, and CSS lets it be", $has_escape || ! $sets_display );
+}
+check( 'filter chips are tap-target high', (bool) preg_match( '/\.fd-rsum__chip\s*\{[^}]*min-height:\s*var\(--wp--custom--tap-target\)/', $css ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

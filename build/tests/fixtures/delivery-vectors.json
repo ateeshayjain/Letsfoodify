@@ -1,0 +1,498 @@
+{
+    "note": "Shared by tests/lane-a-test.php (PHP foodify_delivery_answer) and tests/delivery-vectors.js (JS window.foodifyDelivery.answer). Fixture zones — NOT the client's.",
+    "configs": {
+        "main": {
+            "zones": [
+                {
+                    "label": "Western UP",
+                    "states": [],
+                    "pin_prefixes": [
+                        "20"
+                    ],
+                    "min_days": 2,
+                    "max_days": 3
+                },
+                {
+                    "label": "Delhi NCR",
+                    "states": [
+                        "DL"
+                    ],
+                    "pin_prefixes": [
+                        "2013",
+                        "2010",
+                        "1220"
+                    ],
+                    "min_days": 1,
+                    "max_days": 2
+                },
+                {
+                    "label": "North India",
+                    "states": [
+                        "UP",
+                        "HR",
+                        "PB",
+                        "RJ",
+                        "UK",
+                        "HP",
+                        "CH"
+                    ],
+                    "pin_prefixes": [],
+                    "min_days": 2,
+                    "max_days": 4
+                },
+                {
+                    "label": "Rest of India",
+                    "states": [
+                        "MH",
+                        "KA",
+                        "TN",
+                        "GJ",
+                        "WB",
+                        "KL",
+                        "TS",
+                        "AP"
+                    ],
+                    "pin_prefixes": [],
+                    "min_days": 3,
+                    "max_days": 6
+                }
+            ],
+            "cutoff_hour": 14,
+            "no_dispatch_weekdays": [
+                7
+            ],
+            "no_delivery_weekdays": [
+                7
+            ],
+            "holidays": [
+                "2026-11-16"
+            ]
+        },
+        "sameday": {
+            "zones": [
+                {
+                    "label": "Noida",
+                    "states": [],
+                    "pin_prefixes": [
+                        "2013"
+                    ],
+                    "min_days": 0,
+                    "max_days": 0
+                }
+            ],
+            "cutoff_hour": 12,
+            "no_dispatch_weekdays": [],
+            "no_delivery_weekdays": [],
+            "holidays": []
+        },
+        "empty": []
+    },
+    "cases": [
+        {
+            "name": "before the cut-off ships today",
+            "config": "main",
+            "pin": "201304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-10T13:59:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Wed 11 – Thu 12 Nov",
+                "detail": "To Gautam Buddha Nagar · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-11",
+                    "to": "2026-11-12",
+                    "label": "Delivers Wed 11 – Thu 12 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-10",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "at the cut-off ships tomorrow",
+            "config": "main",
+            "pin": "201304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-10T14:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Thu 12 – Fri 13 Nov",
+                "detail": "To Gautam Buddha Nagar · Ships Wed 11 Nov.",
+                "estimate": {
+                    "from": "2026-11-12",
+                    "to": "2026-11-13",
+                    "label": "Delivers Thu 12 – Fri 13 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-11",
+                    "detail": "Ships Wed 11 Nov."
+                }
+            }
+        },
+        {
+            "name": "UTC input is converted to IST (08:29Z = 13:59 IST)",
+            "config": "main",
+            "pin": "201304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-10T08:29:00Z",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Wed 11 – Thu 12 Nov",
+                "detail": "To Gautam Buddha Nagar · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-11",
+                    "to": "2026-11-12",
+                    "label": "Delivers Wed 11 – Thu 12 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-10",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "UTC input is converted to IST (08:30Z = 14:00 IST)",
+            "config": "main",
+            "pin": "201304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-10T08:30:00Z",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Thu 12 – Fri 13 Nov",
+                "detail": "To Gautam Buddha Nagar · Ships Wed 11 Nov.",
+                "estimate": {
+                    "from": "2026-11-12",
+                    "to": "2026-11-13",
+                    "label": "Delivers Thu 12 – Fri 13 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-11",
+                    "detail": "Ships Wed 11 Nov."
+                }
+            }
+        },
+        {
+            "name": "after IST midnight is the next day, before the cut-off",
+            "config": "main",
+            "pin": "201304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-10T19:00:00Z",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Thu 12 – Fri 13 Nov",
+                "detail": "To Gautam Buddha Nagar · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-12",
+                    "to": "2026-11-13",
+                    "label": "Delivers Thu 12 – Fri 13 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-11",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "Sunday and a holiday Monday push dispatch to Tuesday",
+            "config": "main",
+            "pin": "110001",
+            "lookup": {
+                "city": "Central Delhi",
+                "state": "DL"
+            },
+            "now": "2026-11-14T15:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Wed 18 – Thu 19 Nov",
+                "detail": "To Central Delhi · Ships Tue 17 Nov.",
+                "estimate": {
+                    "from": "2026-11-18",
+                    "to": "2026-11-19",
+                    "label": "Delivers Wed 18 – Thu 19 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-17",
+                    "detail": "Ships Tue 17 Nov."
+                }
+            }
+        },
+        {
+            "name": "transit skips Sunday",
+            "config": "main",
+            "pin": "560001",
+            "lookup": {
+                "city": "Bangalore",
+                "state": "KA"
+            },
+            "now": "2026-11-13T10:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Tue 17 – Fri 20 Nov",
+                "detail": "To Bangalore · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-17",
+                    "to": "2026-11-20",
+                    "label": "Delivers Tue 17 – Fri 20 Nov",
+                    "zone": "Rest of India",
+                    "dispatch": "2026-11-13",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "a range across months names both months",
+            "config": "main",
+            "pin": "400001",
+            "lookup": {
+                "city": "Mumbai",
+                "state": "MH"
+            },
+            "now": "2026-11-26T10:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Mon 30 Nov – Thu 3 Dec",
+                "detail": "To Mumbai · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-30",
+                    "to": "2026-12-03",
+                    "label": "Delivers Mon 30 Nov – Thu 3 Dec",
+                    "zone": "Rest of India",
+                    "dispatch": "2026-11-26",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "the longest PIN prefix wins over an earlier, shorter one",
+            "config": "main",
+            "pin": "201304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Thu 12 – Fri 13 Nov",
+                "detail": "To Gautam Buddha Nagar · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-12",
+                    "to": "2026-11-13",
+                    "label": "Delivers Thu 12 – Fri 13 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-11",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "a shorter prefix still matches its own PINs",
+            "config": "main",
+            "pin": "202001",
+            "lookup": {
+                "city": "Aligarh",
+                "state": "UP"
+            },
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Fri 13 – Sat 14 Nov",
+                "detail": "To Aligarh · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-13",
+                    "to": "2026-11-14",
+                    "label": "Delivers Fri 13 – Sat 14 Nov",
+                    "zone": "Western UP",
+                    "dispatch": "2026-11-11",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "a state zone answers when no prefix matches",
+            "config": "main",
+            "pin": "124001",
+            "lookup": {
+                "city": "Rohtak",
+                "state": "HR"
+            },
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Fri 13 – Mon 16 Nov",
+                "detail": "To Rohtak · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-13",
+                    "to": "2026-11-16",
+                    "label": "Delivers Fri 13 – Mon 16 Nov",
+                    "zone": "North India",
+                    "dispatch": "2026-11-11",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "a prefix zone answers even when the table does not know the PIN",
+            "config": "main",
+            "pin": "201399",
+            "lookup": null,
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Thu 12 – Fri 13 Nov",
+                "detail": "Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-12",
+                    "to": "2026-11-13",
+                    "label": "Delivers Thu 12 – Fri 13 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-11",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "an unserved state is unserviceable, with the city",
+            "config": "main",
+            "pin": "795001",
+            "lookup": {
+                "city": "Imphal West",
+                "state": "MN"
+            },
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "unserviceable",
+                "message": "Sorry, we don't deliver to 795001 (Imphal West) yet.",
+                "detail": "",
+                "estimate": null
+            }
+        },
+        {
+            "name": "a PIN the table does not know is unknown, not unserviceable",
+            "config": "main",
+            "pin": "999999",
+            "lookup": null,
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "unknown",
+                "message": "We couldn't find PIN code 999999.",
+                "detail": "Please check the number.",
+                "estimate": null
+            }
+        },
+        {
+            "name": "a PIN filed under two states is unconfirmed",
+            "config": "main",
+            "pin": "140119",
+            "lookup": {
+                "city": "Rupnagar",
+                "state": ""
+            },
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "unconfirmed",
+                "message": "We can't confirm delivery to 140119 here.",
+                "detail": "Checkout shows it before you pay.",
+                "estimate": null
+            }
+        },
+        {
+            "name": "five digits is invalid",
+            "config": "main",
+            "pin": "20130",
+            "lookup": null,
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "invalid",
+                "message": "Enter a 6-digit PIN code.",
+                "detail": "",
+                "estimate": null
+            }
+        },
+        {
+            "name": "a leading zero is invalid",
+            "config": "main",
+            "pin": "012345",
+            "lookup": null,
+            "now": "2026-11-11T09:00:00+05:30",
+            "expect": {
+                "status": "invalid",
+                "message": "Enter a 6-digit PIN code.",
+                "detail": "",
+                "estimate": null
+            }
+        },
+        {
+            "name": "spaces in a PIN are ignored",
+            "config": "main",
+            "pin": "201 304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-10T13:59:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Wed 11 – Thu 12 Nov",
+                "detail": "To Gautam Buddha Nagar · Order by 2 pm to ship today.",
+                "estimate": {
+                    "from": "2026-11-11",
+                    "to": "2026-11-12",
+                    "label": "Delivers Wed 11 – Thu 12 Nov",
+                    "zone": "Delhi NCR",
+                    "dispatch": "2026-11-10",
+                    "detail": "Order by 2 pm to ship today."
+                }
+            }
+        },
+        {
+            "name": "same-day delivery is a single date",
+            "config": "sameday",
+            "pin": "201304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-10T11:00:00+05:30",
+            "expect": {
+                "status": "ok",
+                "message": "Delivers Tue 10 Nov",
+                "detail": "To Gautam Buddha Nagar · Order by 12 noon to ship today.",
+                "estimate": {
+                    "from": "2026-11-10",
+                    "to": "2026-11-10",
+                    "label": "Delivers Tue 10 Nov",
+                    "zone": "Noida",
+                    "dispatch": "2026-11-10",
+                    "detail": "Order by 12 noon to ship today."
+                }
+            }
+        },
+        {
+            "name": "no config, no answer",
+            "config": "empty",
+            "pin": "201304",
+            "lookup": {
+                "city": "Gautam Buddha Nagar",
+                "state": "UP"
+            },
+            "now": "2026-11-10T11:00:00+05:30",
+            "expect": {
+                "status": "unconfigured",
+                "message": "",
+                "detail": "",
+                "estimate": null
+            }
+        }
+    ]
+}

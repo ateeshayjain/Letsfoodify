@@ -540,6 +540,190 @@ JS;
 }
 
 /* -------------------------------------------------------------------------
+ * Lane A (Nov 2026): the veg mark, the unit price, the gallery shot list.
+ * Pure; product-display.php reads the product and calls them.
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Does the declared diet earn FSSAI's vegetarian symbol (green square, green
+ * dot)? An EXACT match on the declared value, never a substring:
+ * "Non-vegetarian" contains "vegetarian", and a green dot on a non-veg pack is
+ * the one labelling error an Indian buyer will not forgive. Unknown or blank is
+ * NOT veg — the mark is a claim, and a missing declaration makes no claim
+ * (the admin column already reports the gap). Vegan food is vegetarian food,
+ * so it carries the mark too. Egg is non-vegetarian under FSSAI's rules.
+ */
+function foodify_diet_is_veg( string $diet ): bool {
+	$d = strtolower( (string) preg_replace( '/\s+/', ' ', trim( $diet ) ) );
+	return in_array( $d, [ 'vegetarian', 'veg', 'pure veg', 'pure vegetarian', 'vegan', 'jain' ], true );
+}
+
+/** The mark, or '' — drawn in CSS (.fd-veg), so no image request. */
+function foodify_veg_mark_html( string $diet ): string {
+	return foodify_diet_is_veg( $diet )
+		? '<span class="fd-veg" role="img" aria-label="Vegetarian" title="Vegetarian"></span>'
+		: '';
+}
+
+/**
+ * Net quantity in base units (g or ml), or null when it cannot be read with
+ * certainty. "80 g" → 80 g; "1.2 kg" → 1200 g; "3 × 80 g" / "3 packs of 80 g" /
+ * "3 packs, 80 g each" → 240 g; "3 packs · 240 g" → 240 g (a stated figure
+ * with no "each" is the total). Mass and volume together, or two quantities
+ * that disagree, is ambiguous → null: a unit price computed from the wrong one
+ * is off by the pack count, and an overstated "per 100 g" is worse than none.
+ *
+ * @return array{qty:float,dim:string}|null dim is 'g' or 'ml'.
+ */
+function foodify_net_quantity( string $raw ): ?array {
+	$s = strtolower( str_replace( '×', 'x', $raw ) );
+	$s = (string) preg_replace( '/(?<=\d),(?=\d{3}\b)/', '', $s );   // 1,000 g
+	$units = [
+		'kg' => [ 1000, 'g' ], 'kgs' => [ 1000, 'g' ], 'kilo' => [ 1000, 'g' ], 'kilos' => [ 1000, 'g' ], 'kilogram' => [ 1000, 'g' ], 'kilograms' => [ 1000, 'g' ],
+		'g' => [ 1, 'g' ], 'gm' => [ 1, 'g' ], 'gms' => [ 1, 'g' ], 'gram' => [ 1, 'g' ], 'grams' => [ 1, 'g' ], 'gramme' => [ 1, 'g' ], 'grammes' => [ 1, 'g' ],
+		'l' => [ 1000, 'ml' ], 'ltr' => [ 1000, 'ml' ], 'ltrs' => [ 1000, 'ml' ], 'litre' => [ 1000, 'ml' ], 'litres' => [ 1000, 'ml' ], 'liter' => [ 1000, 'ml' ], 'liters' => [ 1000, 'ml' ],
+		'ml' => [ 1, 'ml' ], 'millilitre' => [ 1, 'ml' ], 'millilitres' => [ 1, 'ml' ], 'milliliter' => [ 1, 'ml' ], 'milliliters' => [ 1, 'ml' ],
+	];
+	$unit_re = implode( '|', array_map( static fn( $u ): string => preg_quote( (string) $u, '/' ), array_keys( $units ) ) );
+	$qty_re  = '(\d+(?:\.\d+)?)\s*(' . $unit_re . ')\b';
+	$count   = '\b(\d{1,3})\s*';
+	$packs   = '(?:packs?|pouches?|sachets?|pieces?|pcs)';
+
+	$found = [];
+	$take  = static function ( float $n, string $u, int $mult ) use ( $units, &$found ): void {
+		[ $f, $dim ] = $units[ $u ];
+		$found[]     = [ $n * $f * $mult, $dim ];
+	};
+	// "3 x 80 g", "3 packs of 80 g", "3 sachets x 80 g"
+	if ( preg_match_all( '/' . $count . '(?:x|' . $packs . '\s*(?:of|x))\s*' . $qty_re . '/', $s, $m, PREG_SET_ORDER ) ) {
+		foreach ( $m as $hit ) {
+			$take( (float) $hit[2], $hit[3], (int) $hit[1] );
+			$s = str_replace( $hit[0], ' ', $s );
+		}
+	}
+	// "3 packs, 80 g each"
+	if ( preg_match( '/' . $count . $packs . '\b.*?' . $qty_re . '\s*each\b/', $s, $hit ) ) {
+		$take( (float) $hit[2], $hit[3], (int) $hit[1] );
+		$s = str_replace( $hit[0], ' ', $s );
+	}
+	if ( preg_match_all( '/' . $qty_re . '/', $s, $m, PREG_SET_ORDER ) ) {
+		foreach ( $m as $hit ) {
+			$take( (float) $hit[1], $hit[2], 1 );
+		}
+	}
+	if ( ! $found ) {
+		return null;
+	}
+	[ $qty, $dim ] = $found[0];
+	foreach ( $found as [ $q, $d ] ) {
+		if ( $d !== $dim || abs( $q - $qty ) > 0.001 ) {
+			return null;
+		}
+	}
+	return $qty > 0 ? [ 'qty' => (float) $qty, 'dim' => $dim ] : null;
+}
+
+/** ₹1,23,456.50 — Indian grouping; ".00" dropped, any other paise kept to two places. */
+function foodify_inr( float $amount ): string {
+	$cents  = (int) round( $amount * 100 );
+	$whole  = intdiv( $cents, 100 );
+	$paise  = $cents % 100;
+	$digits = (string) $whole;
+	if ( strlen( $digits ) > 3 ) {
+		$head   = (string) preg_replace( '/\B(?=(\d{2})+$)/', ',', substr( $digits, 0, -3 ) );
+		$digits = $head . ',' . substr( $digits, -3 );
+	}
+	return '₹' . $digits . ( $paise > 0 ? '.' . str_pad( (string) $paise, 2, '0', STR_PAD_LEFT ) : '' );
+}
+
+/**
+ * The unit price under the price: "₹231.25/100 g" below 1 kg (or 1 l), "₹450/kg"
+ * at or above it. Null — nothing printed — when the price or the quantity
+ * cannot be read with certainty.
+ *
+ * The Legal Metrology (Packaged Commodities) Amendment Rules 2022 made "unit
+ * sale price" a mandatory pack declaration. As we read them — NOT verified
+ * against the gazette text, see docs/FEATURES-A-NOTES.md — the rule's basis
+ * below 1 kg is PER GRAM, not per 100 g; per 100 g is the comparison
+ * convention Amazon and Blinkit use and what the brief asked for. This line
+ * is a shopping aid on the selling price; the MRP row in Pack & label is the
+ * pack declaration.
+ */
+function foodify_unit_price( float $price, string $net_quantity ): ?string {
+	$q = foodify_net_quantity( $net_quantity );
+	if ( null === $q || $price <= 0 ) {
+		return null;
+	}
+	$whole = $q['qty'] >= 1000;
+	$unit  = $whole ? ( 'g' === $q['dim'] ? 'kg' : 'l' ) : '100 ' . $q['dim'];
+	return foodify_inr( $price / $q['qty'] * ( $whole ? 1000 : 100 ) ) . '/' . $unit;
+}
+
+/**
+ * The gallery's shot list, in order. The preview's photo brief and any
+ * completeness check read THIS list, so the brief the photographer gets and
+ * the gap the editor is told about cannot disagree.
+ *
+ * The back of pack is required: it is the printed label — ingredients,
+ * allergens, nutrition, FSSAI number, best-before — as the pack itself states
+ * it. The structured table says the same things, but a buyer checking an
+ * allergen trusts the pack, and Amazon and Blinkit both show it.
+ *
+ * @return array<int,array{n:int,key:string,title:string,detail:string,required:bool}>
+ */
+function foodify_gallery_shots(): array {
+	return [
+		[ 'n' => 1, 'key' => 'front',       'title' => 'Pack, front',               'detail' => 'Straight on, label legible. This is the Merchant Center image.', 'required' => true ],
+		[ 'n' => 2, 'key' => 'prepared',    'title' => 'Prepared, in a bowl',       'detail' => 'The actual portion, natural light, no styling props.',           'required' => true ],
+		[ 'n' => 3, 'key' => 'ingredients', 'title' => 'Ingredients, laid out',     'detail' => 'Proves it is food, not powder. Answers the real objection.',     'required' => true ],
+		[ 'n' => 4, 'key' => 'scale',       'title' => 'In a hand or beside a mug', 'detail' => 'Scale. 80 g means nothing without something next to it.',        'required' => true ],
+		[ 'n' => 5, 'key' => 'back',        'title' => 'Back of pack — the printed label, legible',
+			'detail' => 'Flat and sharp, every word readable at full size: ingredients, allergens, nutrition, FSSAI number, best-before.', 'required' => true ],
+	];
+}
+
+/**
+ * Required shots a product does not have — the same "gap" the spec table
+ * reports for a missing declaration, for photographs.
+ *
+ * @param array<int,string> $present Shot keys present (foodify_shot_keys_from_tags()).
+ * @return array<int,string> Missing keys, in shot order.
+ */
+function foodify_gallery_gaps( array $present ): array {
+	$missing = [];
+	foreach ( foodify_gallery_shots() as $shot ) {
+		if ( $shot['required'] && ! in_array( $shot['key'], $present, true ) ) {
+			$missing[] = $shot['key'];
+		}
+	}
+	return $missing;
+}
+
+/**
+ * Which shot each image is. An image tagged with its shot key (attachment meta
+ * `_foodify_shot`) is that shot; an untagged one takes the next untaken shot
+ * in list order — featured image first, then the gallery — which is the order
+ * the brief asks the photographer for. So five untagged images cover the list,
+ * and four leave the back of pack as the gap.
+ *
+ * @param array<int,string> $tags One entry per image, in gallery order: its tag, or ''.
+ * @return array<int,string>
+ */
+function foodify_shot_keys_from_tags( array $tags ): array {
+	$keys = array_column( foodify_gallery_shots(), 'key' );
+	$free = array_values( array_diff( $keys, $tags ) );
+	$out  = [];
+	foreach ( $tags as $tag ) {
+		if ( in_array( $tag, $keys, true ) ) {
+			$out[] = $tag;
+		} elseif ( $free ) {
+			$out[] = array_shift( $free );
+		}
+	}
+	return array_values( array_unique( $out ) );
+}
+
+/* -------------------------------------------------------------------------
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
 

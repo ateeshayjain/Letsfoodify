@@ -196,6 +196,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `tests/fixture-leak-test.py` | **Invented data stays in the renderer that invents it.** The preview's dummy FSSAI licence and dispatch promise may not appear in the theme, a pattern, a template or bootstrap.sh |
 | `tests/pdp-test.php` | 46 assertions. The card and product page rules: SAVE only at 15%+, sold out outranks bestseller, Pack & label is never a tab, and an element hidden with `[hidden]` has a display rule that lets it |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |
+| `docs/FEATURES-2026-11.md` | **The fourteen retention/discovery features** (PIN delivery date, search, veg mark + unit price, back-in-stock, offers, buy again, build-a-box, WhatsApp, cancel/returns, review photos, repeat orders, cart reminder, referrals): where each lives, the rules they keep, and Foodify's open questions. Per-lane detail in `FEATURES-A…D-NOTES.md` |
+| `run-all-tests.sh` → `duplicate-functions` | A function defined twice is a fatal at boot that `php -l` and undefined-functions both miss |
 
 ### Work package index
 
