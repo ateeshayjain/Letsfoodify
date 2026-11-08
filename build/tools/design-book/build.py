@@ -114,13 +114,13 @@ pages.append(f"""<section class="page">
     <div class="card"><h3>The photography is missing on purpose</h3><p>Every cream box marked “photography placeholder” is where a
     real photo of the prepared dish goes. Booking that shoot is the single biggest visual upgrade left.</p></div>
     <div class="card"><h3>The words and numbers are samples</h3><p>Product names and prices come from your catalogue. A few values were
-    invented so the pages look finished — they are listed by name on the second-to-last page.</p></div>
+    invented so the pages look finished — they are listed by name under “What needs your word”, near the end.</p></div>
   </div>
   <div class="box">
     <p class="big">What the design is trying to do</p>
     <p><b>Six minutes is the product.</b> Prep time is on every card, ahead of price. &nbsp;·&nbsp;
     <b>Show the food, not the pouch.</b> &nbsp;·&nbsp;
-    <b>No surprises after the cart.</b> Shipping is shown before checkout, never added at the end. &nbsp;·&nbsp;
+    <b>No surprises after the cart.</b> Delivery is shown before checkout, never added at the end. &nbsp;·&nbsp;
     <b>Earn trust honestly.</b> No fake viewer counts, no invented reviews. &nbsp;·&nbsp;
     <b>Designed for a phone first.</b> Nothing a customer reads is smaller than 16px; nothing they tap is smaller than a thumb.</p>
   </div>
@@ -128,7 +128,7 @@ pages.append(f"""<section class="page">
   <div style="display:flex;gap:8mm;font-size:9pt;color:var(--mute)">
     <div><b style="color:var(--char)">What follows</b><br>3–4 Home &nbsp;·&nbsp; 5 Search &nbsp;·&nbsp; 6 Category &nbsp;·&nbsp; 7–8 Combos &nbsp;·&nbsp; 9 Build your own box</div>
     <div><br>10–11 Product &nbsp;·&nbsp; 12 Delivery date and offers &nbsp;·&nbsp; 13 Reviews &nbsp;·&nbsp; 14 Filters &nbsp;·&nbsp; 15 Cart &nbsp;·&nbsp; 16 Checkout</div>
-    <div><br>17 Account &nbsp;·&nbsp; 18 After the order &nbsp;·&nbsp; 19 Refer a friend &nbsp;·&nbsp; 20–21 What needs your word &nbsp;·&nbsp; 22 Next</div>
+    <div><br>17 Account &nbsp;·&nbsp; 18 After the order &nbsp;·&nbsp; 19 Refer a friend &nbsp;·&nbsp; 20 The usability review &nbsp;·&nbsp; 21–22 What needs your word &nbsp;·&nbsp; 23 Next</div>
   </div>
   {foot('How to read this')}
 </section>""")
@@ -196,11 +196,11 @@ pages.append(screen_page(
     "Category", "Choosing a meal",
     "The page a customer lands on from Google or from the menu, and the one that has to make 44 products easy to narrow down.",
     "shop-desktop", "shop-phone",
-    ["<b>Filters are visible, not hidden behind an icon</b>: prep method, dietary, price. A Jain customer, or someone with no stove, can get to their shortlist in one tap.",
-     "<b>Sort is a labelled control</b> next to the result count — most popular, best rated, price.",
-     "Every card carries prep time, servings, rating, price — and a <b>Save badge only when the discount is genuinely 15% or more</b>, so a discount never looks invented.",
-     "Sold-out items are greyed out and cannot be added to a cart."],
-    "Laptop · category page with filters open", "Phone · filter and sort stay reachable",
+    ["<b>Filters by what matters here</b>: prep method, dietary, price. Open beside the products on a laptop; on a phone one <b>Filter</b> line that says how many are on — “Filter · 2” — so the products come first.",
+     "<b>Sort is a labelled control</b> next to the result count, and the count is announced to screen readers when a filter changes it.",
+     "Every card <b>leads with how it is made</b> — “Hot water · 6 min”, then servings — and carries Jain, vegan or gluten free as words, not a badge on the photo. A <b>Save badge appears only when the discount is genuinely 15% or more</b>.",
+     "Sold-out items say <b>Sold out</b>, sit at the end of every sort, and offer “Notify me” instead of Add to cart. Once a meal is in the cart its button reads “Add another · 1 in cart”."],
+    "Laptop · category page with filters open", "Phone · filters folded, with a count",
     "Category / shop"))
 
 # ── Combos ──────────────────────────────────────────────────────────────────
@@ -242,9 +242,9 @@ pages.append(screen_page(
     "Product", "The page that sells",
     "Everything a buyer needs before they commit, in the order they ask for it.",
     "product-desktop-1", "product-phone-1",
-    ["The <b>green vegetarian mark</b> sits beside the name, and the <b>price per 100 g</b> under the price, as Amazon and Blinkit show it.",
-     "<b>Check delivery</b>: a PIN code gives a real date — “Delivers Tue 10 – Wed 11 Nov” — before anything goes in the cart.",
-     "<b>Offers</b> lists what checkout will actually do: free delivery from ₹599, the online-payment saving, cash on delivery. Each line comes from the shop’s settings, so it can never promise what checkout will not give.",
+    ["The <b>green vegetarian mark</b> sits beside the name, the <b>price per 100 g</b> under the price, and a one-line <b>Contains: milk, gluten</b> above Add to cart, so an allergy is checked before the tap, not after.",
+     "Under Add to cart, in the order a buyer asks: what is in a combo, <b>Check delivery</b> — a PIN gives a real date — and <b>Offers</b> as one closed line, “2 offers: pay online, save ₹25 · free delivery from ₹599”. Each comes from the shop’s settings, so it can never promise what checkout will not give.",
+     "Three plain assurances close the box: no preservatives, the shelf life, and cash on delivery.",
      "On a phone, a bar with the price and Add to cart follows the customer down the page, so buying is never more than one tap away."],
     "Laptop · top of a product page", "Phone · sticky Add to cart",
     "Product"))
@@ -325,8 +325,9 @@ pages.append(screen_page(
     "Cart", "No surprises",
     "The audited site turned ₹210 into ₹285 at the final screen. This one shows the true cost before the customer commits.",
     "cart-desktop", "cart-phone",
-    ["A bar at the top says <b>how far the order is from free shipping</b> — the cheapest way to lift an average order value.",
-     "Quantity, remove and a partner or creator coupon field. Totals show GST included and shipping as it will actually be charged.",
+    ["A bar at the top says <b>how far the order is from free delivery</b> — the cheapest way to lift an average order value. It disappears when the cart is empty rather than leaving an empty green box.",
+     "Quantity, remove and a partner or creator coupon field. Totals show GST included and <b>Delivery</b> as it will actually be charged — one word for it on every screen, never “Shipping” on one and “Delivery” on the next.",
+     "A box is never dearer than its packs bought one by one: free delivery is judged on the cart before the box discount, so filling a box cannot lose it.",
      "<b>“Continue shopping”</b> is on the page, so the cart is never a dead end."],
     "Laptop · the cart", "Phone · one row per item",
     "Cart"))
@@ -407,6 +408,40 @@ pages.append(screen_page(
      "Referral codes are kept apart from partner and creator codes, so they never count as a partner’s sales."],
     "Laptop · the Refer a friend page", "Phone · checkout’s two optional ticks",
     "Refer a friend"))
+
+# ── The usability review ───────────────────────────────────────────────────
+pages.append(f"""<section class="page">
+  <div class="head"><span class="tag">Review</span><h2 style="margin:0">Every screen, read as a customer would</h2></div>
+  <p class="sub" style="margin:-1mm 0 3mm">Before this edition every screen was checked at phone width (390px) and laptop width (1280px), every
+  button and link was tapped — about 3,500 taps per width — and each problem was confirmed before it was fixed. 94 findings; all four
+  that could cost a customer money or an order are closed.</p>
+  <div class="cardrow">
+    <div class="card"><h3>The four that mattered most</h3><ul class="notes">
+      <li>A filled box could lose free delivery and cost <b>more</b> than its packs bought singly.</li>
+      <li>Choosing a saved address at checkout did not fill the address in.</li>
+      <li>A ₹59 delivery charge could survive after free delivery was earned.</li>
+      <li>The fixed “3–5 days pan-India” line could contradict the date the PIN check gave.</li></ul></div>
+    <div class="card"><h3>What changed everywhere</h3><ul class="notes">
+      <li><b>Nothing a customer reads is under 16px</b>; nothing they tap is under a thumb (44px).</li>
+      <li>A visible outline shows where the keyboard is, on every control.</li>
+      <li><b>One name per thing</b>: Delivery, Free delivery, Sold out, Report a problem.</li>
+      <li>Errors say what went wrong and what to type instead.</li></ul></div>
+    <div class="card"><h3>What a laptop cannot test</h3><p>Typing the six-digit code from an SMS, the number keypad,
+      a cheap Android phone on 4G and screen readers on a real device. We have written a twenty-minute checklist for
+      a real phone; it is the last step before launch.</p></div>
+  </div>
+  <div class="box" style="margin-top:4mm">
+    <p class="big">Design calls we made — say if you disagree</p>
+    <p>Tablets show the menu button rather than squeezing five links in. &nbsp;·&nbsp; On phones the filters start folded and the
+    Save badge sits above the price. &nbsp;·&nbsp; Cards carry one extra line: Jain, vegan or gluten free as words. &nbsp;·&nbsp;
+    The phone cart button shows how many items, not the total.</p>
+    <p class="big" style="margin-top:3mm">Three things only you can confirm</p>
+    <p><b>Is “No preservatives” true of every product?</b> It now appears on each product page. &nbsp;·&nbsp;
+    <b>Box savings:</b> at the current prices five of the six boxes save under 15%, so they show the saving in rupees but no
+    Save badge. &nbsp;·&nbsp; <b>A PIN you do not deliver to</b> is flagged at checkout but not blocked — should it stop the order?</p>
+  </div>
+  {foot('The usability review')}
+</section>""")
 
 # ── 11. Invented values ─────────────────────────────────────────────────────
 pages.append(f"""<section class="page">

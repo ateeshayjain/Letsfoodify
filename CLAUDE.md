@@ -197,6 +197,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `tests/pdp-test.php` | 46 assertions. The card and product page rules: SAVE only at 15%+, sold out outranks bestseller, Pack & label is never a tab, and an element hidden with `[hidden]` has a display rule that lets it |
 | `docs/SOLO-PLAN.md`, `docs/MIGRATION.md` | Schedule and cutover notes |
 | `docs/FEATURES-2026-11.md` | **The fourteen retention/discovery features** (PIN delivery date, search, veg mark + unit price, back-in-stock, offers, buy again, build-a-box, WhatsApp, cancel/returns, review photos, repeat orders, cart reminder, referrals): where each lives, the rules they keep, and Foodify's open questions. Per-lane detail in `FEATURES-A…D-NOTES.md` |
+| `docs/UX-REVIEW-2026-11-08.md` | **The usability review register**: 94 findings at 390px and 1280px (4 P0, all closed), what each fix was and what pins it, what the re-check found, what is still open, and the client's design sign-offs and questions |
+| `docs/DEVICE-CHECKLIST.md` | **The real-phone pass** a laptop cannot do — SMS code entry, keypads, a low-end Android on 4G, screen readers. The last step before launch |
 | `run-all-tests.sh` → `duplicate-functions` | A function defined twice is a fatal at boot that `php -l` and undefined-functions both miss |
 
 ### Work package index
