@@ -2049,8 +2049,11 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 
 /* ==== LANE D: whatsapp, repeat-orders, cart-recovery, referrals — append this lane's rules ABOVE this line's end marker ==== */
 /* Consent boxes (checkout + Your details): a 44px row, 16px words, never pre-ticked by the theme. */
-.fd-optin label.checkbox, label.fd-optin { display: flex; gap: var(--wp--preset--spacing--20); align-items: flex-start; min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); cursor: pointer; }
-.fd-optin input[type="checkbox"] { flex: 0 0 auto; margin-top: .2em; }
+/* Block, not flex: WooCommerce prints the label as a bare text node plus a
+   separate "(optional)" span, and flex made those two columns. The box sits
+   in the label's start padding so the words wrap as one sentence. */
+.fd-optin label.checkbox, label.fd-optin { display: block; position: relative; padding-inline-start: calc(var(--wp--custom--tap-target) / 2 + var(--wp--preset--spacing--10)); min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); cursor: pointer; }
+.fd-optin input[type="checkbox"] { position: absolute; inset-inline-start: 0; top: .3em; margin: 0; }
 .fd-optin .description, .fd-optin__note { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
 .fd-account-optin { border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card); padding: var(--wp--preset--spacing--40); margin: var(--wp--preset--spacing--50) 0; }
 .fd-account-optin legend { font-weight: 600; padding: 0 var(--wp--preset--spacing--20); }
@@ -2240,7 +2243,7 @@ live until you confirm it.</p></details></div>
 <!-- Buy again: signed-in customers with past orders only (inc/buy-again.php).
      Renders nothing for guests, so the cached guest page never contains it,
      and a signed-in front page is sent no-store. -->
-<div class="fx-again" data-fx-again></div>
+<div class="fx-again alignwide" data-fx-again></div>
 
 
 

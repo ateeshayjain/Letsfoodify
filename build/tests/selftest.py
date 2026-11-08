@@ -110,8 +110,18 @@ def pages(mode):
     }
 
 
+COOKIE = "wordpress_logged_in_smoke=customer%7C1700000000%7Cabc"
+
+
+def signed_in_home():
+    """The home page as the test customer sees it: Buy again, logged-in body."""
+    return (HEAD.replace("<body>", '<body class="home logged-in">') + "<h1>A real meal in six minutes</h1>"
+            + '<section class="fd-again" data-fd-again><h2>Buy again</h2></section>' + PAD + FOOT)
+
+
 def serve(mode, port):
     P = pages(mode)
+    shared = {}   # the "bad" site's edge cache: one stored copy of /, served to whoever asks next
 
     class H(http.server.BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
@@ -129,8 +139,22 @@ def serve(mode, port):
             body = P.get(path)
             if body is None:
                 self.send_error(404); return
+            home_hdrs = {}
+            if path == "/":
+                if "wordpress_logged_in_" in (self.headers.get("Cookie") or ""):
+                    body = signed_in_home()
+                    if mode == "bad":
+                        shared["/"] = body          # stored by the cache, no private marker
+                        home_hdrs = {"X-Cache": "MISS"}
+                    else:
+                        home_hdrs = {"Cache-Control": "no-cache, no-store, must-revalidate, max-age=0, private",
+                                     "X-Foodify-Private": "1", "X-Cache": "BYPASS"}
+                elif mode == "bad" and "/" in shared:
+                    body = shared["/"]; home_hdrs = {"X-Cache": "HIT"}
             b = body.encode()
             self.send_response(200)
+            for k, v in home_hdrs.items():
+                self.send_header(k, v)
             self.send_header("Content-Type", "text/plain" if path.endswith(".txt") else "text/html")
             self.send_header("Content-Length", str(len(b)))
             self.send_header("Set-Cookie", "woocommerce_items_in_cart=1; Path=/")
@@ -140,7 +164,9 @@ def serve(mode, port):
             # served to another.
             if path in ("/cart/", "/checkout/", "/my-account/", "/my-account/address-book/"):
                 if mode == "bad":
-                    self.send_header("X-Cache", "HIT")
+                    # An 'r' before the word HIT: grep -E reads [^\r] as 'not r',
+                    # and the gate once missed exactly this header.
+                    self.send_header("X-Cache", "served from origin shield, HIT")
                 else:
                     self.send_header("Cache-Control",
                                      "no-cache, no-store, must-revalidate, max-age=0, private")
@@ -179,9 +205,12 @@ def check(label, cond):
         print(f"  {RED}FAIL{R} {label}"); failed += 1
 
 
-def run(port):
+def run(port, cookie=COOKIE):
     env = dict(os.environ); env.pop("HTTPS_PROXY", None); env.pop("http_proxy", None)
     env["NO_PROXY"] = "*"
+    env.pop("FOODIFY_SMOKE_COOKIE", None)
+    if cookie:
+        env["FOODIFY_SMOKE_COOKIE"] = cookie
     p = subprocess.run(["bash", GATE, f"http://127.0.0.1:{port}"],
                        capture_output=True, text=True, timeout=120, env=env, cwd=KIT)
     # Strip colour before matching, or "PASS" and its label are never adjacent.
@@ -221,6 +250,9 @@ check("feed parses with items",
       "PASS feed parses as XML" in out or "PASS feed reaches its closing tag" in out)
 check("FSSAI licence configured",         "PASS FSSAI licence number is configured" in out)
 check("no placeholder licence",           "PASS no placeholder FSSAI licence number" in out)
+check("signed in as the test customer",   "PASS signed in as the test customer" in out)
+check("signed-in home marked private",    "PASS signed-in home sends Cache-Control: private, no-store" in out)
+check("a guest next sees no Buy again",   "PASS a guest after the customer sees no Buy again" in out)
 check("exits 0",                          rc == 0)
 
 print("\n── Case 2 · site carrying the audit's defects ──")
@@ -250,6 +282,10 @@ check("truncated feed CAUGHT",
       "does NOT parse as XML" in out or "feed is TRUNCATED" in out)
 check("placeholder FSSAI licence CAUGHT",
       "placeholder FSSAI licence 10012345678901 is live" in out)
+# A customer's past orders shown to the next anonymous visitor.
+check("signed-in home without private headers CAUGHT", "is NOT marked private, no-store" in out)
+check("Buy again leaked to a guest through the cache CAUGHT",
+      "A GUEST WAS SERVED THE SIGNED-IN HOME PAGE" in out)
 check("exits non-zero",         rc != 0)
 
 print("\n── Case 3 · unreachable site (the regression test) ──")
@@ -281,6 +317,17 @@ check("does NOT falsely clear analytics either way",
 check("does NOT falsely clear the feed",
       "PASS feed parses as XML" not in out and "closing tag" not in out)
 check("says the page did not load", "did not load" in out)
+check("does NOT falsely clear the signed-in home page",
+      "PASS a guest after the customer sees no Buy again" not in out and "signed-in home page privacy" not in out
+      or "privacy NOT verified" in out)
+check("says signed-in privacy could not be verified", "privacy NOT verified" in out)
+check("exits non-zero", rc != 0)
+
+print("\n── Case 3b · healthy site, but no test-customer cookie supplied ──")
+s3 = serve("good", 8975)
+out, rc = run(8975, cookie=None); s3.shutdown()
+check("a missing cookie is a FAILURE, not a skip", "FAIL no test-customer cookie" in out)
+check("and the leak is not reported as checked", "PASS a guest after the customer sees no Buy again" not in out)
 check("exits non-zero", rc != 0)
 
 print("\n── Case 4 · --staging against an INDEXABLE site (must refuse) ──")

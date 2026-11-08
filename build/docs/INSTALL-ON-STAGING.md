@@ -58,6 +58,8 @@ bash ~/letsfoodify/build/scripts/bootstrap.sh --env=staging
 **5. Check it with the gate, not by eye alone.**
 
 ```bash
+# A test customer with one completed order; the gate signs in as them (read-only).
+export FOODIFY_SMOKE_COOKIE="$(wp eval 'echo LOGGED_IN_COOKIE."=".wp_generate_auth_cookie(<test-customer-id>, time()+3600, "logged_in");')"
 bash ~/letsfoodify/build/scripts/smoke-test.sh https://<your-staging-url> --staging
 ```
 

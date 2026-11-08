@@ -22,7 +22,10 @@ has orders staging has never seen. Configuration moves via
   - [ ] GA4 measurement ID — gate reports "gtag loader present", not "analytics OFF"
   - [ ] Photography loaded — feed exclusion notice reads zero products
   - [ ] Product weights — no order shows "Not dispatchable"
-- [ ] `build/run-all-tests.sh` — **ALL GREEN, 30 suites**. Anything red stops the clock.
+- [ ] `build/run-all-tests.sh` — **ALL GREEN, 36 suites**. Anything red stops the clock.
+- [ ] **A test customer exists on staging AND production**: a real account with at least one completed
+      order, used only by the gate. Section 5b signs in as it to prove a signed-in home page (Buy again)
+      is never cached for other visitors — and FAILS if no cookie is supplied.
 - [ ] **URL inventory → `redirects.csv`** finalised from the WP-01 crawl.
       `wp02-verify.sh` static analysis clean: no chains, no loops, no duplicates.
 - [ ] **Baseline captured and filed**: GSC queries/pages/impressions export, GA4
@@ -32,6 +35,9 @@ has orders staging has never seen. Configuration moves via
 ## T-1 — staging is the dress rehearsal, run as if it were the show
 
 ```bash
+# The test customer's logged-in cookie (read-only: the gate only GETs the home page).
+# Generated on the server — no browser, no password typed anywhere:
+export FOODIFY_SMOKE_COOKIE="$(wp eval 'echo LOGGED_IN_COOKIE."=".wp_generate_auth_cookie(<test-customer-id>, time()+3600, "logged_in");')"
 # Staging must be INVISIBLE and the build must be green ON staging:
 build/scripts/smoke-test.sh https://staging.letsfoodify.com --staging --redirects=redirects.csv
 ```
@@ -70,6 +76,7 @@ maintenance mode ≤ 30 min.
 7. **Maintenance mode off.**
 8. **The gate, against production, immediately:**
    ```bash
+   # FOODIFY_SMOKE_COOKIE from PRODUCTION's wp eval, as at T-1 — a staging cookie does not sign in here.
    build/scripts/smoke-test.sh https://letsfoodify.com --redirects=redirects.csv
    ```
    **Exit non-zero = go to Rollback. No arguing with the gate at 5am** — that

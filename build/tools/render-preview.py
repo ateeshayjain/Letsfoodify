@@ -873,7 +873,7 @@ PDP_REVIEWS = {
 
 def shortcode(code):
     if "foodify_buy_again" in code:
-        return '<div class="fx-again" data-fx-again></div>'
+        return '<div class="fx-again alignwide" data-fx-again></div>'
     if "foodify_box_builder" in code:
         return php("echo foodify_box_builder_html(foodify_box_sizes_parse($a[0]), $a[1], ['action'=>'/build-a-box/','nonce'=>'x','combos_url'=>'/product-category/combos/'])",
                    DEMO_BOX_SIZES, [{k: v for k, v in b.items() if k != "slug"} for b in box_products()])

@@ -8,11 +8,21 @@
 # perfectly correct week-1 result. Use scripts/wp01-verify.sh for WP-01.
 #   ./smoke-test.sh https://staging.letsfoodify.com
 #   ./smoke-test.sh https://letsfoodify.com --redirects=redirects.csv
+#
+# Section 5b signs in as a TEST CUSTOMER (one with at least one completed
+# order) and needs that customer's logged-in cookie. Without it the gate FAILS
+# rather than skipping, because an unverified privacy check is not a pass:
+#   export FOODIFY_SMOKE_COOKIE="$(wp eval 'echo LOGGED_IN_COOKIE."=".wp_generate_auth_cookie(<user-id>, time()+3600, "logged_in");')"
+# (or --customer-cookie=FILE holding that one line). It only reads the home page.
 set -uo pipefail
 
 BASE="${1:-}"; [[ -z "$BASE" ]] && { echo "Usage: $0 <base-url> [--redirects=file.csv]"; exit 2; }
 BASE="${BASE%/}"; REDIRECTS=""
-for a in "${@:2}"; do [[ "$a" == --redirects=* ]] && REDIRECTS="${a#*=}"; done
+CUSTOMER_COOKIE="${FOODIFY_SMOKE_COOKIE:-}"
+for a in "${@:2}"; do
+  [[ "$a" == --redirects=* ]] && REDIRECTS="${a#*=}"
+  [[ "$a" == --customer-cookie=* ]] && CUSTOMER_COOKIE="$(tr -d '\r\n' < "${a#*=}" 2>/dev/null)"
+done
 
 STAGING=0
 for a in "$@"; do [[ "$a" == "--staging" ]] && STAGING=1; done
@@ -273,7 +283,7 @@ for p in "/cart/" "/checkout/" "/my-account/"; do
 
   # Only now that headers demonstrably arrived is an absence check meaningful.
   if grep -qiE '^(x-cache|cf-cache-status|hcdn-cache|x-hcdn-cache|x-litespeed-cache|x-proxy-cache|x-fastcgi-cache):' <<<"$H"; then
-    if grep -qiE '^(x-cache|cf-cache-status|hcdn-cache|x-hcdn-cache|x-litespeed-cache|x-proxy-cache|x-fastcgi-cache):[^\r]*hit' <<<"$H"; then
+    if grep -qiE '^(x-cache|cf-cache-status|hcdn-cache|x-hcdn-cache|x-litespeed-cache|x-proxy-cache|x-fastcgi-cache):[^[:cntrl:]]*hit' <<<"$H"; then
       no "$p was served FROM AN EDGE CACHE (HIT) — private data is being shared between visitors"
     else
       ok "$p reported by the edge as not cached"
@@ -282,6 +292,53 @@ for p in "/cart/" "/checkout/" "/my-account/"; do
     wr "$p — no edge cache header at all; the CDN's behaviour here is unconfirmed"
   fi
 done
+
+hdr "5b · A signed-in home page is never shared (Buy again)"
+# The home page is the one CACHED page that personalises: a signed-in customer
+# sees "Buy again" — their own past orders (inc/buy-again.php). If the edge
+# cache stores that response, the next anonymous visitor is shown somebody
+# else's order history. The theme marks the response private; this proves it,
+# and then proves the thing that matters: a guest asking next sees no trace.
+#
+# Every assertion here is positive-first. "No Buy again in the guest page" is an
+# absence check, so it is only made after the guest page demonstrably arrived,
+# and only after the signed-in fetch demonstrably WAS signed in — a cookie that
+# silently failed would leave nothing to leak and the check would pass vacuously.
+if [[ -z "$CUSTOMER_COOKIE" ]]; then
+  no "no test-customer cookie (FOODIFY_SMOKE_COOKIE or --customer-cookie=FILE) — signed-in home page privacy NOT verified"
+else
+  SH="$(curl -sS -D - --max-time 25 -A 'FoodifySmokeTest/1.0' -H "Cookie: $CUSTOMER_COOKIE" "$BASE/" 2>/dev/null)"
+  S_HEAD="${SH%%$'\r\n\r\n'*}"; S_BODY="${SH#*$'\r\n\r\n'}"
+  if ! grep -qi '^HTTP/' <<<"$S_HEAD" || ! GOT "$S_BODY"; then
+    no "signed-in home page did not load — privacy NOT verified"
+  elif ! grep -qiE '<body[^>]*class="[^"]*\blogged-in\b' <<<"$S_BODY"; then
+    no "the test-customer cookie did not sign in (no logged-in body class) — privacy NOT verified"
+  else
+    ok "signed in as the test customer"
+    grep -qi 'data-fd-again' <<<"$S_BODY" \
+      && ok "the test customer sees Buy again" \
+      || wr "no Buy again for the test customer — give the account a completed order so the leak check below has something to find"
+    grep -qiE '^cache-control:.*no-store' <<<"$S_HEAD" && grep -qiE '^cache-control:.*private' <<<"$S_HEAD" \
+      && ok "signed-in home sends Cache-Control: private, no-store" \
+      || no "signed-in home is NOT marked private, no-store — an edge cache may store one customer's Buy again"
+    grep -qi '^x-foodify-private:' <<<"$S_HEAD" \
+      && ok "signed-in home carries the theme's private-page marker" \
+      || no "signed-in home missing X-Foodify-Private — inc/buy-again.php is not running here"
+    grep -qiE '^(x-cache|cf-cache-status|hcdn-cache|x-hcdn-cache|x-litespeed-cache|x-proxy-cache|x-fastcgi-cache):[^[:cntrl:]]*hit' <<<"$S_HEAD" \
+      && no "signed-in home was served FROM AN EDGE CACHE (HIT) — it is somebody else's page" \
+      || ok "signed-in home not served from the edge cache"
+    # Then a guest, twice: the second request is the one a cache would answer.
+    FETCH "$BASE/" >/dev/null
+    G_BODY="$(FETCH "$BASE/")"
+    if ! GOT "$G_BODY"; then
+      no "guest home page did not load — leak check NOT verified"
+    elif grep -qi 'data-fd-again' <<<"$G_BODY" || grep -qiE '<body[^>]*class="[^"]*\blogged-in\b' <<<"$G_BODY"; then
+      no "A GUEST WAS SERVED THE SIGNED-IN HOME PAGE — one customer's Buy again is visible to everyone"
+    else
+      ok "a guest after the customer sees no Buy again and no signed-in page"
+    fi
+  fi
+fi
 
 hdr "6 · The Merchant Center feed"
 # WP-12. The feed is the revenue surface, and Merchant Center fetches it on a

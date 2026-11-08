@@ -92,7 +92,7 @@ pages.append(f"""<section class="page" style="display:flex;flex-direction:column
   <dl class="kv" style="max-width:140mm">
     <dt>Prepared for</dt><dd>Nalin Agarwal, The Foodify Company</dd>
     <dt>Prepared by</dt><dd>Mindlayer</dd>
-    <dt>Date</dt><dd>18 September 2026</dd>
+    <dt>Date</dt><dd>8 November 2026 (second edition: search, boxes, delivery dates, repeat orders)</dd>
     <dt>Status</dt><dd>For review. Nothing here is live until you approve it.</dd>
   </dl>
   <div style="position:absolute;right:14mm;top:13mm;width:120mm;display:flex;gap:3mm;align-items:flex-start">
@@ -126,9 +126,9 @@ pages.append(f"""<section class="page">
   </div>
   <div class="rule" style="margin:5mm 0 3mm"></div>
   <div style="display:flex;gap:8mm;font-size:9pt;color:var(--mute)">
-    <div><b style="color:var(--char)">What follows</b><br>3–4 Home &nbsp;·&nbsp; 5 Category &nbsp;·&nbsp; 6–7 Combos</div>
-    <div><br>8–9 Product &nbsp;·&nbsp; 10 Filters and sorting &nbsp;·&nbsp; 11 Cart &nbsp;·&nbsp; 12 Checkout</div>
-    <div><br>13 Account &nbsp;·&nbsp; 14 What is invented and needs your word &nbsp;·&nbsp; 15 What happens next</div>
+    <div><b style="color:var(--char)">What follows</b><br>3–4 Home &nbsp;·&nbsp; 5 Search &nbsp;·&nbsp; 6 Category &nbsp;·&nbsp; 7–8 Combos &nbsp;·&nbsp; 9 Build your own box</div>
+    <div><br>10–11 Product &nbsp;·&nbsp; 12 Delivery date and offers &nbsp;·&nbsp; 13 Reviews &nbsp;·&nbsp; 14 Filters &nbsp;·&nbsp; 15 Cart &nbsp;·&nbsp; 16 Checkout</div>
+    <div><br>17 Account &nbsp;·&nbsp; 18 After the order &nbsp;·&nbsp; 19 Refer a friend &nbsp;·&nbsp; 20–21 What needs your word &nbsp;·&nbsp; 22 Next</div>
   </div>
   {foot('How to read this')}
 </section>""")
@@ -179,6 +179,18 @@ pages.append(f"""<section class="page">
   {foot('Home')}
 </section>""")
 
+# ── Search ──────────────────────────────────────────────────────────────────
+pages.append(screen_page(
+    "Search", "Finding a meal by name",
+    "With 44 products, people type what they want. The audited site had no search at all.",
+    "search-desktop", "search-phone",
+    ["<b>Suggestions appear as you type</b>, from the second letter, with the prep time and price — tap one and you are on its page.",
+     "It finds <b>ingredients and other names too</b>: “dal” finds the khichdi, and once you add Hindi and regional names (“राजमा”, “rajma chawal”) those work as well.",
+     "A small typo still finds the dish. Sold-out items come last, marked as sold out.",
+     "<b>No match is never a dead end</b>: it says so and offers three popular meals."],
+    "Laptop · the results page for “dal”", "Phone · suggestions while typing",
+    "Search"))
+
 # ── 5. Shop ─────────────────────────────────────────────────────────────────
 pages.append(screen_page(
     "Category", "Choosing a meal",
@@ -213,13 +225,26 @@ pages.append(screen_page(
     "Laptop \u00b7 the box\u2019s own page", "Phone \u00b7 the same panel",
     "Combos"))
 
+# ── Build your own box ──────────────────────────────────────────────────────
+pages.append(screen_page(
+    "Combos", "Build your own box",
+    "The fixed boxes suit most people; this is for the customer who knows exactly what they want.",
+    "box-desktop", "box-phone",
+    ["<b>Choose a size, then fill it</b> with any mix of single packs. The bar keeps count: “4 of 6 packs · 2 more to fill”.",
+     "<b>The discount is shown before you add the box</b>, and it is exactly what the cart charges — worked out the same way, rounded down to the rupee.",
+     "In the cart the packs stay separate lines marked “6-pack box”. Take one out and the discount goes, with a message saying how to get it back.",
+     "Sizes and discounts are yours to set. Until you do, the page says boxes are coming soon and sells nothing."],
+    "Laptop · a 6-pack box, part filled", "Phone · the running total stays in view",
+    "Build your own box"))
+
 # ── 6–7. Product ────────────────────────────────────────────────────────────
 pages.append(screen_page(
     "Product", "The page that sells",
     "Everything a buyer needs before they commit, in the order they ask for it.",
     "product-desktop-1", "product-phone-1",
-    ["Under the name: <b>the delivery promise</b>. Under the price: net weight, how much cooked food it makes, how many it serves, and how long it takes.",
-     "<b>Five assurances sit directly under the Add to cart button</b> — ready in six minutes, no preservatives, shelf life, cash on delivery, free shipping over ₹599.",
+    ["The <b>green vegetarian mark</b> sits beside the name, and the <b>price per 100 g</b> under the price, as Amazon and Blinkit show it.",
+     "<b>Check delivery</b>: a PIN code gives a real date — “Delivers Tue 10 – Wed 11 Nov” — before anything goes in the cart.",
+     "<b>Offers</b> lists what checkout will actually do: free delivery from ₹599, the online-payment saving, cash on delivery. Each line comes from the shop’s settings, so it can never promise what checkout will not give.",
      "On a phone, a bar with the price and Add to cart follows the customer down the page, so buying is never more than one tap away."],
     "Laptop · top of a product page", "Phone · sticky Add to cart",
     "Product"))
@@ -230,9 +255,44 @@ pages.append(screen_page(
     "product-desktop-2", "product-phone-2",
     ["<b>About · Ingredients &amp; nutrition · How to make · FAQ</b> are tabs on a laptop and open-and-close sections on a phone. Same words, one place to edit them.",
      "<b>Pack &amp; label is always open</b>, never hidden in a tab: MRP, best before, shelf life, country of origin, FSSAI licence, marketed by, consumer care.",
-     "A declaration you have not supplied is shown as <b>“Not provided”</b> rather than quietly left out — that is the honest way to handle allergens, and the same fields feed your Google product listing."],
+     "<b>Allergens and a nutrition panel on every pack.</b> A declaration you have not supplied is shown as <b>“Not provided”</b> rather than quietly left out, and the same fields feed your Google product listing."],
     "Laptop · the tabbed body and the pack table", "Phone · the same, as sections",
     "Product", desk_w="148mm"))
+
+# ── Delivery date, offers, back in stock ────────────────────────────────────
+pages.append(f"""<section class="page">
+  <div class="head"><span class="tag">Product</span><h2 style="margin:0">No surprises, before the cart</h2></div>
+  <p class="sub" style="margin:-1mm 0 3mm">The questions a buyer asks just before tapping Add to cart — when will it come, what will it really cost — answered on the product page.</p>
+  <div class="body">
+    <div class="col-desk" style="width:118mm">
+      <figure class="shot" style="margin:0"><img src="{img('buybox-desktop')}" style="max-height:140mm;width:100%;object-fit:cover;object-position:top"></figure>
+      <p class="cap">Laptop · the buy box after a PIN check</p>
+    </div>
+    <div class="col-desk" style="width:76mm">
+      <ul class="notes">
+        <li><b>The delivery date comes from your courier’s zones</b>, the dispatch cut-off and Sundays — “Order by 2 pm to ship today”. An unknown PIN says so; it never guesses a date.</li>
+        <li><b>The PIN is remembered</b> on the next product and fills itself in at checkout, along with the city and state.</li>
+        <li><b>Sold out is not a dead end.</b> “Notify me” takes an email for one message when it is back — then the address is deleted. No mailing list.</li>
+        <li>The photo brief now asks for a fifth shot: <b>the back of the pack, label legible</b> — ingredients, allergens and FSSAI number, the way marketplace shoppers check.</li>
+      </ul>
+    </div>
+    <div class="col-phone">
+      <figure class="shot" style="margin:0"><img src="{img('notify-phone')}"></figure>
+      <p class="cap">Phone · a sold-out product</p>
+    </div>
+  </div>
+  {foot('Product')}
+</section>""")
+
+pages.append(screen_page(
+    "Product", "Reviews you can read, and filter",
+    "Reviews only from customers who ordered the product, shown the way people actually read them.",
+    "reviews-desktop", "reviews-phone",
+    ["<b>The spread, not just the average</b>: how many fives, fours and threes, so a 4.5 earned honestly reads that way.",
+     "<b>Filter by stars, or “With photos”</b> — the count line always says how many are showing.",
+     "<b>Customers who ordered can add up to three photos.</b> Each is checked by a person before it appears, and location and camera details are stripped from every photo."],
+    "Laptop · the reviews under a product", "Phone · filtered to reviews with photos",
+    "Product"))
 
 # ── Filters and sorting ─────────────────────────────────────────────────────
 pages.append(f"""<section class="page">
@@ -279,7 +339,8 @@ pages.append(screen_page(
     ["<b>Nine fields for a first order.</b> The PIN code fills in the city and state; the state is a list, not free text.",
      "<b>A returning customer types nothing</b> — they pick a saved address and pay.",
      "Cash on delivery sits beside online payment, with the prepaid saving named.",
-     "The page has no menu to wander off into, and nothing is added to the price after this screen."],
+     "The page has no menu to wander off into, and nothing is added to the price after this screen.",
+     "Two optional ticks, <b>off unless the customer ticks them</b>: order updates on WhatsApp, and one email with their cart if they do not finish."],
     "Laptop · checkout with a saved address", "Phone · the same nine fields",
     "Checkout"))
 
@@ -310,6 +371,43 @@ pages.append(f"""<section class="page">
   {foot('Account')}
 </section>""")
 
+# ── After the order ─────────────────────────────────────────────────────────
+pages.append(f"""<section class="page">
+  <div class="head"><span class="tag">Account</span><h2 style="margin:0">After the order</h2></div>
+  <p class="sub" style="margin:-1mm 0 3mm">What Amazon customers expect to do themselves, without writing an email.</p>
+  <div class="body">
+    <div class="col-desk">
+      <div class="two">
+        <figure class="shot" style="margin:0"><img src="{img('actions-desktop')}"></figure>
+        <figure class="shot" style="margin:0"><img src="{img('repeat-desktop')}"></figure>
+      </div>
+      <p class="cap">Laptop · an order’s own page &nbsp;·&nbsp; the repeat orders page</p>
+      <ul class="notes">
+        <li><b>Cancel</b> until the order leaves your kitchen. A paid order is refunded to where it came from; if the automatic refund fails, the customer is told your team will send it by hand.</li>
+        <li><b>Report a problem</b> for a few days after delivery — damaged, wrong item, missing, expired — straight to you as a request, never an automatic refund.</li>
+        <li><b>Repeat this order</b> every 2, 4 or 6 weeks: an email two days before with a one-tap link. <b>Nothing is charged automatically</b> — the customer pays each time, and can skip, pause or cancel.</li>
+      </ul>
+    </div>
+    <div class="col-phone">
+      <figure class="shot" style="margin:0"><img src="{img('again-phone')}"></figure>
+      <p class="cap">Phone · Buy again on the home page</p>
+      <p style="font-size:8.5pt;color:var(--mute);margin-top:2mm">A signed-in customer sees their recent items on the home page, one tap from the cart. It is never shown to anyone else.</p>
+    </div>
+  </div>
+  {foot('After the order')}
+</section>""")
+
+pages.append(screen_page(
+    "Account", "Refer a friend",
+    "A food brand grows by people telling each other. This gives them a reason, and stops it being gamed.",
+    "refer-desktop", "optins-phone",
+    ["<b>Give ₹X, get ₹X</b>: the friend saves on their first order; the customer gets a code once that order has shipped.",
+     "Share on WhatsApp, copy the link, or read out the code.",
+     "<b>Not for your own orders, number or addresses</b>, one reward per friend, a monthly cap, and a reward is withdrawn if the friend’s order is refunded.",
+     "Referral codes are kept apart from partner and creator codes, so they never count as a partner’s sales."],
+    "Laptop · the Refer a friend page", "Phone · checkout’s two optional ticks",
+    "Refer a friend"))
+
 # ── 11. Invented values ─────────────────────────────────────────────────────
 pages.append(f"""<section class="page">
   <h2>What is invented in these pictures, and needs your word</h2>
@@ -326,8 +424,8 @@ pages.append(f"""<section class="page">
   <div class="cardrow">
     <div class="card"><h3>Per-product copy</h3><p>Taste notes, cooked weight and the two or three questions customers actually ask about
     each SKU. The fields are built and empty.</p></div>
-    <div class="card"><h3>Photography</h3><p>Four shots per product, in this order: pack front, prepared in a bowl, ingredients laid out,
-    and one in a hand or beside a mug. The first is what Google Shopping uses.</p></div>
+    <div class="card"><h3>Photography</h3><p>Five shots per product, in this order: pack front, prepared in a bowl, ingredients laid out,
+    one in a hand or beside a mug, and the back of the pack. The first is what Google Shopping uses.</p></div>
     <div class="card"><h3>Prices and reviews</h3><p>Sample values from the catalogue. Real prices, stock and reviews come from your
     WooCommerce back office, which is unchanged.</p></div>
   </div>
@@ -342,10 +440,42 @@ pages.append(f"""<section class="page">
   {foot('Awaiting your word')}
 </section>""")
 
+# ── Settings the new features need ─────────────────────────────────────────
+pages.append(f"""<section class="page">
+  <h2>What the new features need from you</h2>
+  <p class="sub">Each of these features stays hidden on the live site until you set its numbers. The pictures use our guesses,
+  named here so none of them is taken as decided.</p>
+  <div class="cardrow" style="margin-top:5mm">
+    <div class="card"><h3>Delivery zones</h3><p>Which areas your courier reaches in how many days, your dispatch cut-off and the days you
+    do not dispatch. The PIN check shows nothing until these exist.</p></div>
+    <div class="card"><h3>Box sizes and discounts</h3><p>Shown as 3, 6 and 9 packs at 5, 10 and 12% off. Should a box also take a partner
+    code? Which packs, if any, are left out?</p></div>
+    <div class="card"><h3>Returns window</h3><p>Shown as 7 days after delivery. When you mark an order as dispatched also decides when
+    cancelling stops.</p></div>
+  </div>
+  <div class="cardrow">
+    <div class="card"><h3>Referrals</h3><p>Shown as give ₹100, get ₹100 on a first order over ₹499. Your amounts, the minimum order and a
+    monthly cap.</p></div>
+    <div class="card"><h3>Repeat orders</h3><p>How many days’ notice (we suggest 2), and whether repeat orders get a discount. With no
+    discount the page says “Repeat this order”, never “save”.</p></div>
+    <div class="card"><h3>WhatsApp</h3><p>Meta charges per message. It stays off until you approve that, choose the number and the
+    message templates are approved.</p></div>
+  </div>
+  <div class="cardrow">
+    <div class="card"><h3>Names people search by</h3><p>Hindi and regional names for each product (“राजमा”, “poha”), typed once into
+    the product editor.</p></div>
+    <div class="card"><h3>An online payment gateway</h3><p>None is set up yet, so “pay online and save ₹25” cannot apply on the live site
+    until one is.</p></div>
+    <div class="card" style="background:var(--kraft-pale)"><h3>How to answer</h3><p>Our full list has sixteen short questions. A reply
+    to the first three cards is enough to start testing.</p></div>
+  </div>
+  {foot('Awaiting your word')}
+</section>""")
+
 # ── 12. What happens next ───────────────────────────────────────────────────
 pages.append(f"""<section class="page">
   <h2>What happens next</h2>
-  <p class="sub">The build is complete in code and checked by 29 automated tests that run before anything can be deployed.
+  <p class="sub">The build is complete in code and checked by 36 automated test suites that run before anything can be deployed.
   What is left is your input and a launch week.</p>
   <div class="cardrow" style="margin-top:5mm">
     <div class="card"><h3>1 · From you</h3><p>FSSAI licence number · GST details · product photography and pack weights ·

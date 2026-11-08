@@ -52,15 +52,20 @@ boot test and the click-through, which walks every feature).
 - `run-all-tests.sh`: the five new suites, plus a **duplicate-functions** check.
   `php -l` and `undefined-functions` cannot see a function defined twice, which is
   a fatal at boot. Two lanes nearly shipped one (`foodify_inr`).
+- `smoke-test.sh` section 5b: signs in as a test customer (`FOODIFY_SMOKE_COOKIE`)
+  and asserts that the home page is private, no-store, carries `X-Foodify-Private`
+  and is not an edge HIT. It then asserts that a guest asking next sees no Buy
+  again. A missing cookie FAILS rather than skips. `selftest.py` proves that the
+  section catches a leaking cache. Fixed alongside it: the gate's edge-cache HIT
+  regex used `[^\r]`, which `grep -E` reads as "not r". Any header value with an
+  "r" before HIT (e.g. "served from origin shield, HIT") was reported as not
+  cached.
 - Prototype: every feature can be clicked, rendered from the theme's own functions
   and scripts. Demo settings live only in `tools/render-preview.py`, and its banner
   names them.
 
 ## Still open
 
-- `smoke-test.sh` should assert `X-Foodify-Private: 1` on a logged-in `/`, so that
-  Buy again can never be cached into a guest's page. This needs a logged-in
-  request in the gate.
 - Two design changes need the design owner's sign-off:
   - The product page loses the two hard-coded assurances ("Cash on delivery
     available", "Free shipping over ₹599"). They now come from settings, in Offers.
