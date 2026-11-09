@@ -2098,3 +2098,275 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
   background: transparent; color: var(--wp--preset--color--mute);
   border: 1px solid var(--wp--preset--color--line-strong); cursor: not-allowed;
 }
+
+/* ==== Cards: Add → − 1 + (cart-stepper.php, client direction 9 Nov 2026) ====
+   The stepper takes the Add button's place and size: one filled pill, the
+   count in the middle, 44px targets either side. */
+.fd-cartctl { display: flex; width: 100%; }
+.fd-cartctl__stepper {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; box-sizing: border-box; min-height: var(--wp--custom--tap-target);
+  background: var(--wp--preset--color--flame-ink); color: var(--wp--preset--color--surface);
+  border-radius: var(--wp--custom--radius--pill);
+  font-weight: 600; font-size: var(--wp--preset--font-size--md);
+}
+.fd-cartctl__step {
+  appearance: none; margin: 0; padding: 0; border: 0; background: transparent;
+  color: inherit; font: inherit; font-size: var(--wp--preset--font-size--lg); line-height: 1;
+  width: var(--wp--custom--tap-target); min-height: var(--wp--custom--tap-target);
+  border-radius: var(--wp--custom--radius--pill); cursor: pointer;
+}
+.fd-cartctl__step:hover:not(:disabled) { background: color-mix(in srgb, var(--wp--preset--color--surface) 18%, transparent); }
+.fd-cartctl__step:disabled { cursor: not-allowed; opacity: .45; }
+/* The site's focus ring is flame-ink, the stepper's own colour: char here. */
+.fd-cartctl__step:focus-visible { outline: 2px solid var(--wp--preset--color--char); outline-offset: 2px; }
+.fd-cartctl__qty { min-width: 2ch; text-align: center; font-variant-numeric: tabular-nums; }
+.fd-cartctl[aria-busy="true"] .fd-cartctl__qty { color: color-mix(in srgb, var(--wp--preset--color--surface) 75%, transparent); }
+.fd-again__ctl { margin-top: auto; }
+/* The [hidden] escape: the button rules above give both halves a display. */
+.fd-cartctl.fd-cartctl > [hidden] { display: none; }
+
+/* ==== The View cart bar (cart-stepper.php) ================================
+   Floats at the bottom once the cart has something in it, at every width, so
+   adding never leaves the page and always shows that it worked (client, 9 Nov
+   2026). Not printed on the cart, checkout or account. On a phone's product
+   page the sticky Add-to-cart bar owns the bottom edge; this one sits on it. */
+.fd-viewcart { display: none; }
+.fd-viewcart:not([hidden]) {
+  position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--wp--preset--spacing--40) + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box; width: min(22rem, calc(100% - 2 * var(--wp--preset--spacing--40)));
+  display: flex; align-items: center; gap: var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+  background: var(--wp--preset--color--flame-ink); color: var(--wp--preset--color--surface);
+  border-radius: var(--wp--custom--radius--pill); text-decoration: none;
+}
+.fd-viewcart__thumb { flex: 0 0 auto; display: flex; align-items: center; }
+.fd-viewcart__thumb img, .fd-viewcart__thumb.is-count {
+  box-sizing: border-box; width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  border: 2px solid var(--wp--preset--color--flame-ink); background: var(--wp--preset--color--surface);
+  object-fit: cover;
+}
+.fd-viewcart__thumb img + img { margin-left: calc(-1 * var(--wp--preset--spacing--40)); }
+.fd-viewcart__thumb.is-count {
+  display: grid; place-items: center; color: var(--wp--preset--color--flame-ink);
+  font-weight: 700; font-size: var(--wp--preset--font-size--base);
+}
+.fd-viewcart__thumb:empty { display: none; }
+.fd-viewcart__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.fd-viewcart__title { font-size: var(--wp--preset--font-size--md); }
+.fd-viewcart__sum { font-size: var(--wp--preset--font-size--base); font-variant-numeric: tabular-nums; }
+.fd-viewcart__go {
+  flex: 0 0 auto; width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  display: grid; place-items: center; border-radius: 50%;
+  background: color-mix(in srgb, var(--wp--preset--color--surface) 18%, transparent);
+  font-size: var(--wp--preset--font-size--xl); line-height: 1;
+}
+.fd-viewcart:hover .fd-viewcart__go { background: color-mix(in srgb, var(--wp--preset--color--surface) 28%, transparent); }
+.fd-viewcart:focus-visible { outline: 2px solid var(--wp--preset--color--char); outline-offset: 3px; }
+body:has(.fd-viewcart:not([hidden])) { padding-bottom: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--60) + env(safe-area-inset-bottom, 0px)); }
+/* On the sticky bar: its height is one button plus its own padding. */
+body:has(.fd-sticky-atc:not([hidden])) .fd-viewcart:not([hidden]) {
+  bottom: calc(var(--wp--custom--tap-target) + 4 * var(--wp--preset--spacing--30) + env(safe-area-inset-bottom, 0px));
+}
+
+/* ==== Cards: the prep line is text, not a pill (client, 9 Nov 2026) =========
+   In a two-up phone card a pill that wraps ("Hot water · / 6 min" inside a
+   border) reads as broken. Line 1: the method's colour dot, method and time.
+   Line 2: servings, quieter. Either can wrap like any sentence. */
+:is(.fd-products, .fd-again) .fd-card-prep {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+  margin: 0 0 var(--wp--preset--spacing--10); line-height: 1.35;
+}
+:is(.fd-products, .fd-again) .fd-card-prep .fd-chip {
+  display: inline; margin: 0; padding: 0; max-width: none;
+  border: 0; border-radius: 0; background: none; font-size: inherit;
+}
+:is(.fd-products, .fd-again) .fd-card-prep .fd-chip::before {
+  display: inline-block; vertical-align: 0.1em; margin-right: var(--wp--preset--spacing--10);
+}
+:is(.fd-products, .fd-again) .fd-card-prep__serves { font-weight: 400; color: var(--wp--preset--color--mute); }
+
+/* ==== The product card, compact (client, 9 Nov 2026) =======================
+   "This is taking too much space." The card was ten stacked rows, ~495px tall
+   in a two-up phone grid. Now, Blinkit's economy without its density:
+     · Add / − 1 + sits on the photo's bottom-right corner, not a row of its own
+     · SAVE sits on the photo's top-right; Bestseller keeps the top-left
+     · name (two lines at most) · how it is made · diet · ★ 4.7 (84)
+     · the price, now before was, and the unit price under it — pinned to the
+       card's foot, so prices line up across a row whatever is above them.
+   Every gap is spacing-10 (4px) inside a group and spacing-20 between groups. */
+.fd-products > .wp-block-post {
+  position: relative; container-type: inline-size;
+  gap: var(--wp--preset--spacing--10);
+  padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+}
+.fd-products > .wp-block-post > * { order: 2; }
+.fd-products > .wp-block-post > .wc-block-components-product-image {
+  order: 0; margin: 0 0 var(--wp--preset--spacing--10);
+  padding: var(--wp--preset--spacing--20);
+}
+/* The button rides up onto the photo: pulled up by its own height plus a margin. */
+.fd-products > .wp-block-post > .fd-cartctl {
+  order: 1; position: relative; z-index: 2; align-self: flex-end; width: auto;
+  margin: calc(-1 * (var(--wp--custom--tap-target) + var(--wp--preset--spacing--20) + var(--wp--preset--spacing--10))) var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) 0;
+}
+.fd-cartctl.fd-cartctl .fd-cartctl__add {
+  width: auto; min-width: 5rem; min-height: var(--wp--custom--tap-target); box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 var(--wp--preset--spacing--40);
+  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--flame-ink);
+  border: 2px solid var(--wp--preset--color--flame-ink); font-weight: 700;
+}
+.fd-cartctl.fd-cartctl .fd-cartctl__add:hover { background: var(--wp--preset--color--flame-ink); color: var(--wp--preset--color--surface); }
+.fd-products .fd-cartctl__stepper, .fd-again .fd-cartctl__stepper { width: 7rem; }
+/* SAVE leaves the price row for the photo's top-left corner — under the
+   Bestseller/New badge when there is one (same type and padding as a badge,
+   so its own line height measures the badge above it). Side by side they
+   collided on a two-up phone card. */
+.fd-products > .wp-block-post .wc-block-components-product-price .fd-save {
+  position: absolute; z-index: 1; margin: 0;
+  top: calc(var(--wp--preset--spacing--20) * 2); left: calc(var(--wp--preset--spacing--20) * 2);
+}
+.fd-products > .wp-block-post:has(.fd-badges .fd-badge) .wc-block-components-product-price .fd-save {
+  top: calc(var(--wp--preset--spacing--20) * 2 + 1lh + 3 * var(--wp--preset--spacing--10));
+}
+.fd-products .wp-block-post-title {
+  margin: 0; line-height: 1.25;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+:is(.fd-products, .fd-again) .fd-card-prep { margin: 0; line-height: 1.3; }
+.fd-products .fd-card-diet { margin: 0; line-height: 1.3; }
+.fd-card-rating {
+  margin: 0; font-size: var(--wp--preset--font-size--base); line-height: 1.3;
+  color: var(--wp--preset--color--char); font-variant-numeric: tabular-nums;
+}
+.fd-card-rating__star { color: var(--wp--preset--color--flame); }
+.fd-card-rating__count { color: var(--wp--preset--color--mute); }
+/* The price: one row (now, then was), the unit price under it, at the foot. */
+.fd-products .wc-block-components-product-price {
+  margin-top: auto; padding-top: var(--wp--preset--spacing--20);
+  row-gap: 0; line-height: 1.25;
+}
+.fd-products .wc-block-components-product-price::before { content: none; }
+.fd-products .wc-block-components-product-price ins { order: -1; }
+.fd-products .wc-block-components-product-price del { order: 0; margin-right: 0; font-size: var(--wp--preset--font-size--base); }
+.fd-products .wc-block-components-product-price .fd-unit-price { font-weight: 400; }
+/* The name leads; how it is made, diet, rating and price follow in that order. */
+.fd-products > .wp-block-post > .wp-block-post-title { order: 2; }
+.fd-products > .wp-block-post > :not(.wc-block-components-product-image):not(.fd-cartctl):not(.wp-block-post-title) { order: 3; }
+
+/* ==== The header, compact (client, 9 Nov 2026) ==============================
+   "Less cluttered — just the profile icon; the cart without the amount; the
+   magnifying glass inside the search bar; more compact." And on a phone, like
+   the quick-commerce apps: logo left, profile then cart at the right, the
+   search a row of its own below, the categories a scrolling row under it.
+   Every control stays 44px. */
+
+/* Account: a 44px round icon. Its words ("My account", "Sign in") stay in the
+   page for a screen reader, hidden from sight only. */
+.wc-block-customer-account .wc-block-customer-account__account-link,
+.wc-block-customer-account .wc-block-customer-account__account-link:where(*) {
+  width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  padding: 0; gap: 0; border-radius: 50%;
+}
+.wc-block-customer-account__account-link .label {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+/* Cart: a 44px round icon, the count on its corner. No amount (the header
+   block is set to hide it; this covers any version that prints it anyway). */
+.wc-block-mini-cart .wc-block-mini-cart__button {
+  position: relative; justify-content: center;
+  width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  padding: 0; border-radius: 50%;
+}
+.wc-block-mini-cart .wc-block-mini-cart__amount { display: none; }
+.wc-block-mini-cart .wc-block-mini-cart__quantity-badge { position: static; }
+.wc-block-mini-cart .wc-block-mini-cart__badge {
+  position: absolute; top: calc(-1 * var(--wp--preset--spacing--10)); right: calc(-1 * var(--wp--preset--spacing--10));
+  min-width: 1.25rem; height: 1.25rem; box-sizing: border-box;
+  border: 2px solid var(--wp--preset--color--paper);
+}
+.wc-block-mini-cart .wc-block-mini-cart__badge[hidden] { display: none; }
+
+/* Search: one field, the glass inside it at the left. */
+.fd-search { position: relative; flex: 1 1 18rem; min-width: 0; }
+.fd-search__form { position: relative; display: block; margin: 0; }
+.fd-search__input {
+  display: block; width: 100%; box-sizing: border-box;
+  min-height: var(--wp--custom--tap-target);
+  padding: 0 var(--wp--preset--spacing--40) 0 var(--wp--custom--tap-target);
+  border: 1px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--pill);
+}
+.fd-search__go {
+  position: absolute; left: 0; top: 0; bottom: 0; z-index: 1;
+  width: var(--wp--custom--tap-target); display: grid; place-items: center;
+  background: none; color: var(--wp--preset--color--mute); border-radius: var(--wp--custom--radius--pill);
+}
+.fd-search__go:hover { background: none; color: var(--wp--preset--color--flame-ink); }
+.fd-search__pop,
+.fd-search.is-enhanced .fd-search__pop {
+  position: absolute; z-index: 40; left: 0; right: auto; top: calc(100% + var(--wp--preset--spacing--10));
+  width: max(100%, 24rem); max-width: calc(100vw - 2 * var(--wp--preset--spacing--40)); box-sizing: border-box;
+  max-height: min(70vh, 34rem); overflow-y: auto; margin: 0;
+}
+.fd-search__head {
+  margin: var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--10);
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; color: var(--wp--preset--color--mute);
+}
+.fd-search__head:first-child { margin-top: var(--wp--preset--spacing--10); }
+.fd-search__glyph {
+  flex: 0 0 auto; width: 3rem; height: 3rem; display: grid; place-items: center;
+  border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--flame-wash); color: var(--wp--preset--color--flame-deep);
+}
+.fd-search__all .fd-search__glyph { background: var(--wp--preset--color--kraft-pale); color: var(--wp--preset--color--char); }
+
+/* Laptop: one row — logo, menu, search, account, cart — on a tighter rhythm. */
+@media (min-width: 900px) {
+  .wp-block-group.fd-header { gap: var(--wp--preset--spacing--40); }
+  .fd-header__actions { flex: 0 1 auto; gap: var(--wp--preset--spacing--20); }
+  .fd-header__actions > .fd-search { width: 18rem; flex: 0 1 18rem; }
+  .fd-catrow { display: none; }
+}
+/* Phone and small tablet: logo | profile | cart, then search, then categories. */
+@media (max-width: 899px) {
+  .wp-block-group.fd-header.fd-header {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "logo acct cart" "search search search" "cats cats cats";
+    align-items: center; column-gap: var(--wp--preset--spacing--20); row-gap: var(--wp--preset--spacing--20);
+  }
+  .fd-header > .wp-block-site-title { grid-area: logo; margin: 0; }
+  .fd-header > .wp-block-navigation { display: none; }
+  .fd-header .fd-header__actions { display: contents; }
+  .fd-header__actions > .fd-search { grid-area: search; width: auto; }
+  .fd-header__actions > .wc-block-customer-account { grid-area: acct; }
+  .fd-header__actions > .wc-block-mini-cart { grid-area: cart; }
+  .fd-catrow {
+    grid-area: cats; display: flex; gap: var(--wp--preset--spacing--20);
+    overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity;
+    margin: 0 calc(-1 * var(--wp--preset--spacing--40)); padding: 0 var(--wp--preset--spacing--40);
+  }
+  .fd-catrow::-webkit-scrollbar { display: none; }
+  .fd-catrow a {
+    flex: 0 0 auto; scroll-snap-align: start;
+    display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target);
+    padding: 0 var(--wp--preset--spacing--30);
+    border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--pill);
+    background: var(--wp--preset--color--surface); color: var(--wp--preset--color--char);
+    font-size: var(--wp--preset--font-size--base); font-weight: 600; text-decoration: none; white-space: nowrap;
+  }
+  .fd-catrow a:hover { border-color: var(--wp--preset--color--flame-ink); color: var(--wp--preset--color--flame-ink); }
+}
+/* An empty field: popular searches as a wrap of chips, not a tall list. The
+   heading spans the row; each chip is still an option the arrow keys reach. */
+.fd-search__list.is-chips { display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--20); padding: 0 var(--wp--preset--spacing--10) var(--wp--preset--spacing--10); }
+.fd-search__list.is-chips > .fd-search__head { flex-basis: 100%; margin-bottom: 0; }
+.fd-search__list.is-chips .fd-search__link {
+  gap: 0; padding: 0 var(--wp--preset--spacing--30);
+  border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--pill);
+}
+.fd-search__list.is-chips :is(.fd-search__glyph, .fd-search__meta) { display: none; }
+/* Open suggestions sit above the View cart bar. */
+.fd-search__pop, .fd-search.is-enhanced .fd-search__pop { z-index: 70; }

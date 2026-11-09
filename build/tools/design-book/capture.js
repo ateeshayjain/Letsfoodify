@@ -43,7 +43,7 @@ const LIST = [
   // The Nov 2026 features. `setup` runs in the page after the screen is shown;
   // `scrollTo` puts that element at the top; `type` types into a field like a person.
   ['search-desktop',   'search',   1440, 900, 0],
-  ['search-phone',     'home',     390, 844, 0, { click: '#s-home .fd-search__toggle', type: ['#s-home .fd-search__input', 'dal'] }],
+  ['search-phone',     'home',     390, 844, 0, { click: '#s-home .fd-search__input', type: ['#s-home .fd-search__input', 'moong'] }],
   ['box-desktop',      'box',      1440, 900, 0, { setup: "const b=document.getElementById('s-box'); b.querySelector('input[name=box_size][value=\"6\"]').click(); const p=b.querySelectorAll('.fd-box__plus'); [0,0,1,2].forEach(i=>p[i].click());" }],
   ['box-phone',        'box',      390, 844, 560, { setup: "const b=document.getElementById('s-box'); b.querySelector('input[name=box_size][value=\"6\"]').click(); const p=b.querySelectorAll('.fd-box__plus'); [0,0,1,2].forEach(i=>p[i].click());" }],
   ['buybox-desktop',   'product',  1440, 900, 0, { setup: "const w=document.querySelector('#s-p-express-dal-fry .fd-deliver'); w.querySelector('input').value='201304'; w.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));", clipCol: '#s-p-express-dal-fry .fd-deliver' }],

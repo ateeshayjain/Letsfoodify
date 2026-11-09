@@ -267,6 +267,7 @@ require_once FOODIFY_DIR . '/inc/stock-alerts.php';       // 4: notify me when b
 require_once FOODIFY_DIR . '/inc/offers.php';             // 6: offers on the product page
 require_once FOODIFY_DIR . '/inc/search.php';             // 2: product search + suggestions
 require_once FOODIFY_DIR . '/inc/buy-again.php';          // 7: buy again on the home page
+require_once FOODIFY_DIR . '/inc/cart-stepper.php';       // Add → − 1 + on cards, View cart bar on phones
 require_once FOODIFY_DIR . '/inc/order-actions.php';      // 10: cancel before dispatch, request a return
 require_once FOODIFY_DIR . '/inc/box-builder.php';        // 8: build your own box
 require_once FOODIFY_DIR . '/inc/whatsapp.php';           // 9: WhatsApp order updates, ships OFF

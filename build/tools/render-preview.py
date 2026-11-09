@@ -23,7 +23,7 @@ staging.
 
 Usage: python3 tools/render-preview.py [outfile]
 """
-import json, os, re, sys, html, datetime
+import json, os, re, sys, html, datetime, hashlib, urllib.parse
 
 KIT   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 THEME = os.path.join(KIT, "theme", "foodify")
@@ -723,11 +723,24 @@ def search_rows():
     for i, p in enumerate(by_popularity(PRODUCTS + COMBOS)):
         info = info_of(p)
         kw = php("echo foodify_search_keywords($a[0], $a[1])", p[0],
-                 [info.get("ingredients", ""), info.get("taste", ""), p[1], " ".join(info.get("diet", []))]) if info else ""
+                 [" ".join(json.loads(php("echo json_encode(foodify_diet_tags($a[0], $a[1]))", diet_terms(p), info.get("ingredients", "")))),
+                  CHIP[p[1]][1] if p[1] in CHIP else "",
+                  info.get("ingredients", ""), info.get("taste", ""), p[1], " ".join(info.get("diet", []))]) if info else ""
+        labels = json.loads(php("echo json_encode(foodify_diet_tags($a[0], $a[1]))", diet_terms(p), info.get("ingredients", "")))
+        if p[1] in CHIP:
+            labels.append(CHIP[p[1]][1])
+        cat = "combos" if combo_of(p) else "cat-" + re.sub(r"[^a-z]+", "-", p[1].lower().replace("&", "and")).strip("-")
         rows.append(php("echo json_encode(foodify_search_row($a[0]), JSON_UNESCAPED_UNICODE)", {
             "id": i + 1, "name": p[0], "url": "#" + screen_of(p), "price": f"₹{p[3]:,}",
             "prep": f"{CHIP[p[1]][1]} · {p[2].split()[0]} min" if p[1] in CHIP else f"{p[2].split()[0]} min",
-            "kw": kw, "stock": "soldout" not in p[9]}))
+            "kw": kw, "stock": "soldout" not in p[9],
+            # The stand-in photo: the card's bowl in its colour, drawn small.
+            "img": "data:image/svg+xml," + urllib.parse.quote(
+                f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" fill="{p[5]}" opacity=".22"/>'
+                f'<circle cx="24" cy="24" r="15" fill="{p[5]}"/><circle cx="19" cy="19" r="4.5" fill="#fff" opacity=".35"/></svg>'),
+            # Facets, as foodify_search_index_rows() builds them; links are this page's screens.
+            "cats": [["Combos" if combo_of(p) else p[1], "#" + cat]], "tags": labels,
+            "ing": json.loads(php("echo json_encode(foodify_search_ingredient_phrases($a[0]))", info.get("ingredients", "")))}))
     return "[" + ",".join(rows) + "]"
 
 
@@ -841,13 +854,25 @@ def by_popularity(rows):
     return sorted(rows, key=lambda r: -r[7])
 
 
+def pid_of(p):
+    """A stable product id for the card control and the Store API stand-in."""
+    return 101 + (PRODUCTS + COMBOS).index(p)
+
+
+def cart_control(p, wrapper=""):
+    """inc/cart-stepper.php's card control: Add, then − 1 +."""
+    return php("echo foodify_cart_control_html((int)$a[0], $a[1], $a[2], 0, $a[3])",
+               pid_of(p), p[0], f"?add-to-cart={pid_of(p)}", wrapper)
+
+
 def catalog_json():
     """What the page script needs to build a cart line: one entry per product."""
     out = {}
     for p in PRODUCTS + COMBOS:
         out[slug_of(p)] = {"name": p[0], "price": p[3], "was": p[4], "hue": p[5],
                            "stock": "soldout" not in p[9], "screen": screen_of(p),
-                           "combo": bool(combo_of(p)), "prep": card_prep(p)}
+                           "combo": bool(combo_of(p)), "prep": card_prep(p), "id": pid_of(p),
+                           "ctl": cart_control(p, "fd-again__ctl") if "soldout" not in p[9] else ""}
     return out
 
 
@@ -1019,7 +1044,7 @@ def crumb_for(p):
 def dynamic(name, attrs, inner):
     a = attrs or {}
     if name == "site-title":
-        return ('<p class="fx-logo has-display-font-family"><a href="/" data-s="home">'
+        return ('<p class="wp-block-site-title fx-logo has-display-font-family"><a href="/" data-s="home">'
                 'lets<span>foodify</span></a></p>')
     if name == "post-title":
         lvl = a.get("level", 2)
@@ -1091,9 +1116,7 @@ def dynamic(name, attrs, inner):
                     f'<a href="/product/{slug_of(CUR)}/#fd-notify" data-s="{screen_of(CUR)}" data-anchor="fd-notify" '
                     f'aria-label="Notify me when {html.escape(CUR[0])} is back" '
                     'class="wp-block-button__link wp-element-button">Notify me</a></div>')
-        return ('<div class="wp-block-button wc-block-components-product-button">'
-                f'<a href="?add-to-cart={slug_of(CUR)}" data-add="{slug_of(CUR)}" class="wp-block-button__link wp-element-button '
-                'add_to_cart_button ajax_add_to_cart">Add to cart</a></div>')
+        return cart_control(CUR)
     if name == "woocommerce/breadcrumbs":
         sid, label = crumb_for(PDP)
         short = PDP[0].split(" · ")[0]
@@ -1127,8 +1150,7 @@ def dynamic(name, attrs, inner):
         if row[7] == 0:
             return ""   # the theme hides the row at zero reviews (product-display.php)
         if CUR:
-            return (f'<div class="wc-block-components-product-rating">{stars(CUR[6])} '
-                    f'<span class="fd-rating-count">{CUR[7]} reviews</span></div>')
+            return php("echo foodify_card_rating_html((float)$a[0], (int)$a[1])", CUR[6], CUR[7])
         return php("echo foodify_pdp_rating_html((float)$a[0], (int)$a[1])", row[6], row[7])
     if name == "woocommerce/product-price":
         if CUR:
@@ -1182,8 +1204,8 @@ def dynamic(name, attrs, inner):
         qid = "qty-" + slug_of(PDP)
         return ('<form class="cart fx-atc"><div class="quantity">'
                 f'<label class="screen-reader-text" for="{qid}">Quantity</label>'
-                f'<input type="number" id="{qid}" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div>'
-                f'<button type="submit" data-add="{slug_of(PDP)}" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">'
+                f'<input type="number" id="{qid}" name="quantity" class="input-text qty text" value="1" min="1" step="1" inputmode="numeric"></div>'
+                f'<button type="submit" name="add-to-cart" value="{pid_of(PDP)}" class="single_add_to_cart_button wp-element-button fx-add fx-add--lg">'
                 'Add to cart</button></form>' + panel + deliver + offers + assurances(PDP))
     if name == "woocommerce/product-details":
         combo = combo_of(PDP)
@@ -1705,6 +1727,8 @@ MOCK_SCRIPT = r'''<script>
     if (id === 'checkout' && !S.cart.length) { id = 'cart'; }
     if (id === 'account' && push !== false) panel = 'orders';
     SCREENS.forEach(function (s) { screen(s).hidden = (s !== id); });
+    // cart-stepper.php prints the View cart bar everywhere but the cart, checkout and account.
+    document.body.classList.toggle('fx-viewcart-off', ['cart', 'checkout', 'account', 'signin', 'order'].indexOf(id) >= 0);
     TABS.forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.s === id)); });
     current = id;
     var R = RENDER[id] || (id.indexOf('p-') === 0 ? RENDER.product : null);
@@ -1752,18 +1776,41 @@ MOCK_SCRIPT = r'''<script>
     $$('.wc-block-customer-account__account-link .label').forEach(function (l) {
       l.textContent = S.signedIn ? 'My account' : 'Sign in';
     });
-    // WooCommerce's Product Button block says how many are already in the cart
-    // ("2 in cart") and still adds one more on each press. The card is where the
-    // shopper's eye is when they press it; the header pill is usually scrolled away.
-    var inCart = {};
-    S.cart.forEach(function (l) { inCart[l.s] = (inCart[l.s] || 0) + l.q; });
-    $$('.add_to_cart_button[data-add]').forEach(function (b) {
-      var q = inCart[b.getAttribute('data-add')] || 0;
-      b.textContent = q ? 'Add another\u00a0· ' + q + ' in cart' : 'Add to cart';
-      b.classList.toggle('added', q > 0);
-      b.setAttribute('aria-label', q ? 'Add another ' + CATALOG[b.getAttribute('data-add')].name + ' (' + q + ' in cart)' : 'Add ' + CATALOG[b.getAttribute('data-add')].name + ' to cart');
-    });
+    // The cards' − 1 + and the View cart bar: cart-stepper.php's own script,
+    // reading this page's cart through window.foodifyCartApi (below).
+    if (window.foodifyCartRefresh) window.foodifyCartRefresh();
   }
+  // WooCommerce's Store API, answered from this page's cart, so cart-stepper.php's
+  // script runs here unchanged. Lines keep their keys (slug, slug@box); a box
+  // line carries the "Box" item line the script uses to leave it alone.
+  var SLUG_OF = {}; Object.keys(CATALOG).forEach(function (s) { SLUG_OF[CATALOG[s].id] = s; });
+  function bowlPic(hue) {
+    // The card's bowl in its colour (hue is a hex), drawn small: a pale ground, the bowl, a highlight.
+    return 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" fill="' + hue + '" opacity=".25"/>' +
+      '<circle cx="20" cy="20" r="13" fill="' + hue + '"/><circle cx="16" cy="16" r="4" fill="#fff" opacity=".35"/></svg>');
+  }
+  function storeCart() {
+    var L = cartLines(), n = 0, sub = 0;
+    var items = L.map(function (l) { var p = CATALOG[l.s]; n += l.q; sub += p.price * l.q;
+      return { key: lineKey(l), id: p.id, quantity: l.q, name: p.name, images: [{ thumbnail: bowlPic(p.hue) }], quantity_limits: { maximum: 9999 },
+               item_data: l.box ? [{ name: 'Box', value: l.box.size + '-pack box' }] : [] }; });
+    return { items: items, items_count: n, totals: { total_items: String(Math.round(sub * 100)), total_items_tax: '0', currency_minor_unit: 2, currency_code: 'INR' } };
+  }
+  function storeSaved() {
+    save(); paintHeader();
+    if (current === 'cart') RENDER.cart(screen('cart'));
+    return Promise.resolve(storeCart());
+  }
+  window.foodifyCartApi = {
+    get: function () { return Promise.resolve(storeCart()); },
+    add: function (id, q) {
+      var sl = SLUG_OF[id], line = S.cart.filter(function (l) { return l.s === sl && !l.box; })[0];
+      if (line) line.q += q; else S.cart.push({ s: sl, q: q });
+      return storeSaved();
+    },
+    set: function (key, q) { S.cart.forEach(function (l) { if (lineKey(l) === key) l.q = q; }); return storeSaved(); },
+    remove: function (key) { S.cart = S.cart.filter(function (l) { return lineKey(l) !== key; }); if (!S.cart.length) S.coupon = null; return storeSaved(); }
+  };
 
   // ── the cart ─────────────────────────────────────────────────────────────
   function lineKey(l) { return l.s + (l.box ? '@' + l.box.id : ''); }
@@ -1821,12 +1868,6 @@ MOCK_SCRIPT = r'''<script>
     lastQuery = q; show('search');
   }, true);
 
-  function add(slug, q) {
-    var p = CATALOG[slug]; if (!p || !p.stock) return;
-    var line = S.cart.filter(function (l) { return l.s === slug && !l.box; })[0];
-    if (line) line.q += q; else S.cart.push({ s: slug, q: q });
-    save(); paintHeader(); openDrawer(p.name + (q > 1 ? ' × ' + q : '') + ' added to your cart.');
-  }
   function setQty(key, q) {
     S.cart = S.cart.map(function (l) { if (lineKey(l) === key) l.q = q; return l; }).filter(function (l) { return l.q > 0; });
     if (!S.cart.length) S.coupon = null;
@@ -2199,13 +2240,13 @@ MOCK_SCRIPT = r'''<script>
       slot.innerHTML = !ids.length ? '' :
         '<section class="fd-again alignwide" aria-labelledby="fd-again-title" data-fd-again><h2 class="fd-again__title" id="fd-again-title">Buy again</h2>' +
         '<p class="fd-again__lede">From your recent orders.</p><ul class="fd-again__list">' + ids.map(function (sl) {
-          var p = CATALOG[sl], q = 0; S.cart.forEach(function (c) { if (c.s === sl) q += c.q; });
+          var p = CATALOG[sl];
           return '<li class="fd-again__item"><a class="fd-again__link" href="#" data-s="' + p.screen + '">' + bowl(p.hue).replace('fx-bowl', 'fx-bowl fd-again__img') +
             '<span class="fd-again__name">' + (window.FX_VEG || '') + esc(p.name) + '</span></a>' + (p.prep || '') + '<span class="fd-again__price">' + rs(p.price) + '</span>' +
-            '<a class="wp-element-button fd-again__add' + (q ? ' is-in-cart' : '') + '" href="#" data-add="' + sl + '" data-name="' + esc(p.name) + '" aria-label="' +
-            (q ? 'Add another ' + esc(p.name) + ' to cart, ' + q + ' in cart' : 'Add ' + esc(p.name) + ' to cart') + '">' + (q ? 'Add another\u00a0· ' + q + ' in cart' : 'Add to cart') + '</a></li>';
-        }).join('') + '</ul><p class="fd-sr" role="status" aria-live="polite" data-fd-again-status></p></section>';
+            p.ctl + '</li>';
+        }).join('') + '</ul></section>';
     });
+    if (window.foodifyCartRefresh) window.foodifyCartRefresh();
   }
   // The results page: the same ranking as the header suggestions (inc/search.php).
   var lastQuery = 'dal';
@@ -2479,7 +2520,9 @@ MOCK_SCRIPT = r'''<script>
     if ((el = t.closest('[data-focus]'))) { e.preventDefault(); var ff = document.getElementById(el.getAttribute('data-focus')); if (ff) { ff.scrollIntoView({ block: 'center' }); ff.focus({ preventScroll: true }); } return; }
     if ((el = t.closest('a.fd-search__link'))) {
       e.preventDefault(); var dd = el.closest('details'); if (dd) dd.open = false;
-      show(el.getAttribute('href').slice(1)); return;
+      var sh = el.getAttribute('href'), sm = /[?&]s=([^&]*)/.exec(sh);
+      if (sm) { lastQuery = decodeURIComponent(sm[1].replace(/\+/g, ' ')); show('search'); } else show(sh.slice(1));
+      return;
     }
     if ((el = t.closest('.fd-notify__undo'))) {
       e.preventDefault();
@@ -2490,11 +2533,6 @@ MOCK_SCRIPT = r'''<script>
       e.preventDefault(); paginate(root, +el.getAttribute('data-page'));
       var top = $('.fd-shop__results', root); if (top) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
-    }
-    if ((el = t.closest('[data-add]'))) {
-      e.preventDefault();
-      var form = el.closest('form.cart'), q = form ? Math.max(1, parseInt((form.querySelector('input.qty') || {}).value, 10) || 1) : 1;
-      add(el.getAttribute('data-add'), q); return;
     }
     if (t.closest('[data-drawer]')) { e.preventDefault(); openDrawer(''); return; }
     if (t.closest('.fx-burger')) { e.preventDefault(); openMenu(); return; }
@@ -2590,7 +2628,8 @@ MOCK_SCRIPT = r'''<script>
     if (el.matches('.fd-tab__button, .fd-sticky-atc button, .tab, summary') || el.type === 'submit' || el.closest('form.cart')) return;
     // Controls the theme's own scripts answer (reviews, box builder, search, referral sharing).
     if (el.matches('.fd-rsum__chip, .fd-rsum__clear, [data-fd-photo], .fd-rv-dialog__close, .fd-box__minus, .fd-box__plus, ' +
-                   '[data-fd-copy], [data-fd-share], .fd-search__toggle, .fd-search__go, .fd-deliver__go')) return;
+                   '[data-fd-copy], [data-fd-share], .fd-search__toggle, .fd-search__go, .fd-deliver__go, ' +
+                   '[data-fd-add], [data-fd-inc], [data-fd-dec]')) return;
     if (el.matches('a[href^="https://wa.me/"]')) { e.preventDefault(); say('On the site this opens WhatsApp with the message ready to send.'); return; }
     if (el.hasAttribute('data-note')) { e.preventDefault(); say(el.getAttribute('data-note')); return; }
     e.preventDefault();
@@ -2725,7 +2764,7 @@ MOCK_SCRIPT = r'''<script>
   // threshold can be tested AT its boundary rather than wherever a click-through
   // happened to leave the cart.
   window.fxSetCart = function (lines, coupon) {
-    S.cart = lines.map(function (l) { return { s: l[0], q: l[1] }; }); S.coupon = coupon || null;
+    S.cart = lines.map(function (l) { return l[2] ? { s: l[0], q: l[1], box: l[2] } : { s: l[0], q: l[1] }; }); S.coupon = coupon || null;
     save(); paintHeader(); if (current === 'cart') RENDER.cart(screen('cart'));
   };
   paintHeader();
@@ -2832,8 +2871,14 @@ def render(markup, depth=0):
             # Without one, core's default gap is a zero-specificity :where() rule,
             # which the theme's own CSS overrides — so it must not be inline here.
             style += f'gap:{bg}' if bg else ""
+            # As WordPress does it: a generated container class whose rule sits in
+            # a <style> block, NOT an inline style — an inline style outranks the
+            # theme's own CSS, which the live site's container class does not
+            # (the phone header's grid only showed up once this matched).
+            cls = "wp-container-fx-" + hashlib.md5(style.encode()).hexdigest()[:8]
+            FLEX_RULES[cls] = style
             tail = markup[pos:]
-            tail = re.sub(r'<div\s+class="', f'<div style="{style}" class="is-layout-flex ', tail, count=1)
+            tail = re.sub(r'<div\s+class="', f'<div class="{cls} is-layout-flex ', tail, count=1)
             markup = markup[:pos] + tail
             # finditer holds the old string; re-scan from here on the patched one.
             return "".join(out) + render(markup[pos:], depth)
@@ -2934,7 +2979,9 @@ def render(markup, depth=0):
     return txt
 
 
-LAYOUT_CSS = """
+FLEX_RULES = {}   # generated container class -> its flex rule (see the layout support in render)
+LAYOUT_CSS = """/*__FLEX_RULES__*/
+
 *{box-sizing:border-box}
 body{margin:0;-webkit-font-smoothing:antialiased}
 img{max-width:100%}
@@ -3040,6 +3087,11 @@ FIXTURE_CSS = """
   background:var(--wp--preset--color--char);color:var(--wp--preset--color--paper);border-radius:var(--wp--custom--radius--pill);
   font-size:var(--wp--preset--font-size--sm);line-height:1.4;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .fx-toast[hidden]{display:none}
+/* cart-stepper.php prints no View cart bar on the cart, checkout or account; the
+   prototype has every screen on one page, so it switches the bar off there. */
+body.fx-viewcart-off .fd-viewcart{display:none}
+/* The stand-in bowl's "6 MIN" chip repeats the card's prep line, and Add now sits on that corner. */
+.fd-products .fx-time{display:none}
 .fx-empty{padding:var(--wp--preset--spacing--60) 0;font-size:var(--wp--preset--font-size--md)}
 .fd-cart-back a{color:var(--wp--preset--color--mute)}
 .fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
@@ -3248,8 +3300,9 @@ html.fx-locked{overflow:hidden}
 .fx-rzp__amt{margin:0;font-size:var(--wp--preset--font-size--2xl);font-weight:700;font-variant-numeric:tabular-nums}
 .fx-rzp__note{margin:0;font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
 .fx-rzp .fd-secondary{align-self:center}
+/* No menu button: below 900px the theme shows its category row under the search instead. */
 @media (max-width:899px){
-  .fx-burger{display:inline-flex}
+  .fx-burger{display:none}
   .fx-nav{display:none}
 }
 @media (max-width:599px){
@@ -3372,7 +3425,7 @@ def body_class(sid, setup):
 # Pure halves the preview also renders from (added with each feature lane).
 BRIDGE_EXTRA = ["payments", "pincodes", "delivery-estimate", "stock-alerts", "offers", "box-builder", "reviews",
                 "address-book", "order-actions", "whatsapp", "repeat-orders", "cart-recovery", "referrals",
-                "search", "buy-again"]
+                "search", "buy-again", "cart-stepper"]
 PHP_CACHE = {}
 
 
@@ -3430,6 +3483,10 @@ def main():
               .replace("__WIDE__", S["layout"]["wideSize"]))
     theme_css = open(os.path.join(THEME, "style.css")).read()
     theme_css = theme_css.split("*/", 1)[1] if "*/" in theme_css else theme_css
+    # Every product screen here keeps its own sticky bar; only the one on the
+    # visible screen is "the" sticky bar the site's single page has.
+    theme_css = theme_css.replace("body:has(.fd-sticky-atc:not([hidden]))",
+                                  "body:has([id^=s-]:not([hidden]) .fd-sticky-atc:not([hidden]))")
 
     panels, tabs, ids = [], [], []
     for sid, label, fn, setup in screen_specs():
@@ -3504,9 +3561,11 @@ def main():
         "(function(){var src=" + json.dumps(php("echo foodify_search_script()")).replace("</", "<\\/") + ";"
         "[].forEach.call(document.querySelectorAll('.fx-shell'),function(el){try{(new Function('document',src))({"
         "querySelector:function(q){return el.querySelector(q);},querySelectorAll:function(q){return el.querySelectorAll(q);},"
-        "createElement:function(t){return document.createElement(t);},body:document.body,"
+        "createElement:function(t){return document.createElement(t);},createElementNS:function(n,t){return document.createElementNS(n,t);},body:document.body,"
         "get activeElement(){return document.activeElement;}});}catch(e){}});})();",
         php("echo foodify_referral_script()"),
+        # Cards' Add → − 1 + and the View cart bar, against window.foodifyCartApi (the page's own cart).
+        php("echo foodify_cart_stepper_script()"),
         "window.FX_BD=" + json.dumps(bd_templates(), ensure_ascii=False) + ";"
         "window.FX_VEG=" + json.dumps(veg_mark()) + ";"
         "window.FX_BOX_IDS=" + json.dumps({str(b["id"]): b["slug"] for b in box_products()}) + ";"
@@ -3585,8 +3644,10 @@ what checkout does with a PIN the shop does not deliver to: try <b>744101</b> (P
 The live site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
 live until you confirm it.</p></details></div>
 {''.join(panels)}
+{php("echo foodify_view_cart_bar_html('/cart/')").replace('data-fd-viewcart hidden', 'data-fd-viewcart data-s="cart" hidden')}
 {theme_js}
 {script}"""
+    doc = doc.replace("/*__FLEX_RULES__*/", "".join(f".{c}{{{st}}}" for c, st in sorted(FLEX_RULES.items())), 1)
     open(OUT, "w").write(doc)
     print(f"rendered {len(ids)} screens -> {OUT}  ({len(doc):,} bytes)")
 

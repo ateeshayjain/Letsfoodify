@@ -9,8 +9,8 @@
 </div>
 <!-- /wp:group -->
 
-<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30"}},"border":{"bottom":{"width":"1px","style":"solid"}}},"borderColor":"line","backgroundColor":"paper","layout":{"type":"constrained"}} -->
-<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30)">
+<!-- wp:group {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20"}},"border":{"bottom":{"width":"1px","style":"solid"}}},"borderColor":"line","backgroundColor":"paper","layout":{"type":"constrained"}} -->
+<div class="wp-block-group has-border-color has-line-border-color has-paper-background-color has-background" style="border-bottom-width:1px;border-bottom-style:solid;padding-top:var(--wp--preset--spacing--20);padding-bottom:var(--wp--preset--spacing--20)">
 <!-- The header row does NOT wrap. Wrapping put the account and cart on a
      second line, centred, at every width between about 620 and 900px —
      tablets and small laptops. The nav wraps INSIDE itself instead, so
@@ -35,18 +35,29 @@
 <!-- /wp:navigation -->
 <!-- wp:group {"className":"fd-header__actions","layout":{"type":"flex","flexWrap":"nowrap"}} -->
 <div class="wp-block-group fd-header__actions">
-<!-- Search: an icon that opens a full-width field on a phone, a field beside
-     the account from 1200px. Plain GET to ?s=&post_type=product, so it works
-     with no JavaScript. This markup is foodify_search_form_html() VERBATIM —
-     tests/search-test.php fails if the two differ. inc/search.php adds the
-     suggestions. -->
+<!-- Search: one field with the glass inside it, always there — a row of its
+     own under the logo on a phone, beside the account and cart from 900px.
+     Plain GET to ?s=&post_type=product, so it works with no JavaScript. This
+     markup is foodify_search_form_html() VERBATIM — tests/search-test.php fails
+     if the two differ. inc/search.php adds the grouped suggestions. -->
 <!-- wp:html -->
-<details class="fd-search" data-fd-search><summary class="fd-search__toggle"><span class="fd-search__when-closed"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Search</span></span><span class="fd-search__when-open"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Close search</span></span></summary><div class="fd-search__panel"><form class="fd-search__form" role="search" method="get" action="/"><label class="fd-sr" for="fd-search-q">Search the menu</label><input class="fd-search__input" id="fd-search-q" type="search" name="s" placeholder="Search meals, ingredients" autocomplete="off" enterkeyhint="search"><input type="hidden" name="post_type" value="product"><button class="fd-search__go" type="submit"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Search</span></button></form><div class="fd-search__pop" hidden><p class="fd-search__none" hidden></p><ul class="fd-search__list" id="fd-search-list" role="listbox" aria-label="Suggestions"></ul></div><p class="fd-sr" role="status" aria-live="polite" data-fd-search-status></p></div></details>
+<div class="fd-search" data-fd-search><form class="fd-search__form" role="search" method="get" action="/"><label class="fd-sr" for="fd-search-q">Search the menu</label><button class="fd-search__go" type="submit"><svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="fd-sr">Search</span></button><input class="fd-search__input" id="fd-search-q" type="search" name="s" placeholder="Search dal, moong, Jain…" autocomplete="off" enterkeyhint="search"><input type="hidden" name="post_type" value="product"></form><div class="fd-search__pop" hidden><p class="fd-search__none" hidden></p><ul class="fd-search__list" id="fd-search-list" role="listbox" aria-label="Suggestions"></ul></div><p class="fd-sr" role="status" aria-live="polite" data-fd-search-status></p></div>
 <!-- /wp:html -->
+<!-- The account and the cart are icons (client, 9 Nov 2026: "just the profile
+     icon", "in cart, don't mention the amount"). The account keeps its words
+     for a screen reader — style.css hides them from sight only — and the cart
+     shows the count on its badge. Adding never opens the drawer: the card
+     becomes − 1 + and the View cart bar comes up (cart-stepper.php). -->
 <!-- wp:woocommerce/customer-account {"displayStyle":"icon_and_text","iconClass":"wc-block-customer-account__account-icon"} /-->
-<!-- wp:woocommerce/mini-cart {"miniCartIcon":"cart","hasHiddenPrice":false,"productCountVisibility":"greater_than_zero","addToCartBehaviour":"open_drawer"} /-->
+<!-- wp:woocommerce/mini-cart {"miniCartIcon":"cart","hasHiddenPrice":true,"productCountVisibility":"greater_than_zero","addToCartBehaviour":"none"} /-->
 </div>
 <!-- /wp:group -->
+<!-- Below 900px the menu is this row of categories under the search, scrolling
+     sideways — every door one tap away, no menu button to find first.
+     Hidden from 900px, where the menu itself is a row (style.css). -->
+<!-- wp:html -->
+<nav class="fd-catrow" aria-label="Shop by category"><a href="/shop/">All meals</a><a href="/product-category/express/">Express</a><a href="/product-category/hot-and-fresh/">Hot &amp; Fresh</a><a href="/product-category/flavors/">Flavors</a><a href="/product-category/combos/">Combos</a><a href="/build-a-box/">Build a box</a></nav>
+<!-- /wp:html -->
 </div>
 <!-- /wp:group -->
 </div>

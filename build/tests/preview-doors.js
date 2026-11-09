@@ -163,26 +163,61 @@ const path = require('path');
   });
   check('filtering to nothing says so, and its link clears the filters', empty.shownNo && empty.after === 12, empty);
 
-  // ── adding to the cart ────────────────────────────────────────────────────
+  // ── adding to the cart: Add → − 1 +, a View cart bar, and no detour ──────
+  // Client direction 9 Nov: adding keeps the shopper on the page; the card
+  // becomes a stepper and a bar at the bottom says how many are in the cart.
+  await page.evaluate(() => window.fxSetCart([], null));
   const b0 = await badge();
-  await go('cat-express'); await click('#s-cat-express .add_to_cart_button'); await wait();
-  check('Add to cart on a card adds one and opens the mini-cart drawer', (await badge()) === b0 + 1 && await drawerOpen(), { b0, b1: await badge() });
-  // The card itself says so — WooCommerce's Product Button block shows "N in cart".
-  const cardLabel = () => page.evaluate(() => {
-    const b = [...document.querySelectorAll('#s-cat-express .add_to_cart_button')].find(e => e.getBoundingClientRect().width > 0)
-      || document.querySelector('#s-cat-express .add_to_cart_button[data-add]');
-    const slug = b.dataset.add, a = b.textContent.trim();
-    const other = document.querySelector(`#s-home .add_to_cart_button[data-add="${slug}"]`);
-    return { slug, label: a, home: other ? other.textContent.trim() : null };
+  await go('cat-express'); await click('#s-cat-express [data-fd-add]'); await wait();
+  const stepCard = () => page.evaluate(() => {
+    const c = [...document.querySelectorAll('#s-cat-express [data-fd-cartctl]')].find(e => e.getBoundingClientRect().width > 0);
+    const id = c.getAttribute('data-product-id'), home = document.querySelector(`#s-home [data-fd-cartctl][data-product-id="${id}"] [data-fd-qty]`);
+    const bar = document.querySelector('[data-fd-viewcart]');
+    return { id, add: !c.querySelector('[data-fd-add]').hidden, stepper: !c.querySelector('.fd-cartctl__stepper').hidden, qty: c.querySelector('[data-fd-qty]').textContent,
+             home: home ? home.textContent : null, bar: getComputedStyle(bar).display !== 'none', sum: bar.querySelector('[data-fd-viewcart-sum]').textContent };
   });
-  const lab = await cardLabel();
-  check('after adding, the card says how many are in the cart — on every page that lists it', /^Add another\u00a0· \d+ in cart$/.test(lab.label) && lab.home === lab.label, lab);
+  const c1 = await stepCard();
+  check('Add on a card adds one and stays on the page — no drawer, no cart', (await badge()) === b0 + 1 && !(await drawerOpen()) && (await shown()) === 'cat-express', { b0, b1: await badge() });
+  check('the card turns into − 1 +, and so does the same product on every page that lists it', !c1.add && c1.stepper && c1.qty === '1' && c1.home === '1', c1);
+  check('a View cart bar comes up with the item count and no amount', c1.bar && c1.sum === '1 item', c1);
+  // Fast taps are reconciled, not lost: five quick + presses end at six.
+  await page.evaluate(() => { const c = [...document.querySelectorAll('#s-cat-express [data-fd-cartctl]')].find(e => e.getBoundingClientRect().width > 0);
+    for (let i = 0; i < 5; i++) c.querySelector('[data-fd-inc]').click(); });
+  await wait(250);
+  const c6 = await stepCard();
+  check('five fast taps on + leave six on the card, six in the cart and "6 items" on the bar', c6.qty === '6' && (await badge()) === b0 + 6 && c6.sum === '6 items', { c6, badge: await badge() });
+  await page.evaluate(() => { const c = [...document.querySelectorAll('#s-cat-express [data-fd-cartctl]')].find(e => e.getBoundingClientRect().width > 0);
+    for (let i = 0; i < 6; i++) c.querySelector('[data-fd-dec]').click(); });
+  await wait(250);
+  const c0 = await stepCard();
+  check('− down to nothing takes it out, brings back Add and hides the bar', c0.add && !c0.stepper && (await badge()) === b0 && !c0.bar, c0);
+  // A pack inside a box is not the card's to change.
+  const boxed = await page.evaluate(() => {
+    window.fxSetCart([['pav-bhaji', 2, { id: 'b1', size: 3 }], ['idli-sambhar', 1, { id: 'b1', size: 3 }]], null); window.fxShow('shop', false);
+    const c = document.querySelector('#s-shop [data-fd-cartctl][data-name="Pav Bhaji"]');
+    const r = { qty: c.querySelector('[data-fd-qty]').textContent, add: !c.querySelector('[data-fd-add]').hidden };
+    c.querySelector('[data-fd-add]').click();
+    return r;
+  });
+  await wait(200);
+  const lines = await page.evaluate(() => JSON.parse(localStorage.getItem('foodify-prototype-v3')).cart.filter(l => l.s === 'pav-bhaji').map(l => (l.box ? 'box:' : 'loose:') + l.q));
+  check('packs inside a box do not show on the card, and Add adds a loose pack beside them', boxed.add && lines.indexOf('box:2') >= 0 && lines.indexOf('loose:1') >= 0, { boxed, lines });
+  await page.evaluate(() => window.fxShow('shop', false)); await click('[data-fd-viewcart]'); await wait();
+  check('the View cart bar opens the cart', (await shown()) === 'cart', await shown());
+  check('… and is not shown on the cart itself', await page.evaluate(() => getComputedStyle(document.querySelector('[data-fd-viewcart]')).display === 'none'));
+  await click('.wc-block-mini-cart__button'); await wait();
   await click('.fx-drawer-overlay .wc-block-mini-cart__footer-cart'); await wait();
   check('the drawer\'s "View my cart" opens the cart', (await shown()) === 'cart', await shown());
+  // The box above is complete and carries its own discount; the sums below are
+  // about codes and delivery. Back to the one loose meal the steps below expect.
+  await page.evaluate(() => window.fxSetCart([['express-dal-fry', 1]], null));
 
   await go('p-dal-makhni');
   await page.evaluate(() => { const q = document.querySelector('#s-p-dal-makhni form.cart input.qty'); q.value = 3; });
   await click('#s-p-dal-makhni .single_add_to_cart_button'); await wait();
+  const stayed = await page.evaluate(() => ({ screen: [...document.querySelectorAll('[id^=s-]')].find(s => !s.hidden).id, drawer: !document.querySelector('.fx-drawer-overlay').hidden,
+    btn: document.querySelector('#s-p-dal-makhni .single_add_to_cart_button').textContent, said: document.querySelector('[data-fd-cart-status]').textContent }));
+  check('the product page adds in place — same page, no drawer, "Added ✓", the name announced', stayed.screen === 's-p-dal-makhni' && !stayed.drawer && /Added/.test(stayed.btn) && /3 × Dal Makhni added/.test(stayed.said), stayed);
   const makhni = await page.evaluate(() => { window.fxShow('cart'); const tr = document.querySelector('#s-cart tr[data-s-line="dal-makhni"]'); return tr ? +tr.querySelector('input.qty').value : 0; });
   check('the product page adds the quantity chosen', makhni === 3, makhni);
   await go('p-aloo-ka-mazaa');
@@ -351,9 +386,11 @@ const path = require('path');
     f.querySelector('input[name=s]').value = 'zzqx'; f.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     r.searchNone = !document.querySelector('#s-search .fx-noresults').hidden && document.querySelectorAll('#s-search .fx-noresults li.wp-block-post').length === 3;
     // 7 · buy again, from the seeded orders
-    window.fxShow('home', false); r.again = document.querySelectorAll('#s-home .fd-again__add').length;
+    window.fxShow('home', false); r.again = document.querySelectorAll('#s-home .fd-again [data-fd-cartctl]').length;
     const before = +document.querySelector('.wc-block-mini-cart__badge').textContent;
-    document.querySelector('#s-home .fd-again__add').click(); r.againAdds = +document.querySelector('.wc-block-mini-cart__badge').textContent - before;
+    const ag = [...document.querySelectorAll('#s-home .fd-again [data-fd-cartctl]')].find(c => !c.querySelector('[data-fd-add]').hidden);
+    ag.querySelector('[data-fd-add]').click(); await new Promise(res => setTimeout(res, 50));
+    r.againAdds = +document.querySelector('.wc-block-mini-cart__badge').textContent - before;
     // 11 · the review filter
     window.fxShow('p-express-dal-fry', false);
     d.querySelector('.fd-rsum__chip[data-fd-filter="photos"]').click();
@@ -456,10 +493,49 @@ const path = require('path');
   const landed = await phone.evaluate(() => { window.fxShow('p-trial-box-3-meals');
     return Math.round(document.querySelector('#s-p-trial-box-3-meals h1').getBoundingClientRect().top); });
   check('on a phone, a tapped product shows its name on the first screen', landed > 0 && landed < 844, landed);
-  await phone.evaluate(() => [...document.querySelectorAll('#s-home .fx-burger')][0].click());
-  const menuAcct = await phone.evaluate(() => { const a = [...document.querySelectorAll('.fx-menu a')].find(x => /My account/.test(x.textContent));
-    if (!a) return null; a.click(); return [...document.querySelectorAll('[id^=s-]')].find(e => !e.hidden).id; });
-  check('on a phone, the menu has "My account" and it opens the account', menuAcct === 's-account', menuAcct);
+  // The phone header (client, 9 Nov): logo | profile | cart, the search its own
+  // row, the categories a row under it — and no menu button left to find.
+  const ph = await phone.evaluate(() => { window.fxShow('home', false); window.scrollTo(0, 0);
+    const h = document.querySelector('#s-home .fd-header'), vis = el => el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0;
+    const acct = h.querySelector('.wc-block-customer-account__account-link'), cart = h.querySelector('.wc-block-mini-cart__button');
+    const cats = [...h.querySelectorAll('.fd-catrow a')].map(a => a.textContent);
+    return { burger: vis(h.querySelector('.fx-burger')), acctLabel: acct.textContent.trim(), acctWide: Math.round(acct.getBoundingClientRect().width),
+      amount: vis(h.querySelector('.wc-block-mini-cart__amount')), cartRight: Math.round(h.getBoundingClientRect().right - cart.getBoundingClientRect().right),
+      searchBelow: h.querySelector('.fd-search').getBoundingClientRect().top >= cart.getBoundingClientRect().bottom, cats }; });
+  check('on a phone: no menu button; the profile is an icon that still says "Sign in"/"My account" to a screen reader', !ph.burger && ph.acctWide === 44 && /Sign in|My account/.test(ph.acctLabel), ph);
+  check('… the cart is the rightmost icon and shows no amount, the search sits on its own row below', ph.cartRight === 0 && !ph.amount && ph.searchBelow, ph);
+  check('… and the categories are a row of their own', ph.cats.join('|') === 'All meals|Express|Hot & Fresh|Flavors|Combos|Build a box', ph.cats);
+  const toExpress = await phone.evaluate(() => { [...document.querySelectorAll('#s-home .fd-catrow a')].find(a => a.textContent === 'Express').click();
+    return [...document.querySelectorAll('[id^=s-]')].find(e => !e.hidden).id; });
+  check('a category in that row opens its page', toExpress === 's-cat-express', toExpress);
+  const menuAcct = await phone.evaluate(() => { window.fxShow('home', false); document.querySelector('#s-home .wc-block-customer-account__account-link').click();
+    return [...document.querySelectorAll('[id^=s-]')].find(e => !e.hidden).id; });
+  check('the profile icon opens the account (or sign-in)', menuAcct === 's-account' || menuAcct === 's-signin', menuAcct);
+
+  // Smart search (client, 9 Nov): products, ingredients, categories, labels.
+  const smart = await phone.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms));
+    window.fxShow('home', false);
+    const inp = document.querySelector('#s-home #fd-search-q'), list = () => document.querySelector('#s-home .fd-search__list');
+    inp.focus(); await sl(30);
+    const empty = { chips: list().classList.contains('is-chips'), n: list().querySelectorAll('[role=option]').length, head: list().firstElementChild.textContent };
+    inp.value = 'moong'; inp.dispatchEvent(new Event('input', { bubbles: true })); await sl(30);
+    const moong = [...list().children].map(li => (li.getAttribute('role') === 'option' ? '' : '# ') + li.textContent.trim());
+    inp.value = 'jain'; inp.dispatchEvent(new Event('input', { bubbles: true })); await sl(30);
+    const jain = [...list().querySelectorAll('.fd-search__facet .fd-search__name')].map(n => n.textContent);
+    // Arrow keys skip the headings; Enter on the label opens its results.
+    inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    const first = document.getElementById(inp.getAttribute('aria-activedescendant'))?.textContent.trim();
+    inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await sl(50);
+    const screen = [...document.querySelectorAll('[id^=s-]')].find(e => !e.hidden).id;
+    const shown = [...document.querySelectorAll('#s-search .fd-products li.wp-block-post')].filter(l => !l.hidden).length;
+    return { empty, moong, jain, first, screen, shown };
+  });
+  check('an empty search offers popular searches as chips', smart.empty.chips && smart.empty.n >= 4 && /Popular/.test(smart.empty.head), smart.empty);
+  check('"moong" groups an ingredient ("Meals with …") above the meals, then "See all"',
+    smart.moong[0].startsWith('# ') && smart.moong.some(r => /^Meals with .*moong/.test(r)) && smart.moong.includes('# Meals') && /^See all/.test(smart.moong[smart.moong.length - 1]), smart.moong);
+  check('"jain" offers the Jain label', smart.jain.includes('Jain'), smart.jain);
+  check('ArrowDown lands on the first option, not a heading; Enter opens its results', /^Jain/.test(smart.first || '') && smart.screen === 's-search' && smart.shown > 0, smart);
   await phone.close();
 
   // ── nothing anywhere is dead ──────────────────────────────────────────────

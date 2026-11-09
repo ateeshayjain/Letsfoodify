@@ -128,15 +128,25 @@ const INSIDE = ['.fd-badges > *', '.fd-chip', '.fd-save'];
         // Every screen in the preview carries its own header in ONE document,
         // so querySelector finds the hidden Home one. Take the visible header.
         const hdr = [...document.querySelectorAll('.fd-header')].find(e => e.getBoundingClientRect().width > 0);
-        const acts = hdr && hdr.querySelector('.fd-header__actions');
+        // Since 9 Nov 2026 the account and cart are icons, the cart rightmost;
+        // below 900px the search is its own row under them (client direction).
+        // The wrapper is display:contents there, so measure the controls.
         const logo = hdr && hdr.querySelector('.fx-logo, .wp-block-site-title');
-        if (hdr && acts && logo) {
-          const h = hdr.getBoundingClientRect(), a = acts.getBoundingClientRect(), l = logo.getBoundingClientRect();
-          if (h.right - a.right > 2) hits.push(`header actions stop ${Math.round(h.right - a.right)}px short of the right edge`);
-          // Same row = their vertical ranges overlap at all; a taller
-          // control sitting lower than a short logo is not a wrap.
-          if (Math.min(a.bottom, l.bottom) - Math.max(a.top, l.top) <= 0) {
-            hits.push('header actions have wrapped onto their own line');
+        const cartEl = hdr && hdr.querySelector('.wc-block-mini-cart');
+        const acctEl = hdr && hdr.querySelector('.wc-block-customer-account');
+        const srch = hdr && hdr.querySelector('.fd-search');
+        if (hdr && logo && cartEl && acctEl) {
+          const h = hdr.getBoundingClientRect(), c = cartEl.getBoundingClientRect(), ac = acctEl.getBoundingClientRect(), l = logo.getBoundingClientRect();
+          if (h.right - c.right > 2) hits.push(`header cart stops ${Math.round(h.right - c.right)}px short of the right edge`);
+          if (ac.right > c.left + 1) hits.push('header account is not left of the cart');
+          // Same row = their vertical ranges overlap at all.
+          for (const [nm, r] of [['cart', c], ['account', ac]]) {
+            if (Math.min(r.bottom, l.bottom) - Math.max(r.top, l.top) <= 0) hits.push(`header ${nm} has wrapped off the logo's row`);
+          }
+          if (srch && innerWidth < 900) {
+            const sr = srch.getBoundingClientRect();
+            if (sr.top < Math.max(c.bottom, l.bottom) - 1) hits.push('phone search is not on its own row under the logo');
+            if (Math.abs(sr.left - h.left) > 2 || Math.abs(sr.right - h.right) > 2) hits.push('phone search does not span the header');
           }
         }
         for (const sel of INSIDE) {

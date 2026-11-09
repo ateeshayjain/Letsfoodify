@@ -92,7 +92,7 @@ pages.append(f"""<section class="page" style="display:flex;flex-direction:column
   <dl class="kv" style="max-width:140mm">
     <dt>Prepared for</dt><dd>Nalin Agarwal, The Foodify Company</dd>
     <dt>Prepared by</dt><dd>Mindlayer</dd>
-    <dt>Date</dt><dd>8 November 2026 (second edition: search, boxes, delivery dates, repeat orders)</dd>
+    <dt>Date</dt><dd>9 November 2026 (third edition: compact cards, Add → − 1 +, the View cart bar, the new header, smart search)</dd>
     <dt>Status</dt><dd>For review. Nothing here is live until you approve it.</dd>
   </dl>
   <div style="position:absolute;right:14mm;top:13mm;width:120mm;display:flex;gap:3mm;align-items:flex-start">
@@ -181,14 +181,14 @@ pages.append(f"""<section class="page">
 
 # ── Search ──────────────────────────────────────────────────────────────────
 pages.append(screen_page(
-    "Search", "Finding a meal by name",
-    "With 44 products, people type what they want. The audited site had no search at all.",
+    "Search", "Smart search",
+    "With 44 products, people type what they want — a dish, an ingredient, a diet. The audited site had no search at all.",
     "search-desktop", "search-phone",
-    ["<b>Suggestions appear as you type</b>, from the second letter, with the prep time and price — tap one and you are on its page.",
-     "It finds <b>ingredients and other names too</b>: “dal” finds the khichdi, and once you add Hindi and regional names (“राजमा”, “rajma chawal”) those work as well.",
-     "A small typo still finds the dish. Sold-out items come last, marked as sold out.",
+    ["<b>Always there</b>, the glass inside the field: under the logo on a phone, in the header row on a laptop. Tapping it before typing shows <b>popular searches</b> — Express, Hot water, Gluten free, Vegan — one tap each.",
+     "As you type, suggestions come <b>in groups</b>: the categories, diets and ingredients the words name (“moong” → <b>Meals with split moong dal · 2 meals</b>), then the meals themselves with prep time and price, then “See all”.",
+     "It finds Hindi and regional names once you add them (“राजमा”), forgives a small typo, and puts sold-out items last.",
      "<b>No match is never a dead end</b>: it says so and offers three popular meals."],
-    "Laptop · the results page for “dal”", "Phone · suggestions while typing",
+    "Laptop · the results page for “dal”", "Phone · typing “moong”",
     "Search"))
 
 # ── 5. Shop ─────────────────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ pages.append(screen_page(
     ["<b>Filters by what matters here</b>: prep method, dietary, price. Open beside the products on a laptop; on a phone one <b>Filter</b> line that says how many are on — “Filter · 2” — so the products come first.",
      "<b>Sort is a labelled control</b> next to the result count, and the count is announced to screen readers when a filter changes it.",
      "Every card <b>leads with how it is made</b> — “Hot water · 6 min”, then servings — and carries Jain, vegan or gluten free as words, not a badge on the photo. A <b>Save badge appears only when the discount is genuinely 15% or more</b>.",
-     "Sold-out items say <b>Sold out</b>, sit at the end of every sort, and offer “Notify me” instead of Add to cart. Once a meal is in the cart its button reads “Add another · 1 in cart”."],
+     "<b>Add sits on the photo’s corner and becomes − 1 +</b> once the meal is in the cart. Adding never leaves the page: a <b>View cart</b> bar comes up at the bottom (“3 items”), so a shopper keeps browsing. Sold-out items say <b>Sold out</b>, sit last, and offer “Notify me”."],
     "Laptop · category page with filters open", "Phone · filters folded, with a count",
     "Category / shop"))
 
@@ -433,9 +433,9 @@ pages.append(f"""<section class="page">
   </div>
   <div class="box" style="margin-top:4mm">
     <p class="big">Design calls we made — say if you disagree</p>
-    <p>Tablets show the menu button rather than squeezing five links in. &nbsp;·&nbsp; On phones the filters start folded and the
-    Save badge sits above the price. &nbsp;·&nbsp; Cards carry one extra line: Jain, vegan or gluten free as words. &nbsp;·&nbsp;
-    The phone cart button shows how many items, not the total.</p>
+    <p>Below 900px the menu is a scrolling row of categories under the search — no menu button to find. &nbsp;·&nbsp; On phones the
+    filters start folded. &nbsp;·&nbsp; Cards show diet as words (“Jain · High protein”) and the Save badge on the photo. &nbsp;·&nbsp;
+    The account and the cart are icons; the cart shows a count, never an amount.</p>
     <p class="big" style="margin-top:3mm">Things only you can confirm</p>
     <p><b>Is “No preservatives” true of every product?</b> It now appears on each product page. &nbsp;·&nbsp;
     <b>Box savings:</b> at the current prices five of the six boxes save under 15%, so they show the saving in rupees but no

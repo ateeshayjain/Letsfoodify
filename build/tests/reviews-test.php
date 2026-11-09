@@ -389,5 +389,14 @@ check( '… the form for a verified buyer stays', str_contains( $stripped, 'revi
 $tpl = (string) file_get_contents( __DIR__ . '/../theme/foodify/templates/single-product.html' );
 check( 'the template\'s heading and line carry the classes the filter swaps', str_contains( $tpl, '"className":"fd-reviews__title"' ) && str_contains( $tpl, '"className":"fd-reviews__sub"' ) );
 
+echo "── a card's rating, one line (client, 9 Nov) ──\n";
+$cr = foodify_card_rating_html( 4.66, 84 );
+check( 'card rating reads "★ 4.7 (84)"', str_contains( $cr, '<span class="fd-card-rating__star">★</span> 4.7 <span class="fd-card-rating__count">(84)</span>' ) );
+check( '… and a screen reader hears the sentence, not the symbols', str_contains( $cr, '<span aria-hidden="true">' ) && str_contains( $cr, '<span class="fd-sr">Rated 4.7 out of 5 from 84 reviews</span>' ) );
+check( 'no reviews, no rating row at all', '' === foodify_card_rating_html( 0.0, 0 ) && '' === foodify_card_rating_html( 4.5, 0 ) );
+check( 'one review says so (WP-08)', str_contains( foodify_card_rating_html( 5.0, 1 ), 'from 1 review<' ) && str_contains( foodify_card_rating_html( 5.0, 1 ), '(1)' ) );
+$rsrc = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/reviews.php' );
+check( 'cards get it through the rating block\'s own filter', 1 === preg_match( "/render_block_woocommerce\/product-rating.*?isDescendentOfQueryLoop.*?foodify_card_rating_html\(/s", $rsrc ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

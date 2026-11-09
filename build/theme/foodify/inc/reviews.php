@@ -137,6 +137,26 @@ function foodify_rating_display( float $average, int $count ): array {
 }
 
 /**
+ * A card's rating in one short line: "★ 4.7 (84)" (client, 9 Nov 2026 — the
+ * card was five stars, the average, and "84 reviews" on a line of its own).
+ * One star is a mark, not a score; the average beside it is the score, and
+ * the count is never dropped (WP-08: a 5.0 from one review must say so).
+ * A screen reader hears the whole sentence instead of the symbols.
+ * Nothing at all for a product with no reviews.
+ */
+function foodify_card_rating_html( float $average, int $count ): string {
+	$d = foodify_rating_display( $average, $count );
+	if ( ! $d['show'] ) {
+		return '';
+	}
+	$avg = number_format( (float) $d['stars'], 1 );
+	return '<div class="wc-block-components-product-rating fd-card-rating">'
+		. '<span aria-hidden="true"><span class="fd-card-rating__star">★</span> ' . $avg
+		. ' <span class="fd-card-rating__count">(' . (int) $d['count'] . ')</span></span>'
+		. '<span class="fd-sr">Rated ' . $avg . ' out of 5 from ' . htmlspecialchars( $d['label'], ENT_QUOTES ) . '</span></div>';
+}
+
+/**
  * Five glyphs for an average — ONE rounding rule for the whole product page
  * (UX review 8 Nov 2026, PRODUCT-15). The title said ★★★★☆ for 4.7 and the
  * summary above the reviews said ★★★★★. The rule is FLOOR, the same stance as
@@ -1335,11 +1355,18 @@ add_filter( 'render_block_core/paragraph', $foodify_review_copy, 10, 2 );
 
 /**
  * The rating row under the product page's title, in the same stars and the
- * same rounding rule as the summary above the reviews (PRODUCT-15). Cards keep
- * WooCommerce's own rating block.
+ * same rounding rule as the summary above the reviews (PRODUCT-15). On a card,
+ * the one-line "★ 4.7 (84)" (foodify_card_rating_html).
  */
-add_filter( 'render_block_woocommerce/product-rating', static function ( string $html, array $block ): string {
-	if ( ! empty( $block['attrs']['isDescendentOfQueryLoop'] ) || ! function_exists( 'is_product' ) || ! is_product() ) {
+add_filter( 'render_block_woocommerce/product-rating', static function ( string $html, array $block, $instance = null ): string {
+	if ( ! empty( $block['attrs']['isDescendentOfQueryLoop'] ) ) {
+		$id      = is_object( $instance ) && isset( $instance->context['postId'] ) ? (int) $instance->context['postId'] : (int) get_the_ID();
+		$product = $id > 0 && function_exists( 'wc_get_product' ) ? wc_get_product( $id ) : null;
+		return $product instanceof WC_Product
+			? foodify_card_rating_html( (float) $product->get_average_rating(), (int) $product->get_review_count() )
+			: $html;
+	}
+	if ( ! function_exists( 'is_product' ) || ! is_product() ) {
 		return $html;
 	}
 	$product = wc_get_product( get_the_ID() );
@@ -1347,4 +1374,4 @@ add_filter( 'render_block_woocommerce/product-rating', static function ( string 
 		return $html;
 	}
 	return foodify_pdp_rating_html( (float) $product->get_average_rating(), (int) $product->get_review_count() ); // Escaped in the builder.
-}, 10, 2 );
+}, 10, 3 );

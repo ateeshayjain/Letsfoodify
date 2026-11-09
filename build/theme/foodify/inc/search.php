@@ -60,6 +60,14 @@ defined( 'ABSPATH' ) || exit;
 const FOODIFY_SEARCH_TYPO_MIN = 4;
 
 /**
+ * The cached index's key, VERSIONED by the row's shape. Rows gained cats, tags
+ * and ing (smart search, 9 Nov 2026); a 12-hour transient of the old shape would
+ * have left every group empty after deploy until some product happened to be
+ * saved. A new shape is a new key — no flush to remember at cutover.
+ */
+const FOODIFY_SEARCH_INDEX_KEY = 'foodify_search_index_v2';
+
+/**
  * Lower-case, punctuation to spaces, single spaces. Letters, combining marks and
  * digits survive in every script — \p{M} is what keeps a Devanagari vowel sign
  * attached to its consonant, so "राजमा" is still one word.
@@ -303,11 +311,45 @@ function foodify_search_keywords( string $name, array $parts, int $max = 60 ): s
 }
 
 /**
- * One index row, typed. Everything a suggestion needs to draw itself.
+ * The ingredient list as phrases a shopper might type: "Yellow moong dal (45%),
+ * toor dal, tomato, cumin" → ["yellow moong dal", "toor dal", "tomato",
+ * "cumin"]. Percentages and bracketed notes go; a phrase longer than four words
+ * is a sentence, not an ingredient, and is skipped. At most 15.
  *
- * @return array{id:int,name:string,url:string,price:string,prep:string,img:string,kw:string,stock:bool}
+ * @return array<int,string>
+ */
+function foodify_search_ingredient_phrases( string $ingredients, int $max = 15 ): array {
+	$out = [];
+	foreach ( preg_split( '/[,;]|\band\b/u', (string) preg_replace( '/\([^)]*\)|\d+(?:\.\d+)?\s*%/u', ' ', $ingredients ) ) ?: [] as $part ) {
+		$p = trim( (string) preg_replace( '/\s+/u', ' ', mb_strtolower( (string) preg_replace( '/[^\p{L}\p{M}\s-]+/u', ' ', $part ) ) ) );
+		if ( '' === $p || mb_strlen( $p ) < 3 || count( explode( ' ', $p ) ) > 4 || in_array( $p, $out, true ) ) {
+			continue;
+		}
+		$out[] = $p;
+		if ( count( $out ) >= $max ) {
+			break;
+		}
+	}
+	return $out;
+}
+
+/**
+ * One index row, typed. Everything a suggestion needs to draw itself, and the
+ * facets smart search groups by (client, 9 Nov 2026: "products, ingredients,
+ * etc."): `cats` the categories with their links, `tags` the diet labels and
+ * the prep method ("Jain", "Hot water"), `ing` the ingredient phrases.
+ *
+ * @return array{id:int,name:string,url:string,price:string,prep:string,img:string,kw:string,stock:bool,
+ *               cats:array<int,array{0:string,1:string}>,tags:array<int,string>,ing:array<int,string>}
  */
 function foodify_search_row( array $p ): array {
+	$strs = static fn( $v ): array => array_values( array_filter( array_map( static fn( $s ): string => trim( (string) $s ), is_array( $v ) ? $v : [] ), 'strlen' ) );
+	$cats = [];
+	foreach ( is_array( $p['cats'] ?? null ) ? $p['cats'] : [] as $c ) {
+		if ( is_array( $c ) && '' !== trim( (string) ( $c[0] ?? '' ) ) ) {
+			$cats[] = [ trim( (string) $c[0] ), (string) ( $c[1] ?? '' ) ];
+		}
+	}
 	return [
 		'id'    => (int) ( $p['id'] ?? 0 ),
 		'name'  => trim( (string) ( $p['name'] ?? '' ) ),
@@ -317,6 +359,9 @@ function foodify_search_row( array $p ): array {
 		'img'   => (string) ( $p['img'] ?? '' ),
 		'kw'    => (string) ( $p['kw'] ?? '' ),
 		'stock' => (bool) ( $p['stock'] ?? false ),
+		'cats'  => $cats,
+		'tags'  => $strs( $p['tags'] ?? [] ),
+		'ing'   => $strs( $p['ing'] ?? [] ),
 	];
 }
 
@@ -333,31 +378,27 @@ function foodify_search_payload( array $rows ): array {
  * with no PHP running at all — the template is the source of truth for a cached
  * page, and this function is the source of truth for the template.
  *
- * It ships CLOSED. Without JavaScript the icon opens it natively (it is a
- * <details>); the script opens it on wide screens and adds the combobox roles.
+ * The field is always there (client, 9 Nov 2026: "the magnifying glass can
+ * be within the search bar"): one field, the glass inside it at the left —
+ * and the glass is the submit button, so a mouse has something to press. On
+ * a phone it is a row of its own under the logo (style.css). The script adds
+ * the combobox roles and the grouped suggestions.
  */
 function foodify_search_form_html(): string {
-	$icon  = '<svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-	$close = '<svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-	return '<details class="fd-search" data-fd-search>'
-		. '<summary class="fd-search__toggle">'
-		. '<span class="fd-search__when-closed">' . $icon . '<span class="fd-sr">Search</span></span>'
-		. '<span class="fd-search__when-open">' . $close . '<span class="fd-sr">Close search</span></span>'
-		. '</summary>'
-		. '<div class="fd-search__panel">'
+	$icon = '<svg class="fd-search__icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+	return '<div class="fd-search" data-fd-search>'
 		. '<form class="fd-search__form" role="search" method="get" action="/">'
 		. '<label class="fd-sr" for="fd-search-q">Search the menu</label>'
-		. '<input class="fd-search__input" id="fd-search-q" type="search" name="s" placeholder="Search meals, ingredients" autocomplete="off" enterkeyhint="search">'
-		. '<input type="hidden" name="post_type" value="product">'
 		. '<button class="fd-search__go" type="submit">' . $icon . '<span class="fd-sr">Search</span></button>'
+		. '<input class="fd-search__input" id="fd-search-q" type="search" name="s" placeholder="Search dal, moong, Jain…" autocomplete="off" enterkeyhint="search">'
+		. '<input type="hidden" name="post_type" value="product">'
 		. '</form>'
 		. '<div class="fd-search__pop" hidden>'
 		. '<p class="fd-search__none" hidden></p>'
 		. '<ul class="fd-search__list" id="fd-search-list" role="listbox" aria-label="Suggestions"></ul>'
 		. '</div>'
 		. '<p class="fd-sr" role="status" aria-live="polite" data-fd-search-status></p>'
-		. '</div>'
-		. '</details>';
+		. '</div>';
 }
 
 /**
@@ -412,7 +453,39 @@ var FDSearch=(function(){
   }
   function popular(rows,n){if(n==null)n=3;var out=[];for(var i=0;i<rows.length&&out.length<n;i++){if(rows[i].stock)out.push(rows[i]);}return out;}
   function seeAll(q,n){q=String(q==null?'':q).replace(/\s+/g,' ').trim();return n===1?'See 1 result for ‘'+q+'’':'See all '+n+' results for ‘'+q+'’';}
-  return {norm:norm,rank:rank,popular:popular,seeAll:seeAll};
+  // Smart search's groups: the categories, labels (diet, prep) and ingredients
+  // a query names, each with how many in-stock meals carry it. Display only —
+  // the ranking above is the rule the results page mirrors in PHP. A label
+  // matches when every query word starts one of its words ("moo" → "yellow
+  // moong dal"); an ingredient needs 3+ letters, and one that is also a label
+  // or a category is shown once, as the label.
+  function facets(rows,q,max){
+    if(max==null)max=4;var qn=norm(q);if(qn.length<2)return [];
+    var tokens=qn.split(' '),seen={},out=[];
+    function hit(label){var lw=words(label);if(!lw.length)return false;
+      for(var a=0;a<tokens.length;a++){var ok=false;for(var b=0;b<lw.length;b++){if(prefix(tokens[a],lw[b])){ok=true;break;}}if(!ok)return false;}
+      return true;}
+    function add(kind,label,url){var k=kind+'|'+norm(label);if(!seen[k]){seen[k]={kind:kind,label:label,url:url||'',n:0};out.push(seen[k]);}seen[k].n++;}
+    for(var i=0;i<rows.length;i++){var r=rows[i];if(!r.stock)continue;
+      (r.cats||[]).forEach(function(c){if(hit(c[0]))add('cat',c[0],c[1]);});
+      (r.tags||[]).forEach(function(t){if(hit(t))add('tag',t,'');});
+      if(qn.length>=3)(r.ing||[]).forEach(function(t){if(hit(t))add('ing',t,'');});}
+    var named={},rank={cat:0,tag:1,ing:2};
+    out.forEach(function(f){if(f.kind!=='ing')named[norm(f.label)]=1;});
+    out=out.filter(function(f){return f.kind!=='ing'||!named[norm(f.label)];});
+    out.sort(function(x,y){return (rank[x.kind]-rank[y.kind])||(y.n-x.n)||(x.label<y.label?-1:x.label>y.label?1:0);});
+    var lab=out.filter(function(f){return f.kind!=='ing';}).slice(0,2),ing=out.filter(function(f){return f.kind==='ing';}).slice(0,2);
+    return lab.concat(ing).slice(0,max);
+  }
+  // An empty field: the categories and labels that hold the most meals.
+  function popularFacets(rows,n){
+    if(n==null)n=6;var seen={},out=[];
+    function add(kind,label,url){var k=kind+'|'+norm(label);if(!seen[k]){seen[k]={kind:kind,label:label,url:url||'',n:0};out.push(seen[k]);}seen[k].n++;}
+    rows.forEach(function(r){if(!r.stock)return;(r.cats||[]).forEach(function(c){add('cat',c[0],c[1]);});(r.tags||[]).forEach(function(t){add('tag',t,'');});});
+    out.sort(function(x,y){return (y.n-x.n)||(x.label<y.label?-1:x.label>y.label?1:0);});
+    return out.slice(0,n);
+  }
+  return {norm:norm,rank:rank,popular:popular,seeAll:seeAll,facets:facets,popularFacets:popularFacets};
 })();
 JS;
 }
@@ -433,19 +506,20 @@ function foodify_search_script(): string {
 (function(){
   var root=document.querySelector('[data-fd-search]');if(!root)return;
   var input=root.querySelector('.fd-search__input'),pop=root.querySelector('.fd-search__pop'),list=root.querySelector('.fd-search__list'),
-      none=root.querySelector('.fd-search__none'),status=root.querySelector('[data-fd-search-status]'),toggle=root.querySelector('summary'),form=root.querySelector('form'),
-      wide=matchMedia('(min-width:1200px)'),rows=null,loading=false,opts=[],active=-1,KEY='fd-search-v1';
+      none=root.querySelector('.fd-search__none'),status=root.querySelector('[data-fd-search-status]'),form=root.querySelector('form'),
+      rows=null,loading=false,active=-1,KEY='fd-search-v2';
+  // The groups' marks, as path data: a grid (category), a tag (diet, prep), a leaf (ingredient), the glass (see all).
+  var ICON={cat:['M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'],
+            tag:['M3 12V4h8l9 9-8 8z','M7.5 7.2a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6'],
+            ing:['M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7'],
+            all:['M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13','m15.5 15.5 5 5']},NS='http://www.w3.org/2000/svg';
   root.classList.add('is-enhanced');
   input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');
   input.setAttribute('aria-expanded','false');input.setAttribute('aria-controls','fd-search-list');
   try{var u=new URLSearchParams(location.search);if(u.get('post_type')==='product'&&u.get('s')){input.value=u.get('s');}}catch(e){}
+  function results(q){var act=form.getAttribute('action')||'/';return act+(act.indexOf('?')<0?'?':'&')+'s='+encodeURIComponent(String(q).trim())+'&post_type=product';}
+  function options(){return list.querySelectorAll('[role=option]');}
   function close(){pop.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');active=-1;}
-  function fit(){if(wide.matches){root.open=true;}else if(!root.contains(document.activeElement)){root.open=false;}}
-  fit();if(wide.addEventListener){wide.addEventListener('change',fit);}
-  // Open and focus inside the tap itself: iOS raises the keyboard only for a
-  // focus() made in the gesture, and the details 'toggle' event comes later.
-  toggle.addEventListener('click',function(e){if(wide.matches)return;e.preventDefault();root.open=!root.open;if(root.open){input.focus();}});
-  root.addEventListener('toggle',function(){if(!root.open){close();}});
   function got(r){rows=Array.isArray(r)?r:[];loading=false;if(document.activeElement===input){show();}}
   function load(){
     if(rows||loading)return;
@@ -456,58 +530,81 @@ function foodify_search_script(): string {
       var r=j&&Array.isArray(j.rows)?j.rows:[];try{sessionStorage.setItem(KEY,JSON.stringify({t:Date.now(),rows:r}));}catch(e){}got(r);
     }).catch(function(){loading=false;});
   }
-  function opt(row,i){
-    var li=document.createElement('li');li.id='fd-search-opt-'+i;li.className='fd-search__opt';li.setAttribute('role','option');li.setAttribute('aria-selected','false');
-    var a=document.createElement('a');a.href=row.url;a.tabIndex=-1;a.className='fd-search__link';
-    if(row.img){var im=document.createElement('img');im.src=row.img;im.alt='';im.width=48;im.height=48;im.loading='lazy';im.className='fd-search__img';a.appendChild(im);}
-    else{var ph=document.createElement('span');ph.className='fd-search__img is-empty';ph.setAttribute('aria-hidden','true');a.appendChild(ph);}
+  function head(text){var li=document.createElement('li');li.className='fd-search__head';li.setAttribute('role','presentation');li.textContent=text;list.appendChild(li);}
+  function item(href,cls){
+    var li=document.createElement('li');li.id='fd-search-opt-'+options().length;li.className='fd-search__opt'+(cls?' '+cls:'');
+    li.setAttribute('role','option');li.setAttribute('aria-selected','false');
+    var a=document.createElement('a');a.href=href;a.tabIndex=-1;a.className='fd-search__link';li.appendChild(a);list.appendChild(li);return a;
+  }
+  function text(a,name,meta){
     var tx=document.createElement('span');tx.className='fd-search__text';
-    var nm=document.createElement('span');nm.className='fd-search__name';nm.textContent=row.name;tx.appendChild(nm);
-    var meta=[row.prep,row.price].filter(Boolean).join(' · ');
+    var nm=document.createElement('span');nm.className='fd-search__name';nm.textContent=name;tx.appendChild(nm);
     if(meta){var mt=document.createElement('span');mt.className='fd-search__meta';mt.textContent=meta;tx.appendChild(mt);}
     a.appendChild(tx);
+  }
+  function glyph(a,kind){
+    var s=document.createElement('span');s.className='fd-search__glyph';s.setAttribute('aria-hidden','true');
+    var g=document.createElementNS(NS,'svg');
+    [['viewBox','0 0 24 24'],['width','20'],['height','20'],['fill','none'],['stroke','currentColor'],['stroke-width','1.8'],['stroke-linejoin','round'],['stroke-linecap','round']]
+      .forEach(function(p){g.setAttribute(p[0],p[1]);});
+    ICON[kind].forEach(function(d){var p=document.createElementNS(NS,'path');p.setAttribute('d',d);g.appendChild(p);});
+    s.appendChild(g);a.appendChild(s);
+  }
+  function meals(n){return n===1?'1 meal':n+' meals';}
+  function facet(f){
+    var a=item(f.kind==='cat'&&f.url?f.url:results(f.label),'fd-search__facet');glyph(a,f.kind);
+    text(a,f.kind==='ing'?'Meals with '+f.label:f.label,(f.kind==='cat'?'Category · ':'')+meals(f.n));
+  }
+  function meal(row){
+    var a=item(row.url,'');
+    if(row.img){var im=document.createElement('img');im.src=row.img;im.alt='';im.width=48;im.height=48;im.loading='lazy';im.className='fd-search__img';a.appendChild(im);}
+    else{var ph=document.createElement('span');ph.className='fd-search__img is-empty';ph.setAttribute('aria-hidden','true');a.appendChild(ph);}
+    text(a,row.name,[row.prep,row.price].filter(Boolean).join(' · '));
     if(!row.stock){var so=document.createElement('span');so.className='fd-search__sold';so.textContent='Sold out';a.appendChild(so);}
-    li.appendChild(a);return li;
   }
   function show(){
     var q=input.value;if(!rows){load();return;}
-    if(FDSearch.norm(q).length<2){close();status.textContent='';return;}
-    var hit=FDSearch.rank(rows,q,6),miss=!hit.length;opts=miss?FDSearch.popular(rows,3):hit;
-    list.textContent='';active=-1;input.removeAttribute('aria-activedescendant');
-    opts.forEach(function(r,i){list.appendChild(opt(r,i));});
-    // The last option: every match, on the results page (BROWSE-9).
-    if(!miss){var all=FDSearch.rank(rows,q,200).length,act=form.getAttribute('action')||'/',
-      href=act+(act.indexOf('?')<0?'?':'&')+'s='+encodeURIComponent(q.trim())+'&post_type=product',
-      li=document.createElement('li'),a=document.createElement('a');
-      li.id='fd-search-opt-'+opts.length;li.className='fd-search__opt fd-search__all';li.setAttribute('role','option');li.setAttribute('aria-selected','false');
-      a.href=href;a.tabIndex=-1;a.className='fd-search__link';a.textContent=FDSearch.seeAll(q,all);li.appendChild(a);list.appendChild(li);
-      opts=opts.concat([{url:href}]);}
-    none.hidden=!miss;none.textContent=miss?'No match for ‘'+q.trim().replace(/\s+/g,' ')+'’. Popular right now:':'';
-    if(!opts.length){close();status.textContent=none.textContent;return;}
-    pop.hidden=false;input.setAttribute('aria-expanded','true');
-    var n=miss?opts.length:opts.length-1;
-    status.textContent=(miss?none.textContent+' ':'')+(n===1?'1 suggestion.':n+' suggestions.');
+    list.textContent='';active=-1;input.removeAttribute('aria-activedescendant');none.hidden=true;none.textContent='';
+    list.classList.toggle('is-chips',FDSearch.norm(q).length<2);   // popular searches are chips; results are rows
+    var said='';
+    if(FDSearch.norm(q).length<2){
+      // Nothing typed yet: where most of the menu is.
+      var pf=FDSearch.popularFacets(rows,6);if(!pf.length){close();return;}
+      head('Popular searches');pf.forEach(facet);said=pf.length+' popular searches.';
+    }else{
+      var fs=FDSearch.facets(rows,q,4),hit=FDSearch.rank(rows,q,5);
+      if(fs.length){head('Categories and ingredients');fs.forEach(facet);}
+      if(hit.length){head('Meals');hit.forEach(meal);
+        var all=FDSearch.rank(rows,q,200).length,a=item(results(q),'fd-search__all');glyph(a,'all');text(a,FDSearch.seeAll(q,all),'');}
+      if(!fs.length&&!hit.length){
+        none.hidden=false;none.textContent='No match for ‘'+q.trim().replace(/\s+/g,' ')+'’. Popular right now:';
+        FDSearch.popular(rows,3).forEach(meal);
+      }
+      var n=options().length;said=(none.hidden?'':none.textContent+' ')+(n===1?'1 suggestion.':n+' suggestions.');
+    }
+    if(!options().length){close();status.textContent=said;return;}
+    pop.hidden=false;input.setAttribute('aria-expanded','true');status.textContent=said;
   }
   function move(d){
     if(pop.hidden){show();if(pop.hidden)return;}
-    var items=list.children;if(!items.length)return;
+    var items=options();if(!items.length)return;
     if(active>=0)items[active].setAttribute('aria-selected','false');
     active=(active+d+items.length+2)%(items.length+1)-1;
     if(active<0){input.removeAttribute('aria-activedescendant');return;}
     items[active].setAttribute('aria-selected','true');input.setAttribute('aria-activedescendant',items[active].id);
     if(items[active].scrollIntoView)items[active].scrollIntoView({block:'nearest'});
   }
-  input.addEventListener('focus',load);
+  input.addEventListener('focus',function(){load();show();});
   input.addEventListener('input',show);
   input.addEventListener('keydown',function(e){
     if(e.key==='ArrowDown'){e.preventDefault();move(1);}
     else if(e.key==='ArrowUp'){e.preventDefault();move(-1);}
-    else if(e.key==='Enter'&&active>=0&&!pop.hidden){e.preventDefault();location.href=opts[active].url;}
-    else if(e.key==='Escape'){
-      if(!pop.hidden){e.preventDefault();close();}
-      else if(!wide.matches&&root.open){e.preventDefault();root.open=false;toggle.focus();}
-    }
+    // Opening an option clicks its own link, so whatever answers links answers this too.
+    else if(e.key==='Enter'&&active>=0&&!pop.hidden){e.preventDefault();options()[active].querySelector('a').click();}
+    else if(e.key==='Escape'&&!pop.hidden){e.preventDefault();close();}
   });
+  list.addEventListener('mousedown',function(e){e.preventDefault();});   // a tap on a suggestion does not blur the field first
+  list.addEventListener('click',function(){close();});
   root.addEventListener('focusout',function(e){if(!root.contains(e.relatedTarget)){close();}});
 })();
 JS;
@@ -523,7 +620,7 @@ if ( ! function_exists( 'add_action' ) ) {
 
 /** Rows for every product a shopper can find, most popular first. Cached; rebuilt when a product changes. */
 function foodify_search_index_rows(): array {
-	$cached = get_transient( 'foodify_search_index' );
+	$cached = get_transient( FOODIFY_SEARCH_INDEX_KEY );
 	if ( is_array( $cached ) ) {
 		return $cached;
 	}
@@ -552,6 +649,24 @@ function foodify_search_index_rows(): array {
 			}
 		}
 		$chip   = function_exists( 'foodify_prep_chip_parts' ) ? foodify_prep_chip_parts( $product ) : null;
+		$cats   = [];
+		foreach ( (array) wp_get_post_terms( $id, 'product_cat' ) as $term ) {
+			if ( $term instanceof WP_Term && 'uncategorized' !== $term->slug ) {
+				$link   = get_term_link( $term );
+				$cats[] = [ $term->name, is_string( $link ) ? $link : '' ];
+			}
+		}
+		// Diet labels (pa_dietary, checked against the ingredients like the card)
+		// and the prep method ("Hot water"): a shopper types "Jain", not a slug.
+		$labels = [];
+		if ( function_exists( 'foodify_badge_state' ) && function_exists( 'foodify_diet_tags' ) ) {
+			$state  = foodify_badge_state( $product );
+			$labels = foodify_diet_tags( $state['dietary'], $state['ingredients'] );
+		}
+		if ( $chip && '' !== (string) $chip['label'] ) {
+			$labels[] = trim( explode( '·', (string) $chip['label'] )[0] );
+		}
+		$ingredients = (string) $product->get_meta( '_foodify_ingredients' );
 		$image  = $product->get_image_id() ? wp_get_attachment_image_url( (int) $product->get_image_id(), 'woocommerce_gallery_thumbnail' ) : '';
 		$rows[] = foodify_search_row( [
 			'id'    => $id,
@@ -564,19 +679,23 @@ function foodify_search_index_rows(): array {
 			// shop's own Hindi and regional names matter more than "salt".
 			'kw'    => foodify_search_keywords( $product->get_name(), array_merge(
 				[ (string) $product->get_meta( '_foodify_search_keywords' ) ],
+				$labels,
 				$terms,
-				[ (string) $product->get_meta( '_foodify_ingredients' ) ]
+				[ $ingredients ]
 			) ),
 			'stock' => $product->is_in_stock() && $product->is_purchasable(),
+			'cats'  => $cats,
+			'tags'  => $labels,
+			'ing'   => foodify_search_ingredient_phrases( $ingredients ),
 		] );
 	}
-	set_transient( 'foodify_search_index', $rows, 12 * HOUR_IN_SECONDS );
+	set_transient( FOODIFY_SEARCH_INDEX_KEY, $rows, 12 * HOUR_IN_SECONDS );
 	return $rows;
 }
 
 /** Any product change makes the index stale. */
 function foodify_search_index_flush(): void {
-	delete_transient( 'foodify_search_index' );
+	delete_transient( FOODIFY_SEARCH_INDEX_KEY );
 }
 foreach ( [ 'woocommerce_update_product', 'woocommerce_new_product', 'woocommerce_delete_product', 'woocommerce_trash_product',
 	'woocommerce_product_set_stock_status', 'woocommerce_variation_set_stock_status', 'edited_product_tag', 'edited_product_cat' ] as $foodify_hook ) {

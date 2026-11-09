@@ -99,23 +99,20 @@ function foodify_buy_again_private_response( bool $front_page, bool $logged_in )
  * Each card carries what the grid cards carry (review BROWSE-7 / ACCOUNT-20):
  * the veg mark before the name and the prep line ("Hot water · 6 min · Serves
  * 2") — principle 1, six minutes is the product — built by the SAME helpers
- * the grid uses (product-spec.php), so the two can never disagree. And once a
- * product is in the cart, the button says so the way the grid's does:
- * "Add another · 1 in cart" (foodify_in_cart_text()).
+ * the grid uses (product-spec.php), so the two can never disagree. Its button
+ * is the grid's too: Add, then − 1 + once the product is in the cart
+ * (cart-stepper.php, which reads the cart and announces every change).
  *
  * @param array<int,array{id:int,name:string,url:string,price:string,img?:string,add_url:string,
- *              chip?:?array{label:string,modifier:string},servings?:int,veg?:bool,in_cart?:int}> $products
- *        `chip` is foodify_prep_chip_parts(); `veg` is foodify_diet_is_veg() of the declared diet;
- *        `in_cart` the quantity already in the cart.
- * @param string $endpoint WooCommerce's AJAX add-to-cart URL (`/?wc-ajax=add_to_cart`). Empty = links only.
+ *              chip?:?array{label:string,modifier:string},servings?:int,veg?:bool}> $products
+ *        `chip` is foodify_prep_chip_parts(); `veg` is foodify_diet_is_veg() of the declared diet.
  */
-function foodify_buy_again_html( array $products, string $endpoint = '' ): string {
+function foodify_buy_again_html( array $products ): string {
 	if ( ! $products ) {
 		return '';
 	}
-	$e       = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES, 'UTF-8' );
-	$in_text = function_exists( 'foodify_in_cart_text' ) ? foodify_in_cart_text() : "Add another\u{00A0}· %s in cart";
-	$items   = '';
+	$e     = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES, 'UTF-8' );
+	$items = '';
 	foreach ( $products as $p ) {
 		$name = (string) ( $p['name'] ?? '' );
 		$img  = (string) ( $p['img'] ?? '' );
@@ -126,64 +123,24 @@ function foodify_buy_again_html( array $products, string $endpoint = '' ): strin
 		$prep = ! empty( $p['chip'] ) && is_array( $p['chip'] ) && function_exists( 'foodify_card_prep_html' )
 			? foodify_card_prep_html( $p['chip'], (int) ( $p['servings'] ?? 0 ) )
 			: '';
-		$n    = max( 0, (int) ( $p['in_cart'] ?? 0 ) );
-		$label = $n > 0 ? sprintf( $in_text, (string) $n ) : 'Add to cart';
-		$aria  = $n > 0 ? 'Add another ' . $name . ' to cart, ' . $n . ' in cart' : 'Add ' . $name . ' to cart';
+		$id   = (int) ( $p['id'] ?? 0 );
+		$add  = (string) ( $p['add_url'] ?? '' );
+		$ctl  = function_exists( 'foodify_cart_control_html' ) && $id > 0
+			? foodify_cart_control_html( $id, $name, $add, 0, 'fd-again__ctl' )
+			: '<a class="wp-element-button fd-again__add" href="' . $e( $add ) . '" rel="nofollow" aria-label="' . $e( 'Add ' . $name . ' to cart' ) . '">Add to cart</a>';
 		$items .= '<li class="fd-again__item">'
 			. '<a class="fd-again__link" href="' . $e( (string) ( $p['url'] ?? '' ) ) . '">' . $pic
 			. '<span class="fd-again__name">' . $veg . $e( $name ) . '</span></a>'
 			. $prep
 			. '<span class="fd-again__price">' . $e( (string) ( $p['price'] ?? '' ) ) . '</span>'
-			. '<a class="wp-element-button fd-again__add' . ( $n > 0 ? ' is-in-cart' : '' ) . '" href="' . $e( (string) ( $p['add_url'] ?? '' ) ) . '" rel="nofollow"'
-			. ' data-product-id="' . (int) ( $p['id'] ?? 0 ) . '" data-name="' . $e( $name ) . '" data-in-cart="' . $n . '"'
-			. ' aria-label="' . $e( $aria ) . '">' . $e( $label ) . '</a>'
+			. $ctl
 			. '</li>';
 	}
-	return '<section class="fd-again alignwide" aria-labelledby="fd-again-title" data-fd-again'
-		. ' data-in-cart-text="' . $e( $in_text ) . '"'
-		. ( '' !== $endpoint ? ' data-endpoint="' . $e( $endpoint ) . '"' : '' ) . '>'
+	return '<section class="fd-again alignwide" aria-labelledby="fd-again-title" data-fd-again>'
 		. '<h2 class="fd-again__title" id="fd-again-title">Buy again</h2>'
 		. '<p class="fd-again__lede">From your recent orders.</p>'
 		. '<ul class="fd-again__list">' . $items . '</ul>'
-		. '<p class="fd-sr" role="status" aria-live="polite" data-fd-again-status></p>'
 		. '</section>';
-}
-
-/**
- * One-tap add without leaving the page. Expects foodify_buy_again_html().
- *
- * Posts to WooCommerce's own AJAX add-to-cart, then tells the mini-cart block
- * (`wc-blocks_added_to_cart`) and any classic listener (jQuery `added_to_cart`)
- * so the header pill updates. Anything unexpected falls back to following the
- * link, which is WooCommerce's no-JavaScript add-to-cart and reports its own
- * errors — the button never silently does nothing.
- *
- * After a successful add: "Added <name>" in the live region, and the button
- * keeps the grid's in-cart state ("Add another · 2 in cart") rather than
- * flipping back to "Add to cart" as if nothing had happened (BROWSE-17).
- */
-function foodify_buy_again_script(): string {
-	return <<<'JS'
-(function(){
-  var s=document.querySelector('[data-fd-again]');if(!s||!window.fetch||!window.FormData)return;
-  var ep=s.getAttribute('data-endpoint'),st=s.querySelector('[data-fd-again-status]'),tpl=s.getAttribute('data-in-cart-text')||'Add another\u00a0· %s in cart';if(!ep)return;
-  s.addEventListener('click',function(e){
-    var b=e.target.closest?e.target.closest('.fd-again__add'):null;if(!b)return;e.preventDefault();
-    if(b.getAttribute('aria-disabled')==='true')return;b.setAttribute('aria-disabled','true');
-    var f=new FormData();f.append('product_id',b.getAttribute('data-product-id'));f.append('quantity','1');
-    fetch(ep,{method:'POST',body:f,credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
-      if(!j||j.error){location.href=b.href;return;}
-      var name=b.getAttribute('data-name')||'It',n=(parseInt(b.getAttribute('data-in-cart')||'0',10)||0)+1;
-      b.setAttribute('data-in-cart',String(n));b.classList.add('is-in-cart');
-      b.textContent=tpl.replace('%s',String(n));b.setAttribute('aria-label','Add another '+name+' to cart, '+n+' in cart');
-      if(st){st.textContent='';st.textContent='Added '+name;}
-      document.body.dispatchEvent(new CustomEvent('wc-blocks_added_to_cart',{bubbles:true,cancelable:true}));
-      if(window.jQuery){window.jQuery(document.body).trigger('added_to_cart',[j.fragments,j.cart_hash,window.jQuery(b)]);}
-      b.removeAttribute('aria-disabled');
-    }).catch(function(){location.href=b.href;});
-  });
-})();
-JS;
 }
 
 /* -------------------------------------------------------------------------
@@ -242,15 +199,6 @@ function foodify_buy_again_products( int $user_id ): array {
 		}
 	}
 
-	// What is already in the cart, so a card can say "Add another · 1 in cart".
-	// This page is private for a signed-in customer (guard 2), so it may.
-	$in_cart = [];
-	if ( function_exists( 'WC' ) && WC()->cart ) {
-		foreach ( WC()->cart->get_cart() as $line ) {
-			$pid             = (int) ( $line['product_id'] ?? 0 );
-			$in_cart[ $pid ] = ( $in_cart[ $pid ] ?? 0 ) + (int) ( $line['quantity'] ?? 0 );
-		}
-	}
 
 	$out = [];
 	foreach ( foodify_buy_again_ids( $plain, $purchasable, 4 ) as $id ) {
@@ -267,7 +215,6 @@ function foodify_buy_again_products( int $user_id ): array {
 			'chip'     => function_exists( 'foodify_prep_chip_parts' ) ? foodify_prep_chip_parts( $p ) : null,
 			'servings' => function_exists( 'foodify_combo_data' ) && null !== foodify_combo_data( $p ) ? 0 : (int) $p->get_meta( '_foodify_servings' ),
 			'veg'      => function_exists( 'foodify_product_diet' ) && function_exists( 'foodify_diet_is_veg' ) && foodify_diet_is_veg( foodify_product_diet( $p ) ),
-			'in_cart'  => $in_cart[ $id ] ?? 0,
 		];
 	}
 	return $out;
@@ -300,14 +247,5 @@ add_shortcode( 'foodify_buy_again', static function (): string {
 	if ( ! $products ) {
 		return '';
 	}
-	$GLOBALS['foodify_buy_again_on_page'] = true;
-	$endpoint = class_exists( 'WC_AJAX' ) ? (string) WC_AJAX::get_endpoint( 'add_to_cart' ) : '';
-	return foodify_buy_again_html( $products, $endpoint );
-} );
-
-add_action( 'wp_footer', static function (): void {
-	if ( empty( $GLOBALS['foodify_buy_again_on_page'] ) ) {
-		return;
-	}
-	echo '<script>' . foodify_buy_again_script() . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- static script, no data.
+	return foodify_buy_again_html( $products );
 } );

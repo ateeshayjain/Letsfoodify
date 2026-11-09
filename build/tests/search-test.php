@@ -90,7 +90,15 @@ check( 'keywords are capped',                       2 === count( explode( ' ', f
 $row = foodify_search_row( [ 'id' => '12', 'name' => ' Dal ', 'stock' => 1 ] );
 check( 'a row is typed (id int, stock bool, name trimmed)', 12 === $row['id'] && true === $row['stock'] && 'Dal' === $row['name'] );
 check( 'a row has exactly the fields the browser reads',
-	[ 'id', 'name', 'url', 'price', 'prep', 'img', 'kw', 'stock' ] === array_keys( $row ) );
+	[ 'id', 'name', 'url', 'price', 'prep', 'img', 'kw', 'stock', 'cats', 'tags', 'ing' ] === array_keys( $row ) );
+$fr = foodify_search_row( [ 'id' => 1, 'cats' => [ [ ' Express ', '/c/express/' ], [ '' ], 'junk' ], 'tags' => [ ' Jain ', '', 7 ], 'ing' => 'not a list' ] );
+check( 'facets are typed: categories as [name, link], labels and ingredients as trimmed words, junk dropped',
+	[ [ 'Express', '/c/express/' ] ] === $fr['cats'] && [ 'Jain', '7' ] === $fr['tags'] && [] === $fr['ing'] );
+echo "── ingredients a shopper might type ──\n";
+check( 'percentages and notes go, phrases stay', [ 'yellow moong dal', 'toor dal', 'tomato', 'ghee', 'salt' ]
+	=== foodify_search_ingredient_phrases( 'Yellow moong dal (45%), toor dal, tomato, ghee and salt' ) );
+check( 'a sentence is not an ingredient', [ 'cumin' ] === foodify_search_ingredient_phrases( 'cumin, dried slowly at a low heat for hours' ) );
+check( 'no duplicates, at most 15', 15 === count( foodify_search_ingredient_phrases( implode( ',', array_map( static fn( $i ) => 'spice' . chr( 97 + $i ), range( 0, 20 ) ) ) . ', spicea' ) ) );
 $p1 = foodify_search_payload( $rows );
 $p2 = foodify_search_payload( array_reverse( $rows ) );
 check( 'the version changes when the rows change (it is the ETag)', $p1['v'] !== $p2['v'] && 12 === strlen( $p1['v'] ) );
@@ -106,9 +114,10 @@ check( 'it sits in the header actions, before the account button',
 check( 'a plain GET form to the site root',          str_contains( $form, 'method="get" action="/"' ) );
 check( 'the field is named s',                       str_contains( $form, 'name="s"' ) );
 check( 'it searches products, not posts',            str_contains( $form, '<input type="hidden" name="post_type" value="product">' ) );
-check( 'it ships closed (the icon opens it natively)', ! preg_match( '~<details[^>]*\bopen\b~', $form ) );
+check( 'the field is always there — no toggle to open first (client, 9 Nov)', ! str_contains( $form, '<details' ) && ! str_contains( $form, '<summary' ) );
+check( 'the glass is inside the field, and it is the submit button', 1 === preg_match( '~<form class="fd-search__form"[^>]*><label[^>]*>[^<]*</label><button class="fd-search__go" type="submit">~', $form ) );
 check( 'the field has a label',                      str_contains( $form, '<label class="fd-sr" for="fd-search-q">' ) && str_contains( $form, 'id="fd-search-q"' ) );
-check( 'every icon (open, close, submit) carries words for a screen reader', 3 === substr_count( $form, '<span class="fd-sr">' ) );
+check( 'the glass carries words for a screen reader', 1 === substr_count( $form, '<span class="fd-sr">Search</span>' ) );
 check( 'combobox roles are NOT in the static markup (added by the script, so no-JS has no dead popup)',
 	! str_contains( $form, 'role="combobox"' ) );
 check( 'the listbox exists for the script to fill',  str_contains( $form, 'id="fd-search-list" role="listbox"' ) );
@@ -153,9 +162,15 @@ foreach ( [
 	'sessionStorage'                    => 'keeps the index for the session',
 	'window.fdSearchRows'               => 'accepts inline rows (the prototype)',
 	"credentials:'omit'"                => 'fetches the index without cookies (it is public and cacheable)',
-	'textContent=row.name'              => 'writes product names as text, never as HTML',
+	'nm.textContent=name'               => 'writes names as text, never as HTML',
+	'text(a,row.name,'                  => 'names a meal by its product name',
+	'FDSearch.facets(rows,q,4)'         => 'groups categories, labels and ingredients above the meals',
+	'FDSearch.popularFacets(rows,6)'    => 'offers popular searches before anything is typed',
+	"'Meals with '+f.label"             => 'names an ingredient group "Meals with …"',
+	"setAttribute('role','presentation')" => 'keeps group headings out of the options',
 	'FDSearch.seeAll(q,all)'            => 'ends the list with "See all N results" (BROWSE-9)',
-	'opts=opts.concat([{url:href}])'    => 'so Enter on it opens the results page',
+	"item(results(q),'fd-search__all')" => 'so Enter on it opens the results page',
+	"options()[active].querySelector('a').click()" => 'opens an option by clicking its own link',
 ] as $needle => $label ) {
 	check( 'the script ' . $label, str_contains( $js, $needle ) );
 }
@@ -172,10 +187,18 @@ if ( '' !== $node ) {
 	$dir = sys_get_temp_dir() . '/fd-search-' . getmypid();
 	@mkdir( $dir );
 	file_put_contents( $dir . '/engine.js', foodify_search_engine_js() . "\nmodule.exports=FDSearch;\n" );
-	file_put_contents( $dir . '/vectors.json', json_encode( [ 'rows' => $rows, 'queries' => $queries ], JSON_UNESCAPED_UNICODE ) );
+	$frows = array_map( 'foodify_search_row', [
+		[ 'id' => 1, 'name' => 'Express Dal Fry', 'stock' => true, 'cats' => [ [ 'Express', '/c/express/' ] ], 'tags' => [ 'Jain', 'Hot water' ], 'ing' => [ 'yellow moong dal', 'tomato' ] ],
+		[ 'id' => 2, 'name' => 'Moong Cheela',    'stock' => true, 'cats' => [ [ 'Hot & Fresh', '/c/hot/' ] ], 'tags' => [ 'Jain', 'Cooking' ], 'ing' => [ 'yellow moong dal', 'jain' ] ],
+		[ 'id' => 3, 'name' => 'Rajma Chawal',    'stock' => true, 'cats' => [ [ 'Express', '/c/express/' ] ], 'tags' => [ 'Hot water' ], 'ing' => [ 'rajma', 'moong sprouts' ] ],
+		[ 'id' => 4, 'name' => 'Moong Halwa',     'stock' => false, 'cats' => [ [ 'Express', '/c/express/' ] ], 'tags' => [ 'Jain' ], 'ing' => [ 'yellow moong dal' ] ],
+	] );
+	file_put_contents( $dir . '/vectors.json', json_encode( [ 'rows' => $rows, 'queries' => $queries, 'frows' => $frows ], JSON_UNESCAPED_UNICODE ) );
 	file_put_contents( $dir . '/run.js', "const S=require('./engine.js');const v=require('./vectors.json');"
 		. "const out={};for(const q of v.queries){out[q]={rank:S.rank(v.rows,q,6).map(r=>r.id),two:S.rank(v.rows,q,2).map(r=>r.id),norm:S.norm(q),all:S.seeAll(q,S.rank(v.rows,q,200).length)};}"
-		. "out.__popular=S.popular(v.rows,3).map(r=>r.id);process.stdout.write(JSON.stringify(out));" );
+		. "out.__popular=S.popular(v.rows,3).map(r=>r.id);"
+		. "out.__facets={moong:S.facets(v.frows,'moong'),jain:S.facets(v.frows,'jain'),exp:S.facets(v.frows,'exp'),mo:S.facets(v.frows,'mo'),x:S.facets(v.frows,'x'),pop:S.popularFacets(v.frows,3)};"
+		. "process.stdout.write(JSON.stringify(out));" );
 	$raw = (string) shell_exec( escapeshellarg( $node ) . ' ' . escapeshellarg( $dir . '/run.js' ) . ' 2>&1' );
 	$js_out = json_decode( $raw, true );
 	check( 'the JavaScript engine ran', is_array( $js_out ) );
@@ -193,6 +216,15 @@ if ( '' !== $node ) {
 		}
 		check( sprintf( 'all %d queries rank identically in PHP and JavaScript (ids, order, limit, normalisation)', count( $queries ) ), count( $queries ) === $same );
 		check( 'popular products agree', ids( foodify_search_popular( $rows, 3 ) ) === ( $js_out['__popular'] ?? null ) );
+		$f = $js_out['__facets'] ?? [];
+		$lab = static fn( array $fs ): array => array_map( static fn( $x ) => $x['kind'] . ':' . $x['label'] . ':' . $x['n'], $fs );
+		check( '"moong": the ingredients that name it, counted over IN-STOCK meals (the sold-out halwa is not counted)',
+			[ 'ing:yellow moong dal:2', 'ing:moong sprouts:1' ] === $lab( $f['moong'] ?? [] ) );
+		check( '"jain": the label, once — not also as an ingredient', [ 'tag:Jain:2' ] === $lab( $f['jain'] ?? [] ) );
+		check( '"exp": the category, with its own link', [ 'cat:Express:2' ] === $lab( $f['exp'] ?? [] ) && '/c/express/' === ( $f['exp'][0]['url'] ?? '' ) );
+		check( '"mo": two letters name no ingredient', [] === array_values( array_filter( $f['mo'] ?? [], static fn( $x ) => 'ing' === $x['kind'] ) ) );
+		check( 'a query that names nothing has no groups', [] === ( $f['x'] ?? null ) );
+		check( 'popular searches: the categories and labels holding the most meals', [ 'cat:Express:2', 'tag:Hot water:2', 'tag:Jain:2' ] === $lab( $f['pop'] ?? [] ) );
 	}
 	file_put_contents( $dir . '/whole.js', $js );
 	exec( escapeshellarg( $node ) . ' --check ' . escapeshellarg( $dir . '/whole.js' ) . ' 2>&1', $o, $code );
@@ -201,5 +233,8 @@ if ( '' !== $node ) {
 	@rmdir( $dir );
 }
 
+$ssrc2 = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/search.php' );
+check( 'the cached index is keyed by its row shape, so a deploy never serves the old shape', 'foodify_search_index_v2' === FOODIFY_SEARCH_INDEX_KEY
+	&& 3 === substr_count( $ssrc2, 'FOODIFY_SEARCH_INDEX_KEY )' ) + substr_count( $ssrc2, 'FOODIFY_SEARCH_INDEX_KEY, ' ) && ! str_contains( $ssrc2, "'foodify_search_index'" ) );
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

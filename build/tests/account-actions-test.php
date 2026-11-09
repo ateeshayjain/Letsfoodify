@@ -15,6 +15,7 @@ declare( strict_types = 1 );
 
 define( 'ABSPATH', __DIR__ );
 require __DIR__ . '/../theme/foodify/inc/product-spec.php';   // the grid card's helpers the shelf reuses (BROWSE-7)
+require __DIR__ . '/../theme/foodify/inc/cart-stepper.php';  // the card control the shelf shares
 require __DIR__ . '/../theme/foodify/inc/buy-again.php';
 require __DIR__ . '/../theme/foodify/inc/order-actions.php';
 
@@ -72,30 +73,24 @@ echo "── buy again: the markup ──\n";
 $shelf = foodify_buy_again_html( [
 	[ 'id' => 3, 'name' => 'Rajma <b>Chawal</b>', 'url' => '/product/rajma/', 'price' => '₹210', 'img' => '', 'add_url' => '/?add-to-cart=3' ],
 	[ 'id' => 4, 'name' => 'Lemon Poha', 'url' => '/product/poha/', 'price' => '₹99', 'img' => '/i/poha.jpg', 'add_url' => '/?add-to-cart=4' ],
-], '/?wc-ajax=add_to_cart' );
+] );
 check( 'nothing to offer renders nothing at all',        '' === foodify_buy_again_html( [] ) );
 check( 'one card per product',                           2 === substr_count( $shelf, 'class="fd-again__item"' ) );
 check( 'a name is escaped',                              str_contains( $shelf, 'Rajma &lt;b&gt;Chawal&lt;/b&gt;' ) && ! str_contains( $shelf, '<b>Chawal' ) );
 check( 'Add to cart works without JavaScript (a real add-to-cart link)', str_contains( $shelf, 'href="/?add-to-cart=4" rel="nofollow"' ) );
 check( 'the button names its product for a screen reader', str_contains( $shelf, 'aria-label="Add Lemon Poha to cart"' ) );
-check( 'the AJAX endpoint rides on the section',         str_contains( $shelf, 'data-endpoint="/?wc-ajax=add_to_cart"' ) );
+check( 'each card carries the grid\'s own control: Add, then − 1 + (cart-stepper.php)',
+	str_contains( $shelf, foodify_cart_control_html( 4, 'Lemon Poha', '/?add-to-cart=4', 0, 'fd-again__ctl' ) ) );
 check( 'a missing image is a placeholder, not a broken <img>', str_contains( $shelf, '<span class="fd-again__img is-empty" aria-hidden="true"></span>' ) );
 check( 'the section is on the wide rail and labelled',   str_contains( $shelf, 'class="fd-again alignwide" aria-labelledby="fd-again-title"' ) );
-check( 'adding is announced',                            str_contains( $shelf, 'role="status" aria-live="polite" data-fd-again-status' ) );
-$bjs = foodify_buy_again_script();
-check( 'the script tells the mini-cart block',           str_contains( $bjs, 'wc-blocks_added_to_cart' ) );
-check( 'on any failure the script follows the link (WooCommerce reports the error)', 2 === substr_count( $bjs, 'location.href=b.href' ) );
+check( 'the shelf has no add-to-cart script of its own any more', ! function_exists( 'foodify_buy_again_script' ) && ! str_contains( $shelf, 'data-endpoint' ) );
 // BROWSE-7 / ACCOUNT-20 / BROWSE-17: the card carries what the grid card carries, and says when it is in the cart.
 $card = foodify_buy_again_html( [ [ 'id' => 5, 'name' => 'Dal Fry', 'url' => '/p/', 'price' => '₹175', 'add_url' => '/?add-to-cart=5',
-	'chip' => [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 'servings' => 2, 'veg' => true, 'in_cart' => 0 ] ], '/e' );
+	'chip' => [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 'servings' => 2, 'veg' => true ] ] );
 check( 'BROWSE-7: the prep line is the grid card\'s own', str_contains( $card, foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 2 ) ) && str_contains( $card, 'Hot water · 6 min' ) && str_contains( $card, 'Serves 2' ) );
 check( 'BROWSE-7: the veg mark sits before the name', str_contains( $card, '<span class="fd-again__name">' . foodify_veg_mark_html( 'vegetarian' ) . 'Dal Fry</span>' ) );
 check( 'BROWSE-7: no veg mark without a vegetarian declaration', ! str_contains( foodify_buy_again_html( [ [ 'id' => 6, 'name' => 'X', 'url' => '', 'price' => '', 'add_url' => '', 'veg' => false ] ] ), 'fd-veg' ) );
-$inc = foodify_buy_again_html( [ [ 'id' => 5, 'name' => 'Dal Fry', 'url' => '/p/', 'price' => '₹175', 'add_url' => '/?add-to-cart=5', 'in_cart' => 1 ] ], '/e' );
-check( 'BROWSE-17: already in the cart -> the grid\'s in-cart text', str_contains( $inc, ">Add another\u{00A0}· 1 in cart</a>" ) && str_contains( $inc, 'is-in-cart' ) && str_contains( $inc, 'data-in-cart="1"' ) );
-check( 'BROWSE-17: the script writes "Added <name>" into the live region', str_contains( $bjs, "st.textContent='Added '+name;" ) );
-check( 'BROWSE-17: and keeps the in-cart state instead of flipping back to "Add to cart"', str_contains( $bjs, "b.textContent=tpl.replace('%s',String(n));" ) && ! str_contains( $bjs, "b.textContent='Add to cart'" ) );
-check( 'BROWSE-17: from the same text the grid uses', str_contains( $card, 'data-in-cart-text="' . htmlspecialchars( foodify_in_cart_text(), ENT_QUOTES ) . '"' ) );
+check( 'nothing about the cart is printed: the stepper reads it in the browser', str_contains( $card, 'data-fd-cartctl data-product-id="5"' ) && ! str_contains( $card, 'in cart' ) );
 
 /* ========================================================================
  * 10 · Cancel
@@ -233,7 +228,7 @@ echo "── the scripts parse ──\n";
 $node = trim( (string) shell_exec( 'command -v node 2>/dev/null' ) );
 check( 'node is available', '' !== $node );
 if ( '' !== $node ) {
-	foreach ( [ 'buy again' => $bjs, 'order actions' => foodify_order_actions_script() ] as $name => $code ) {
+	foreach ( [ 'cart stepper' => foodify_cart_stepper_script(), 'order actions' => foodify_order_actions_script() ] as $name => $code ) {
 		$tmp = tempnam( sys_get_temp_dir(), 'fdjs' ) . '.js';
 		file_put_contents( $tmp, $code );
 		exec( escapeshellarg( $node ) . ' --check ' . escapeshellarg( $tmp ) . ' 2>&1', $o, $rc );
