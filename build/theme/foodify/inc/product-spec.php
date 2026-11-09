@@ -830,7 +830,13 @@ function foodify_card_prep_html( array $chip, int $servings = 0, string $pack = 
 	// Line 2: the pack and what it feeds — "80 g · Serves 2" (client, 9 Nov 2026:
 	// the size beside the price, as quick-commerce cards show "250 ml").
 	$second = implode( ' · ', array_filter( [ trim( $pack ), $servings > 0 ? 'Serves ' . $servings : '' ], 'strlen' ) );
-	return '<p class="fd-card-prep"><span class="fd-chip' . ( '' !== $mod ? ' ' . $e( $mod ) : '' ) . '">' . $e( $label ) . '</span>'
+	// Method and time stay one line where they fit; where they do not, the line
+	// breaks only AFTER the dot and the time moves whole ("Drinking water ·" /
+	// "1 min" — never "… · 1" / "min"). Client, 9 Nov 2026.
+	$cut  = strrpos( $label, ' · ' );
+	$text = false === $cut ? $e( $label )
+		: $e( substr( $label, 0, $cut ) ) . '&nbsp;· <span class="fd-card-prep__time">' . $e( substr( $label, $cut + strlen( ' · ' ) ) ) . '</span>';
+	return '<p class="fd-card-prep"><span class="fd-chip' . ( '' !== $mod ? ' ' . $e( $mod ) : '' ) . '">' . $text . '</span>'
 		. ( '' !== $second ? '<span class="fd-card-prep__serves">' . $e( $second ) . '</span>' : '' )
 		. '</p>';
 }

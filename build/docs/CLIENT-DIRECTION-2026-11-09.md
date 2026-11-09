@@ -274,3 +274,15 @@ no time promises, no invented fees, and only doors the shop actually has.
   change).
 - An order's page has one way back, **‹ Orders**, at every width (it had
   "‹ Profile" and the prototype's "← All orders").
+
+### Then: the View cart bar ("super ugly") and the prep line
+
+- **View cart is one card**: one outline, one radius, clipped — the
+  free-delivery line on top (its meter a hairline along the band's foot,
+  light green once unlocked), the red View cart band under it edge to edge.
+  It was a white rounded card with a fully round red pill pushed into its foot.
+- **"Hot water · 6 min" stays one line** (it is one fact). Where a long
+  method does not fit, the line breaks only after the dot and the time moves
+  whole ("Drinking water ·" / "1 min", never "… · 1" / "min").
+- **Buy again** carries the pack beside its price ("₹185 · 80 g"), as the
+  grid card's foot does, instead of a line of its own.

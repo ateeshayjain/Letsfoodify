@@ -872,7 +872,7 @@ def catalog_json():
     for p in PRODUCTS + COMBOS:
         out[slug_of(p)] = {"name": p[0], "price": p[3], "was": p[4], "hue": p[5],
                            "stock": "soldout" not in p[9], "screen": screen_of(p),
-                           "combo": bool(combo_of(p)), "prep": card_prep(p, again=True), "id": pid_of(p),
+                           "combo": bool(combo_of(p)), "prep": card_prep(p), "id": pid_of(p),
                            "pack": "" if combo_of(p) else pdp_values(p).get("net_quantity", ""),
                            "ctl": cart_control(p, "fd-again__ctl") if "soldout" not in p[9] else ""}
     return out
@@ -2342,8 +2342,8 @@ MOCK_SCRIPT = r'''<script>
         '<section class="fd-again alignwide" aria-labelledby="fd-again-title" data-fd-again><h2 class="fd-again__title" id="fd-again-title">Buy again</h2>' +
         '<p class="fd-again__lede">From your recent orders.</p><ul class="fd-again__list">' + ids.map(function (sl) {
           var p = CATALOG[sl];
-          return '<li class="fd-again__item"><a class="fd-again__link" href="#" data-s="' + p.screen + '">' + bowl(p.hue).replace('fx-bowl', 'fx-bowl fd-again__img') +
-            '<span class="fd-again__name">' + (window.FX_VEG || '') + esc(p.name) + '</span></a>' + (p.prep || '') + '<span class="fd-again__price">' + rs(p.price) + '</span>' +
+          return '<li class="fd-again__item"><a class="fd-again__link" href="#" data-s="' + p.screen + '">' + '<span class="fd-again__img is-empty">' + bowl(p.hue) + '</span>' +
+            '<span class="fd-again__name">' + (window.FX_VEG || '') + esc(p.name) + '</span></a>' + (p.prep || '') + '<span class="fd-again__price">' + rs(p.price) + (p.pack ? '<span class="fd-again__pack"> · ' + esc(p.pack) + '</span>' : '') + '</span>' +
             p.ctl + '</li>';
         }).join('') + '</ul></section>';
     });

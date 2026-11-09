@@ -192,8 +192,10 @@ check( 'the H1 filter prints them on the product page', str_contains( (string) f
 
 echo "── BROWSE-1: the card leads with the prep method ──\n";
 $cp = foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 2 );
-check( '"[Hot water · 6 min] Serves 2" — no dot to strand when it wraps', '<p class="fd-card-prep"><span class="fd-chip fd-chip--hot">Hot water · 6 min</span><span class="fd-card-prep__serves">Serves 2</span></p>' === $cp );
-check( 'no servings, just the chip', '<p class="fd-card-prep"><span class="fd-chip">Drinking water · 1 min</span></p>' === foodify_card_prep_html( [ 'label' => 'Drinking water · 1 min', 'modifier' => '' ] ) );
+check( '"[Hot water · 6 min] Serves 2" — no dot to strand when it wraps', '<p class="fd-card-prep"><span class="fd-chip fd-chip--hot">Hot water&nbsp;· <span class="fd-card-prep__time">6 min</span></span><span class="fd-card-prep__serves">Serves 2</span></p>' === $cp );
+check( 'no servings, just the chip', '<p class="fd-card-prep"><span class="fd-chip">Drinking water&nbsp;· <span class="fd-card-prep__time">1 min</span></span></p>' === foodify_card_prep_html( [ 'label' => 'Drinking water · 1 min', 'modifier' => '' ] ) );
+check( 'a long method wraps only after the dot, and the time moves whole (client, 9 Nov)', str_contains( (string) file_get_contents( __DIR__ . '/../theme/foodify/style.css' ), '.fd-card-prep__time { white-space: nowrap; }' ) );
+check( 'a label without a time is printed as it is', str_contains( foodify_card_prep_html( [ 'label' => 'Ready to eat', 'modifier' => '' ] ), '>Ready to eat</span>' ) );
 check( 'no method, no line (the old yield line stays)', '' === foodify_card_prep_html( [] ) );
 $pd = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' );
 check( 'the card filter puts the chip BEFORE the title and drops the duplicate yield line',
@@ -241,7 +243,7 @@ if ( '' !== $node ) {
 }
 
 echo "── pack size on the card (client, 9 Nov) ──\n";
-check( 'the second line is "80 g · Serves 2"', str_contains( foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => '' ], 2, '80 g' ), '<span class="fd-card-prep__serves">80 g · Serves 2</span>' ) );
+check( 'the second line is "80 g · Serves 2" (where a caller still asks for it)', str_contains( foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => '' ], 2, '80 g' ), '<span class="fd-card-prep__serves">80 g · Serves 2</span>' ) );
 check( 'a pack with no servings (a box) shows the pack alone', str_contains( foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => '' ], 0, '3 × 80 g' ), '>3 × 80 g</span>' ) );
 check( 'no pack declared: servings alone, as before', str_contains( foodify_card_prep_html( [ 'label' => 'x', 'modifier' => '' ], 2 ), '>Serves 2</span>' ) );
 $pdsrc = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' );

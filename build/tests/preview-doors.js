@@ -476,7 +476,8 @@ const path = require('path');
     const r = { before: orders() };
     pin.value = '744101'; pin.dispatchEvent(new Event('input', { bubbles: true })); await sl(30);
     r.popped = !!(d() && d().open); r.msg = d() && d().querySelector('[data-fd-pin-block-msg]').textContent; r.locked = btn.getAttribute('aria-disabled');
-    d().close(); await sl(10); r.focusBack = document.activeElement === pin;
+    // A dialog's close event is queued, not immediate: wait for focus to land (bounded), not a fixed 10 ms.
+    d().close(); for (let t = 0; t < 20 && document.activeElement !== pin; t++) await sl(50); r.focusBack = document.activeElement === pin;
     btn.click(); await sl(30);
     r.reopened = d().open; r.payWindow = !document.querySelector('.fx-rzp').hidden; r.after = orders();
     d().close();
