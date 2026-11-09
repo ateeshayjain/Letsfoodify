@@ -118,7 +118,7 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 	// the old yield line, under the name, as before.
 	$chip  = foodify_prep_chip_parts( $product );
 	$combo = function_exists( 'foodify_combo_data' ) && null !== foodify_combo_data( $product );
-	$lead  = $chip ? foodify_card_prep_html( $chip, $combo ? 0 : (int) $product->get_meta( '_foodify_servings' ) ) : '';
+	$lead  = $chip ? foodify_card_prep_html( $chip, $combo ? 0 : (int) $product->get_meta( '_foodify_servings' ), (string) $product->get_meta( '_foodify_net_quantity' ) ) : '';
 	$yield = '' !== $lead ? '' : foodify_card_yield( [
 		'servings'     => (string) $product->get_meta( '_foodify_servings' ),
 		'prep_minutes' => (string) $product->get_meta( '_foodify_prep_minutes' ),
@@ -387,13 +387,13 @@ add_action( 'wp_footer', static function (): void {
 		// reads as one meal.
 		$box = function_exists( 'foodify_combo_data' ) && null !== foodify_combo_data( $product );
 		$one = $box ? __( 'box', 'foodify' ) : __( 'pack', 'foodify' );
-		printf(
-			'<div class="fd-sticky-atc" data-unit="%1$s" data-unit-one="%4$s" data-unit-many="%5$s" hidden><div class="fd-sticky-atc__price"><strong class="fd-sticky-atc__total">%2$s</strong><span class="fd-sticky-atc__qty">1 %4$s</span></div><button type="button" class="wp-element-button">%3$s</button></div>',
-			esc_attr( (string) wc_get_price_to_display( $product ) ),
+		$ctl = function_exists( 'foodify_cart_control_html' ) && $product->is_type( 'simple' )
+			? foodify_cart_control_html( $product->get_id(), $product->get_name(), $product->add_to_cart_url(), max( 0, (int) $product->get_max_purchase_quantity() ), 'fd-sticky-atc__ctl' )
+			: '';
+		echo foodify_sticky_atc_html( // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the builder; the price is wc_price().
+			(string) wc_get_price_to_display( $product ),
 			wp_kses_post( wc_price( wc_get_price_to_display( $product ) ) ),
-			esc_html__( 'Add to cart', 'foodify' ),
-			esc_attr( $one ),
-			esc_attr( $box ? __( 'boxes', 'foodify' ) : __( 'packs', 'foodify' ) )
+			__( 'Add to cart', 'foodify' ), $one, $box ? __( 'boxes', 'foodify' ) : __( 'packs', 'foodify' ), $ctl
 		);
 	}
 	echo '<script>' . foodify_pdp_script() . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- static script, no data.

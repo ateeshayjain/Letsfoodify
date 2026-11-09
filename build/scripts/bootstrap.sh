@@ -496,9 +496,9 @@ if [[ "$PHASE" == "all" ]]; then
       warn "foodify_stock_alert_retention_days NOT set — unsent stock alerts are kept until cancelled (client to confirm a period)"
     fi
     if command wp option get foodify_public_offer >/dev/null 2>&1; then
-      ok "foodify_public_offer is set — its coupon is listed under Offers while it is live"
+      ok "foodify_public_offer is set — while its coupon is live it is listed under Offers on product pages and under Available offers in the cart (one tap applies it)"
     else
-      ok "foodify_public_offer unset — no coupon is advertised on product pages"
+      ok "foodify_public_offer unset — no coupon is advertised on product pages or in the cart"
     fi
   else
     echo "    [dry-run] wp option get foodify_delivery_zones / foodify_stock_alert_retention_days / foodify_public_offer"
@@ -540,6 +540,26 @@ if [[ "$PHASE" == "all" ]]; then
     BOX_PID="$(command wp post create --post_type=page --post_status=publish \
                --post_title="Build your own box" --post_name=build-a-box --porcelain)"
     ok "created page Build your own box (#$BOX_PID)"
+  fi
+
+  # /track-order/ (the footer links it). WooCommerce's own tracking form; the
+  # step timeline (inc/order-progress.php) prints under it once an order is
+  # found. Created only when ABSENT — an existing page's content is the
+  # client's, so a page without the form is reported, never rewritten.
+  TRACK_PID="$(command wp post list --post_type=page --name=track-order --field=ID --posts_per_page=1 2>/dev/null | head -1 || true)"
+  if [[ -n "$TRACK_PID" ]]; then
+    if command wp post get "$TRACK_PID" --field=post_content 2>/dev/null | grep -q 'woocommerce_order_tracking'; then
+      ok "page /track-order/ present with the tracking form (#$TRACK_PID)"
+    else
+      warn "page /track-order/ (#$TRACK_PID) has no [woocommerce_order_tracking] — add the shortcode block to it, or customers cannot track"
+    fi
+  elif [[ $DRY -eq 1 ]]; then
+    echo "    [dry-run] wp post create --post_type=page --post_title=\"Track your order\" --post_name=track-order (content: [woocommerce_order_tracking])"
+  else
+    TRACK_PID="$(command wp post create --post_type=page --post_status=publish \
+               --post_title="Track your order" --post_name=track-order \
+               --post_content='<!-- wp:shortcode -->[woocommerce_order_tracking]<!-- /wp:shortcode -->' --porcelain)"
+    ok "created page Track your order (#$TRACK_PID)"
   fi
 
   if [[ $DRY -eq 0 ]]; then

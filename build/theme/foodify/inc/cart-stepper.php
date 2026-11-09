@@ -52,6 +52,23 @@ function foodify_cart_control_html( int $product_id, string $name, string $add_u
 }
 
 /**
+ * The product page's sticky bar (PRODUCT-2/17): the price for the quantity
+ * chosen and an Add to cart that presses the real one. Since 9 Nov 2026 it also
+ * carries the card's control: once the meal is in the cart the button gives way
+ * to − N + (style.css, on .fd-cartctl.is-in-cart), as on the cards.
+ * `$price_html` is wc_price() output; everything else is escaped here.
+ */
+function foodify_sticky_atc_html( string $unit_price, string $price_html, string $label, string $one, string $many, string $control = '' ): string {
+	$e = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES, 'UTF-8' );
+	return '<div class="fd-sticky-atc" data-unit="' . $e( $unit_price ) . '" data-unit-one="' . $e( $one ) . '" data-unit-many="' . $e( $many ) . '" hidden>'
+		. '<div class="fd-sticky-atc__price"><strong class="fd-sticky-atc__total">' . $price_html . '</strong>'
+		. '<span class="fd-sticky-atc__qty">1 ' . $e( $one ) . '</span></div>'
+		. '<button type="button" class="wp-element-button">' . $e( $label ) . '</button>'
+		. $control
+		. '</div>';
+}
+
+/**
  * The "View cart" bar. Printed hidden and empty: the script fills it from
  * this browser's cart (see the file comment on caching) — up to three of the
  * items' pictures, overlapping, and "2 items". One live region rides along for
@@ -59,12 +76,36 @@ function foodify_cart_control_html( int $product_id, string $name, string $add_u
  */
 function foodify_view_cart_bar_html( string $cart_url ): string {
 	$e = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES, 'UTF-8' );
-	return '<a class="fd-viewcart" href="' . $e( $cart_url ) . '" data-fd-viewcart hidden>'
+	return '<div class="fd-viewcart" data-fd-viewcart hidden>'
+		// Free-delivery progress (client, 9 Nov 2026): "Add ₹34 for free delivery", then "Free delivery unlocked".
+		. '<p class="fd-viewcart__free" data-fd-viewcart-free hidden><span data-fd-viewcart-free-text></span>'
+		. '<span class="fd-viewcart__meter" aria-hidden="true"><span data-fd-viewcart-meter></span></span></p>'
+		. '<a class="fd-viewcart__link" href="' . $e( $cart_url ) . '">'
 		. '<span class="fd-viewcart__thumb" data-fd-viewcart-thumb aria-hidden="true"></span>'
 		. '<span class="fd-viewcart__text"><strong class="fd-viewcart__title">View cart</strong>'
 		. '<span class="fd-viewcart__sum" data-fd-viewcart-sum></span></span>'
 		. '<span class="fd-viewcart__go" aria-hidden="true">›</span></a>'
+		. '</div>'
 		. '<p class="fd-sr" role="status" aria-live="polite" data-fd-cart-status></p>';
+}
+
+/**
+ * The strip's words. `$basis` is the cart as WooCommerce's free-delivery check
+ * sees it — items with tax, AFTER codes, BEFORE the box discount (a fee; see
+ * box-builder.php) — and `$min` the zone's minimum (foodify_free_shipping_threshold).
+ * The script builds the same words (freeText); the test holds them together.
+ *
+ * @return array{show:bool,unlocked:bool,text:string,percent:float}
+ */
+function foodify_view_cart_free( float $basis, ?float $min ): array {
+	if ( null === $min || $min <= 0 || $basis <= 0 ) {
+		return [ 'show' => false, 'unlocked' => false, 'text' => '', 'percent' => 0.0 ];
+	}
+	if ( $basis >= $min ) {
+		return [ 'show' => true, 'unlocked' => true, 'text' => 'Free delivery unlocked', 'percent' => 100.0 ];
+	}
+	$left = (int) ceil( $min - $basis );
+	return [ 'show' => true, 'unlocked' => false, 'text' => 'Add ₹' . number_format( $left ) . ' more for free delivery', 'percent' => round( $basis / $min * 100, 1 ) ];
 }
 
 /**
@@ -125,6 +166,18 @@ function foodify_cart_stepper_script(): string {
   }
   // foodify_view_cart_summary()'s words.
   function itemsText(n){ return n < 1 ? '' : n + (n === 1 ? ' item' : ' items'); }
+  // foodify_view_cart_free()'s words. The basis is the cart as WooCommerce's
+  // free-delivery check sees it: items with tax, after codes, before the box
+  // discount (a fee, so not in total_discount).
+  function freeBasis(c){
+    var t = (c && c.totals) || {}, u = Math.pow(10, +(t.currency_minor_unit != null ? t.currency_minor_unit : 2));
+    return ((+t.total_items || 0) + (+t.total_items_tax || 0) - (+t.total_discount || 0) - (+t.total_discount_tax || 0)) / u;
+  }
+  function freeText(basis, min){
+    if (!(min > 0) || !(basis > 0)) return null;
+    if (basis >= min) return { unlocked: true, text: 'Free delivery unlocked', percent: 100 };
+    return { unlocked: false, text: 'Add ₹' + Math.ceil(min - basis).toLocaleString('en-IN') + ' more for free delivery', percent: Math.round(basis / min * 1000) / 10 };
+  }
 
   function paint(){
     [].forEach.call(document.querySelectorAll('[data-fd-cartctl]'), function(el){
@@ -153,7 +206,14 @@ function foodify_cart_stepper_script(): string {
       pics.forEach(function(src){ var i = new Image(); i.src = src; i.alt = ''; i.width = 40; i.height = 40; th.appendChild(i); });
       if (!pics.length && n) th.textContent = String(n);
       th.classList.toggle('is-count', !pics.length);
-      bar.setAttribute('aria-label', n ? 'View cart, ' + itemsText(n) : 'View cart');
+      bar.querySelector('.fd-viewcart__link').setAttribute('aria-label', n ? 'View cart, ' + itemsText(n) : 'View cart');
+      var fr = bar.querySelector('[data-fd-viewcart-free]'), f = n ? freeText(freeBasis(cart), +cfg.freeMin) : null;
+      fr.hidden = !f;
+      if (f) {
+        fr.classList.toggle('is-unlocked', f.unlocked);
+        fr.querySelector('[data-fd-viewcart-free-text]').textContent = f.text;
+        fr.querySelector('[data-fd-viewcart-meter]').style.width = f.percent + '%';
+      }
     }
   }
   function say(msg){ var s = document.querySelector('[data-fd-cart-status]'); if (s) { s.textContent = ''; s.textContent = msg; } }
@@ -162,6 +222,9 @@ function foodify_cart_stepper_script(): string {
     quiet = true;
     document.body.dispatchEvent(new CustomEvent(added ? 'wc-blocks_added_to_cart' : 'wc-blocks_removed_from_cart', { bubbles: true, cancelable: true }));
     quiet = false;
+    // On the cart page (a "You might also like" Add), the classic cart table
+    // re-renders itself on WooCommerce's own event — totals, savings and all.
+    if (window.jQuery && document.querySelector('.woocommerce-cart-form')) window.jQuery(document.body).trigger('wc_update_cart');
   }
 
   function sync(id, name){
@@ -290,6 +353,8 @@ add_action( 'wp_enqueue_scripts', static function (): void {
 		'window.FOODIFY_CART = ' . wp_json_encode( [
 			'api'      => esc_url_raw( rest_url( 'wc/store/v1/' ) ),
 			'boxLabel' => __( 'Box', 'foodify' ),   // box-builder.php's item line, which marks a pack inside a box
+			// The free-delivery minimum the zone offers (shortcodes.php); null = no strip.
+			'freeMin'  => function_exists( 'foodify_free_shipping_threshold' ) ? foodify_free_shipping_threshold() : null,
 		] ) . ";\n" . foodify_cart_stepper_script()
 	);
 } );

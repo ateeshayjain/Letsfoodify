@@ -65,3 +65,86 @@ pop-up (separate commit, `843d843`, see `FEATURES-A-NOTES.md`).
 5. **On a real phone** (add to `DEVICE-CHECKLIST.md` run): the View cart bar
    clears the home indicator; the category row scrolls with a thumb; the
    search field does not zoom the page on focus (it is 16px).
+
+---
+
+## Second round — "all of the 11" (what else to borrow from Blinkit)
+
+I proposed eleven things to borrow, and four not to (no countdowns or time
+promises, no invented "2 left" stock, no text under 16px, no tips or fees).
+The client asked for all eleven.
+
+| # | What it became | Where |
+|---|---|---|
+| 1 | **A delivery line under the logo**: "By Wed 11 Nov · 201301 ▾". Tap it to change the PIN in a small sheet (the same check as the product page). It is printed hidden and filled in the browser from the PIN this device last checked, so a cached page carries no PIN or date. It is absent while `foodify_delivery_zones` is unset. | `inc/delivery-estimate.php`, `parts/header.html` |
+| 2 | **Free delivery on the View cart bar**: "Add ₹34 more for free delivery" with a thin meter, then "Free delivery unlocked". The amount is counted on the same basis checkout uses (items with tax, after codes, before the box discount). | `inc/cart-stepper.php` |
+| 3 | **Pack size on every card**: "80 g · Serves 2", from the declared net quantity. | `inc/product-spec.php` |
+| 4 | **The cart as a bill**: "Cart totals" becomes **Bill details**. A green "You saved ₹X on this order" sits above checkout and counts sale prices, codes and the box discount. It leaves out the pay-online saving, which is not decided until checkout. **You might also like** under the cart shows best sellers that are not already in it. | `inc/cart-extras.php`, `inc/home-rows.php`, `templates/page-cart.html` |
+| 5 | **Home rows**: Bestsellers · Just add hot water · Under ₹200 · Jain meals. On a phone each row swipes sideways; from 782px it is one row of four with "See all". Rows are queried by slug and price, never by term id, and show in-stock meals only. | `inc/home-rows.php`, `templates/front-page.html` |
+| 6 | **− N + on the product page's sticky bar** once the meal is in the cart. | `inc/cart-stepper.php`, `inc/product-display.php` |
+| 7 | **Recent searches**: the last five, shown above Popular searches, with Clear. They are stored on this device only, never in the page, and never sent anywhere. | `inc/search.php` |
+| 8 | **Where your order is**, as steps: Placed → Packed → Shipped → Delivered. It appears on the order's own page and on Track order. | `inc/order-progress.php` |
+| 9 | **Available offers in the cart** with one-tap Apply. It lists the coupon already named in `foodify_public_offer`, in the product page's own words, read live from the coupon. | `inc/cart-extras.php`, `inc/offers.php` |
+| 10 | **Order again** on every order (processing, delivered, problem reported, cancelled), first in the orders list and under the order. | `inc/order-progress.php` |
+| 11 | **A tab bar on phones**: Home · Categories · Order again · Account. The View cart bar floats just above it. It is not shown on a product page, the cart or checkout, where those pages' own bars own the bottom. | `inc/tab-bar.php` |
+
+### Found while building these (worth knowing)
+
+- **The orders list never had a reorder button on the live theme.**
+  WooCommerce's orders list offers only Pay · View · Cancel; there is no
+  "order again" action there (checked against its source). The theme's
+  earlier "Reorder first" filter relabelled an action that never existed. The
+  prototype showed the button, so nobody noticed. Item 10 adds it, using
+  WooCommerce's own order-again URL and nonce. WooCommerce's handler does the
+  adding and checks the order belongs to the customer.
+- **Nothing created `/track-order/`**, although the footer links to it.
+  `bootstrap.sh` now creates it with WooCommerce's tracking form, and only
+  when it is missing. An existing page without the form is reported, not
+  rewritten.
+- **"Out for delivery" is not a step.** The store has no such status; only a
+  courier plugin would add it, and the step appears automatically if one does.
+  A step the store can never reach would sit grey on every order and read as
+  "stuck". The courier link appears on Shipped once something supplies
+  `foodify_order_tracking_url`, the same filter the WhatsApp updates read.
+  Today nothing does.
+- **Offers come from the existing setting, not a new one.** A second,
+  hand-typed list of offers could say something checkout does not honour.
+  Partner and creator codes are coupons too, so the theme never lists
+  coupons by itself.
+
+### Decisions taken on the client's behalf (say if any is wrong)
+
+- **"Packed" has no date.** The store records when an order was placed,
+  completed (shipped) and marked delivered, but not when it was packed.
+- **Order again also covers cancelled orders.** It does not cover unpaid or
+  failed orders, which offer Pay instead.
+- **The tab bar's Categories goes to the shop** (every meal, with filters).
+  The category row under the search is still one tap away on every page.
+- **Tab labels are 16px**, like all text. "Order again" fits a 390px phone;
+  the label shortens with "…" rather than shrink on anything narrower.
+
+### How it is tested
+
+- `tests/cart-extras-test.php` (40): You saved, the offer words and Apply,
+  the home rows' queries, You might also like.
+- `tests/order-progress-test.php` (31): every status's steps, the courier
+  link rules, Order again's URL, statuses and placement.
+- `tests/tab-bar-test.php` (19): the tabs, the current tab, where it is not
+  shown, the stacking.
+- `tests/search-test.php`: recent searches run in node (dedupe, cap,
+  one-letter rule).
+- `tests/preview-doors.js` (118, real browser): recent searches and Clear;
+  the tab bar, its current tab and the View cart bar above it; Bill details,
+  You saved, Apply and the saving it adds; You might also like leaving out
+  the cart; Order again on every order; the order's steps.
+
+### Check on staging
+
+6. **Order again** from the orders list puts the order's items in the cart
+   and lands on the cart, for a processing order as well as a delivered one.
+7. **`/track-order/`**: with an order number and its email, the steps appear
+   above the order's lines.
+8. **Bill details**: the heading reads so, and "You saved" equals the
+   struck-through prices plus any code plus any box discount on a real cart.
+9. **The tab bar on a real phone** clears the home indicator, and the View
+   cart bar sits above it.

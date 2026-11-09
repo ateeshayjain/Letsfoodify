@@ -71,21 +71,13 @@ add_action( 'woocommerce_account_dashboard', static function (): void {
 }, 5 );
 
 /**
- * Reorder is the PRIMARY action on an order row.
- *
- * WooCommerce lists "View" first and buries "Order again" behind it, which is
- * backwards for a store people buy the same six things from. WP-05: "one-tap
- * reorder as the primary action, not 'view details'."
+ * "View" is secondary: "Details". The PRIMARY action on an order row is
+ * "Order again" (WP-05: "one-tap reorder as the primary action, not 'view
+ * details'"), which inc/order-progress.php ADDS — WooCommerce's orders list
+ * has no order-again action of its own, so this filter used to relabel one
+ * that was never there.
  */
 add_filter( 'woocommerce_my_account_my_orders_actions', static function ( array $actions, $order ): array {
-	if ( isset( $actions['order-again'] ) ) {
-		$actions['order-again']['name'] = __( 'Reorder', 'foodify' );
-		$actions['order-again']['class'] = trim( ( $actions['order-again']['class'] ?? '' ) . ' fd-reorder' );
-		// Move it to the front without losing the others.
-		$again = $actions['order-again'];
-		unset( $actions['order-again'] );
-		$actions = [ 'order-again' => $again ] + $actions;
-	}
 	if ( isset( $actions['view'] ) ) {
 		$actions['view']['name']  = __( 'Details', 'foodify' );
 		$actions['view']['class'] = trim( ( $actions['view']['class'] ?? '' ) . ' fd-secondary' );

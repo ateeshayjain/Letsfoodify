@@ -334,23 +334,131 @@ function foodify_delivery_answer( string $pin, ?array $lookup, array $cfg, DateT
  * The widget's markup. Printed `hidden`: without the script it cannot answer,
  * and a field that does nothing is worse than no field. The script un-hides it.
  */
-function foodify_delivery_widget_html( array $cfg, string $pin_url ): string {
+function foodify_delivery_widget_html( array $cfg, string $pin_url, string $id = 'fd-deliver' ): string {
 	$cfg = foodify_delivery_normalise_config( $cfg );
 	if ( null === $cfg ) {
 		return '';
 	}
-	$e = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
-	return '<div class="fd-deliver" id="fd-deliver" data-fd-deliver hidden'
+	$e  = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
+	$id = preg_replace( '/[^a-z0-9-]/', '', strtolower( $id ) ) ?: 'fd-deliver';
+	return '<div class="fd-deliver" id="' . $id . '" data-fd-deliver hidden'
 		. ' data-pin-url="' . $e( $pin_url ) . '"'
 		. ' data-config="' . $e( (string) json_encode( $cfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ) . '">'
 		. '<form class="fd-deliver__form" novalidate>'
-		. '<label class="fd-deliver__label" for="fd-deliver-pin">Check delivery</label>'
+		. '<label class="fd-deliver__label" for="' . $id . '-pin">Check delivery</label>'
 		. '<span class="fd-deliver__row">'
-		. '<input class="fd-deliver__input" id="fd-deliver-pin" name="pin" type="text" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" autocomplete="postal-code" placeholder="PIN code" aria-describedby="fd-deliver-out">'
+		. '<input class="fd-deliver__input" id="' . $id . '-pin" name="pin" type="text" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" autocomplete="postal-code" placeholder="PIN code" aria-describedby="' . $id . '-out">'
 		. '<button class="fd-deliver__go" type="submit">Check</button>'
 		. '</span></form>'
-		. '<p class="fd-deliver__out" id="fd-deliver-out" role="status" aria-live="polite"></p>'
+		. '<p class="fd-deliver__out" id="' . $id . '-out" role="status" aria-live="polite"></p>'
 		. '</div>';
+}
+
+/**
+ * The delivery line under the logo (client, 9 Nov 2026 — Blinkit's "15 minutes ·
+ * Home ▾"): "By Wed 11 Nov · 201301 ▾". Printed EMPTY and hidden in the header
+ * template, which is cached for everyone; foodify_delivery_line_script() fills
+ * it in this browser from the PIN it last checked (localStorage `foodify_pin`),
+ * with the same rules as the product page. Tapping it opens the PIN sheet.
+ */
+function foodify_delivery_line_html(): string {
+	return '<div class="fd-dline" data-fd-dline hidden>'
+		. '<button type="button" class="fd-dline__btn" data-fd-dline-open aria-haspopup="dialog" aria-controls="fd-dline-sheet">'
+		. '<svg class="fd-dline__pin" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></svg>'
+		. '<span class="fd-dline__text" data-fd-dline-text>Check delivery to your PIN</span>'
+		. '<svg class="fd-dline__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+		. '</button></div>';
+}
+
+/** The sheet the line opens: the product page's own PIN check, and Done. */
+function foodify_delivery_line_sheet_html( array $cfg, string $pin_url ): string {
+	$widget = foodify_delivery_widget_html( $cfg, $pin_url, 'fd-dline-deliver' );
+	if ( '' === $widget ) {
+		return '';
+	}
+	return '<dialog class="fd-dline-sheet" id="fd-dline-sheet" aria-labelledby="fd-dline-sheet-title">'
+		. '<h2 class="fd-dline-sheet__title" id="fd-dline-sheet-title">Where should we deliver?</h2>'
+		. '<p class="fd-dline-sheet__lede">Your PIN code tells you when an order arrives. We remember it on this device.</p>'
+		. $widget
+		. '<form method="dialog" class="fd-dline-sheet__done"><button type="submit" class="wp-element-button">Done</button></form>'
+		. '</dialog>';
+}
+
+/**
+ * The words on the line for one answer of foodify_delivery_answer(). The script
+ * builds the same words (lineText); tests/lane-a-test.php holds them together.
+ *   ok             "By Wed 11 Nov · 201301"   (the LAST day of the window — a promise is its far end)
+ *   unserviceable  "No delivery to 744101"
+ *   unconfirmed    "201301 · date at checkout"
+ *   other / none   "Check delivery to your PIN"
+ */
+function foodify_delivery_line_text( string $pin, array $answer ): string {
+	$status = (string) ( $answer['status'] ?? '' );
+	if ( 'ok' === $status ) {
+		$label = (string) ( $answer['estimate']['label'] ?? $answer['message'] ?? '' );
+		$label = (string) preg_replace( '/^Delivers\s+/u', '', $label );
+		$parts = preg_split( '/\s+–\s+/u', $label ) ?: [ $label ];
+		return 'By ' . trim( (string) end( $parts ) ) . ' · ' . $pin;
+	}
+	if ( 'unserviceable' === $status ) {
+		return 'No delivery to ' . $pin;
+	}
+	if ( 'unconfirmed' === $status ) {
+		return $pin . ' · date at checkout';
+	}
+	return 'Check delivery to your PIN';
+}
+
+/**
+ * Fills every [data-fd-dline] (the prototype has one per screen) and wires the
+ * sheet. Runs AFTER foodify_delivery_script(), whose foodifyDelivery.answer it
+ * uses and whose `foodify:pin` event it listens for, so checking a PIN on a
+ * product page updates the line too.
+ */
+function foodify_delivery_line_script(): string {
+	return <<<'JS'
+(function(w){
+  var sheet=document.getElementById('fd-dline-sheet'),box=sheet&&sheet.querySelector('[data-fd-deliver]');
+  if(!sheet||!box||!w.foodifyDelivery)return;
+  var cfg;try{cfg=JSON.parse(box.getAttribute('data-config')||'');}catch(e){return;}
+  var url=box.getAttribute('data-pin-url')||'';
+  function saved(){try{return w.localStorage.getItem('foodify_pin')||'';}catch(e){return '';}}
+  function lookup(pin){
+    if(typeof w.foodifyPinLookup==='function')return Promise.resolve(w.foodifyPinLookup(pin));
+    return fetch(url+pin,{credentials:'same-origin'}).then(function(r){if(!r.ok)throw r;return r.json();}).then(function(j){
+      var po=j&&j[0]&&j[0].Status==='Success'&&j[0].PostOffice&&j[0].PostOffice[0];return po?{city:po.District||'',state:po.State||''}:null;});
+  }
+  // foodify_delivery_line_text()'s words.
+  function lineText(pin,a){
+    if(a.status==='ok'){var l=String((a.estimate&&a.estimate.label)||a.message||'').replace(/^Delivers\s+/,''),p=l.split(/\s+–\s+/);return 'By '+p[p.length-1].trim()+' · '+pin;}
+    if(a.status==='unserviceable')return 'No delivery to '+pin;
+    if(a.status==='unconfirmed')return pin+' · date at checkout';
+    return 'Check delivery to your PIN';
+  }
+  function paint(text,state){
+    [].forEach.call(document.querySelectorAll('[data-fd-dline]'),function(el){
+      el.hidden=false;el.setAttribute('data-state',state);
+      el.querySelector('[data-fd-dline-text]').textContent=text;
+      el.querySelector('[data-fd-dline-open]').setAttribute('aria-label',text+'. Change delivery PIN code');
+    });
+  }
+  function refresh(){
+    var pin=saved();
+    if(!/^[1-9]\d{5}$/.test(pin)){paint('Check delivery to your PIN','none');return;}
+    lookup(pin).then(function(hit){var a=w.foodifyDelivery.answer(pin,hit,cfg,Date.now());paint(lineText(pin,a),a.status);},
+      function(){paint('Check delivery to your PIN','none');});
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest?e.target.closest('[data-fd-dline-open]'):null;if(!b)return;
+    e.preventDefault();if(sheet.showModal)sheet.showModal();else sheet.setAttribute('open','');
+    var i=sheet.querySelector('input[name=pin]');if(i){i.focus();if(i.select)i.select();}
+  });
+  sheet.addEventListener('close',refresh);
+  document.addEventListener('foodify:pin',refresh);
+  w.addEventListener('storage',function(e){if(e.key==='foodify_pin')refresh();});
+  refresh();
+})(window);
+JS;
 }
 
 /**
@@ -415,7 +523,8 @@ function foodify_delivery_script(): string {
   }
   w.foodifyDelivery={answer:answer,estimate:estimate};
   if(typeof document==='undefined')return;
-  function store(v){try{if(v===undefined)return w.localStorage.getItem(KEY);w.localStorage.setItem(KEY,v);}catch(e){}return null;}
+  function store(v){try{if(v===undefined)return w.localStorage.getItem(KEY);w.localStorage.setItem(KEY,v);
+    document.dispatchEvent(new CustomEvent('foodify:pin',{detail:v}));}catch(e){}return null;}
   [].forEach.call(document.querySelectorAll('[data-fd-deliver]'),function(box){
     var cfg;try{cfg=JSON.parse(box.getAttribute('data-config')||'');}catch(e){return;}
     var url=box.getAttribute('data-pin-url')||'',form=box.querySelector('form'),input=box.querySelector('input'),out=box.querySelector('.fd-deliver__out'),seq=0;
@@ -492,9 +601,27 @@ add_filter( 'render_block_woocommerce/add-to-cart-form', static function ( strin
 	return $html . foodify_delivery_widget_html( $cfg, rest_url( 'foodify/v1/pin/' ) ); // Escaped in the builder.
 }, 10 );
 
+/**
+ * The delivery line's sheet, wherever the header is (every storefront page),
+ * once zones are set. Printed before the script below, which binds every
+ * [data-fd-deliver] it finds — the sheet's included.
+ */
+add_action( 'wp_footer', static function (): void {
+	$cfg = foodify_delivery_config();
+	if ( null === $cfg || is_admin() || ( function_exists( 'is_checkout' ) && is_checkout() ) ) {
+		return;
+	}
+	echo foodify_delivery_line_sheet_html( $cfg, rest_url( 'foodify/v1/pin/' ) ) . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the builder.
+	$GLOBALS['foodify_delivery_widget_printed'] = true;
+	$GLOBALS['foodify_delivery_line_printed']   = true;
+}, 20 );
+
 add_action( 'wp_footer', static function (): void {
 	if ( ! empty( $GLOBALS['foodify_delivery_widget_printed'] ) ) {
 		echo '<script>' . foodify_delivery_script() . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- static script, no data.
+		if ( ! empty( $GLOBALS['foodify_delivery_line_printed'] ) ) {
+			echo '<script>' . foodify_delivery_line_script() . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- static script, no data.
+		}
 		return;
 	}
 	if ( function_exists( 'is_checkout' ) && is_checkout() && ! ( function_exists( 'is_order_received_page' ) && is_order_received_page() ) ) {

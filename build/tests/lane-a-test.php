@@ -293,5 +293,25 @@ check( 'the delivery check is APPENDED after the form (it was prepended, above t
 	str_contains( $src( 'delivery-estimate.php' ), "return \$html . foodify_delivery_widget_html(" )
 	&& ! str_contains( $src( 'delivery-estimate.php' ), ") . \$html; // Escaped" ) );
 
+echo "── the delivery line under the logo (client, 9 Nov) ──\n";
+$okA = [ 'status' => 'ok', 'message' => 'Delivers Tue 10 – Wed 11 Nov', 'estimate' => [ 'label' => 'Delivers Tue 10 – Wed 11 Nov' ] ];
+check( 'a window reads as its far end: "By Wed 11 Nov · 201301"', 'By Wed 11 Nov · 201301' === foodify_delivery_line_text( '201301', $okA ) );
+check( 'one day: "By Tue 10 Nov"', 'By Tue 10 Nov · 201301' === foodify_delivery_line_text( '201301', [ 'status' => 'ok', 'estimate' => [ 'label' => 'Delivers Tue 10 Nov' ] ] ) );
+check( 'across months: the later month', 'By Mon 2 Nov · 110001' === foodify_delivery_line_text( '110001', [ 'status' => 'ok', 'estimate' => [ 'label' => 'Delivers Fri 30 Oct – Mon 2 Nov' ] ] ) );
+check( 'a PIN we do not serve says so', 'No delivery to 744101' === foodify_delivery_line_text( '744101', [ 'status' => 'unserviceable' ] ) );
+check( 'a PIN under two states: the date waits for checkout', '201301 · date at checkout' === foodify_delivery_line_text( '201301', [ 'status' => 'unconfirmed' ] ) );
+check( 'anything else asks for a PIN', 'Check delivery to your PIN' === foodify_delivery_line_text( '999999', [ 'status' => 'unknown' ] ) );
+$lj = foodify_delivery_line_script();
+check( 'the script builds the same words', str_contains( $lj, "return 'By '+p[p.length-1].trim()+' · '+pin;" ) && str_contains( $lj, "'No delivery to '+pin" ) && str_contains( $lj, "pin+' · date at checkout'" ) );
+check( 'it reads the PIN this device checked, and hears a new one', str_contains( $lj, "getItem('foodify_pin')" ) && str_contains( $lj, "addEventListener('foodify:pin',refresh)" ) && str_contains( foodify_delivery_script(), "new CustomEvent('foodify:pin'" ) );
+$hdr = (string) file_get_contents( __DIR__ . '/../theme/foodify/parts/header.html' );
+check( 'the header carries foodify_delivery_line_html() verbatim, right after the logo', 1 === substr_count( $hdr, foodify_delivery_line_html() ) && strpos( $hdr, 'wp:site-title' ) < strpos( $hdr, foodify_delivery_line_html() ) && strpos( $hdr, foodify_delivery_line_html() ) < strpos( $hdr, 'wp:navigation' ) );
+check( 'the cached header holds no PIN and no date — printed hidden, words filled in the browser', str_contains( foodify_delivery_line_html(), 'data-fd-dline hidden' ) && ! preg_match( '/\d{6}/', foodify_delivery_line_html() ) );
+$sheet = foodify_delivery_line_sheet_html( $main, '/wp-json/foodify/v1/pin/' );
+check( 'the sheet is a labelled dialog with the PIN check and Done', str_contains( $sheet, '<dialog class="fd-dline-sheet" id="fd-dline-sheet" aria-labelledby="fd-dline-sheet-title">' ) && str_contains( $sheet, '<form method="dialog"' ) );
+check( 'its PIN check has ids of its own, so a product page (which has one too) has no duplicates',
+	str_contains( $sheet, 'id="fd-dline-deliver-pin"' ) && ! str_contains( $sheet, 'id="fd-deliver-pin"' ) && str_contains( foodify_delivery_widget_html( $main, '/x/' ), 'id="fd-deliver-pin"' ) );
+check( 'no zones set, no sheet (and so no line)', '' === foodify_delivery_line_sheet_html( [], '/x/' ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

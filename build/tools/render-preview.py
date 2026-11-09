@@ -792,8 +792,8 @@ def card_prep(p):
     if p[1] not in CHIP:
         return ""
     mod, label = CHIP[p[1]]
-    return php("echo foodify_card_prep_html($a[0], (int)$a[1])",
-               {"label": f"{label} · {p[2].split()[0]} min", "modifier": mod}, p[8])
+    return php("echo foodify_card_prep_html($a[0], (int)$a[1], $a[2])",
+               {"label": f"{label} · {p[2].split()[0]} min", "modifier": mod}, p[8], pdp_values(p).get("net_quantity", ""))
 
 
 def veg_mark():
@@ -1366,6 +1366,26 @@ def state_select(id_, label="State"):
             f'<select id="{id_}" name="state" class="input-text" required>{opts}</select></p>')
 
 
+def progress_html():
+    """inc/order-progress.php's steps for each order state the prototype has, with
+    date tokens the page script fills in (the theme formats dates with wp_date)."""
+    d = "'dates'=>['placed'=>'__PLACED__','shipped'=>'','delivered'=>'__DELIVERED__']"
+    states = {
+        "Processing": "['status'=>'processing'," + d + "]",
+        "Shipped": "['status'=>'completed','dispatched'=>true," + d + "]",
+        "Delivered": "['status'=>'completed','dispatched'=>true,'delivered_at'=>1," + d + "]",
+        "Problem reported": "['status'=>'return-requested','dispatched'=>true,'delivered_at'=>1," + d + "]",
+        "Cancelled": "['status'=>'cancelled']",
+    }
+    return {k: php("echo foodify_order_progress_html(foodify_order_progress(" + v + "));") for k, v in states.items()}
+
+
+def offers_html(applied):
+    """The cart's Available offers, from the theme: the demo public coupon worded by foodify_offer_lines()."""
+    return php("$c=['code'=>'WELCOME5','type'=>'percent','amount'=>5.0,'min_spend'=>0.0,'expires'=>'','free_shipping'=>false];"
+               "echo foodify_public_offers_html(foodify_cart_offers(foodify_offer_lines(['coupon'=>$c]),'WELCOME5'), " + ("['welcome5']" if applied else "[]") + ");")
+
+
 def cart_or_checkout(which):
     if which == "cart":
         # [woocommerce_cart]'s own markup — shop_table_responsive with data-title
@@ -1387,8 +1407,9 @@ def cart_or_checkout(which):
 <input type="text" id="coupon_code" class="input-text" placeholder="Partner or creator code" autocomplete="off">
 <button type="submit" class="button wp-element-button" name="apply_coupon">Apply</button></div>
 <button type="submit" class="button wp-element-button" name="update_cart" disabled>Update cart</button></td></tr></tbody>
-</table></form>
-<div class="cart-collaterals"><div class="cart_totals"><h2>Cart totals</h2>
+</table>
+<div class="fx-offers"></div></form>
+<div class="cart-collaterals"><div class="cart_totals"><h2>Bill details</h2>
 <table class="shop_table shop_table_responsive"><tbody>
 <tr class="cart-subtotal"><th>Subtotal</th><td data-title="Subtotal"></td></tr>
 <tr class="cart-discount" hidden><th></th><td data-title="Coupon"></td></tr>
@@ -1397,6 +1418,7 @@ def cart_or_checkout(which):
 </tbody></table>
 <p class="fd-cart-prepaid"><!--FX_CART_PREPAID--></p>
 <p class="fd-cart-promise is-estimate"><!--FX_CART_PROMISE--></p>
+<div class="fx-saved"></div>
 <div class="wc-proceed-to-checkout"><a href="/checkout/" data-s="checkout" class="checkout-button button alt wc-forward wp-element-button">Proceed to checkout</a></div>
 </div></div></div>'''.replace('<!--FX_CART_PREPAID-->', php("echo foodify_cart_prepaid_hint(625.0, ['razorpay'], [])")).replace('<!--FX_CART_PROMISE-->', html.escape(json.loads(php("echo json_encode(foodify_cart_promise(['needs_shipping'=>true]))"))['message']))
     # Checkout. A RETURNING customer sees the chooser and every field already
@@ -1539,6 +1561,7 @@ DLT-registered. Guest checkout stays the default path either way.</div>
 <section data-panel-body="view-order" hidden>
 <p><a href="#" data-panel="orders" class="fd-secondary">← All orders</a></p>
 <p class="fx-vo-head"></p>
+<div class="fx-vo-progress"></div>
 <section class="woocommerce-order-details"><h2 class="woocommerce-order-details__title">Order details</h2>
 <table class="woocommerce-table woocommerce-table--order-details shop_table order_details">
 <thead><tr><th class="product-name">Product</th><th class="product-total">Total</th></tr></thead>
@@ -1546,7 +1569,7 @@ DLT-registered. Guest checkout stays the default path either way.</div>
 <section class="woocommerce-customer-details"><h2 class="woocommerce-column__title">Delivery address</h2>
 <address class="fx-vo-address"></address></section>
 <div class="fx-vo-actions"></div><div class="fx-vo-repeat"></div><div class="fx-vo-wa"></div>
-<p class="fx-o-actions"><button type="button" class="wp-element-button fd-reorder fx-vo-reorder">Reorder these items</button>
+<p class="fx-o-actions"><button type="button" class="wp-element-button fd-reorder fx-vo-reorder">Order again</button>
 <a href="#" class="woocommerce-button button invoice wp-element-button fd-secondary" data-note="On the live site this downloads the order&#8217;s GST invoice as a PDF, from the free PDF Invoices &amp; Packing Slips plugin. It needs Foodify&#8217;s GSTIN before it can be issued.">Download invoice (PDF)</a></p>
 </section>
 <section data-panel-body="address-book" hidden>
@@ -1617,7 +1640,16 @@ MOCK_SCRIPT = r'''<script>
   var CATALOG = __CATALOG__;
   var PDP_SRC = __PDP_SCRIPT__;
   var THRESHOLD = 599, FLAT = 59, PREPAID = 25;
-  var COUPONS = { NALIN10: { rate: 0.10, label: 'partner code' } };
+  var COUPONS = { NALIN10: { rate: 0.10, label: 'partner code' }, WELCOME5: { rate: 0.05, label: 'public offer' } };
+  // foodify_public_offer = WELCOME5 in this demo; the partner code is never listed.
+  var OFFER_CODE = 'WELCOME5', OFFERS = __OFFERS__;
+  // inc/order-progress.php, per order state; dates filled in here as wp_date('D j M') would.
+  var PROGRESS = __PROGRESS__;
+  function dayLabel(ts) { var d = new Date(ts); return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()] + ' ' + d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]; }
+  function progress(o) {
+    var h = PROGRESS[o.status] || PROGRESS[o.delivered ? 'Delivered' : 'Processing'];
+    return h.split('__PLACED__').join((o.placedAt || Date.parse(o.date)) ? dayLabel(o.placedAt || Date.parse(o.date)) : esc(o.date)).split('__DELIVERED__').join(o.delivered ? dayLabel(o.delivered) : '');
+  }
   var KEY = 'foodify-prototype-v3';
 
   // ── state ────────────────────────────────────────────────────────────────
@@ -1718,6 +1750,14 @@ MOCK_SCRIPT = r'''<script>
   // ── screens ──────────────────────────────────────────────────────────────
   var TABS = $$('.proto .tab');
   var current = null, afterSignIn = null;
+  var CATS = __CATS__;
+  // Order again and Account both open the account (its landing IS the orders list here);
+  // which tab was tapped decides which one is current.
+  var TAB_AGAIN = false;
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('.fd-tabbar__tab') : null;
+    if (t) TAB_AGAIN = /orders/.test(t.getAttribute('href'));
+  }, true);
   function show(id, push, anchor) {
     if (SCREENS.indexOf(id) < 0) return;
     // What WordPress does before it renders: the account page signs you in
@@ -1729,6 +1769,17 @@ MOCK_SCRIPT = r'''<script>
     SCREENS.forEach(function (s) { screen(s).hidden = (s !== id); });
     // cart-stepper.php prints the View cart bar everywhere but the cart, checkout and account.
     document.body.classList.toggle('fx-viewcart-off', ['cart', 'checkout', 'account', 'signin', 'order'].indexOf(id) >= 0);
+    // tab-bar.php: not printed on a product page, the cart or checkout; current tab by page.
+    var tb = document.querySelector('.fd-tabbar');
+    if (tb) {
+      tb.hidden = id.indexOf('p-') === 0 || ['cart', 'checkout', 'order'].indexOf(id) >= 0;
+      var cur = id === 'home' ? 'home' : (id === 'shop' || id === 'combos' || CATS.indexOf(id) >= 0) ? 'cats' : (id === 'account' || id === 'signin') ? (TAB_AGAIN ? 'again' : 'acct') : '';
+      if (cur !== 'again' && cur !== 'acct') TAB_AGAIN = false;
+      [].forEach.call(tb.querySelectorAll('.fd-tabbar__tab'), function (t, i) {
+        var on = ['home', 'cats', 'again', 'acct'][i] === cur;
+        t.classList.toggle('is-current', on); if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+      });
+    }
     TABS.forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.s === id)); });
     current = id;
     var R = RENDER[id] || (id.indexOf('p-') === 0 ? RENDER.product : null);
@@ -1794,7 +1845,9 @@ MOCK_SCRIPT = r'''<script>
     var items = L.map(function (l) { var p = CATALOG[l.s]; n += l.q; sub += p.price * l.q;
       return { key: lineKey(l), id: p.id, quantity: l.q, name: p.name, images: [{ thumbnail: bowlPic(p.hue) }], quantity_limits: { maximum: 9999 },
                item_data: l.box ? [{ name: 'Box', value: l.box.size + '-pack box' }] : [] }; });
-    return { items: items, items_count: n, totals: { total_items: String(Math.round(sub * 100)), total_items_tax: '0', currency_minor_unit: 2, currency_code: 'INR' } };
+    var disc = totals(L, S.coupon, null).disc;
+    return { items: items, items_count: n, totals: { total_items: String(Math.round(sub * 100)), total_items_tax: '0',
+             total_discount: String(Math.round(disc * 100)), total_discount_tax: '0', currency_minor_unit: 2, currency_code: 'INR' } };
   }
   function storeSaved() {
     save(); paintHeader();
@@ -1948,6 +2001,17 @@ MOCK_SCRIPT = r'''<script>
     // bootstrap.sh titles the two methods "Delivery" and "Free delivery" (BUY-15).
     $('.shipping td', root).innerHTML = t.ship ? amt(t.ship) : 'Free delivery';  // foodify_shipping_method_label()
     $('.order-total td', root).innerHTML = '<strong>' + amt(t.total) + '</strong>';
+    // foodify_cart_savings(): sale prices + codes + the box discount, whole rupees.
+    var saved = t.disc + t.boxDisc;
+    L.forEach(function (l) { var p = CATALOG[l.s]; if (p.was > p.price) saved += (p.was - p.price) * l.q; });
+    saved = Math.floor(saved);
+    $('.fx-saved', root).innerHTML = saved >= 1 ? '<p class="fd-saved">You saved <strong>' + rs(saved) + '</strong> on this order</p>' : '';
+    $('.fx-offers', root).innerHTML = S.coupon === OFFER_CODE ? OFFERS.applied : OFFERS.open;
+    // "You might also like" never offers what is already in the cart (foodify_cart_suggest_args).
+    var have = {}; L.forEach(function (l) { have[CATALOG[l.s].id] = 1; });
+    $$('.fd-row--cart li', root).forEach(function (li) {
+      var c = li.querySelector('[data-fd-cartctl]'); li.hidden = !!(c && have[c.getAttribute('data-product-id')]);
+    });
   }
   function applyCoupon(code, root) {
     code = (code || '').trim().toUpperCase();
@@ -2286,7 +2350,8 @@ MOCK_SCRIPT = r'''<script>
       return '<tr><td class="woocommerce-orders-table__cell-order-number"><a href="#" data-view="' + o.no + '"><strong>#' + o.no + '</strong></a></td><td>' + o.date + '</td><td>' + o.status + '</td>' +
         '<td class="woocommerce-orders-table__cell-order-total">' + rs(o.t.total) + '<span class="fx-meta">' + o.t.count + (o.t.count === 1 ? ' item' : ' items') + '</span></td>' +
         '<td class="woocommerce-orders-table__cell-order-actions">' +
-        '<button type="button" class="wp-element-button fd-reorder" data-reorder="' + o.no + '">Reorder</button>' +
+        // inc/order-progress.php adds Order again, first, to WooCommerce's orders table.
+        '<button type="button" class="wp-element-button fd-reorder" data-reorder="' + o.no + '" aria-label="Order again: put everything from order ' + o.no + ' in your cart">Order again</button>' +
         // inc/order-actions.php adds these two to WooCommerce's orders table.
         (o.status === 'Processing' ? '<a href="#" class="woocommerce-button button foodify-cancel fd-secondary" data-view="' + o.no + '" data-open="fd-cancel">Cancel</a>' : '') +
         (returnState(o) === 'open' ? '<a href="#" class="woocommerce-button button foodify-return fd-secondary" data-view="' + o.no + '" data-open="fd-return">Report a problem</a>' : '') +
@@ -2300,6 +2365,7 @@ MOCK_SCRIPT = r'''<script>
       $('.fx-vo-actions', root).innerHTML = orderActions(o);
       $('.fx-vo-repeat', root).innerHTML = repeatOffer(o);
       $('.fx-vo-wa', root).innerHTML = o.wa ? FX_BD.waStop.split('99999').join(String(o.no)) : '';
+      $('.fx-vo-progress', root).innerHTML = progress(o);
       $('.fx-vo-head', root).innerHTML = 'Order <mark class="order-number">#' + o.no + '</mark> was placed on <mark class="order-date">' + o.date + '</mark> and is currently <mark class="order-status">' + o.status + '</mark>.';
       orderTable(o, $('.fx-vo-lines', root), $('.fx-vo-totals', root));
       $('.fx-vo-address', root).innerHTML = addressHTML(o.addr);
@@ -2629,7 +2695,7 @@ MOCK_SCRIPT = r'''<script>
     // Controls the theme's own scripts answer (reviews, box builder, search, referral sharing).
     if (el.matches('.fd-rsum__chip, .fd-rsum__clear, [data-fd-photo], .fd-rv-dialog__close, .fd-box__minus, .fd-box__plus, ' +
                    '[data-fd-copy], [data-fd-share], .fd-search__toggle, .fd-search__go, .fd-deliver__go, ' +
-                   '[data-fd-add], [data-fd-inc], [data-fd-dec]')) return;
+                   '[data-fd-add], [data-fd-inc], [data-fd-dec], [data-fd-dline-open], [data-fd-offer]')) return;
     if (el.matches('a[href^="https://wa.me/"]')) { e.preventDefault(); say('On the site this opens WhatsApp with the message ready to send.'); return; }
     if (el.hasAttribute('data-note')) { e.preventDefault(); say(el.getAttribute('data-note')); return; }
     e.preventDefault();
@@ -2713,7 +2779,7 @@ MOCK_SCRIPT = r'''<script>
       var all = S.orders.slice(); if (S.last && !all.some(function (o) { return o.no === S.last.no; })) all.unshift(S.last);
       var o = all.filter(function (x) { return x.no === no; })[0], out = $('.fx-track-result', root);
       if (!o) { out.innerHTML = '<ul class="woocommerce-error" role="alert"><li>Sorry, the order could not be found. Please contact us if you are having difficulty finding your order details.</li></ul>'; return; }
-      out.innerHTML = '<div class="woocommerce-message" role="status">Order <mark>#' + o.no + '</mark> was placed on <mark>' + o.date + '</mark> and is currently <mark>' + o.status + '</mark>.</div>' +
+      out.innerHTML = '<div class="woocommerce-message" role="status">Order <mark>#' + o.no + '</mark> was placed on <mark>' + o.date + '</mark> and is currently <mark>' + o.status + '</mark>.</div>' + progress(o) +
         '<table class="woocommerce-table shop_table order_details"><tbody class="fx-t-lines"></tbody><tfoot class="fx-t-totals"></tfoot></table>';
       orderTable(o, $('.fx-t-lines', out), $('.fx-t-totals', out)); return;
     }
@@ -2822,6 +2888,14 @@ def loop_rows(related, query):
         return (picks + rest)[:4]
     if LISTING is not None and query.get("inherit", True):
         return LISTING
+    # The home page's shelves (inc/home-rows.php): the same slugs and price, in stock.
+    row = query.get("fdRow")
+    if row:
+        keep = {"bestsellers": lambda r: True,
+                "hot-water": lambda r: "Just add hot water" in prep_terms(r),
+                "under-200": lambda r: r[3] <= 200,
+                "jain": lambda r: "Jain" in diet_terms(r)}.get(row, lambda r: True)
+        return [r for r in by_popularity(PRODUCTS + COMBOS) if "soldout" not in r[9] and keep(r)]
     if query.get("inherit") is False and query.get("__woocommerceStockStatus"):
         return [r for r in by_popularity(PRODUCTS) if "soldout" not in r[9]]
     # The home page's best-sellers row: orderBy popularity.
@@ -3094,6 +3168,8 @@ body.fx-viewcart-off .fd-viewcart{display:none}
 .fd-products .fx-time{display:none}
 .fx-empty{padding:var(--wp--preset--spacing--60) 0;font-size:var(--wp--preset--font-size--md)}
 .fd-cart-back a{color:var(--wp--preset--color--mute)}
+.fd-row--cart li[hidden]{display:none}
+.fd-tabbar[hidden]{display:none!important}
 .fx-gallery .fx-bowl{max-width:440px;margin:0 auto}
 .fx-brief{margin-top:var(--wp--preset--spacing--40);border:1px dashed var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--card);padding:0 var(--wp--preset--spacing--40)}
 .fx-brief>summary{min-height:var(--wp--custom--tap-target);display:flex;align-items:center;font-size:var(--wp--preset--font-size--sm);font-weight:600;color:var(--wp--preset--color--mute);cursor:pointer}
@@ -3425,7 +3501,7 @@ def body_class(sid, setup):
 # Pure halves the preview also renders from (added with each feature lane).
 BRIDGE_EXTRA = ["payments", "pincodes", "delivery-estimate", "stock-alerts", "offers", "box-builder", "reviews",
                 "address-book", "order-actions", "whatsapp", "repeat-orders", "cart-recovery", "referrals",
-                "search", "buy-again", "cart-stepper"]
+                "search", "buy-again", "cart-stepper", "home-rows", "cart-extras", "order-progress", "tab-bar"]
 PHP_CACHE = {}
 
 
@@ -3526,9 +3602,8 @@ def main():
             # the sticky bar, hidden until the real button scrolls away. The
             # theme's one script runs once per product screen (see MOCK_SCRIPT).
             unit, units = ("box", "boxes") if combo_of(PDP) else ("pack", "packs")
-            body += (f'<div class="fd-sticky-atc" data-unit="{PDP[3]}" data-unit-one="{unit}" data-unit-many="{units}" hidden><div class="fd-sticky-atc__price">'
-                     f'<strong class="fd-sticky-atc__total">₹{PDP[3]}</strong><span class="fd-sticky-atc__qty">1 {unit}</span></div>'
-                     '<button type="button" class="wp-element-button">Add to cart</button></div>')
+            body += php("echo foodify_sticky_atc_html($a[0], $a[1], 'Add to cart', $a[2], $a[3], $a[4])",
+                        str(PDP[3]), f"₹{PDP[3]}", unit, units, cart_control(PDP, "fd-sticky-atc__ctl"))
         if label:
             tabs.append(f'<button class="tab" role="tab" aria-selected="{str(sid == "home").lower()}" data-s="{sid}">{label}</button>')
         ids.append(sid)
@@ -3549,7 +3624,10 @@ def main():
         "window.foodifyPinLookup=function(p){var h=window.FX_PINS.pins[p];if(!h)return null;"
         "return{city:h[0]>=0?window.FX_PINS.districts[h[0]]:'',state:h[1]>=0?window.FX_PINS.states[h[1]]:''};};",
         php("echo foodify_delivery_script()"),
+        # The line under the logo (every screen's header) and its PIN sheet.
+        php("echo foodify_delivery_line_script()"),
         php("echo foodify_box_script()"),
+        php("echo foodify_public_offers_script()"),
         "(function(){var src=" + json.dumps(php("echo foodify_review_filter_script()")).replace("</", "<\\/") + ";"
         "[].forEach.call(document.querySelectorAll('[id^=s-p-]'),function(el){try{(new Function('document',src))({"
         "querySelector:function(q){return el.querySelector(q);},querySelectorAll:function(q){return el.querySelectorAll(q);},"
@@ -3565,6 +3643,7 @@ def main():
         "get activeElement(){return document.activeElement;}});}catch(e){}});})();",
         php("echo foodify_referral_script()"),
         # Cards' Add → − 1 + and the View cart bar, against window.foodifyCartApi (the page's own cart).
+        "window.FOODIFY_CART=" + json.dumps({"boxLabel": "Box", "freeMin": OFFER_CFG["free_shipping_min"]}) + ";",
         php("echo foodify_cart_stepper_script()"),
         "window.FX_BD=" + json.dumps(bd_templates(), ensure_ascii=False) + ";"
         "window.FX_VEG=" + json.dumps(veg_mark()) + ";"
@@ -3573,6 +3652,9 @@ def main():
     ])
     script = (MOCK_SCRIPT.replace('__SCREENS__', json.dumps(ids))
               .replace('__CATALOG__', json.dumps(catalog_json(), ensure_ascii=False))
+              .replace('__PROGRESS__', json.dumps(progress_html(), ensure_ascii=False).replace('</', '<\\/'))
+              .replace('__CATS__', json.dumps([c[0] for c in CATEGORIES]))
+              .replace('__OFFERS__', json.dumps({"open": offers_html(False), "applied": offers_html(True)}, ensure_ascii=False).replace('</', '<\\/'))
               .replace('__PDP_SCRIPT__', json.dumps(PDP_SCRIPT).replace("</", "<\\/")))
 
     doc = f"""<title>Foodify Storefront</title>
@@ -3618,7 +3700,7 @@ def main():
 </div></div>
 <div class="banner"><b>A working prototype of the new letsfoodify.com</b>, generated from the real WordPress theme.
 Browse, filter, open any product, add to the cart, check out, and find the order in your account. In the cart, try the
-partner code <b>NALIN10</b>.
+partner code <b>NALIN10</b>, or tap Apply on the public offer <b>WELCOME5</b> (set as <code>foodify_public_offer</code> here).
 <details><summary>What is real and what is not</summary>
 <p><b>Real:</b> the layout, type, colours and every component come from the theme the developer installs. The cart
 follows the shop's actual rules — free delivery from ₹599 after codes, ₹59 below it, ₹25 off for paying online,
@@ -3644,7 +3726,9 @@ what checkout does with a PIN the shop does not deliver to: try <b>744101</b> (P
 The live site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
 live until you confirm it.</p></details></div>
 {''.join(panels)}
-{php("echo foodify_view_cart_bar_html('/cart/')").replace('data-fd-viewcart hidden', 'data-fd-viewcart data-s="cart" hidden')}
+{php("echo foodify_view_cart_bar_html('/cart/')").replace('class="fd-viewcart__link" href="/cart/"', 'class="fd-viewcart__link" href="/cart/" data-s="cart"')}
+{php("echo foodify_tab_bar_html(['home'=>'/','cats'=>'/shop/','again'=>'/my-account/orders/','acct'=>'/my-account/']);").replace('href="/"', 'href="/" data-s="home"').replace('href="/shop/"', 'href="/shop/" data-s="shop"').replace('href="/my-account/orders/"', 'href="/my-account/orders/" data-s="account"').replace('href="/my-account/"', 'href="/my-account/" data-s="account"')}
+{php("echo foodify_delivery_line_sheet_html(foodify_delivery_normalise_config($a[0]), $a[1])", DEMO_DELIVERY, "/wp-json/foodify/v1/pin/")}
 {theme_js}
 {script}"""
     doc = doc.replace("/*__FLEX_RULES__*/", "".join(f".{c}{{{st}}}" for c, st in sorted(FLEX_RULES.items())), 1)

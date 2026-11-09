@@ -2129,13 +2129,30 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 /* ==== The View cart bar (cart-stepper.php) ================================
    Floats at the bottom once the cart has something in it, at every width, so
    adding never leaves the page and always shows that it worked (client, 9 Nov
-   2026). Not printed on the cart, checkout or account. On a phone's product
-   page the sticky Add-to-cart bar owns the bottom edge; this one sits on it. */
+   2026). On top of it, the free-delivery strip. Not printed on the cart,
+   checkout or account. On a phone's product page it sits on the sticky bar. */
 .fd-viewcart { display: none; }
 .fd-viewcart:not([hidden]) {
   position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
   bottom: calc(var(--wp--preset--spacing--40) + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box; width: min(22rem, calc(100% - 2 * var(--wp--preset--spacing--40)));
+  display: flex; flex-direction: column;
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: calc(var(--wp--custom--tap-target) / 2 + var(--wp--preset--spacing--20));
+}
+.fd-viewcart__free {
+  margin: 0; padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--40) var(--wp--preset--spacing--10);
+  display: grid; gap: var(--wp--preset--spacing--10);
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; text-align: center; color: var(--wp--preset--color--char);
+}
+.fd-viewcart__free[hidden] { display: none; }
+.fd-viewcart__free.is-unlocked { color: var(--wp--preset--color--leaf-ink); }
+.fd-viewcart__meter { display: block; height: 4px; border-radius: var(--wp--custom--radius--pill); background: var(--wp--preset--color--line); overflow: hidden; }
+.fd-viewcart__meter > span { display: block; height: 100%; width: 0; background: var(--wp--preset--color--leaf); border-radius: inherit; transition: width .3s var(--wp--custom--ease, ease); }
+.fd-viewcart__free.is-unlocked .fd-viewcart__meter { display: none; }
+@media (prefers-reduced-motion: reduce) { .fd-viewcart__meter > span { transition: none; } }
+.fd-viewcart__link {
   display: flex; align-items: center; gap: var(--wp--preset--spacing--30);
   padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
   background: var(--wp--preset--color--flame-ink); color: var(--wp--preset--color--surface);
@@ -2162,13 +2179,19 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
   background: color-mix(in srgb, var(--wp--preset--color--surface) 18%, transparent);
   font-size: var(--wp--preset--font-size--xl); line-height: 1;
 }
-.fd-viewcart:hover .fd-viewcart__go { background: color-mix(in srgb, var(--wp--preset--color--surface) 28%, transparent); }
-.fd-viewcart:focus-visible { outline: 2px solid var(--wp--preset--color--char); outline-offset: 3px; }
-body:has(.fd-viewcart:not([hidden])) { padding-bottom: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--60) + env(safe-area-inset-bottom, 0px)); }
+.fd-viewcart__link:hover .fd-viewcart__go { background: color-mix(in srgb, var(--wp--preset--color--surface) 28%, transparent); }
+.fd-viewcart__link:focus-visible { outline: 2px solid var(--wp--preset--color--char); outline-offset: 3px; }
+body:has(.fd-viewcart:not([hidden])) { padding-bottom: calc(var(--wp--custom--tap-target) * 2 + var(--wp--preset--spacing--60) + env(safe-area-inset-bottom, 0px)); }
 /* On the sticky bar: its height is one button plus its own padding. */
 body:has(.fd-sticky-atc:not([hidden])) .fd-viewcart:not([hidden]) {
   bottom: calc(var(--wp--custom--tap-target) + 4 * var(--wp--preset--spacing--30) + env(safe-area-inset-bottom, 0px));
 }
+
+/* The sticky bar's stepper: once the meal is in the cart, − N + replaces its button. */
+.fd-sticky-atc .fd-sticky-atc__ctl { width: auto; flex: 0 0 auto; }
+.fd-sticky-atc .fd-sticky-atc__ctl:not(.is-in-cart) { display: none; }
+.fd-sticky-atc:has(.fd-sticky-atc__ctl.is-in-cart) > .wp-element-button { display: none; }
+.fd-sticky-atc .fd-cartctl__stepper { width: 8rem; }
 
 /* ==== Cards: the prep line is text, not a pill (client, 9 Nov 2026) =========
    In a two-up phone card a pill that wraps ("Hot water · / 6 min" inside a
@@ -2370,3 +2393,171 @@ body:has(.fd-sticky-atc:not([hidden])) .fd-viewcart:not([hidden]) {
 .fd-search__list.is-chips :is(.fd-search__glyph, .fd-search__meta) { display: none; }
 /* Open suggestions sit above the View cart bar. */
 .fd-search__pop, .fd-search.is-enhanced .fd-search__pop { z-index: 70; }
+
+/* ==== The delivery line under the logo (client, 9 Nov 2026) ================ */
+.fd-dline[hidden] { display: none; }
+.fd-dline__btn {
+  display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--10);
+  min-height: var(--wp--custom--tap-target); max-width: 100%; margin: 0; padding: 0;
+  border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: var(--wp--preset--font-size--base); font-weight: 600;
+  color: var(--wp--preset--color--char); text-align: left;
+}
+.fd-dline__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fd-dline__pin { flex: 0 0 auto; color: var(--wp--preset--color--flame-ink); }
+.fd-dline__chev { flex: 0 0 auto; color: var(--wp--preset--color--mute); }
+.fd-dline[data-state="unserviceable"] .fd-dline__text { color: var(--wp--preset--color--danger); }
+.fd-dline__btn:hover .fd-dline__text { text-decoration: underline; }
+.fd-dline-sheet {
+  box-sizing: border-box; width: min(26rem, calc(100vw - 2 * var(--wp--preset--spacing--40)));
+  padding: var(--wp--preset--spacing--60); border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  background: var(--wp--preset--color--paper); color: var(--wp--preset--color--char);
+}
+.fd-dline-sheet::backdrop { background: color-mix(in srgb, var(--wp--preset--color--char) 55%, transparent); }
+.fd-dline-sheet__title { margin: 0 0 var(--wp--preset--spacing--20); font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); line-height: 1.2; }
+.fd-dline-sheet__lede { margin: 0 0 var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); }
+.fd-dline-sheet .fd-deliver { margin: 0 0 var(--wp--preset--spacing--40); }
+.fd-dline-sheet__done { margin: 0; }
+.fd-dline-sheet__done .wp-element-button { width: 100%; min-height: var(--wp--custom--tap-target); }
+@media (min-width: 900px) {
+  .fd-header > .fd-dline { flex: 0 1 auto; min-width: 0; }
+}
+@media (max-width: 899px) {
+  .wp-block-group.fd-header.fd-header {
+    grid-template-areas: "logo acct cart" "dline acct cart" "search search search" "cats cats cats";
+    row-gap: 0;
+  }
+  .fd-header > .fd-dline { grid-area: dline; min-width: 0; margin-top: calc(-1 * var(--wp--preset--spacing--10)); }
+  .fd-header > .fd-dline .fd-dline__btn { min-height: 2rem; }
+  .fd-header > .fd-dline .fd-dline__btn::after { content: ""; position: absolute; inset: calc(-1 * var(--wp--preset--spacing--10)) 0; }
+  .fd-header > .fd-dline .fd-dline__btn { position: relative; }
+  .fd-header__actions > .fd-search { margin-top: var(--wp--preset--spacing--20); }
+  .fd-catrow { margin-top: var(--wp--preset--spacing--20); }
+  .fd-header > .fd-dline[hidden] + * { margin-top: 0; }
+}
+
+/* ==== Home rows (inc/home-rows.php, client 9 Nov 2026) ===================== */
+.fd-rows { display: grid; gap: var(--wp--preset--spacing--70); }
+.fd-row__head { align-items: center; gap: var(--wp--preset--spacing--30); margin-bottom: var(--wp--preset--spacing--30); }
+.fd-row__title { margin: 0; line-height: 1.2; }
+.fd-row__all { margin: 0; flex: 0 0 auto; }
+.fd-row__all a {
+  display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target);
+  font-weight: 600; color: var(--wp--preset--color--flame-ink); text-decoration: none;
+}
+.fd-row__all a:hover { text-decoration: underline; }
+@media (max-width: 781px) {
+  /* A strip that swipes: two cards and a sliver of the third, so it reads as more. */
+  .fd-products.fd-products--row.fd-products--row {
+    display: grid; grid-auto-flow: column; grid-template-columns: none;
+    grid-auto-columns: calc((100% - var(--wp--preset--spacing--30)) / 2.2);
+    gap: var(--wp--preset--spacing--30);
+    overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin-inline: calc(-1 * var(--wp--preset--spacing--40)); padding: 0 var(--wp--preset--spacing--40) var(--wp--preset--spacing--10);
+    scroll-padding-inline: var(--wp--preset--spacing--40);
+  }
+  .fd-products--row::-webkit-scrollbar { display: none; }
+  .fd-products--row > li { scroll-snap-align: start; }
+}
+@media (min-width: 782px) {
+  .fd-products.fd-products--row > li:nth-child(n+5) { display: none; }
+}
+
+/* ==== The cart as a bill (inc/cart-extras.php, client 9 Nov 2026) ========== */
+.fd-saved {
+  margin: 0 0 var(--wp--preset--spacing--30); padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+  border-radius: var(--wp--custom--radius--control); background: var(--wp--preset--color--leaf-wash);
+  color: var(--wp--preset--color--leaf-ink); font-size: var(--wp--preset--font-size--base); font-weight: 600; text-align: center;
+}
+.fd-offers-list { margin-block: var(--wp--preset--spacing--40); }
+.fd-offers-list__title { margin: 0 0 var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--lg); }
+.fd-offers-list__items { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--20); }
+.fd-cart-offer {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+  border: 1px dashed var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--surface);
+}
+.fd-cart-offer__text { display: grid; gap: var(--wp--preset--spacing--10); min-width: 0; }
+.fd-cart-offer__title { font-size: var(--wp--preset--font-size--base); }
+.fd-cart-offer__meta { color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
+.fd-cart-offer__apply { flex: 0 0 auto; min-height: var(--wp--custom--tap-target); }
+.fd-cart-offer__applied { flex: 0 0 auto; color: var(--wp--preset--color--leaf-ink); font-weight: 600; }
+.fd-row--cart { margin-top: var(--wp--preset--spacing--70); }
+
+/* ==== Recent searches (inc/search.php, client 9 Nov 2026) ================== */
+.fd-search__pop { position: relative; }
+.fd-search__clear {
+  position: absolute; top: var(--wp--preset--spacing--10); right: var(--wp--preset--spacing--20); z-index: 1;
+  min-height: var(--wp--custom--tap-target); padding: 0 var(--wp--preset--spacing--20);
+  border: 0; background: none; color: var(--wp--preset--color--flame-ink);
+  font: inherit; font-size: var(--wp--preset--font-size--base); font-weight: 600; cursor: pointer;
+}
+.fd-search__clear:hover { text-decoration: underline; }
+.fd-search__clear:focus-visible { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: 2px; }
+
+/* ==== Where your order is (inc/order-progress.php, client 9 Nov 2026) ===== */
+.fd-track { margin-block: var(--wp--preset--spacing--40); }
+.fd-track__title { margin: 0 0 var(--wp--preset--spacing--30); font-size: var(--wp--preset--font-size--lg); }
+.fd-track__steps { list-style: none; margin: 0; padding: 0; display: grid; }
+.fd-track__step {
+  position: relative; display: grid; grid-template-columns: var(--wp--preset--spacing--40) 1fr;
+  gap: var(--wp--preset--spacing--20); padding-bottom: var(--wp--preset--spacing--30);
+}
+.fd-track__step:last-child { padding-bottom: 0; }
+/* The rail between dots: solid up to where the order is, dashed after it. */
+.fd-track__step:not(:last-child)::before {
+  content: ""; position: absolute; left: calc(var(--wp--preset--spacing--40) / 2 - 1px);
+  top: 0.5lh; bottom: -0.5lh;
+  border-left: 2px dashed var(--wp--preset--color--line-strong);
+}
+.fd-track__step.is-done:not(:last-child)::before { border-left-style: solid; border-left-color: var(--wp--preset--color--leaf); }
+.fd-track__dot {
+  position: relative; z-index: 1; justify-self: center; align-self: start;
+  margin-top: calc(0.5lh - var(--wp--preset--spacing--30) / 2);
+  width: var(--wp--preset--spacing--30); height: var(--wp--preset--spacing--30); border-radius: 50%;
+  background: var(--wp--preset--color--surface); border: 2px solid var(--wp--preset--color--line-strong); box-sizing: border-box;
+}
+.fd-track__step.is-done .fd-track__dot { background: var(--wp--preset--color--leaf); border-color: var(--wp--preset--color--leaf); }
+.fd-track__step.is-current .fd-track__dot { border-color: var(--wp--preset--color--flame); box-shadow: 0 0 0 4px var(--wp--preset--color--flame-wash); background: var(--wp--preset--color--flame); }
+.fd-track__text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--base); }
+.fd-track__label { font-weight: 600; }
+.fd-track__step.is-todo .fd-track__label { font-weight: 400; color: var(--wp--preset--color--mute); }
+.fd-track__date { color: var(--wp--preset--color--mute); }
+.fd-track__track { flex-basis: 100%; color: var(--wp--preset--color--flame-ink); font-weight: 600; }
+.fd-track-note { margin-block: var(--wp--preset--spacing--30); color: var(--wp--preset--color--mute); }
+
+/* ==== Tab bar (inc/tab-bar.php, client 9 Nov 2026) =========================
+   Phones only. Its height is one token, so the View cart bar and the page's
+   bottom padding can stack on it exactly: icon (spacing-50) + label line
+   (1.25rem) + gap (spacing-10) + padding (2 × spacing-20) = 4rem = spacing-80. */
+.fd-tabbar, .fd-tabbar[hidden] { display: none; }
+@media (max-width: 781px) {
+  .fd-tabbar:not([hidden]) {
+    display: block; position: fixed; z-index: 55; left: 0; right: 0; bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--wp--preset--color--surface); border-top: 1px solid var(--wp--preset--color--line);
+  }
+  .fd-tabbar__tabs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .fd-tabbar__tab {
+    box-sizing: border-box; height: var(--wp--preset--spacing--80);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--wp--preset--spacing--10);
+    padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--10);
+    color: var(--wp--preset--color--mute); text-decoration: none;
+    font-size: var(--wp--preset--font-size--base); line-height: 1.25;
+  }
+  .fd-tabbar__icon { width: var(--wp--preset--spacing--50); height: var(--wp--preset--spacing--50); flex: 0 0 auto; }
+  .fd-tabbar__label { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fd-tabbar__tab.is-current { color: var(--wp--preset--color--flame-ink); font-weight: 600; }
+  .fd-tabbar__tab.is-current .fd-tabbar__icon { stroke-width: 2.2; }
+  .fd-tabbar__tab:focus-visible { outline: 2px solid var(--wp--preset--color--flame-ink); outline-offset: -4px; }
+  body:has(.fd-tabbar:not([hidden])) { padding-bottom: calc(var(--wp--preset--spacing--80) + env(safe-area-inset-bottom, 0px)); }
+  /* The View cart bar floats just above the tab bar. */
+  body:has(.fd-tabbar:not([hidden])) .fd-viewcart:not([hidden]) {
+    bottom: calc(var(--wp--preset--spacing--80) + var(--wp--preset--spacing--20) + env(safe-area-inset-bottom, 0px));
+  }
+  body:has(.fd-tabbar:not([hidden])):has(.fd-viewcart:not([hidden])) {
+    padding-bottom: calc(var(--wp--preset--spacing--80) + var(--wp--custom--tap-target) * 2 + var(--wp--preset--spacing--60) + env(safe-area-inset-bottom, 0px));
+  }
+}

@@ -33,7 +33,8 @@ check( 'no product, no control', '' === foodify_cart_control_html( 0, 'X', '/a' 
 
 echo "── the View cart bar ──\n";
 $bar = foodify_view_cart_bar_html( '/cart/' );
-check( 'a link to the cart, printed hidden and empty', str_starts_with( $bar, '<a class="fd-viewcart" href="/cart/" data-fd-viewcart hidden>' ) && str_contains( $bar, 'data-fd-viewcart-sum></span>' ) );
+check( 'a link to the cart, printed hidden and empty', str_starts_with( $bar, '<div class="fd-viewcart" data-fd-viewcart hidden>' ) && str_contains( $bar, '<a class="fd-viewcart__link" href="/cart/">' ) && str_contains( $bar, 'data-fd-viewcart-sum></span>' ) );
+check( 'the free-delivery strip rides on top, hidden until the script knows the cart', str_contains( $bar, '<p class="fd-viewcart__free" data-fd-viewcart-free hidden>' ) );
 check( 'one live region for every change', 1 === substr_count( $bar, 'role="status" aria-live="polite" data-fd-cart-status' ) );
 check( '"1 item", "3 items" — no amount (client, 9 Nov)', '1 item' === foodify_view_cart_summary( 1 ) && '3 items' === foodify_view_cart_summary( 3 ) && '' === foodify_view_cart_summary( 0 ) );
 
@@ -63,6 +64,28 @@ check( 'the box label it skips is the one box-builder prints', str_contains( $sr
 $css = (string) file_get_contents( __DIR__ . '/../theme/foodify/style.css' );
 check( 'the bar sits on a product page\'s sticky bar rather than under it', str_contains( $css, 'body:has(.fd-sticky-atc:not([hidden])) .fd-viewcart:not([hidden])' ) );
 check( 'hidden halves stay hidden whatever the button rules say', str_contains( $css, '.fd-cartctl.fd-cartctl > [hidden] { display: none; }' ) );
+
+echo "── free delivery on the bar (client, 9 Nov) ──\n";
+$f = foodify_view_cart_free( 565.0, 599.0 );
+check( '"Add ₹34 more for free delivery", with the meter at 94%', $f['show'] && ! $f['unlocked'] && 'Add ₹34 more for free delivery' === $f['text'] && 94.3 === $f['percent'] );
+check( 'a part rupee rounds UP (₹33.50 short is "₹34")', 'Add ₹34 more for free delivery' === foodify_view_cart_free( 565.5, 599.0 )['text'] );
+check( 'at the minimum: "Free delivery unlocked"', foodify_view_cart_free( 599.0, 599.0 )['unlocked'] && 'Free delivery unlocked' === foodify_view_cart_free( 650.0, 599.0 )['text'] );
+check( 'no free-delivery minimum, or an empty cart: no strip', ! foodify_view_cart_free( 300.0, null )['show'] && ! foodify_view_cart_free( 0.0, 599.0 )['show'] );
+check( 'thousands are grouped the Indian way', 'Add ₹1,234 more for free delivery' === foodify_view_cart_free( 100.0, 1334.0 )['text'] );
+$js = foodify_cart_stepper_script();
+check( 'the script\'s basis is WooCommerce\'s: items with tax, minus CODES (total_discount) — the box discount is a fee and stays out',
+	str_contains( $js, "(+t.total_items || 0) + (+t.total_items_tax || 0) - (+t.total_discount || 0) - (+t.total_discount_tax || 0)" ) && ! str_contains( $js, 'total_fees' ) );
+check( '… and builds the same words', str_contains( $js, "'Add ₹' + Math.ceil(min - basis).toLocaleString('en-IN') + ' more for free delivery'" ) && str_contains( $js, "'Free delivery unlocked'" ) );
+check( 'the minimum comes from the one function the cart band uses', str_contains( (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/cart-stepper.php' ), "'freeMin'  => function_exists( 'foodify_free_shipping_threshold' ) ? foodify_free_shipping_threshold() : null" ) );
+
+echo "── the product page's sticky bar ──\n";
+$ctl = foodify_cart_control_html( 9, 'Dal', '/?add-to-cart=9', 0, 'fd-sticky-atc__ctl' );
+$sb  = foodify_sticky_atc_html( '185', '<span class="amount">₹185</span>', 'Add to cart', 'pack', 'packs', $ctl );
+check( 'the bar keeps its own button (it presses the real form, quantity and all)', str_contains( $sb, '<button type="button" class="wp-element-button">Add to cart</button>' ) );
+check( '… and carries the card\'s control, which takes over once the meal is in the cart', str_contains( $sb, $ctl ) && str_contains( $css, '.fd-sticky-atc:has(.fd-sticky-atc__ctl.is-in-cart) > .wp-element-button { display: none; }' ) );
+check( 'escaped: units and price figure', str_contains( foodify_sticky_atc_html( '1"', 'x', 'A', 'p<', 'q', '' ), 'data-unit="1&quot;"' ) && str_contains( foodify_sticky_atc_html( '1', 'x', 'A', 'p<', 'q', '' ), '1 p&lt;</span>' ) );
+$pd = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' );
+check( 'product-display prints the bar through the builder, with the control for a simple product', str_contains( $pd, 'echo foodify_sticky_atc_html(' ) && str_contains( $pd, "'fd-sticky-atc__ctl'" ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

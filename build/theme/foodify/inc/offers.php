@@ -222,8 +222,12 @@ function foodify_offer_shipping_facts(): array {
 	return $facts;
 }
 
-/** The public coupon, as foodify_offer_lines() wants it — or null unless it is live for this product. */
-function foodify_offer_coupon( WC_Product $product ): ?array {
+/**
+ * The public coupon, as foodify_offer_lines() wants it — or null unless it is
+ * live (and, given a product, valid for it). The cart passes no product: there
+ * WooCommerce itself checks the code against every line when it is applied.
+ */
+function foodify_offer_coupon( ?WC_Product $product = null ): ?array {
 	$code = trim( (string) get_option( 'foodify_public_offer', '' ) );
 	if ( '' === $code || ! class_exists( 'WC_Coupon' ) ) {
 		return null;
@@ -242,6 +246,9 @@ function foodify_offer_coupon( WC_Product $product ): ?array {
 	if ( $c->get_email_restrictions() ) {
 		return null;   // restricted to named customers: not a public offer
 	}
+	if ( null === $product ) {
+		return foodify_offer_coupon_facts( $c, $expires );
+	}
 	$ids = array_filter( [ $product->get_id(), $product->get_parent_id() ] );
 	$cats = (array) $product->get_category_ids();
 	if ( ( $c->get_product_ids() && ! array_intersect( $ids, $c->get_product_ids() ) )
@@ -250,6 +257,11 @@ function foodify_offer_coupon( WC_Product $product ): ?array {
 		|| array_intersect( $cats, $c->get_excluded_product_categories() ) ) {
 		return null;   // checkout would refuse it for this product
 	}
+	return foodify_offer_coupon_facts( $c, $expires );
+}
+
+/** What the offer line reads from a live coupon. */
+function foodify_offer_coupon_facts( WC_Coupon $c, $expires ): array {
 	return [
 		'code'          => $c->get_code(),
 		'type'          => $c->get_discount_type(),

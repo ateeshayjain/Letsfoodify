@@ -485,7 +485,16 @@ var FDSearch=(function(){
     out.sort(function(x,y){return (y.n-x.n)||(x.label<y.label?-1:x.label>y.label?1:0);});
     return out.slice(0,n);
   }
-  return {norm:norm,rank:rank,popular:popular,seeAll:seeAll,facets:facets,popularFacets:popularFacets};
+  // Recent searches (client, 9 Nov 2026): newest first, one entry per search
+  // however it was typed ("Dal  FRY" and "dal fry" are one), at most n, and
+  // never a one-letter keystroke.
+  function remember(list,q,n){
+    if(n==null)n=5;q=String(q==null?'':q).trim().replace(/\s+/g,' ');
+    var out=(Array.isArray(list)?list:[]).filter(function(x){return typeof x==='string'&&norm(x).length>=2;});
+    if(norm(q).length<2)return out.slice(0,n);
+    var k=norm(q);out=out.filter(function(x){return norm(x)!==k;});out.unshift(q);return out.slice(0,n);
+  }
+  return {norm:norm,rank:rank,popular:popular,seeAll:seeAll,facets:facets,popularFacets:popularFacets,remember:remember};
 })();
 JS;
 }
@@ -507,11 +516,12 @@ function foodify_search_script(): string {
   var root=document.querySelector('[data-fd-search]');if(!root)return;
   var input=root.querySelector('.fd-search__input'),pop=root.querySelector('.fd-search__pop'),list=root.querySelector('.fd-search__list'),
       none=root.querySelector('.fd-search__none'),status=root.querySelector('[data-fd-search-status]'),form=root.querySelector('form'),
-      rows=null,loading=false,active=-1,KEY='fd-search-v2';
+      rows=null,loading=false,active=-1,KEY='fd-search-v2',RKEY='fd-recent-searches';
   // The groups' marks, as path data: a grid (category), a tag (diet, prep), a leaf (ingredient), the glass (see all).
   var ICON={cat:['M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'],
             tag:['M3 12V4h8l9 9-8 8z','M7.5 7.2a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6'],
             ing:['M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7'],
+            recent:['M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16','M12 8v4l3 2'],
             all:['M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13','m15.5 15.5 5 5']},NS='http://www.w3.org/2000/svg';
   root.classList.add('is-enhanced');
   input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');
@@ -531,6 +541,16 @@ function foodify_search_script(): string {
     }).catch(function(){loading=false;});
   }
   function head(text){var li=document.createElement('li');li.className='fd-search__head';li.setAttribute('role','presentation');li.textContent=text;list.appendChild(li);}
+  // Recent searches live on THIS device only (localStorage) — never in the
+  // cached page, never sent anywhere. Storage can be off (private mode): then
+  // there are simply none.
+  function recents(){try{var r=JSON.parse(localStorage.getItem(RKEY)||'[]');return FDSearch.remember(r,'',5);}catch(e){return [];}}
+  function remember(q){try{localStorage.setItem(RKEY,JSON.stringify(FDSearch.remember(recents(),q,5)));}catch(e){}}
+  // "Clear" sits outside the listbox (a listbox holds options only).
+  var clear=document.createElement('button');clear.type='button';clear.className='fd-search__clear';clear.hidden=true;
+  clear.textContent='Clear';clear.setAttribute('aria-label','Clear recent searches');pop.insertBefore(clear,list);
+  clear.addEventListener('mousedown',function(e){e.preventDefault();});
+  clear.addEventListener('click',function(){try{localStorage.removeItem(RKEY);}catch(e){}show();input.focus();status.textContent='Recent searches cleared.';});
   function item(href,cls){
     var li=document.createElement('li');li.id='fd-search-opt-'+options().length;li.className='fd-search__opt'+(cls?' '+cls:'');
     li.setAttribute('role','option');li.setAttribute('aria-selected','false');
@@ -566,11 +586,16 @@ function foodify_search_script(): string {
     var q=input.value;if(!rows){load();return;}
     list.textContent='';active=-1;input.removeAttribute('aria-activedescendant');none.hidden=true;none.textContent='';
     list.classList.toggle('is-chips',FDSearch.norm(q).length<2);   // popular searches are chips; results are rows
-    var said='';
+    var said='';clear.hidden=true;
     if(FDSearch.norm(q).length<2){
-      // Nothing typed yet: where most of the menu is.
-      var pf=FDSearch.popularFacets(rows,6);if(!pf.length){close();return;}
-      head('Popular searches');pf.forEach(facet);said=pf.length+' popular searches.';
+      // Nothing typed yet: what this shopper searched before, then where most of the menu is.
+      var rc=recents(),pf=FDSearch.popularFacets(rows,6);
+      if(rc.length){head('Recent searches');clear.hidden=false;
+        rc.forEach(function(r){var a=item(results(r),'fd-search__facet fd-search__recent');glyph(a,'recent');text(a,r,'');a.setAttribute('data-fd-recent','');});
+        said=(rc.length===1?'1 recent search, ':rc.length+' recent searches, ');}
+      if(pf.length){head('Popular searches');pf.forEach(facet);}
+      if(!rc.length&&!pf.length){close();return;}
+      said+=pf.length+' popular searches.';
     }else{
       var fs=FDSearch.facets(rows,q,4),hit=FDSearch.rank(rows,q,5);
       if(fs.length){head('Categories and ingredients');fs.forEach(facet);}
@@ -604,7 +629,13 @@ function foodify_search_script(): string {
     else if(e.key==='Escape'&&!pop.hidden){e.preventDefault();close();}
   });
   list.addEventListener('mousedown',function(e){e.preventDefault();});   // a tap on a suggestion does not blur the field first
-  list.addEventListener('click',function(){close();});
+  // A search the shopper TYPED is remembered when they act on it: Enter, or any suggestion.
+  form.addEventListener('submit',function(){remember(input.value);});
+  list.addEventListener('click',function(e){
+    var a=e.target.closest?e.target.closest('a'):null;
+    if(a&&a.hasAttribute('data-fd-recent'))remember(a.textContent);else if(FDSearch.norm(input.value).length>=2)remember(input.value);
+    close();
+  });
   root.addEventListener('focusout',function(e){if(!root.contains(e.relatedTarget)){close();}});
 })();
 JS;

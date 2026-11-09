@@ -13,6 +13,28 @@
 <!-- wp:woocommerce/classic-shortcode {"shortcode":"cart"} /-->
 </div>
 <!-- /wp:group -->
+<!-- You might also like (client, 9 Nov 2026): best sellers that are NOT
+     already in the cart — inc/home-rows.php drops the cart's products from
+     the "cart-suggest" row. The cart page is never edge-cached, so the
+     server can know the cart here. -->
+<!-- wp:group {"align":"wide","className":"fd-row fd-row--cart","layout":{"type":"default"}} -->
+<div class="wp-block-group alignwide fd-row fd-row--cart">
+<!-- wp:heading {"fontSize":"xl","className":"fd-row__title"} -->
+<h2 class="wp-block-heading fd-row__title has-xl-font-size">You might also like</h2>
+<!-- /wp:heading -->
+<!-- wp:query {"queryId":21,"query":{"perPage":8,"pages":0,"offset":0,"postType":"product","order":"desc","orderBy":"popularity","inherit":false,"__woocommerceStockStatus":["instock"],"fdRow":"cart-suggest"},"namespace":"woocommerce/product-query","align":"wide","layout":{"type":"default"}} -->
+<div class="wp-block-query alignwide">
+<!-- wp:post-template {"className":"fd-products fd-products--row","layout":{"type":"grid","columnCount":4}} -->
+<!-- wp:woocommerce/product-image {"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
+<!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
+<!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
+<!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->
+<!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true} /-->
+<!-- /wp:post-template -->
+</div>
+<!-- /wp:query -->
+</div>
+<!-- /wp:group -->
 </main>
 <!-- /wp:group -->
 <!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

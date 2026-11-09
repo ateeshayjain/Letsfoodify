@@ -18,6 +18,13 @@
 <!-- wp:group {"align":"wide","className":"fd-header","style":{"spacing":{"blockGap":"var:preset|spacing|30"}},"layout":{"type":"flex","justifyContent":"space-between","flexWrap":"nowrap"}} -->
 <div class="wp-block-group alignwide fd-header">
 <!-- wp:site-title {"level":0,"fontSize":"xl","style":{"typography":{"fontStyle":"normal","fontWeight":"700"},"elements":{"link":{"color":{"text":"var:preset|color|char"}}}},"fontFamily":"display"} /-->
+<!-- The delivery line (client, 9 Nov 2026): "By Wed 11 Nov · 201301 ▾" under the
+     logo, read in the browser from the PIN this device last checked — the
+     page itself is cached for everyone, so it is printed empty and hidden.
+     foodify_delivery_line_html() VERBATIM; tests/lane-a-test.php pins it. -->
+<!-- wp:html -->
+<div class="fd-dline" data-fd-dline hidden><button type="button" class="fd-dline__btn" data-fd-dline-open aria-haspopup="dialog" aria-controls="fd-dline-sheet"><svg class="fd-dline__pin" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></svg><span class="fd-dline__text" data-fd-dline-text>Check delivery to your PIN</span><svg class="fd-dline__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+<!-- /wp:html -->
 <!-- wp:navigation {"overlayMenu":"mobile","overlayBackgroundColor":"paper","overlayTextColor":"char","fontSize":"base","layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"}} -->
 <!-- wp:navigation-link {"label":"Express","url":"/product-category/express/"} /-->
 <!-- wp:navigation-link {"label":"Hot &amp; Fresh","url":"/product-category/hot-and-fresh/"} /-->

@@ -92,7 +92,7 @@ pages.append(f"""<section class="page" style="display:flex;flex-direction:column
   <dl class="kv" style="max-width:140mm">
     <dt>Prepared for</dt><dd>Nalin Agarwal, The Foodify Company</dd>
     <dt>Prepared by</dt><dd>Mindlayer</dd>
-    <dt>Date</dt><dd>9 November 2026 (third edition: compact cards, Add → − 1 +, the View cart bar, the new header, smart search)</dd>
+    <dt>Date</dt><dd>9 November 2026 (fourth edition: compact cards, Add → − 1 +, the View cart bar, the new header, smart search — and the eleven borrowed from Blinkit: delivery line, free-delivery strip, home rows, the cart as a bill, order steps, Order again, the phone tab bar)</dd>
     <dt>Status</dt><dd>For review. Nothing here is live until you approve it.</dd>
   </dl>
   <div style="position:absolute;right:14mm;top:13mm;width:120mm;display:flex;gap:3mm;align-items:flex-start">
@@ -159,19 +159,20 @@ pages.append(screen_page(
     "home-desktop-1", "home-phone-1",
     ["The claim is the headline — <b>6 minute mein ghar ka khana ready!</b> — and it is the only claim the site makes about time. It is written in one place, so it can never say six on one page and ten on another.",
      "The four facts under it answer what a first-time buyer actually asks: no preservatives, how long it keeps, who is licensed, who cooks it.",
-     "<b>Three steps, six minutes</b> explains the product without a video and without a paragraph."],
+     "<b>Three steps, six minutes</b> explains the product without a video and without a paragraph.",
+     "Under the logo, <b>“By Wed 11 Nov · 201301 ▾”</b> once a PIN has been checked — tap it to change the PIN. On a phone, a <b>tab bar</b> (Home · Categories · Order again · Account) sits at the bottom, with the View cart bar floating just above it."],
     "Laptop · top of the home page", "Phone · the same page",
     "Home"))
 
 pages.append(f"""<section class="page">
   <div class="head"><span class="tag">Home</span><h2 style="margin:0">Further down the page</h2></div>
-  <p class="sub" style="margin:-1mm 0 3mm">Eight best sellers, not a wall of products — the audited site put 140 product tiles on the homepage for a catalogue of 44.</p>
+  <p class="sub" style="margin:-1mm 0 3mm">Four short shelves, not a wall of products — the audited site put 140 product tiles on the homepage for a catalogue of 44.</p>
   <div class="two">
     <figure class="shot" style="margin:0"><img src="{img('home-desktop-2')}"><figcaption></figcaption></figure>
     <figure class="shot" style="margin:0"><img src="{img('home-desktop-3')}"></figure>
   </div>
   <ul class="notes" style="columns:2;column-gap:8mm">
-    <li><b>What people reorder</b> — eight products, chosen by how often they sell, refreshed automatically.</li>
+    <li><b>Four shelves</b> — Bestsellers, Just add hot water, Under ₹200, Jain meals. A row of four on a laptop with “See all”; on a phone each swipes sideways. In-stock meals only, refreshed automatically.</li>
     <li><b>Sorted by how you make it</b> — hot water, cold water, cooking: the way a customer decides.</li>
     <li>Reviews carry real names and a verified-purchase mark, and only appear once real customers leave them.</li>
     <li>The trust strip repeats the four facts at the point where a hesitant buyer scrolls back up.</li>
@@ -328,7 +329,8 @@ pages.append(screen_page(
     ["A bar at the top says <b>how far the order is from free delivery</b> — the cheapest way to lift an average order value. It disappears when the cart is empty rather than leaving an empty green box.",
      "Quantity, remove and a partner or creator coupon field. Totals show GST included and <b>Delivery</b> as it will actually be charged — one word for it on every screen, never “Shipping” on one and “Delivery” on the next.",
      "A box is never dearer than its packs bought one by one: free delivery is judged on the cart before the box discount, so filling a box cannot lose it.",
-     "<b>“Continue shopping”</b> is on the page, so the cart is never a dead end."],
+     "It reads as a bill: <b>Bill details</b>, then <b>“You saved ₹X on this order”</b> — sale prices, codes and the box discount, nothing that is not yet decided. The shop’s public offer is listed with one-tap <b>Apply</b>; partner codes are never listed.",
+     "<b>“Continue shopping”</b> is on the page, and <b>You might also like</b> under it offers best sellers that are not already in the cart."],
     "Laptop · the cart", "Phone · one row per item",
     "Cart"))
 
@@ -358,7 +360,8 @@ pages.append(f"""<section class="page">
       </div>
       <p class="cap">Laptop · past orders with one-tap reorder &nbsp;·&nbsp; signing in</p>
       <ul class="notes">
-        <li><b>Reorder</b> puts a past order back in the cart in one tap — the shortest path to a second sale.</li>
+        <li><b>Order again</b> puts a past order back in the cart in one tap — the shortest path to a second sale. It is first on every order, delivered or not.</li>
+        <li>Each order shows <b>where it is</b> as steps — Placed, Packed, Shipped, Delivered — only steps the shop actually records.</li>
         <li>Saved addresses mean a returning customer never types an address again.</li>
         <li>Guest checkout stays the default: nobody is forced to make an account to buy.</li>
         <li>Sign-in by code depends on DLT registration for transactional SMS, which is yours to obtain; until it is done, the

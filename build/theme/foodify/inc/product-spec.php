@@ -820,15 +820,18 @@ function foodify_card_diet_html( array $tags, int $max = 2 ): string {
  *
  * @param array{label?:string,modifier?:string} $chip foodify_prep_chip_parts()
  */
-function foodify_card_prep_html( array $chip, int $servings = 0 ): string {
+function foodify_card_prep_html( array $chip, int $servings = 0, string $pack = '' ): string {
 	$label = trim( (string) ( $chip['label'] ?? '' ) );
 	if ( '' === $label ) {
 		return '';
 	}
-	$e   = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
-	$mod = trim( (string) ( $chip['modifier'] ?? '' ) );
+	$e    = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES );
+	$mod  = trim( (string) ( $chip['modifier'] ?? '' ) );
+	// Line 2: the pack and what it feeds — "80 g · Serves 2" (client, 9 Nov 2026:
+	// the size beside the price, as quick-commerce cards show "250 ml").
+	$second = implode( ' · ', array_filter( [ trim( $pack ), $servings > 0 ? 'Serves ' . $servings : '' ], 'strlen' ) );
 	return '<p class="fd-card-prep"><span class="fd-chip' . ( '' !== $mod ? ' ' . $e( $mod ) : '' ) . '">' . $e( $label ) . '</span>'
-		. ( $servings > 0 ? '<span class="fd-card-prep__serves">Serves ' . $servings . '</span>' : '' )
+		. ( '' !== $second ? '<span class="fd-card-prep__serves">' . $e( $second ) . '</span>' : '' )
 		. '</p>';
 }
 

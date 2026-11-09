@@ -202,7 +202,8 @@ const path = require('path');
   await wait(200);
   const lines = await page.evaluate(() => JSON.parse(localStorage.getItem('foodify-prototype-v3')).cart.filter(l => l.s === 'pav-bhaji').map(l => (l.box ? 'box:' : 'loose:') + l.q));
   check('packs inside a box do not show on the card, and Add adds a loose pack beside them', boxed.add && lines.indexOf('box:2') >= 0 && lines.indexOf('loose:1') >= 0, { boxed, lines });
-  await page.evaluate(() => window.fxShow('shop', false)); await click('[data-fd-viewcart]'); await wait();
+  // The link, not the wrapper: the free-delivery strip rides on top of it (client, 9 Nov).
+  await page.evaluate(() => window.fxShow('shop', false)); await click('[data-fd-viewcart] .fd-viewcart__link'); await wait();
   check('the View cart bar opens the cart', (await shown()) === 'cart', await shown());
   check('… and is not shown on the cart itself', await page.evaluate(() => getComputedStyle(document.querySelector('[data-fd-viewcart]')).display === 'none'));
   await click('.wc-block-mini-cart__button'); await wait();
@@ -490,8 +491,11 @@ const path = require('path');
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await phone.goto('file://' + path.resolve(__dirname, '../preview/storefront.html'));
   await phone.waitForTimeout(300);
+  // Measured from the SITE's top (its header), not the page's: the prototype's
+  // own tab strip and banner sit above it and are not on letsfoodify.com.
   const landed = await phone.evaluate(() => { window.fxShow('p-trial-box-3-meals');
-    return Math.round(document.querySelector('#s-p-trial-box-3-meals h1').getBoundingClientRect().top); });
+    const s = document.querySelector('#s-p-trial-box-3-meals');
+    return Math.round(s.querySelector('h1').getBoundingClientRect().top - s.querySelector('header').getBoundingClientRect().top); });
   check('on a phone, a tapped product shows its name on the first screen', landed > 0 && landed < 844, landed);
   // The phone header (client, 9 Nov): logo | profile | cart, the search its own
   // row, the categories a row under it — and no menu button left to find.
@@ -536,6 +540,71 @@ const path = require('path');
     smart.moong[0].startsWith('# ') && smart.moong.some(r => /^Meals with .*moong/.test(r)) && smart.moong.includes('# Meals') && /^See all/.test(smart.moong[smart.moong.length - 1]), smart.moong);
   check('"jain" offers the Jain label', smart.jain.includes('Jain'), smart.jain);
   check('ArrowDown lands on the first option, not a heading; Enter opens its results', /^Jain/.test(smart.first || '') && smart.screen === 's-search' && smart.shown > 0, smart);
+
+  // ── the eleven Blinkit borrowings (client, 9 Nov) ─────────────────────────
+  // Recent searches: the search just made comes back first, and Clear empties it.
+  const recent = await phone.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms));
+    window.fxShow('home', false);
+    const inp = document.querySelector('#s-home #fd-search-q'), list = () => document.querySelector('#s-home .fd-search__list');
+    inp.value = ''; inp.blur(); await sl(20); inp.focus(); inp.dispatchEvent(new Event('input', { bubbles: true })); await sl(30);
+    const heads = [...list().querySelectorAll('.fd-search__head')].map(h => h.textContent);
+    const items = [...list().querySelectorAll('.fd-search__recent')].map(r => r.textContent.trim());
+    const clear = document.querySelector('#s-home .fd-search__clear');
+    const clearOut = clear && !clear.hidden && !list().contains(clear);
+    clear.click(); await sl(30);
+    return { heads, items, clearOut, after: list().querySelectorAll('.fd-search__recent').length, stored: localStorage.getItem('fd-recent-searches') };
+  });
+  check('recent searches come first when the field is empty, newest first', recent.heads[0] === 'Recent searches' && recent.heads[1] === 'Popular searches' && /^jain$/i.test(recent.items[0] || ''), recent);
+  check('… Clear sits outside the list and empties it', recent.clearOut && recent.after === 0 && !recent.stored, recent);
+
+  // The tab bar: four tabs, the View cart bar above it, gone where another bar owns the bottom.
+  const tabs = await phone.evaluate(() => {
+    window.fxSetCart([['express-dal-fry', 1]], null); window.fxShow('home', false);
+    const tb = document.querySelector('.fd-tabbar'), vc = document.querySelector('.fd-viewcart'), vis = e => getComputedStyle(e).display !== 'none';
+    const r = { labels: [...tb.querySelectorAll('.fd-tabbar__label')].map(l => l.textContent), current: tb.querySelector('[aria-current=page]')?.textContent,
+      above: vis(vc) && Math.round(vc.getBoundingClientRect().bottom) <= Math.round(tb.getBoundingClientRect().top), bottom: Math.round(innerHeight - tb.getBoundingClientRect().bottom) };
+    window.fxShow('p-express-dal-fry', false); r.onProduct = vis(tb);
+    window.fxShow('cart', false); r.onCart = vis(tb);
+    window.fxShow('shop', false); r.shopCurrent = tb.querySelector('[aria-current=page]')?.textContent;
+    return r;
+  });
+  check('phones get a tab bar: Home · Categories · Order again · Account, the page\'s own tab marked', tabs.labels.join('|') === 'Home|Categories|Order again|Account' && tabs.current === 'Home' && tabs.shopCurrent === 'Categories' && tabs.bottom === 0, tabs);
+  check('… the View cart bar floats above it, never under it', tabs.above, tabs);
+  check('… and it is not there on a product page or the cart, whose own bars own the bottom', !tabs.onProduct && !tabs.onCart, tabs);
+
+  // The cart as a bill.
+  const bill = await phone.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms));
+    window.fxSetCart([['express-dal-fry', 2]], null); window.fxShow('cart', false); await sl(30);
+    const c = document.getElementById('s-cart');
+    const r = { h2: c.querySelector('.cart_totals h2').textContent, saved: c.querySelector('.fd-saved')?.textContent,
+      offer: c.querySelector('.fd-cart-offer__title')?.textContent, partnerListed: /NALIN10/.test(c.querySelector('.fx-offers').textContent),
+      suggestHasDal: [...c.querySelectorAll('.fd-row--cart li')].filter(l => !l.hidden).some(l => l.querySelector('[data-fd-cartctl]')?.getAttribute('data-name') === 'Express Dal Fry'),
+      suggestions: [...c.querySelectorAll('.fd-row--cart li')].filter(l => !l.hidden).length };
+    c.querySelector('[data-fd-offer]').click(); await sl(60);
+    r.applied = c.querySelector('.fd-cart-offer__applied')?.textContent; r.savedAfter = c.querySelector('.fd-saved')?.textContent;
+    r.discount = c.querySelector('.cart-discount td')?.textContent;
+    return r;
+  });
+  check('the cart totals read "Bill details", and "You saved" adds up the sale price (2 × ₹40)', bill.h2 === 'Bill details' && bill.saved === 'You saved ₹80 on this order', bill);
+  check('Available offers lists the PUBLIC offer only — never a partner code', bill.offer === 'Use code WELCOME5: 5% off your order' && !bill.partnerListed, bill);
+  check('… Apply applies it through the coupon form, and the saving grows by the code', bill.applied === 'Applied' && /^−₹19/.test(bill.discount || '') && bill.savedAfter === 'You saved ₹99 on this order', bill);
+  check('"You might also like" never offers what is already in the cart', bill.suggestions > 0 && !bill.suggestHasDal, bill);
+
+  // Where an order is, and Order again.
+  const ord = await phone.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms));
+    window.fxShow('account', false); await sl(30);
+    const a = document.getElementById('s-account');
+    const again = [...a.querySelectorAll('.fx-orders .fd-reorder')].map(b => b.textContent);
+    a.querySelector('.fx-orders button[data-view]').click(); await sl(60);
+    const steps = [...a.querySelectorAll('.fx-vo-progress .fd-track__step')].map(s => s.className.replace('fd-track__step ', '') + ':' + s.querySelector('.fd-track__label').textContent.replace(/^(Done|Now|Next): /, ''));
+    return { again, steps, title: a.querySelector('.fx-vo-progress h2')?.textContent, viewAgain: a.querySelector('.fx-vo-reorder')?.textContent };
+  });
+  check('every order in the list has "Order again", first', ord.again.length > 0 && ord.again.every(t => t === 'Order again'), ord);
+  check('an order shows where it is as steps — Placed, Packed, Shipped, Delivered — with no step the store cannot reach', ord.title === 'Where your order is' && ord.steps.join('|') === 'is-done:Placed|is-done:Packed|is-done:Shipped|is-done:Delivered', ord);
+  check('… and Order again under it', ord.viewAgain === 'Order again', ord);
   await phone.close();
 
   // ── nothing anywhere is dead ──────────────────────────────────────────────

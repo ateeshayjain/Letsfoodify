@@ -197,6 +197,7 @@ if ( '' !== $node ) {
 	file_put_contents( $dir . '/run.js', "const S=require('./engine.js');const v=require('./vectors.json');"
 		. "const out={};for(const q of v.queries){out[q]={rank:S.rank(v.rows,q,6).map(r=>r.id),two:S.rank(v.rows,q,2).map(r=>r.id),norm:S.norm(q),all:S.seeAll(q,S.rank(v.rows,q,200).length)};}"
 		. "out.__popular=S.popular(v.rows,3).map(r=>r.id);"
+		. "out.__recent={a:S.remember(['dal fry','poha'],'  Dal  FRY '),b:S.remember(['a','b','c','d','e'].map(x=>x+x),'upma'),c:S.remember(['poha'],'d'),d:S.remember(null,'idli'),e:S.remember(['poha',7,'x'],'')};"
 		. "out.__facets={moong:S.facets(v.frows,'moong'),jain:S.facets(v.frows,'jain'),exp:S.facets(v.frows,'exp'),mo:S.facets(v.frows,'mo'),x:S.facets(v.frows,'x'),pop:S.popularFacets(v.frows,3)};"
 		. "process.stdout.write(JSON.stringify(out));" );
 	$raw = (string) shell_exec( escapeshellarg( $node ) . ' ' . escapeshellarg( $dir . '/run.js' ) . ' 2>&1' );
@@ -225,6 +226,11 @@ if ( '' !== $node ) {
 		check( '"mo": two letters name no ingredient', [] === array_values( array_filter( $f['mo'] ?? [], static fn( $x ) => 'ing' === $x['kind'] ) ) );
 		check( 'a query that names nothing has no groups', [] === ( $f['x'] ?? null ) );
 		check( 'popular searches: the categories and labels holding the most meals', [ 'cat:Express:2', 'tag:Hot water:2', 'tag:Jain:2' ] === $lab( $f['pop'] ?? [] ) );
+		$r = $js_out['__recent'] ?? [];
+		check( 'recent searches: newest first, one entry however it was typed', [ 'Dal FRY', 'poha' ] === ( $r['a'] ?? null ) );
+		check( 'recent searches: at most five', [ 'upma', 'aa', 'bb', 'cc', 'dd' ] === ( $r['b'] ?? null ) );
+		check( 'recent searches: a one-letter keystroke is not a search', [ 'poha' ] === ( $r['c'] ?? null ) && [ 'idli' ] === ( $r['d'] ?? null ) );
+		check( 'recent searches: whatever storage held that is not a search is dropped', [ 'poha' ] === ( $r['e'] ?? null ) );
 	}
 	file_put_contents( $dir . '/whole.js', $js );
 	exec( escapeshellarg( $node ) . ' --check ' . escapeshellarg( $dir . '/whole.js' ) . ' 2>&1', $o, $code );
@@ -236,5 +242,13 @@ if ( '' !== $node ) {
 $ssrc2 = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/search.php' );
 check( 'the cached index is keyed by its row shape, so a deploy never serves the old shape', 'foodify_search_index_v2' === FOODIFY_SEARCH_INDEX_KEY
 	&& 3 === substr_count( $ssrc2, 'FOODIFY_SEARCH_INDEX_KEY )' ) + substr_count( $ssrc2, 'FOODIFY_SEARCH_INDEX_KEY, ' ) && ! str_contains( $ssrc2, "'foodify_search_index'" ) );
+echo "── recent searches (client, 9 Nov) ──\n";
+$sj = foodify_search_script();
+check( 'kept on this device only, and storage that is off simply means none', str_contains( $sj, "RKEY='fd-recent-searches'" ) && str_contains( $sj, 'localStorage.getItem(RKEY)' ) && str_contains( $sj, 'catch(e){return [];}' ) && ! str_contains( $sj, 'fetch(url,{credentials:\'omit\',method' ) );
+check( 'shown above Popular searches when the field is empty', strpos( $sj, "head('Recent searches')" ) < strpos( $sj, "head('Popular searches')" ) );
+check( 'Clear is a named button OUTSIDE the listbox', str_contains( $sj, "clear.setAttribute('aria-label','Clear recent searches');pop.insertBefore(clear,list);" ) );
+check( 'remembered on Enter and on any suggestion picked after typing', str_contains( $sj, "form.addEventListener('submit',function(){remember(input.value);});" ) && str_contains( $sj, 'else if(FDSearch.norm(input.value).length>=2)remember(input.value);' ) );
+check( 'a recent search opens the results page for it', str_contains( $sj, "item(results(r),'fd-search__facet fd-search__recent')" ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

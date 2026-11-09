@@ -240,5 +240,11 @@ if ( '' !== $node ) {
 	check( 'the scripts behave — ' . $ps_last, 0 === $ps_rc && (bool) preg_match( '/^\d+ passed, 0 failed$/', $ps_last ) );
 }
 
+echo "── pack size on the card (client, 9 Nov) ──\n";
+check( 'the second line is "80 g · Serves 2"', str_contains( foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => '' ], 2, '80 g' ), '<span class="fd-card-prep__serves">80 g · Serves 2</span>' ) );
+check( 'a pack with no servings (a box) shows the pack alone', str_contains( foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => '' ], 0, '3 × 80 g' ), '>3 × 80 g</span>' ) );
+check( 'no pack declared: servings alone, as before', str_contains( foodify_card_prep_html( [ 'label' => 'x', 'modifier' => '' ], 2 ), '>Serves 2</span>' ) );
+check( 'the card reads the declared net quantity', str_contains( (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' ), '(string) $product->get_meta( \'_foodify_net_quantity\' ) ) : \'\';' ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

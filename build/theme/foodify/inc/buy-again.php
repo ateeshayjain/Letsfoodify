@@ -121,7 +121,7 @@ function foodify_buy_again_html( array $products ): string {
 			: '<span class="fd-again__img is-empty" aria-hidden="true"></span>';
 		$veg  = ! empty( $p['veg'] ) && function_exists( 'foodify_veg_mark_html' ) ? foodify_veg_mark_html( 'vegetarian' ) : '';
 		$prep = ! empty( $p['chip'] ) && is_array( $p['chip'] ) && function_exists( 'foodify_card_prep_html' )
-			? foodify_card_prep_html( $p['chip'], (int) ( $p['servings'] ?? 0 ) )
+			? foodify_card_prep_html( $p['chip'], (int) ( $p['servings'] ?? 0 ), (string) ( $p['pack'] ?? '' ) )
 			: '';
 		$id   = (int) ( $p['id'] ?? 0 );
 		$add  = (string) ( $p['add_url'] ?? '' );
@@ -214,6 +214,7 @@ function foodify_buy_again_products( int $user_id ): array {
 			// What the grid card shows, from the grid's own helpers (BROWSE-7).
 			'chip'     => function_exists( 'foodify_prep_chip_parts' ) ? foodify_prep_chip_parts( $p ) : null,
 			'servings' => function_exists( 'foodify_combo_data' ) && null !== foodify_combo_data( $p ) ? 0 : (int) $p->get_meta( '_foodify_servings' ),
+			'pack'     => (string) $p->get_meta( '_foodify_net_quantity' ),
 			'veg'      => function_exists( 'foodify_product_diet' ) && function_exists( 'foodify_diet_is_veg' ) && foodify_diet_is_veg( foodify_product_diet( $p ) ),
 		];
 	}

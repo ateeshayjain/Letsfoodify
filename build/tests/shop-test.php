@@ -79,7 +79,7 @@ check( 'a visible "Sort by" label precedes the sort select', str_contains( $shop
 check( 'the product grid is the styled loop (fd-products)',  str_contains( $shop, '"className":"fd-products"' ) );
 $home = (string) file_get_contents( $tpl . 'front-page.html' );
 $pdp  = (string) file_get_contents( $tpl . 'single-product.html' );
-check( 'home best-sellers use the same card loop',           str_contains( $home, '"className":"fd-products"' ) );
+check( 'the home page\'s four shelves use the same card loop', 4 === substr_count( $home, '"className":"fd-products fd-products--row"' ) );
 check( 'PDP related products use the same card loop',        str_contains( $pdp, '"className":"fd-products"' ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
