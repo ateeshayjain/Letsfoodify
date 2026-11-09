@@ -160,7 +160,11 @@ for f in OWNED:
     check(f"{f}: 'Free delivery', never 'free shipping' (decision 6)", "free shipping" not in re.sub(r"<!--.*?-->", "", read(f), flags=re.S).lower() or f.startswith("patterns/free-shipping"))
 check("the cart count hides at zero", '"productCountVisibility":"greater_than_zero"' in header)
 check("the phone menu has All meals and Build a box (overlay-only)", '"label":"All meals","url":"/shop/","className":"fd-nav-extra"' in header and '"url":"/build-a-box/","className":"fd-nav-extra"' in header)
-check("the menu button holds to 900px, where the row fits", "(min-width: 600px) and (max-width: 899px)" in nocomment)
+# Below 1024px there is no menu row and no menu button: the category row under
+# the search replaces both (client, 9 Nov 2026); the row needs 1024px to fit.
+check("below 1024px the menu is hidden whole and the category row takes its place",
+      bool(re.search(r"@media \(max-width: 1023px\)\s*\{[^@]*?\.fd-header > \.wp-block-navigation\s*\{\s*display:\s*none", nocomment))
+      and bool(re.search(r"@media \(min-width: 1024px\)\s*\{[^@]*?\.fd-catrow\s*\{\s*display:\s*none", nocomment)))
 band = read("patterns", "free-shipping-progress.php")
 check("the delivery band is drawn by the shortcode's wrapper, not an always-on group", "leaf-wash" not in band and "fd-ship-band" in band
       and bool(re.search(r"\.fd-shipping-progress\s*\{[^}]*background:\s*var\(--wp--preset--color--leaf-wash\)", nocomment)))

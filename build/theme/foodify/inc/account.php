@@ -56,19 +56,9 @@ add_filter( 'woocommerce_account_menu_items', static function ( array $items ): 
 	return $ordered;
 } );
 
-/** Land on Orders, not on a dashboard that says nothing. */
-add_action( 'woocommerce_account_dashboard', static function (): void {
-	if ( ! function_exists( 'wc_get_endpoint_url' ) ) {
-		return;
-	}
-	$orders = wc_get_endpoint_url( 'orders', '', wc_get_page_permalink( 'myaccount' ) );
-	printf(
-		'<p class="fd-account-lead">%1$s</p><p><a class="wp-element-button" href="%2$s">%3$s</a></p>',
-		esc_html__( 'Your past orders are one tap from being your next one.', 'foodify' ),
-		esc_url( $orders ),
-		esc_html__( 'Orders &amp; reorder', 'foodify' )
-	);
-}, 5 );
+/* The dashboard is the profile screen now (inc/profile.php, client 9 Nov 2026):
+   name, tiles, and every account door as a row — it replaced the line and the
+   "Orders & reorder" button that stood here. */
 
 /**
  * "View" is secondary: "Details". The PRIMARY action on an order row is

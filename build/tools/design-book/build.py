@@ -329,6 +329,7 @@ pages.append(screen_page(
     ["A bar at the top says <b>how far the order is from free delivery</b> — the cheapest way to lift an average order value. It disappears when the cart is empty rather than leaving an empty green box.",
      "Quantity, remove and a partner or creator coupon field. Totals show GST included and <b>Delivery</b> as it will actually be charged — one word for it on every screen, never “Shipping” on one and “Delivery” on the next.",
      "A box is never dearer than its packs bought one by one: free delivery is judged on the cart before the box discount, so filling a box cannot lose it.",
+     "The items are <b>one card</b> — “Shipment of 3 items” and the delivery date on top, each line with its pack, <b>− N +</b> and the struck and paid price. On a phone, Proceed is a bar at the bottom with the total.",
      "It reads as a bill: <b>Bill details</b>, then <b>“You saved ₹X on this order”</b> — sale prices, codes and the box discount, nothing that is not yet decided. The shop’s public offer is listed with one-tap <b>Apply</b>; partner codes are never listed.",
      "<b>“Continue shopping”</b> is on the page, and <b>You might also like</b> under it offers best sellers that are not already in the cart."],
     "Laptop · the cart", "Phone · one row per item",
@@ -360,7 +361,8 @@ pages.append(f"""<section class="page">
       </div>
       <p class="cap">Laptop · past orders with one-tap reorder &nbsp;·&nbsp; signing in</p>
       <ul class="notes">
-        <li><b>Order again</b> puts a past order back in the cart in one tap — the shortest path to a second sale. It is first on every order, delivered or not.</li>
+        <li>The account opens on a <b>profile</b>: your name and number, three tiles, then every account section as one row each — only the sections the shop has.</li>
+        <li>Each order is a <b>card</b>: where it is, the meals' pictures, and <b>Order again</b> beside Details — one tap from the list.</li>
         <li>Each order shows <b>where it is</b> as steps — Placed, Packed, Shipped, Delivered — only steps the shop actually records.</li>
         <li>Saved addresses mean a returning customer never types an address again.</li>
         <li>Guest checkout stays the default: nobody is forced to make an account to buy.</li>

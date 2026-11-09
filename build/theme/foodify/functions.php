@@ -270,6 +270,7 @@ require_once FOODIFY_DIR . '/inc/buy-again.php';          // 7: buy again on the
 require_once FOODIFY_DIR . '/inc/cart-stepper.php';       // Add → − 1 + on cards, View cart bar on phones
 require_once FOODIFY_DIR . '/inc/home-rows.php';          // the home page's shelves: Bestsellers, hot water, under ₹200, Jain
 require_once FOODIFY_DIR . '/inc/cart-extras.php';        // the cart as a bill: Bill details, You saved, Available offers
+require_once FOODIFY_DIR . '/inc/profile.php';            // the account's first screen as a profile, like the apps
 require_once FOODIFY_DIR . '/inc/tab-bar.php';            // phones: Home · Categories · Order again · Account at the bottom
 require_once FOODIFY_DIR . '/inc/order-actions.php';      // 10: cancel before dispatch, request a return
 require_once FOODIFY_DIR . '/inc/order-progress.php';     // where an order is, as steps; Order again on every order

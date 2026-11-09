@@ -1386,14 +1386,10 @@ ins:has(> .woocommerce-Price-amount) { text-decoration: none; }
 @media (max-width: 781px) {
   .fd-strip__more { display: none; }
 }
-/* Between 600px (core's overlay breakpoint) and 900px the five links, the
-   logo and the actions do not fit one row, and the nav wrapped to two or
-   three (BROWSE-16). Core's breakpoint is moved, not fought: the menu button
-   stays until 900px, where measurement shows the row fits. */
-@media (min-width: 600px) and (max-width: 899px) {
-  .fd-header .wp-block-navigation__responsive-container-open:not(.always-shown) { display: flex; }
-  .fd-header .wp-block-navigation__responsive-container:not(.hidden-by-default):not(.is-menu-open) { display: none; }
-}
+/* Below 1024px the menu is not a menu at all: the header shows the category
+   row under the search (client, 9 Nov 2026), and the navigation block is
+   hidden whole ("The header, compact"). The menu row needs 1024px to fit
+   (BROWSE-16 measured it wrapping below that). */
 /* The overlay: the interface font, at reading size, one 52px row per link. */
 .wp-block-navigation__responsive-container .wp-block-navigation-item__content {
   font-family: var(--wp--preset--font-family--ui);
@@ -1403,7 +1399,7 @@ ins:has(> .woocommerce-Price-amount) { text-decoration: none; }
 /* Items that exist for the overlay only (My account, All meals, Build a box).
    Wherever the menu is a row they would be the same door twice, or a sixth
    link the row has no room for. */
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .wp-block-navigation .fd-nav-account, .wp-block-navigation .fd-nav-extra { display: none; }
 }
 
@@ -2347,14 +2343,14 @@ body:has(.fd-sticky-atc:not([hidden])) .fd-viewcart:not([hidden]) {
 .fd-search__all .fd-search__glyph { background: var(--wp--preset--color--kraft-pale); color: var(--wp--preset--color--char); }
 
 /* Laptop: one row — logo, menu, search, account, cart — on a tighter rhythm. */
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .wp-block-group.fd-header { gap: var(--wp--preset--spacing--40); }
   .fd-header__actions { flex: 0 1 auto; gap: var(--wp--preset--spacing--20); }
   .fd-header__actions > .fd-search { width: 18rem; flex: 0 1 18rem; }
   .fd-catrow { display: none; }
 }
 /* Phone and small tablet: logo | profile | cart, then search, then categories. */
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .wp-block-group.fd-header.fd-header {
     display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas: "logo acct cart" "search search search" "cats cats cats";
@@ -2420,10 +2416,30 @@ body:has(.fd-sticky-atc:not([hidden])) .fd-viewcart:not([hidden]) {
 .fd-dline-sheet .fd-deliver { margin: 0 0 var(--wp--preset--spacing--40); }
 .fd-dline-sheet__done { margin: 0; }
 .fd-dline-sheet__done .wp-element-button { width: 100%; min-height: var(--wp--custom--tap-target); }
-@media (min-width: 900px) {
-  .fd-header > .fd-dline { flex: 0 1 auto; min-width: 0; }
+/* Laptop: the line sits UNDER the logo, as on a phone. Beside it, it took the
+   menu's room and pushed "How it works" onto a second line at 1280px. */
+@media (min-width: 1024px) {
+  .wp-block-group.fd-header.fd-header {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "logo nav actions" "dline nav actions";
+    align-items: center; column-gap: var(--wp--preset--spacing--50); row-gap: 0;
+  }
+  .fd-header > .wp-block-site-title { grid-area: logo; align-self: end; margin: 0; }
+  .fd-header > .fd-dline { grid-area: dline; align-self: start; min-width: 0; }
+  .fd-header > .fd-dline .fd-dline__btn { min-height: 2rem; }
+  .fd-header:has(> .fd-dline[hidden]) > .wp-block-site-title { grid-row: 1 / span 2; align-self: center; }
+  .fd-header > .wp-block-navigation { grid-area: nav; min-width: 0; }
+  .fd-header > .fd-header__actions { grid-area: actions; }
 }
-@media (max-width: 899px) {
+/* A small laptop or a tablet held sideways: the search gives the menu room,
+   so "How it works" never drops to a line of its own. */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .fd-header__actions > .fd-search { width: 11rem; flex-basis: 11rem; }
+  .wp-block-group.fd-header.fd-header { column-gap: var(--wp--preset--spacing--30); }
+  .fd-header .wp-block-navigation, .fd-header .wp-block-navigation__container { column-gap: var(--wp--preset--spacing--30); flex-wrap: nowrap; }
+  .fd-header .wp-block-navigation-item, .fd-header .wp-block-navigation-item__content { white-space: nowrap; }
+}
+@media (max-width: 1023px) {
   .wp-block-group.fd-header.fd-header {
     grid-template-areas: "logo acct cart" "dline acct cart" "search search search" "cats cats cats";
     row-gap: 0;
@@ -2592,3 +2608,250 @@ body:has(.fd-sticky-atc:not([hidden])) .fd-viewcart:not([hidden]) {
 /* A combo's "what is in it" line stops at one line (its name already says "3 meals"): one long list stretched
    every card in its row (a row is as tall as its tallest card). */
 .fd-products .fd-yield { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
+
+/* ==== The cart, Blinkit's checkout (inc/cart-extras.php, client 9 Nov 2026) ==
+   The items are ONE card: "Shipment of 3 items" on top, then a row per line —
+   picture · name, pack, Remove · − N + over the struck and paid price. At
+   every width: a cart line reads the same on a laptop. On a phone, Proceed is
+   a bar fixed to the bottom with the delivery row and the total. */
+.woocommerce-cart .fd-cart-ship {
+  display: flex; align-items: center; gap: var(--wp--preset--spacing--30);
+  padding: var(--wp--preset--spacing--40);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line); border-bottom: 0;
+  border-radius: var(--wp--custom--radius--card) var(--wp--custom--radius--card) 0 0;
+}
+.fd-cart-ship__icon {
+  flex: 0 0 auto; box-sizing: border-box; width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  padding: var(--wp--preset--spacing--20); border-radius: var(--wp--custom--radius--control);
+  background: var(--wp--preset--color--leaf-wash); color: var(--wp--preset--color--leaf-ink);
+}
+.fd-cart-ship__text { display: grid; gap: var(--wp--preset--spacing--10); min-width: 0; }
+.fd-cart-ship__title { margin: 0; font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); font-weight: 700; line-height: 1.2; }
+.fd-cart-ship__when { margin: 0; color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
+.fd-cart-ship__when[hidden], .fd-paybar__to[hidden] { display: none; }
+.fd-linkbtn {
+  appearance: none; margin: 0; padding: 0 var(--wp--preset--spacing--10); border: 0; background: none;
+  min-height: var(--wp--custom--tap-target); font: inherit; font-weight: 600; color: var(--wp--preset--color--flame-ink);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart {
+  display: block; width: 100%;
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: 0 0 var(--wp--custom--radius--card) var(--wp--custom--radius--card);
+}
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart thead { display: none; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tbody,
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr:not(.cart_item) { display: block; width: 100%; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item {
+  display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  grid-template-areas: "thumb name qty" "thumb remove subtotal";
+  column-gap: var(--wp--preset--spacing--30); row-gap: var(--wp--preset--spacing--10);
+  align-items: start; padding: var(--wp--preset--spacing--40);
+  border-top: 1px solid var(--wp--preset--color--line);
+}
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td {
+  display: block; padding: 0; border: 0; width: auto; white-space: normal; text-align: left !important;
+}
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td::before { display: none; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-thumbnail { grid-area: thumb; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-thumbnail img { width: 4.5rem; height: 4.5rem; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-name {
+  grid-area: name; display: grid; gap: var(--wp--preset--spacing--10);
+  font-size: var(--wp--preset--font-size--base); line-height: 1.3;
+}
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-name > a {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.fd-cart-line__pack { font-weight: 400; color: var(--wp--preset--color--mute); }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-remove { grid-area: remove; align-self: end; justify-self: start; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-remove a.remove,
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-remove a.remove:hover {
+  width: auto; height: auto; min-height: var(--wp--custom--tap-target); padding: 0; justify-content: flex-start;
+  background: none; font-size: var(--wp--preset--font-size--base); font-weight: 400;
+  text-decoration: underline dashed; text-underline-offset: 4px;
+}
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-price { display: none; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-quantity { grid-area: qty; justify-self: end; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart tr.cart_item td.product-subtotal {
+  grid-area: subtotal; justify-self: end; align-self: end; text-align: right !important;
+  font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.fd-cart-line__was { margin-right: var(--wp--preset--spacing--10); font-weight: 400; color: var(--wp--preset--color--mute); }
+.fd-cartqty {
+  display: inline-flex; align-items: center; box-sizing: border-box; height: var(--wp--custom--tap-target);
+  border: 2px solid var(--wp--preset--color--flame-ink); border-radius: var(--wp--custom--radius--pill);
+  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--flame-ink);
+}
+.fd-cartqty__step {
+  appearance: none; margin: 0; padding: 0; border: 0; background: none; color: inherit; cursor: pointer;
+  width: var(--wp--custom--tap-target); height: 100%; border-radius: var(--wp--custom--radius--pill);
+  font: inherit; font-size: var(--wp--preset--font-size--lg); font-weight: 700; line-height: 1;
+}
+.fd-cartqty__step:hover { background: var(--wp--preset--color--flame-wash); }
+.fd-cartqty .quantity input.qty {
+  width: 2.5rem; min-height: 0; height: 100%; padding: 0; border: 0; background: none;
+  color: inherit; font-weight: 700; text-align: center; -moz-appearance: textfield;
+}
+.fd-cartqty .quantity input.qty::-webkit-inner-spin-button, .fd-cartqty .quantity input.qty::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.woocommerce-cart .woocommerce-cart-form table.shop_table.cart td.actions { display: block; width: auto; padding: var(--wp--preset--spacing--40); border: 0; border-top: 1px solid var(--wp--preset--color--line); }
+/* With the steppers there is nothing for Update cart to do; it stays for a
+   browser without JavaScript (where the steppers are not there either). */
+.woocommerce-cart .woocommerce-cart-form:has(.fd-cartqty) td.actions > [name="update_cart"] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.fd-saved-row td { padding: var(--wp--preset--spacing--30) 0 0 !important; text-align: left !important; }
+.fd-saved-row .fd-saved { margin: 0; }
+.fd-paybar__to, .fd-paybar__total { display: none; }
+@media (max-width: 781px) {
+  .woocommerce-cart .wc-proceed-to-checkout {
+    position: fixed; z-index: 60; left: 0; right: 0; bottom: 0; margin: 0;
+    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
+    column-gap: var(--wp--preset--spacing--30); row-gap: var(--wp--preset--spacing--20);
+    padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--40) calc(var(--wp--preset--spacing--30) + env(safe-area-inset-bottom, 0px));
+    background: var(--wp--preset--color--surface); border-top: 1px solid var(--wp--preset--color--line);
+  }
+  .woocommerce-cart .wc-proceed-to-checkout .fd-paybar__to:not([hidden]) {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--wp--preset--spacing--10);
+    grid-column: 1 / -1; margin: 0; font-size: var(--wp--preset--font-size--base);
+  }
+  .fd-paybar__to-label { color: var(--wp--preset--color--mute); }
+  /* No PIN yet: the row asks for one, so "Delivering" would not read. */
+  .fd-paybar__to[data-state="none"] .fd-paybar__to-label { display: none; }
+  .woocommerce-cart .wc-proceed-to-checkout .fd-paybar__total { display: grid; line-height: 1.2; }
+  .fd-paybar__amount { font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .fd-paybar__label { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+  .woocommerce-cart .wc-proceed-to-checkout a.checkout-button { min-height: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--20)); }
+  body.woocommerce-cart:has(.wc-proceed-to-checkout) { padding-bottom: calc(var(--wp--custom--tap-target) * 3 + var(--wp--preset--spacing--50) + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ==== Orders as cards (inc/order-progress.php, client 9 Nov 2026) ========== */
+.fd-ocards { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--40); }
+.fd-ocard {
+  background: var(--wp--preset--color--surface); border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card); overflow: visible;
+}
+.fd-ocard__head { display: flex; align-items: center; gap: var(--wp--preset--spacing--30); padding: var(--wp--preset--spacing--40); }
+.fd-ocard__mark {
+  flex: 0 0 auto; display: grid; place-items: center;
+  width: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--10)); height: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--10));
+  border-radius: var(--wp--custom--radius--control); background: var(--wp--preset--color--kraft-pale); color: var(--wp--preset--color--char);
+}
+.fd-ocard__mark svg { width: var(--wp--preset--spacing--50); height: var(--wp--preset--spacing--50); }
+.fd-ocard.is-done .fd-ocard__mark { background: var(--wp--preset--color--leaf-wash); color: var(--wp--preset--color--leaf-ink); }
+.fd-ocard.is-wait .fd-ocard__mark { background: var(--wp--preset--color--flame-wash); color: var(--wp--preset--color--flame-deep); }
+.fd-ocard.is-alert .fd-ocard__mark { background: var(--wp--preset--color--flame-wash); color: var(--wp--preset--color--danger); }
+.fd-ocard__what { flex: 1 1 auto; min-width: 0; display: grid; gap: var(--wp--preset--spacing--10); }
+.fd-ocard__title { margin: 0; font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); line-height: 1.2; }
+.fd-ocard__meta { margin: 0; color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); font-variant-numeric: tabular-nums; }
+.fd-ocard__meta .amount { color: var(--wp--preset--color--char); font-weight: 600; }
+.fd-ocard__menu { position: relative; flex: 0 0 auto; align-self: flex-start; }
+.fd-ocard__menubtn {
+  list-style: none; display: grid; place-items: center; cursor: pointer;
+  width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target); border-radius: 50%; color: var(--wp--preset--color--mute);
+}
+.fd-ocard__menubtn::-webkit-details-marker { display: none; }
+.fd-ocard__menubtn svg { width: var(--wp--preset--spacing--50); height: var(--wp--preset--spacing--50); fill: currentColor; }
+.fd-ocard__menubtn:hover, .fd-ocard__menu[open] .fd-ocard__menubtn { background: var(--wp--preset--color--kraft-pale); color: var(--wp--preset--color--char); }
+.fd-ocard__menulist {
+  position: absolute; z-index: 20; right: 0; top: calc(100% + var(--wp--preset--spacing--10)); min-width: 13rem;
+  list-style: none; margin: 0; padding: var(--wp--preset--spacing--10) 0;
+  background: var(--wp--preset--color--surface); border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--control);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--wp--preset--color--char) 14%, transparent);
+}
+.fd-ocard__menuitem {
+  display: flex; align-items: center; min-height: var(--wp--custom--tap-target); padding: 0 var(--wp--preset--spacing--40);
+  color: var(--wp--preset--color--char); text-decoration: none; font-size: var(--wp--preset--font-size--base);
+}
+.fd-ocard__menuitem:hover { background: var(--wp--preset--color--kraft-pale); }
+.fd-ocard__thumbs {
+  list-style: none; margin: 0; padding: var(--wp--preset--spacing--40);
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--wp--preset--spacing--20);
+  border-top: 1px solid var(--wp--preset--color--line);
+}
+.fd-ocard__thumb {
+  aspect-ratio: 1; display: grid; place-items: center; overflow: hidden;
+  border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--control); background: var(--wp--preset--color--kraft-pale);
+}
+.fd-ocard__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.fd-ocard__noimg { padding: var(--wp--preset--spacing--10); font-size: var(--wp--preset--font-size--base); line-height: 1.1; text-align: center; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; color: var(--wp--preset--color--mute); }
+.fd-ocard__more { background: var(--wp--preset--color--surface); font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); font-weight: 700; color: var(--wp--preset--color--mute); }
+.fd-ocard__foot { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-top: 1px solid var(--wp--preset--color--line); }
+.fd-ocard__act {
+  appearance: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; font: inherit; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; min-height: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--20));
+  font-weight: 600; color: var(--wp--preset--color--char); text-decoration: none; font-size: var(--wp--preset--font-size--base);
+}
+.fd-ocard__act + .fd-ocard__act { border-left: 1px solid var(--wp--preset--color--line); }
+.fd-ocard__act--main { color: var(--wp--preset--color--flame-ink); }
+.fd-ocard__act:hover { background: var(--wp--preset--color--kraft-pale); }
+.fd-ocard__foot > :first-child { border-bottom-left-radius: var(--wp--custom--radius--card); }
+.fd-ocard__foot > :last-child { border-bottom-right-radius: var(--wp--custom--radius--card); }
+
+/* The order's own page: each line a picture, name and pack, then "× 2" and the
+   price. The picture sits in the cell's padding, so the cell stays a table
+   cell and the row's rule runs unbroken. */
+.woocommerce-order-details .order_item td.product-name { position: relative; padding-left: calc(3.5rem + var(--wp--preset--spacing--30)); }
+.fd-oitem__img {
+  position: absolute; left: 0; top: var(--wp--preset--spacing--30); width: 3.5rem; height: 3.5rem; object-fit: cover; box-sizing: border-box;
+  border-radius: var(--wp--custom--radius--control); background: var(--wp--preset--color--kraft-pale); border: 1px solid var(--wp--preset--color--line);
+}
+span.fd-oitem__img { display: block; }
+.fd-oitem__name { display: block; font-weight: 600; }
+.fd-oitem__pack { color: var(--wp--preset--color--mute); font-weight: 400; }
+.woocommerce-order-details .order_item td.product-name > .product-quantity { font-weight: 400; color: var(--wp--preset--color--mute); }
+.woocommerce-order-details .order_item td { height: calc(3.5rem + 2 * var(--wp--preset--spacing--30)); padding-top: var(--wp--preset--spacing--30); padding-bottom: var(--wp--preset--spacing--30); vertical-align: top; }
+@media (max-width: 781px) {
+  /* Order again is the page's one action: a bar at the bottom (the tab bar steps aside here). */
+  .woocommerce-account .woocommerce-order-details ~ .order-again,
+  .woocommerce-account .order-again {
+    position: fixed; z-index: 60; left: 0; right: 0; bottom: 0; margin: 0;
+    padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--40) calc(var(--wp--preset--spacing--30) + env(safe-area-inset-bottom, 0px));
+    background: var(--wp--preset--color--surface); border-top: 1px solid var(--wp--preset--color--line);
+  }
+  .woocommerce-account .order-again .button { display: flex; justify-content: center; width: 100%; min-height: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--20)); }
+  body.woocommerce-account:has(.order-again) { padding-bottom: calc(var(--wp--custom--tap-target) * 2 + var(--wp--preset--spacing--40) + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ==== The profile (inc/profile.php, client 9 Nov 2026) ===================== */
+/* WooCommerce's own "Hello …" and "From your account dashboard…" lines say
+   what the profile now shows. */
+.woocommerce-MyAccount-content:has(> .fd-profile) > p { display: none; }
+.fd-profile { display: grid; gap: var(--wp--preset--spacing--30); max-width: 40rem; }
+.fd-profile__name { margin: 0; font-size: var(--wp--preset--font-size--2xl); line-height: 1.15; }
+.fd-profile__facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--10) var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); }
+.fd-profile__facts li { display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--10); min-width: 0; overflow-wrap: anywhere; }
+.fd-profile__facts svg { flex: 0 0 auto; width: 1.1rem; height: 1.1rem; }
+.fd-profile__tiles { list-style: none; margin: var(--wp--preset--spacing--20) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--wp--preset--spacing--30); }
+.fd-profile__tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--wp--preset--spacing--20);
+  min-height: calc(var(--wp--custom--tap-target) * 2); padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--20);
+  background: var(--wp--preset--color--surface); border: 1px solid var(--wp--preset--color--line); border-radius: var(--wp--custom--radius--card);
+  color: var(--wp--preset--color--char); text-decoration: none; font-weight: 600; text-align: center;
+}
+.fd-profile__tile svg { width: var(--wp--preset--spacing--60); height: var(--wp--preset--spacing--60); color: var(--wp--preset--color--flame-ink); }
+.fd-profile__tile:hover { border-color: var(--wp--preset--color--line-strong); }
+.fd-profile__group {
+  margin: var(--wp--preset--spacing--40) 0 0; font-family: var(--wp--preset--font-family--ui);
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--wp--preset--color--mute);
+}
+.fd-profile__list { list-style: none; margin: 0; padding: 0; }
+.fd-profile__row {
+  display: flex; align-items: center; gap: var(--wp--preset--spacing--30);
+  min-height: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--20)); color: var(--wp--preset--color--char); text-decoration: none;
+}
+.fd-profile__icon {
+  flex: 0 0 auto; display: grid; place-items: center; width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  border-radius: 50%; background: var(--wp--preset--color--kraft-pale); color: var(--wp--preset--color--char);
+}
+.fd-profile__icon svg { width: var(--wp--preset--spacing--50); height: var(--wp--preset--spacing--50); }
+.fd-profile__label { flex: 1 1 auto; font-size: var(--wp--preset--font-size--md); }
+.fd-profile__chev { flex: 0 0 auto; width: var(--wp--preset--spacing--50); height: var(--wp--preset--spacing--50); color: var(--wp--preset--color--mute); }
+.fd-profile__row:hover .fd-profile__label { color: var(--wp--preset--color--flame-ink); }
+.fd-profile__list--out { margin-top: var(--wp--preset--spacing--30); border-top: 1px solid var(--wp--preset--color--line); padding-top: var(--wp--preset--spacing--20); }
+.fd-profile-back { display: none; margin: 0 0 var(--wp--preset--spacing--30); }
+.fd-profile-back a { display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--10); min-height: var(--wp--custom--tap-target); font-weight: 600; color: var(--wp--preset--color--char); text-decoration: none; }
+@media (max-width: 781px) {
+  /* The profile IS the menu on a phone; every other account page starts with "‹ Profile". */
+  .woocommerce-account.logged-in .woocommerce-MyAccount-navigation { display: none; }
+  .fd-profile-back { display: block; }
+}

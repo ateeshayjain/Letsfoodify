@@ -69,5 +69,41 @@ $bs = (string) file_get_contents( __DIR__ . '/../scripts/bootstrap.sh' );
 check( 'bootstrap.sh makes /track-order/ (the footer links it) only when absent, with WooCommerce\'s tracking form',
 	str_contains( $bs, '--post_name=track-order' ) && str_contains( $bs, "[woocommerce_order_tracking]" ) && str_contains( $bs, 'never rewritten' ) );
 
+echo "── the orders list as cards (client, 9 Nov: Blinkit's order history) ──\n";
+check( 'where it is, in words: delivered beats shipped once a date is recorded', [ 'text' => 'Delivered', 'icon' => 'done' ] === foodify_order_headline( 'completed', true ) && 'Shipped' === foodify_order_headline( 'wc-completed' )['text'] );
+check( 'being packed, waiting for payment, cancelled, a problem reported', 'Being packed' === foodify_order_headline( 'processing' )['text'] && 'Waiting for payment' === foodify_order_headline( 'pending' )['text'] && 'stop' === foodify_order_headline( 'cancelled' )['icon'] && 'alert' === foodify_order_headline( 'return-requested' )['icon'] );
+check( 'no time claims: nothing says "minutes"', ! preg_match( '/minute/i', json_encode( array_map( 'foodify_order_headline', [ 'completed', 'processing', 'pending', 'on-hold', 'cancelled' ] ) ) ) );
+$acts = [
+	'order-again' => [ 'url' => '/cart/?order_again=7&_wpnonce=x', 'name' => 'Order again', 'aria-label' => 'Order again: put everything from order 1194 in your cart' ],
+	'view'        => [ 'url' => '/my-account/view-order/7/', 'name' => 'Details' ],
+	'foodify-return' => [ 'url' => '/r/', 'name' => 'Report a problem' ],
+	'invoice'     => [ 'url' => '/inv/', 'name' => 'Invoice' ],
+];
+$items = [];
+for ( $i = 1; $i <= 6; $i++ ) { $items[] = [ 'name' => 'Meal ' . $i, 'img' => $i < 6 ? '/m' . $i . '.jpg' : '' ]; }
+$card = foodify_order_card_html( [ 'number' => '1194', 'status' => 'completed', 'delivered' => true, 'total' => '<span class="amount">₹720</span>', 'date' => '3 Nov, 8:11 am', 'items' => $items, 'actions' => $acts ] );
+check( 'headline and "₹720 · 3 Nov, 8:11 am · #1194"', str_contains( $card, '<h3 class="fd-ocard__title">Delivered<span class="fd-sr"> · order 1194</span></h3>' ) && str_contains( $card, '<p class="fd-ocard__meta"><span class="amount">₹720</span> · 3 Nov, 8:11 am · #1194</p>' ) );
+check( 'four pictures, then "+2" (said in full to a screen reader)', 4 === substr_count( $card, '<li class="fd-ocard__thumb"><img' ) && str_contains( $card, '<span aria-hidden="true">+2</span><span class="fd-sr">and 2 more</span>' ) );
+check( 'each picture is named for its meal', str_contains( $card, 'alt="Meal 1"' ) );
+check( 'the foot: Order again | Details', 1 === preg_match( '#<div class="fd-ocard__foot"><a class="fd-ocard__act fd-ocard__act--main" href="/cart/\?order_again=7&amp;_wpnonce=x" aria-label="Order again: put everything from order 1194 in your cart">Order again</a><a class="fd-ocard__act" href="/my-account/view-order/7/">Details</a></div>#', $card ) );
+check( 'everything else behind ⋮ — a <details> menu, named for the order', str_contains( $card, '<details class="fd-ocard__menu"><summary class="fd-ocard__menubtn" aria-label="More for order 1194">' ) && str_contains( $card, '>Report a problem</a>' ) && str_contains( $card, '>Invoice</a>' ) && 1 === substr_count( $card, '>Order again</a>' ) );
+$pay = foodify_order_card_html( [ 'number' => '9', 'status' => 'pending', 'total' => '₹1', 'date' => 'd', 'items' => [], 'actions' => [ 'pay' => [ 'url' => '/pay/', 'name' => 'Pay' ], 'view' => [ 'url' => '/v/', 'name' => 'Details' ], 'cancel' => [ 'url' => '/c/', 'name' => 'Cancel' ] ] ] );
+check( 'an unpaid order leads with Pay; nothing else to hide, no menu when only Cancel… is there', str_contains( $pay, 'fd-ocard__act--main" href="/pay/">Pay</a>' ) && str_contains( $pay, '>Cancel</a>' ) );
+check( 'no actions beyond the foot: no ⋮ at all', ! str_contains( foodify_order_card_html( [ 'number' => '1', 'status' => 'processing', 'total' => 't', 'date' => 'd', 'items' => [], 'actions' => [ 'view' => [ 'url' => '/v/', 'name' => 'Details' ] ] ] ), 'fd-ocard__menu' ) );
+check( 'escaped', str_contains( foodify_order_card_html( [ 'number' => '<1>', 'status' => 'processing', 'total' => 't', 'date' => '<d>', 'items' => [ [ 'name' => '"x"', 'img' => '' ] ], 'actions' => [] ] ), '&lt;d&gt;' ) );
+
+echo "── the order's own page ──\n";
+$n = foodify_order_item_name_html( '<a href="/p/">Dal</a>', '/d.jpg', '80 g' );
+check( 'each line: picture, name, pack — WooCommerce adds "× 2" after', '<img class="fd-oitem__img" src="/d.jpg" alt="" width="56" height="56" loading="lazy" decoding="async"><span class="fd-oitem__name"><a href="/p/">Dal</a></span><span class="fd-oitem__pack">80 g</span>' === $n );
+check( 'no picture: a placeholder; no pack: nothing', str_contains( foodify_order_item_name_html( 'X', '', '' ), 'fd-oitem__img is-empty' ) && ! str_contains( foodify_order_item_name_html( 'X', '', '' ), 'fd-oitem__pack' ) );
+$src = (string) file_get_contents( $T . 'inc/order-progress.php' );
+check( 'the list replaces WooCommerce\'s orders RENDERER, keeping its query filter and pagination', str_contains( $src, "remove_action( 'woocommerce_account_orders_endpoint', 'woocommerce_account_orders' );" ) && str_contains( $src, "apply_filters( 'woocommerce_my_account_my_orders_query'" ) && str_contains( $src, 'wc_get_account_orders_actions( $order )' ) && str_contains( $src, "wc_get_endpoint_url( 'orders', \$page + 1 )" ) );
+check( 'pictures on order lines only while woocommerce_view_order runs (emails use the same filter)', str_contains( $src, "! doing_action( 'woocommerce_view_order' )" ) );
+check( 'the struck MRP is NOT shown on a past order — the order never recorded it', ! str_contains( $src, 'get_regular_price' ) );
+$tb = (string) file_get_contents( $T . 'inc/tab-bar.php' );
+check( 'the tab bar steps aside on an order\'s page, whose Order again bar owns the bottom', str_contains( $tb, "is_wc_endpoint_url( 'view-order' )" ) );
+$css = (string) file_get_contents( $T . 'style.css' );
+check( 'on a phone, Order again is a bar fixed to the bottom of the order page', str_contains( $css, ".woocommerce-account .order-again {\n    position: fixed;" ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

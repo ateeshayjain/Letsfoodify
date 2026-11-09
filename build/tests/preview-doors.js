@@ -233,7 +233,8 @@ const path = require('path');
   await go('cart');
   const math = () => page.evaluate(() => {
     const r = document.getElementById('s-cart'), n = s => parseInt((r.querySelector(s) || { textContent: '' }).textContent.replace(/[^0-9]/g, ''), 10) || 0;
-    const lines = [...r.querySelectorAll('tr.cart_item')].map(tr => parseInt(tr.querySelector('.product-subtotal').textContent.replace(/[^0-9]/g, ''), 10));
+    // The paid figure, not the struck one before it (inc/cart-extras.php).
+    const lines = [...r.querySelectorAll('tr.cart_item')].map(tr => { const c = tr.querySelector('.product-subtotal').cloneNode(true); c.querySelectorAll('del').forEach(d => d.remove()); return parseInt(c.textContent.replace(/[^0-9]/g, ''), 10); });
     const disc = r.querySelector('.cart-discount').hidden ? 0 : n('.cart-discount td');
     return { lines: lines.reduce((a, b) => a + b, 0), sub: n('.cart-subtotal td'), disc, ship: /Free/.test(r.querySelector('.shipping td').textContent) ? 0 : n('.shipping td'), total: n('.order-total td') };
   });
@@ -306,9 +307,10 @@ const path = require('path');
   check('checkout with an empty cart sends you to the cart', (await shown()) === 'cart', await shown());
 
   // ── the account remembers ─────────────────────────────────────────────────
-  await go('account');
-  const first = await page.evaluate(() => document.querySelector('#s-account .fx-orders tr td strong').textContent);
-  check('the new order heads the account\'s order list', first === '#1195', first);
+  // It opens on the profile (inc/profile.php); its first row is the orders.
+  await go('account'); await click('#s-account .fd-profile__row[data-panel="orders"]'); await wait();
+  const first = await page.evaluate(() => document.querySelector('#s-account .fx-orders .fd-ocard [data-view]').getAttribute('data-view'));
+  check('the new order heads the account\'s order list', first === '1195', first);
   await click('#s-account [data-view="1088"]'); await wait();
   check('Details opens that order', /1088/.test(await page.textContent('#s-account .fx-vo-head')));
   await click('#s-account .fx-vo-head ~ * [data-panel="orders"], #s-account section[data-panel-body="view-order"] [data-panel="orders"]'); await wait();
@@ -605,6 +607,36 @@ const path = require('path');
   check('every order in the list has "Order again", first', ord.again.length > 0 && ord.again.every(t => t === 'Order again'), ord);
   check('an order shows where it is as steps — Placed, Packed, Shipped, Delivered — with no step the store cannot reach', ord.title === 'Where your order is' && ord.steps.join('|') === 'is-done:Placed|is-done:Packed|is-done:Shipped|is-done:Delivered', ord);
   check('… and Order again under it', ord.viewAgain === 'Order again', ord);
+
+  // The cart, Blinkit's checkout: one card of lines, − N + on each, the phone's pay bar.
+  const cart2 = await phone.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms));
+    window.fxSetCart([['express-dal-fry', 1], ['masala-chai', 1]], null); window.fxShow('cart', false); await sl(30);
+    const c = document.getElementById('s-cart'), row = c.querySelector('tr.cart_item');
+    const r = { ship: c.querySelector('.fd-cart-ship__title').textContent, remove: row.querySelector('a.remove').textContent, pack: row.querySelector('.fd-cart-line__pack')?.textContent,
+      was: !!row.querySelector('.product-subtotal del'), bar: getComputedStyle(c.querySelector('.wc-proceed-to-checkout')).position };
+    row.querySelector('[data-fd-cartqty-step="1"]').click(); row.querySelector('[data-fd-cartqty-step="1"]').click();
+    // The quantity applies after a 700 ms pause; wait for it (bounded), not a fixed sleep that load can outrun.
+    for (let t = 0; t < 30 && c.querySelector('.fd-cart-ship__title').textContent !== 'Shipment of 4 items'; t++) await sl(100);
+    r.qty = c.querySelector('tr.cart_item input.qty').value; r.total = c.querySelector('.fx-paybar-amt').textContent; r.ship2 = c.querySelector('.fd-cart-ship__title').textContent;
+    return r;
+  });
+  check('the cart\'s lines are one card: "Shipment of 2 items", each line with its pack, a struck price and "Remove"', cart2.ship === 'Shipment of 2 items' && cart2.pack === '80 g' && cart2.was && cart2.remove === 'Remove', cart2);
+  check('… + steps the quantity in place (two taps, one update) and the pay bar\'s total follows', cart2.qty === '3' && cart2.ship2 === 'Shipment of 4 items' && /₹/.test(cart2.total), cart2);
+  check('… on a phone Proceed is a bar fixed to the bottom', cart2.bar === 'fixed', cart2);
+
+  // Orders as cards, and the profile.
+  const prof = await phone.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms));
+    window.fxShow('account', true); await sl(60);
+    const a = document.getElementById('s-account'), card = a.querySelector('.fd-ocard');
+    return { profile: !a.querySelector('[data-panel-body="dashboard"]').hidden, name: a.querySelector('.fd-profile__name')?.textContent,
+      rows: [...a.querySelectorAll('.fd-profile__row')].map(r => r.textContent.trim()), nav: getComputedStyle(a.querySelector('.woocommerce-MyAccount-navigation')).display,
+      cardTitle: card.querySelector('.fd-ocard__title').firstChild.textContent, foot: [...card.querySelectorAll('.fd-ocard__act')].map(b => b.textContent),
+      menu: [...card.querySelectorAll('.fd-ocard__menuitem')].map(m => m.textContent), thumbs: card.querySelectorAll('.fd-ocard__thumb').length };
+  });
+  check('the account opens on the profile: name, then the shop\'s own doors, Log out last; no side menu on a phone', prof.profile && prof.name === 'Ateeshay Jain' && prof.rows[0] === 'Orders & reorder' && prof.rows[prof.rows.length - 1] === 'Log out' && prof.nav === 'none', prof);
+  check('each order is a card: where it is, its pictures, Order again | Details, the rest behind ⋮', prof.cardTitle === 'Delivered' && prof.thumbs > 0 && prof.foot.join('|') === 'Order again|Details' && prof.menu.includes('Invoice'), prof);
   await phone.close();
 
   // ── nothing anywhere is dead ──────────────────────────────────────────────

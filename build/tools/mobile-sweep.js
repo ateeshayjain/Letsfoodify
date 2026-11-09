@@ -143,7 +143,7 @@ const INSIDE = ['.fd-badges > *', '.fd-chip', '.fd-save'];
           for (const [nm, r] of [['cart', c], ['account', ac]]) {
             if (Math.min(r.bottom, l.bottom) - Math.max(r.top, l.top) <= 0) hits.push(`header ${nm} has wrapped off the logo's row`);
           }
-          if (srch && innerWidth < 900) {
+          if (srch && innerWidth < 1024) {
             const sr = srch.getBoundingClientRect();
             if (sr.top < Math.max(c.bottom, l.bottom) - 1) hits.push('phone search is not on its own row under the logo');
             if (Math.abs(sr.left - h.left) > 2 || Math.abs(sr.right - h.right) > 2) hits.push('phone search does not span the header');

@@ -33,6 +33,16 @@
  *   statuses it may come from are widened past "completed" so an order still
  *   being packed, or one cancelled, can be ordered again too.
  *
+ * THE ORDERS LIST, AS CARDS (client, 9 Nov 2026 — Blinkit's order history)
+ *   Each order is a card: where it is ("Delivered", "Being packed") over
+ *   "₹720 · 3 Nov, 8:11 am", a row of what was in it ("+2" past four), and
+ *   Order again | Details at its foot. Everything else WooCommerce or the
+ *   theme offers for that order (Pay, Cancel, Report a problem, Invoice) sits
+ *   behind "⋮" — a <details> menu, so it works without JavaScript. The cards
+ *   replace WooCommerce's orders TABLE renderer, not its template: same query,
+ *   same filters, same pagination. NOT borrowed: "Arrived in 10 minutes"
+ *   (no time claims), deleting an order, and ratings on the list.
+ *
  * @package Foodify
  */
 declare( strict_types = 1 );
@@ -120,6 +130,94 @@ function foodify_order_progress_html( array $p, string $tracking = '' ): string 
 		. '<ol class="fd-track__steps">' . $li . '</ol></section>';
 }
 
+/**
+ * What a card says an order is doing, and its mark.
+ *
+ * @return array{text:string,icon:string} icon: done | wait | stop | alert
+ */
+function foodify_order_headline( string $status, bool $delivered = false ): array {
+	$status = (string) preg_replace( '/^wc-/', '', strtolower( trim( $status ) ) );
+	if ( $delivered && in_array( $status, [ 'completed', 'processing' ], true ) ) {
+		return [ 'text' => 'Delivered', 'icon' => 'done' ];
+	}
+	$map = [
+		'completed'        => [ 'Shipped', 'done' ],
+		'processing'       => [ 'Being packed', 'wait' ],
+		'on-hold'          => [ 'Placed', 'wait' ],
+		'pending'          => [ 'Waiting for payment', 'wait' ],
+		'out-for-delivery' => [ 'Out for delivery', 'wait' ],
+		'delivered'        => [ 'Delivered', 'done' ],
+		'return-requested' => [ 'Problem reported', 'alert' ],
+		'cancelled'        => [ 'Cancelled', 'stop' ],
+		'refunded'         => [ 'Refunded', 'stop' ],
+		'failed'           => [ 'Payment did not go through', 'stop' ],
+	];
+	[ $text, $icon ] = $map[ $status ] ?? [ ucfirst( str_replace( '-', ' ', $status ) ), 'wait' ];
+	return [ 'text' => $text, 'icon' => $icon ];
+}
+
+/**
+ * One order as a card.
+ *
+ * @param array{number:string,status:string,delivered?:bool,total:string,date:string,
+ *              items:array<int,array{name:string,img:string}>,
+ *              actions:array<string,array{url:string,name:string,aria-label?:string}>} $o
+ *        total: WooCommerce's formatted total (HTML). actions: wc_get_account_orders_actions().
+ */
+function foodify_order_card_html( array $o, int $show = 4 ): string {
+	$e     = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES, 'UTF-8' );
+	$h     = foodify_order_headline( (string) $o['status'], ! empty( $o['delivered'] ) );
+	$no    = (string) $o['number'];
+	$icons = [
+		'done'  => '<path d="m6 12.5 4 4 8-9"/>',
+		'wait'  => '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+		'stop'  => '<path d="m7 7 10 10M17 7 7 17"/>',
+		'alert' => '<path d="M12 4 3 20h18z"/><path d="M12 10v4M12 17v.01"/>',
+	];
+	$thumbs = '';
+	$items  = array_values( (array) ( $o['items'] ?? [] ) );
+	foreach ( array_slice( $items, 0, $show ) as $it ) {
+		$thumbs .= '<li class="fd-ocard__thumb">' . ( '' !== (string) $it['img']
+			? '<img src="' . $e( (string) $it['img'] ) . '" alt="' . $e( (string) $it['name'] ) . '" width="64" height="64" loading="lazy" decoding="async">'
+			: '<span class="fd-ocard__noimg">' . $e( (string) $it['name'] ) . '</span>' ) . '</li>';
+	}
+	$more = count( $items ) - $show;
+	if ( $more > 0 ) {
+		$thumbs .= '<li class="fd-ocard__thumb fd-ocard__more"><span aria-hidden="true">+' . $more . '</span><span class="fd-sr">and ' . $more . ' more</span></li>';
+	}
+	$actions = (array) ( $o['actions'] ?? [] );
+	$link    = static function ( array $a, string $cls ) use ( $e ): string {
+		return '<a class="' . $cls . '" href="' . $e( (string) $a['url'] ) . '"' . ( ! empty( $a['aria-label'] ) ? ' aria-label="' . $e( (string) $a['aria-label'] ) . '"' : '' ) . '>' . $e( (string) $a['name'] ) . '</a>';
+	};
+	// The foot: Pay when it is owed, else Order again — then Details.
+	$first = isset( $actions['pay'] ) ? 'pay' : ( isset( $actions['order-again'] ) ? 'order-again' : '' );
+	$foot  = ( '' !== $first ? $link( $actions[ $first ], 'fd-ocard__act fd-ocard__act--main' ) : '' )
+		. ( isset( $actions['view'] ) ? $link( $actions['view'], 'fd-ocard__act' ) : '' );
+	$rest  = '';
+	foreach ( $actions as $key => $a ) {
+		if ( $key === $first || 'view' === $key ) {
+			continue;
+		}
+		$rest .= '<li>' . $link( $a, 'fd-ocard__menuitem' ) . '</li>';
+	}
+	$menu = '' === $rest ? '' : '<details class="fd-ocard__menu"><summary class="fd-ocard__menubtn" aria-label="' . $e( 'More for order ' . $no ) . '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></summary><ul class="fd-ocard__menulist">' . $rest . '</ul></details>';
+	return '<li class="fd-ocard is-' . $h['icon'] . '">'
+		. '<div class="fd-ocard__head"><span class="fd-ocard__mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' . $icons[ $h['icon'] ] . '</svg></span>'
+		. '<div class="fd-ocard__what"><h3 class="fd-ocard__title">' . $e( $h['text'] ) . '<span class="fd-sr"> · order ' . $e( $no ) . '</span></h3>'
+		. '<p class="fd-ocard__meta">' . (string) $o['total'] . ' · ' . $e( (string) $o['date'] ) . ' · #' . $e( $no ) . '</p></div>' . $menu . '</div>'
+		. ( '' !== $thumbs ? '<ul class="fd-ocard__thumbs">' . $thumbs . '</ul>' : '' )
+		. ( '' !== $foot ? '<div class="fd-ocard__foot">' . $foot . '</div>' : '' )
+		. '</li>';
+}
+
+/** An order line on its own page: picture, name, and the pack ("80 g"). The quantity follows ("× 2"). */
+function foodify_order_item_name_html( string $name_html, string $img, string $pack ): string {
+	$e = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES, 'UTF-8' );
+	return ( '' !== $img ? '<img class="fd-oitem__img" src="' . $e( $img ) . '" alt="" width="56" height="56" loading="lazy" decoding="async">' : '<span class="fd-oitem__img is-empty" aria-hidden="true"></span>' )
+		. '<span class="fd-oitem__name">' . $name_html . '</span>'
+		. ( '' !== trim( $pack ) ? '<span class="fd-oitem__pack">' . $e( trim( $pack ) ) . '</span>' : '' );
+}
+
 /* -------------------------------------------------------------------------
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
@@ -169,3 +267,70 @@ add_filter( 'woocommerce_my_account_my_orders_actions', static function ( array 
 	];
 	return [ 'order-again' => $again ] + $actions;
 }, 5, 2 );
+
+/** The orders list as cards — WooCommerce's own query and filters, the theme's markup. */
+add_action( 'init', static function (): void {
+	remove_action( 'woocommerce_account_orders_endpoint', 'woocommerce_account_orders' );
+	add_action( 'woocommerce_account_orders_endpoint', 'foodify_account_orders' );
+} );
+
+function foodify_account_orders( $current_page ): void {
+	$page   = empty( $current_page ) ? 1 : absint( $current_page );
+	$result = wc_get_orders( apply_filters( 'woocommerce_my_account_my_orders_query', [
+		'customer' => get_current_user_id(),
+		'page'     => $page,
+		'paginate' => true,
+	] ) );
+	do_action( 'woocommerce_before_account_orders', 0 < $result->total );
+	if ( ! $result->total ) {
+		wc_print_notice( esc_html__( 'No order has been made yet.', 'woocommerce' ) . ' <a class="woocommerce-Button wc-forward button" href="' . esc_url( apply_filters( 'woocommerce_return_to_shop_redirect', wc_get_page_permalink( 'shop' ) ) ) . '">' . esc_html__( 'Browse products', 'woocommerce' ) . '</a>', 'notice' );
+		do_action( 'woocommerce_after_account_orders', false );
+		return;
+	}
+	$cards = '';
+	foreach ( $result->orders as $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			continue;
+		}
+		$items = [];
+		foreach ( $order->get_items() as $item ) {
+			$p       = $item instanceof WC_Order_Item_Product ? $item->get_product() : null;
+			$img_id  = $p ? (int) $p->get_image_id() : 0;
+			$items[] = [ 'name' => $item->get_name(), 'img' => $img_id ? (string) wp_get_attachment_image_url( $img_id, 'thumbnail' ) : '' ];
+		}
+		$created = $order->get_date_created();
+		$cards  .= foodify_order_card_html( [
+			'number'    => (string) $order->get_order_number(),
+			'status'    => $order->get_status(),
+			'delivered' => (int) $order->get_meta( '_foodify_delivered_at' ) > 0,
+			'total'     => wp_kses_post( $order->get_formatted_order_total() ),
+			'date'      => $created ? wp_date( 'j M, g:i a', $created->getTimestamp() ) : '',
+			'items'     => $items,
+			'actions'   => wc_get_account_orders_actions( $order ),
+		] );
+	}
+	echo '<ul class="fd-ocards">' . $cards . '</ul>'; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the builder.
+	if ( 1 < $result->max_num_pages ) {
+		echo '<div class="woocommerce-pagination woocommerce-pagination--without-numbers woocommerce-Pagination">';
+		if ( 1 !== $page ) {
+			echo '<a class="woocommerce-button woocommerce-button--previous woocommerce-Button woocommerce-Button--previous button" href="' . esc_url( wc_get_endpoint_url( 'orders', $page - 1 ) ) . '">' . esc_html__( 'Previous', 'woocommerce' ) . '</a>';
+		}
+		if ( (int) $result->max_num_pages !== $page ) {
+			echo '<a class="woocommerce-button woocommerce-button--next woocommerce-Button woocommerce-Button--next button" href="' . esc_url( wc_get_endpoint_url( 'orders', $page + 1 ) ) . '">' . esc_html__( 'Next', 'woocommerce' ) . '</a>';
+		}
+		echo '</div>';
+	}
+	do_action( 'woocommerce_after_account_orders', true );
+}
+
+/* The order's own page (and Track order): each line with its picture and pack.
+   Only while woocommerce_view_order runs — emails use the same filter. */
+add_filter( 'woocommerce_order_item_name', static function ( $name, $item ) {
+	if ( ! doing_action( 'woocommerce_view_order' ) || ! $item instanceof WC_Order_Item_Product ) {
+		return $name;
+	}
+	$p   = $item->get_product();
+	$img = $p && $p->get_image_id() ? (string) wp_get_attachment_image_url( (int) $p->get_image_id(), 'thumbnail' ) : '';
+	$id  = $p ? ( $p->get_parent_id() ?: $p->get_id() ) : 0;
+	return foodify_order_item_name_html( (string) $name, $img, $id ? (string) get_post_meta( $id, '_foodify_net_quantity', true ) : '' );
+}, 20, 2 );

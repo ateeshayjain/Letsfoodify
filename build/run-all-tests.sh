@@ -22,6 +22,8 @@ run() { # label command...
   else
     FAILED=$((FAILED+1))
     printf "  ${R}FAIL${N} %-28s\n" "$label"
+    # The failing checks themselves first (a long suite's tail may not hold them), then its end.
+    grep -E 'FAIL' <<<"$out" | sed 's/\x1b\[[0-9;]*m//g' | head -8 | sed 's/^/       ! /'
     tail -12 <<<"$out" | sed 's/^/         /'
   fi
 }
@@ -32,7 +34,7 @@ run "bash-syntax"     bash -c 'for f in scripts/*.sh run-all-tests.sh; do bash -
 run "theme.json"      python3 -c "import json;json.load(open('theme/foodify/theme.json'));print('valid')"
 
 echo "── pure suites ──"
-for t in perf shortcode otp address checkout payments reviews partner admin product-spec wp11 wp12 wp13 shop pdp combo lane-a search account-actions box retention cart-stepper cart-extras order-progress tab-bar; do
+for t in perf shortcode otp address checkout payments reviews partner admin product-spec wp11 wp12 wp13 shop pdp combo lane-a search account-actions box retention cart-stepper cart-extras order-progress tab-bar profile; do
   run "$t" php "tests/$t-test.php"
 done
 run "undefined-functions" php tests/undefined-functions.php

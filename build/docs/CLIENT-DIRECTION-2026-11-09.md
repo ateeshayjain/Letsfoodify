@@ -173,3 +173,92 @@ pack and unit price. In the phone's swipe rows it is 289px tall instead of
 
 Tested in `tests/pdp-test.php` ("the card, decluttered") and in
 `tests/preview-doors.js`.
+
+---
+
+## Fourth round: the cart, orders and profile, from Blinkit screenshots
+
+The client sent Blinkit's checkout, profile, order history and order summary
+as references. Each became the version below, keeping this rebuild's rules:
+no time promises, no invented fees, and only doors the shop actually has.
+
+### Cart (`inc/cart-extras.php`)
+
+- **The items are one card.** "Shipment of 3 items" sits on top, with the
+  delivery date for this device's PIN and **Change**. Each line shows a
+  picture, the name, the pack size and **Remove** on the left, and
+  **− N +** over the struck and paid price on the right.
+- **How the steppers work.** − and + only change WooCommerce's own quantity
+  field and fire its input event. The existing auto-apply (checkout-flow.php)
+  submits after a pause, so five quick taps make one update. Without
+  JavaScript the plain field and Update cart still work.
+- **On a phone, Proceed is a bar fixed to the bottom.** It shows "Delivering
+  · By Wed 11 Nov · 201301 · Change", then the total and **Proceed to
+  checkout**. "You saved" moved into the bill, under the total, so it is not
+  inside the bar.
+- **Not borrowed:**
+  - the ₹30 gift bag, which is a product and a fee that don't exist (the
+    client's call);
+  - "Move to wishlist", because the shop has no wishlist;
+  - "Delivery in 15 minutes", because we make no time promises.
+
+### Orders list and order page (`inc/order-progress.php`)
+
+- **Every order is a card.** It shows where the order is ("Delivered",
+  "Being packed", "Shipped", "Cancelled"), then "₹720 · 3 Nov, 8:11 am ·
+  #1194", the meals' pictures ("+2" beyond four), and **Order again |
+  Details**.
+- **The ⋮ menu holds everything else** WooCommerce or the theme offers for
+  that order: Pay, Cancel, Report a problem, Invoice. It is a `<details>`
+  menu, so it works without JavaScript.
+- **How it is built.** It replaces WooCommerce's orders-table renderer (not
+  its template) and keeps the same query filter, actions and pagination.
+- **On the order's own page,** each line has its picture and pack ("80 g ×
+  2"). On a phone, **Order again** is a bar fixed to the bottom, and the tab
+  bar steps aside there.
+- **Not borrowed:**
+  - "Arrived in 10 minutes";
+  - delete order;
+  - ratings on the list;
+  - a struck MRP on a past order, because the order never recorded what the
+    MRP was, and today's may differ.
+
+### Profile (`inc/profile.php`)
+
+- **The account opens on the profile.** It shows the name, mobile and email,
+  then three tiles (Orders, Addresses, Help).
+- **"Your information" is the live account menu,** one round-icon row per
+  section: Orders & reorder, Repeat orders, Saved addresses, Your details,
+  Refer a friend, and anything a plugin adds later.
+- **Then Help** (Track an order, Contact us), and **Log out** last.
+- **On a phone the side menu is hidden:** the profile is the menu, and every
+  other account page starts with "‹ Profile".
+- **Not borrowed:** wallet, wishlist, recipes, prescriptions, gift cards and
+  the appearance switch. The shop has none of these.
+
+### Also fixed
+
+- **The laptop header.** The delivery line now sits under the logo, as it
+  does on phones. Below 1024px the header uses the phone/tablet layout (the
+  search on its own row, then the category row) instead of a cramped menu row.
+  Between 900 and 1100px the menu used to wrap "How it works" onto a second
+  line.
+
+### Tests
+
+- `tests/cart-extras-test.php` (56): the items card, steppers, pay bar and
+  "You saved" placement.
+- `tests/order-progress-test.php` (49): headlines, cards, menu, the order-page
+  lines, the renderer swap, and the tab bar stepping aside.
+- `tests/profile-test.php` (20, new).
+- `tests/preview-doors.js` (123, real browser): stepping a cart line, the
+  card, the pay bar, the profile landing and rows, and the order cards.
+
+### Check on staging
+
+10. **Cart:** − and + update the line and the totals through WooCommerce's
+    own update. On a phone the bar's total matches the bill.
+11. **My account → Orders** shows the cards, with pagination past ten orders.
+    ⋮ → Cancel on a processing order still goes through the cancel flow.
+12. **The profile** lists every account section that is actually installed.
+    On a phone, "‹ Profile" appears on each section.

@@ -58,7 +58,7 @@ check( 'the offer is the ONE public coupon, read live — never a list of WooCom
 check( 'the cart asks for the coupon with no product; a product page still checks its restrictions',
 	str_contains( $off, 'function foodify_offer_coupon( ?WC_Product $product = null ): ?array' ) && str_contains( $off, 'if ( null === $product ) {' ) );
 check( 'You saved counts codes with their tax and the box discount', str_contains( $src, 'get_discount_total() + (float) WC()->cart->get_discount_tax()' ) && str_contains( $src, 'foodify_box_cart_discount_total()' ) );
-check( 'You saved sits above Proceed to checkout', str_contains( $src, "add_action( 'woocommerce_proceed_to_checkout'" ) && str_contains( $src, '}, 1 );' ) );
+check( 'You saved is a row of the bill, under the total', str_contains( $src, "add_action( 'woocommerce_cart_totals_after_order_total'" ) );
 $cs = (string) file_get_contents( $T . 'inc/cart-stepper.php' );
 check( 'an Add on the cart page refreshes the classic cart table', str_contains( $cs, "window.jQuery(document.body).trigger('wc_update_cart')" ) );
 $bs = (string) file_get_contents( __DIR__ . '/../scripts/bootstrap.sh' );
@@ -86,6 +86,30 @@ $pc = (string) file_get_contents( $T . 'templates/page-cart.html' );
 check( 'the cart page carries the row, after the cart', str_contains( $pc, '"fdRow":"cart-suggest"' ) && strpos( $pc, 'classic-shortcode' ) < strpos( $pc, 'You might also like' ) );
 $hr = (string) file_get_contents( $T . 'inc/home-rows.php' );
 check( 'the filter reads the live cart for that row', str_contains( $hr, "'cart-suggest' === \$row" ) && str_contains( $hr, 'WC()->cart->get_cart()' ) );
+
+echo "── the items card (client, 9 Nov: Blinkit's checkout) ──\n";
+$ship = foodify_cart_ship_html( 3 );
+check( '"Shipment of 3 items" over the lines; one item says "item"', str_contains( $ship, '>Shipment of 3 items</p>' ) && str_contains( foodify_cart_ship_html( 1 ), '>Shipment of 1 item</p>' ) && '' === foodify_cart_ship_html( 0 ) );
+check( 'its delivery row is the header line\'s own (filled from this device\'s PIN), printed hidden', str_contains( $ship, '<p class="fd-cart-ship__when" data-fd-dline hidden><span data-fd-dline-text></span> <button type="button" class="fd-linkbtn" data-fd-dline-open>Change</button></p>' ) );
+check( 'no "15 minutes": the card promises no time', ! preg_match( '/minute/i', $ship ) );
+$f = '<div class="quantity"><input type="number" class="input-text qty text" name="cart[k][qty]" value="2" min="0"></div>';
+$q = foodify_cart_qty_html( $f, 'Dal <Fry>' );
+check( '− N + wraps WooCommerce\'s own field, which stays the form value', str_starts_with( $q, '<div class="fd-cartqty" data-fd-cartqty>' ) && str_contains( $q, $f ) );
+check( '− and + are buttons named for the meal', str_contains( $q, 'data-fd-cartqty-step="-1" aria-label="One fewer Dal &lt;Fry&gt;">−</button>' ) && str_contains( $q, 'data-fd-cartqty-step="1" aria-label="One more Dal &lt;Fry&gt;">+</button>' ) );
+check( 'a hidden field (one per order) is left alone', '<input type="hidden" name="x" value="1">1' === foodify_cart_qty_html( '<input type="hidden" name="x" value="1">1', 'X' ) );
+check( 'the pack under the name; none declared, nothing', '<span class="fd-cart-line__pack">80 g</span>' === foodify_cart_pack_html( ' 80 g ' ) && '' === foodify_cart_pack_html( '' ) );
+check( 'the struck price before the paid one', '<del class="fd-cart-line__was">W</del> N' === foodify_cart_struck_html( 'N', 'W' ) && 'N' === foodify_cart_struck_html( 'N', '' ) );
+check( 'the phone bar: delivery row, then the total', str_contains( foodify_cart_paybar_to_html(), 'data-fd-dline hidden' ) && '<span class="fd-paybar__total"><span class="fd-paybar__amount">₹618</span><span class="fd-paybar__label">Total</span></span>' === foodify_cart_paybar_total_html( '₹618' ) );
+$lj = foodify_cart_lines_script();
+check( 'the steppers step within min and max, then fire the field\'s own input event (checkout-flow.php applies it)', str_contains( $lj, "if(n<min)n=min;if(max>0&&n>max)n=max;" ) && str_contains( $lj, "f.dispatchEvent(new Event('input',{bubbles:true}))" ) && str_contains( (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/checkout-flow.php' ), "$(document.body).on('change input', '.woocommerce-cart-form .qty'" ) );
+check( 'after WooCommerce redraws the cart, the delivery rows are filled again', str_contains( $lj, "on('updated_wc_div updated_cart_totals'" ) && str_contains( $lj, "new CustomEvent('foodify:pin')" ) );
+$cx = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/cart-extras.php' );
+check( 'every line filter is the cart page\'s only (mini-cart and checkout review keep their look)', 1 === preg_match_all( "/'woocommerce_cart_item_quantity'.*?is_cart\\(\\)/s", $cx ) && 1 === preg_match_all( "/'woocommerce_cart_item_name'.*?is_cart\\(\\)/s", $cx ) && 1 === preg_match_all( "/'woocommerce_cart_item_subtotal'.*?is_cart\\(\\)/s", $cx ) && 1 === preg_match_all( "/'woocommerce_cart_item_remove_link'.*?is_cart\\(\\)/s", $cx ) );
+check( '× becomes the word "Remove"', str_contains( $cx, "'>Remove</a>'" ) );
+check( '"You saved" sits in the bill, not inside the phone\'s fixed bar', str_contains( $cx, "add_action( 'woocommerce_cart_totals_after_order_total'" ) && str_contains( $cx, '<tr class="fd-saved-row"><td colspan="2">' ) );
+$css = (string) file_get_contents( __DIR__ . '/../theme/foodify/style.css' );
+check( 'on a phone, Proceed is a bar fixed to the bottom with room left for it', str_contains( $css, ".woocommerce-cart .wc-proceed-to-checkout {\n    position: fixed;" ) && str_contains( $css, 'body.woocommerce-cart:has(.wc-proceed-to-checkout) { padding-bottom:' ) );
+check( 'Update cart stays for a browser without JavaScript, only hidden when the steppers are there', str_contains( $css, '.woocommerce-cart .woocommerce-cart-form:has(.fd-cartqty) td.actions > [name="update_cart"]' ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

@@ -22,6 +22,18 @@
  *   shopper. Apply goes through WooCommerce's own coupon form, which decides
  *   whether the code is valid for this cart.
  *
+ * THE ITEMS, AS ONE CARD (client, 9 Nov 2026 — Blinkit's checkout)
+ *   "Shipment of 3 items" over the lines, with the delivery date for this
+ *   device's PIN; each line: picture · name, pack size, Remove · − N + with
+ *   the struck and paid price. The − / + only change WooCommerce's own
+ *   quantity field and fire its input event: checkout-flow.php's auto-apply
+ *   (foodify_cart_qty_script) submits it, so a page without JavaScript keeps
+ *   the plain field and its Update cart button.
+ *   On a phone the totals' Proceed becomes a bar fixed to the bottom:
+ *   "Delivering · By Wed 11 Nov · 201301 · Change", then the total and
+ *   "Proceed to checkout ›". Not borrowed: a paid gift bag (no such product
+ *   or fee exists — the client's call) and "Move to wishlist" (no wishlist).
+ *
  * @package Foodify
  */
 declare( strict_types = 1 );
@@ -115,6 +127,78 @@ function foodify_cart_saved_html( int $saved ): string {
 	return $saved < 1 ? '' : '<p class="fd-saved">You saved <strong>₹' . number_format( $saved ) . '</strong> on this order</p>';
 }
 
+/** Over the lines: how many, and when they arrive (filled in the browser from this device's PIN). */
+function foodify_cart_ship_html( int $count ): string {
+	if ( $count < 1 ) {
+		return '';
+	}
+	return '<div class="fd-cart-ship">'
+		. '<svg class="fd-cart-ship__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h11v10H3z"/><path d="M14 9h4l3 3v4h-7"/><path d="M7.5 18.5a1.5 1.5 0 1 0 0-.01M17.5 18.5a1.5 1.5 0 1 0 0-.01"/></svg>'
+		. '<div class="fd-cart-ship__text"><p class="fd-cart-ship__title">Shipment of ' . $count . ( 1 === $count ? ' item' : ' items' ) . '</p>'
+		. '<p class="fd-cart-ship__when" data-fd-dline hidden><span data-fd-dline-text></span> <button type="button" class="fd-linkbtn" data-fd-dline-open>Change</button></p></div>'
+		. '</div>';
+}
+
+/**
+ * − N + around WooCommerce's own quantity field. A field WooCommerce prints as
+ * hidden (sold one per order) is left alone: there is nothing to step.
+ */
+function foodify_cart_qty_html( string $field, string $name ): string {
+	if ( '' === $field || false !== strpos( $field, 'type="hidden"' ) ) {
+		return $field;
+	}
+	$e = static fn( string $s ): string => htmlspecialchars( $s, ENT_QUOTES, 'UTF-8' );
+	return '<div class="fd-cartqty" data-fd-cartqty>'
+		. '<button type="button" class="fd-cartqty__step" data-fd-cartqty-step="-1" aria-label="' . $e( 'One fewer ' . $name ) . '">−</button>'
+		. $field
+		. '<button type="button" class="fd-cartqty__step" data-fd-cartqty-step="1" aria-label="' . $e( 'One more ' . $name ) . '">+</button>'
+		. '</div>';
+}
+
+/** The pack size under the name: "80 g". */
+function foodify_cart_pack_html( string $pack ): string {
+	$pack = trim( $pack );
+	return '' === $pack ? '' : '<span class="fd-cart-line__pack">' . htmlspecialchars( $pack, ENT_QUOTES, 'UTF-8' ) . '</span>';
+}
+
+/** The line's total with the price it would have been struck through before it, when it is lower. */
+function foodify_cart_struck_html( string $subtotal_html, string $was_html ): string {
+	return '' === $was_html ? $subtotal_html : '<del class="fd-cart-line__was">' . $was_html . '</del> ' . $subtotal_html;
+}
+
+/** The phone pay bar's total: "₹618 / TOTAL". */
+function foodify_cart_paybar_total_html( string $total_html ): string {
+	return '<span class="fd-paybar__total"><span class="fd-paybar__amount">' . $total_html . '</span><span class="fd-paybar__label">Total</span></span>';
+}
+
+/** The phone pay bar's delivery row, filled from this device's PIN like the header line. */
+function foodify_cart_paybar_to_html(): string {
+	return '<p class="fd-paybar__to" data-fd-dline hidden><span class="fd-paybar__to-label">Delivering</span> <span data-fd-dline-text></span> <button type="button" class="fd-linkbtn" data-fd-dline-open>Change</button></p>';
+}
+
+/**
+ * − / + : step WooCommerce's field (within its min and max) and fire its input
+ * event; checkout-flow.php's auto-apply submits it after a pause, so five
+ * quick taps are one update. After WooCommerce redraws the cart, the delivery
+ * rows are filled again.
+ */
+function foodify_cart_lines_script(): string {
+	return <<<'JS'
+(function(){
+  document.addEventListener('click',function(e){
+    var b=e.target.closest?e.target.closest('[data-fd-cartqty-step]'):null;if(!b)return;
+    var f=b.closest('[data-fd-cartqty]').querySelector('input.qty');if(!f)return;
+    e.preventDefault();
+    var n=(parseInt(f.value,10)||0)+parseInt(b.getAttribute('data-fd-cartqty-step'),10),
+        min=f.hasAttribute('min')?parseInt(f.getAttribute('min'),10)||0:0,max=parseInt(f.getAttribute('max'),10);
+    if(n<min)n=min;if(max>0&&n>max)n=max;
+    f.value=String(n);f.dispatchEvent(new Event('input',{bubbles:true}));f.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  if(window.jQuery)window.jQuery(document.body).on('updated_wc_div updated_cart_totals',function(){document.dispatchEvent(new CustomEvent('foodify:pin'));});
+})();
+JS;
+}
+
 /* -------------------------------------------------------------------------
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
@@ -141,7 +225,7 @@ add_action( 'woocommerce_after_cart_table', static function (): void {
 	echo '<script>' . foodify_public_offers_script() . '</script>'; // phpcs:ignore WordPress.Security.EscapeOutput -- static script.
 } );
 
-add_action( 'woocommerce_proceed_to_checkout', static function (): void {
+add_action( 'woocommerce_cart_totals_after_order_total', static function (): void {
 	if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
 		return;
 	}
@@ -156,5 +240,52 @@ add_action( 'woocommerce_proceed_to_checkout', static function (): void {
 	}
 	$codes = (float) WC()->cart->get_discount_total() + (float) WC()->cart->get_discount_tax();
 	$box   = function_exists( 'foodify_box_cart_discount_total' ) ? (float) foodify_box_cart_discount_total() : 0.0;
-	echo foodify_cart_saved_html( foodify_cart_savings( $lines, $codes, $box ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- built from numbers.
-}, 1 );
+	$saved = foodify_cart_saved_html( foodify_cart_savings( $lines, $codes, $box ) );
+	if ( '' !== $saved ) {
+		echo '<tr class="fd-saved-row"><td colspan="2">' . $saved . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput -- built from numbers.
+	}
+}, 20 );
+
+/* The items card. Each filter runs on the cart page only: the same filters
+   draw the mini-cart and the checkout's order review, which keep their own look. */
+add_action( 'woocommerce_before_cart_table', static function (): void {
+	if ( function_exists( 'WC' ) && WC()->cart ) {
+		echo foodify_cart_ship_html( (int) WC()->cart->get_cart_contents_count() ); // phpcs:ignore WordPress.Security.EscapeOutput -- built from a number.
+	}
+} );
+add_filter( 'woocommerce_cart_item_quantity', static function ( $html, $key, $item ) {
+	$p = $item['data'] ?? null;
+	return is_cart() && $p instanceof WC_Product ? foodify_cart_qty_html( (string) $html, $p->get_name() ) : $html;
+}, 20, 3 );
+add_filter( 'woocommerce_cart_item_name', static function ( $name, $item ) {
+	$p = $item['data'] ?? null;
+	if ( ! is_cart() || ! $p instanceof WC_Product ) {
+		return $name;
+	}
+	$id = $p->get_parent_id() ?: $p->get_id();
+	return $name . foodify_cart_pack_html( (string) get_post_meta( $id, '_foodify_net_quantity', true ) );
+}, 20, 2 );
+add_filter( 'woocommerce_cart_item_subtotal', static function ( $subtotal, $item ) {
+	$p = $item['data'] ?? null;
+	if ( ! is_cart() || ! $p instanceof WC_Product || ! $p->is_on_sale() ) {
+		return $subtotal;
+	}
+	$qty = (int) ( $item['quantity'] ?? 1 );
+	$reg = (float) wc_get_price_to_display( $p, [ 'price' => (float) $p->get_regular_price(), 'qty' => $qty ] );
+	$now = (float) wc_get_price_to_display( $p, [ 'qty' => $qty ] );
+	return $reg > $now ? foodify_cart_struck_html( (string) $subtotal, wc_price( $reg ) ) : $subtotal;
+}, 20, 2 );
+add_filter( 'woocommerce_cart_item_remove_link', static function ( $link ) {
+	return is_cart() ? (string) preg_replace( '/>\s*&times;\s*<\/a>|>\s*×\s*<\/a>/u', '>Remove</a>', (string) $link, 1 ) : $link;
+}, 20 );
+// The phone pay bar: WooCommerce's own Proceed button, with the delivery row and the total beside it.
+add_action( 'woocommerce_proceed_to_checkout', static function (): void {
+	if ( function_exists( 'WC' ) && WC()->cart ) {
+		echo foodify_cart_paybar_to_html() . foodify_cart_paybar_total_html( WC()->cart->get_total() ); // phpcs:ignore WordPress.Security.EscapeOutput -- WooCommerce's formatted total.
+	}
+}, 5 );
+add_action( 'wp_footer', static function (): void {
+	if ( function_exists( 'is_cart' ) && is_cart() ) {
+		echo '<script>' . foodify_cart_lines_script() . '</script>'; // phpcs:ignore WordPress.Security.EscapeOutput -- static script.
+	}
+}, 30 );

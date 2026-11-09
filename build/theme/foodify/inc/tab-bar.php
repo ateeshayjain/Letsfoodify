@@ -4,7 +4,8 @@
  * Home · Categories · Order again · Account.
  *
  * WHERE IT IS NOT
- *   A product page's bottom belongs to its sticky Add to cart bar, and the
+ *   A product page's bottom belongs to its sticky Add to cart bar, an order's
+ *   page to its Order again bar, and the
  *   cart and checkout's to their own Proceed / Place order — two bars stacked
  *   there would put the one button that matters under a menu. So the tab bar
  *   is not printed on those pages at all. Everywhere else, the View cart bar
@@ -85,7 +86,8 @@ if ( ! function_exists( 'add_action' ) ) {
 add_action( 'wp_footer', static function (): void {
 	if ( is_admin() || ! function_exists( 'wc_get_page_permalink' )
 		|| ( function_exists( 'is_product' ) && is_product() )
-		|| ( function_exists( 'is_cart' ) && is_cart() ) || ( function_exists( 'is_checkout' ) && is_checkout() ) ) {
+		|| ( function_exists( 'is_cart' ) && is_cart() ) || ( function_exists( 'is_checkout' ) && is_checkout() )
+		|| ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'view-order' ) ) ) {
 		return;
 	}
 	$account = wc_get_page_permalink( 'myaccount' );
