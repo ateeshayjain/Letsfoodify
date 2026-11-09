@@ -110,9 +110,37 @@ function foodify_profile_text( string $s ): string {
 	return trim( html_entity_decode( strip_tags( $s ), ENT_QUOTES, 'UTF-8' ) );
 }
 
-/** "‹ Profile" at the top of every other account page — a phone has no side menu. */
-function foodify_profile_back_html( string $url ): string {
-	return '<p class="fd-profile-back"><a href="' . htmlspecialchars( $url, ENT_QUOTES, 'UTF-8' ) . '"><span aria-hidden="true">‹</span> Profile</a></p>';
+/**
+ * "‹ Profile" at the top of every other account page — a phone has no side
+ * menu. On an order's own page it is "‹ Orders": back is the list it came from.
+ */
+function foodify_profile_back_html( string $url, string $label = 'Profile' ): string {
+	// "‹ Orders" shows at every width (an order page has no other way back); "‹ Profile" on a phone only.
+	return '<p class="fd-profile-back' . ( 'Profile' === $label ? '' : ' is-always' ) . '"><a href="' . htmlspecialchars( $url, ENT_QUOTES, 'UTF-8' ) . '"><span aria-hidden="true">‹</span> ' . htmlspecialchars( $label, ENT_QUOTES, 'UTF-8' ) . '</a></p>';
+}
+
+/**
+ * The account page's heading (client, 9 Nov 2026): "Profile" on the first
+ * screen once signed in, "Order summary" on an order's page. Anything else —
+ * signed out, another section — keeps the heading it had ('' = no change).
+ */
+function foodify_account_heading( bool $signed_in, string $endpoint ): string {
+	if ( ! $signed_in ) {
+		return '';
+	}
+	if ( '' === $endpoint ) {
+		return 'Profile';
+	}
+	return 'view-order' === $endpoint ? 'Order summary' : '';
+}
+
+/** Put a heading's words in place of a rendered block heading's text. */
+function foodify_replace_heading_text( string $html, string $text ): string {
+	if ( '' === $text ) {
+		return $html;
+	}
+	$out = preg_replace( '#(<h[1-6][^>]*>).*?(</h[1-6]>)#s', '${1}' . htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' ) . '${2}', $html, 1 );
+	return is_string( $out ) ? $out : $html;
 }
 
 /* -------------------------------------------------------------------------
@@ -153,6 +181,18 @@ add_action( 'woocommerce_account_dashboard', static function (): void {
 
 add_action( 'woocommerce_account_content', static function (): void {
 	if ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url() ) {
-		echo foodify_profile_back_html( (string) wc_get_page_permalink( 'myaccount' ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the builder.
+		echo is_wc_endpoint_url( 'view-order' ) // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the builder.
+			? foodify_profile_back_html( (string) wc_get_account_endpoint_url( 'orders' ), __( 'Orders', 'foodify' ) )
+			: foodify_profile_back_html( (string) wc_get_page_permalink( 'myaccount' ) );
 	}
 }, 5 );
+
+/* The page title block on the account page. Product cards' titles (which carry
+   __woocommerceNamespace) are never touched. */
+add_filter( 'render_block_core/post-title', static function ( string $html, array $block ): string {
+	if ( '' === $html || ! empty( $block['attrs']['__woocommerceNamespace'] ) || ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
+		return $html;
+	}
+	$endpoint = function_exists( 'WC' ) && WC()->query ? (string) WC()->query->get_current_endpoint() : '';
+	return foodify_replace_heading_text( $html, foodify_account_heading( is_user_logged_in(), $endpoint ) );
+}, 20, 2 );

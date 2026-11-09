@@ -313,8 +313,8 @@ const path = require('path');
   check('the new order heads the account\'s order list', first === '1195', first);
   await click('#s-account [data-view="1088"]'); await wait();
   check('Details opens that order', /1088/.test(await page.textContent('#s-account .fx-vo-head')));
-  await click('#s-account .fx-vo-head ~ * [data-panel="orders"], #s-account section[data-panel-body="view-order"] [data-panel="orders"]'); await wait();
-  check('"All orders" goes back to the list', await page.evaluate(() => !document.querySelector('#s-account [data-panel-body="orders"]').hidden));
+  await click('#s-account .fd-profile-back a[data-panel="orders"]'); await wait();
+  check('"‹ Orders" on an order\'s page goes back to the list', await page.evaluate(() => !document.querySelector('#s-account [data-panel-body="orders"]').hidden));
   await click('#s-account [data-reorder="1121"]'); await wait();
   check('Reorder puts that order\'s items in the cart', (await shown()) === 'cart' && (await badge()) === 2, { screen: await shown(), badge: await badge() });
 
@@ -605,6 +605,15 @@ const path = require('path');
     return { again, steps, title: a.querySelector('.fx-vo-progress h2')?.textContent, viewAgain: a.querySelector('.fx-vo-reorder')?.textContent };
   });
   check('every order in the list has "Order again", first', ord.again.length > 0 && ord.again.every(t => t === 'Order again'), ord);
+  const heads = await phone.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms));
+    window.fxShow('account', true); await sl(60);
+    const a = document.getElementById('s-account'), h = () => a.querySelector('h1').textContent;
+    const profile = h(); a.querySelector('.fx-orders button[data-view]').click(); await sl(60);
+    return { profile, order: h(), line: a.querySelector('.fx-vo-head').textContent };
+  });
+  check('the account is headed "Profile"; an order\'s page "Order summary", with "Order #… · placed … · …" under it',
+    heads.profile === 'Profile' && heads.order === 'Order summary' && /^Order #\d+ · placed .+ · \w/.test(heads.line), heads);
   check('an order shows where it is as steps — Placed, Packed, Shipped, Delivered — with no step the store cannot reach', ord.title === 'Where your order is' && ord.steps.join('|') === 'is-done:Placed|is-done:Packed|is-done:Shipped|is-done:Delivered', ord);
   check('… and Order again under it', ord.viewAgain === 'Order again', ord);
 

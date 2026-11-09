@@ -3291,11 +3291,18 @@ span.fd-oitem__img { display: block; }
 .fd-profile__row:hover .fd-profile__label { color: var(--wp--preset--color--flame-ink); }
 .fd-profile__list--out { margin-top: var(--wp--preset--spacing--30); border-top: 1px solid var(--wp--preset--color--line); padding-top: var(--wp--preset--spacing--20); }
 .fd-profile-back { display: none; margin: 0 0 var(--wp--preset--spacing--30); }
+.fd-profile-back.is-always { display: block; }
 .fd-profile-back a { display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--10); min-height: var(--wp--custom--tap-target); font-weight: 600; color: var(--wp--preset--color--char); text-decoration: none; }
 @media (max-width: 781px) {
   /* The profile IS the menu on a phone; every other account page starts with "‹ Profile". */
   .woocommerce-account.logged-in .woocommerce-MyAccount-navigation { display: none; }
   .fd-profile-back { display: block; }
+}
+
+/* "Order #1194 · placed 3 Nov 2026 · Delivered" under "Order summary": a quiet
+   line, not three highlighted marks. */
+mark.order-number, mark.order-date, mark.order-status, .woocommerce .order-info mark {
+  background: none; color: inherit; padding: 0; font-weight: 600;
 }
 
 .proto{position:sticky;top:0;z-index:99;background:#14201C;color:#F5F2EA;border-bottom:1px solid #23332D}
@@ -15979,7 +15986,6 @@ convenience or platform fee is added.</p>
 <ul class="fd-ocards fx-orders"></ul>
 </section>
 <section data-panel-body="view-order" hidden>
-<p><a href="#" data-panel="orders" class="fd-secondary">← All orders</a></p>
 <p class="fx-vo-head"></p>
 <div class="fx-vo-progress"></div>
 <section class="woocommerce-order-details"><h2 class="woocommerce-order-details__title">Order details</h2>
@@ -19226,6 +19232,12 @@ DLT-registered. Guest checkout stays the default path either way.</div>
     // inc/profile.php: the profile, filled from the signed-in customer; "‹ Profile" on every other panel.
     $('.fx-profile', root).innerHTML = PROFILE.split('__NAME__').join(esc(S.name || 'Your account')).split('__PHONE__').join(esc(S.mobile || '')).split('__EMAIL__').join(esc(S.email || ''));
     $('.fd-profile-back', root).hidden = panel === 'dashboard';
+    // On an order's page the way back is "‹ Orders" (inc/profile.php).
+    var bk = $('.fd-profile-back a', root); bk.setAttribute('data-panel', panel === 'view-order' ? 'orders' : 'dashboard');
+    bk.lastChild.textContent = panel === 'view-order' ? ' Orders' : ' Profile';
+    $('.fd-profile-back', root).classList.toggle('is-always', panel === 'view-order');
+    // inc/profile.php: the page heading is "Profile" on the profile, "Order summary" on an order.
+    var h1 = $('.fx-posttitle', root); if (h1) h1.textContent = panel === 'dashboard' ? 'Profile' : panel === 'view-order' ? 'Order summary' : 'My account';
     $$('[data-panel-body]', root).forEach(function (s) { s.hidden = s.getAttribute('data-panel-body') !== panel; });
     $$('.woocommerce-MyAccount-navigation-link', root).forEach(function (li) {
       var k = li.querySelector('a').getAttribute('data-panel');
@@ -19254,7 +19266,8 @@ DLT-registered. Guest checkout stays the default path either way.</div>
       $('.fx-vo-repeat', root).innerHTML = repeatOffer(o);
       $('.fx-vo-wa', root).innerHTML = o.wa ? FX_BD.waStop.split('99999').join(String(o.no)) : '';
       $('.fx-vo-progress', root).innerHTML = progress(o);
-      $('.fx-vo-head', root).innerHTML = 'Order <mark class="order-number">#' + o.no + '</mark> was placed on <mark class="order-date">' + o.date + '</mark> and is currently <mark class="order-status">' + o.status + '</mark>.';
+      // inc/order-progress.php: WooCommerce's sentence, shortened (foodify_order_summary_format).
+      $('.fx-vo-head', root).innerHTML = 'Order #<mark class="order-number">' + o.no + '</mark> · placed <mark class="order-date">' + o.date + '</mark> · <mark class="order-status">' + o.status + '</mark>';
       orderTable(o, $('.fx-vo-lines', root), $('.fx-vo-totals', root));
       $('.fx-vo-address', root).innerHTML = addressHTML(o.addr);
       $('.fx-vo-reorder', root).setAttribute('data-reorder', o.no);
@@ -19667,7 +19680,7 @@ DLT-registered. Guest checkout stays the default path either way.</div>
       var all = S.orders.slice(); if (S.last && !all.some(function (o) { return o.no === S.last.no; })) all.unshift(S.last);
       var o = all.filter(function (x) { return x.no === no; })[0], out = $('.fx-track-result', root);
       if (!o) { out.innerHTML = '<ul class="woocommerce-error" role="alert"><li>Sorry, the order could not be found. Please contact us if you are having difficulty finding your order details.</li></ul>'; return; }
-      out.innerHTML = '<div class="woocommerce-message" role="status">Order <mark>#' + o.no + '</mark> was placed on <mark>' + o.date + '</mark> and is currently <mark>' + o.status + '</mark>.</div>' + progress(o) +
+      out.innerHTML = '<p class="order-info">Order #<mark>' + o.no + '</mark> · placed <mark>' + o.date + '</mark> · <mark>' + o.status + '</mark></p>' + progress(o) +
         '<table class="woocommerce-table shop_table order_details"><tbody class="fx-t-lines"></tbody><tfoot class="fx-t-totals"></tfoot></table>';
       orderTable(o, $('.fx-t-lines', out), $('.fx-t-totals', out)); return;
     }

@@ -2849,9 +2849,16 @@ span.fd-oitem__img { display: block; }
 .fd-profile__row:hover .fd-profile__label { color: var(--wp--preset--color--flame-ink); }
 .fd-profile__list--out { margin-top: var(--wp--preset--spacing--30); border-top: 1px solid var(--wp--preset--color--line); padding-top: var(--wp--preset--spacing--20); }
 .fd-profile-back { display: none; margin: 0 0 var(--wp--preset--spacing--30); }
+.fd-profile-back.is-always { display: block; }
 .fd-profile-back a { display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--10); min-height: var(--wp--custom--tap-target); font-weight: 600; color: var(--wp--preset--color--char); text-decoration: none; }
 @media (max-width: 781px) {
   /* The profile IS the menu on a phone; every other account page starts with "‹ Profile". */
   .woocommerce-account.logged-in .woocommerce-MyAccount-navigation { display: none; }
   .fd-profile-back { display: block; }
+}
+
+/* "Order #1194 · placed 3 Nov 2026 · Delivered" under "Order summary": a quiet
+   line, not three highlighted marks. */
+mark.order-number, mark.order-date, mark.order-status, .woocommerce .order-info mark {
+  background: none; color: inherit; padding: 0; font-weight: 600;
 }

@@ -42,6 +42,7 @@ check( 'icons are decoration', 0 === preg_match( '/<svg(?![^>]*aria-hidden="true
 check( 'no name: "Your account"', str_contains( foodify_profile_html( [ 'name' => ' ', 'tiles' => [], 'groups' => [] ] ), '>Your account</h2>' ) );
 check( 'an unknown door still gets an icon', str_contains( foodify_profile_icon( 'partner-earnings' ), '<path d="M6 3h9l4 4v14H6z' ) );
 check( 'nothing borrowed the shop does not have (wallet, wishlist, prescriptions, gift cards)', ! preg_match( '/wallet|wishlist|prescription|gift card/i', $h ) );
+check( 'on an order\'s page the way back is "‹ Orders"', '<p class="fd-profile-back is-always"><a href="/my-account/orders/"><span aria-hidden="true">‹</span> Orders</a></p>' === foodify_profile_back_html( '/my-account/orders/', 'Orders' ) && str_contains( (string) file_get_contents( $T . 'inc/profile.php' ), "is_wc_endpoint_url( 'view-order' )" ) );
 check( '"‹ Profile" back to the account page', '<p class="fd-profile-back"><a href="/my-account/"><span aria-hidden="true">‹</span> Profile</a></p>' === foodify_profile_back_html( '/my-account/' ) );
 
 echo "── wiring ──\n";
@@ -52,6 +53,15 @@ check( 'on the dashboard; "‹ Profile" on every other account page', str_contai
 check( 'the old dashboard line and button are gone from account.php', ! str_contains( (string) file_get_contents( $T . 'inc/account.php' ), "esc_html__( 'Orders &amp; reorder', 'foodify' )\n" ) && ! str_contains( (string) file_get_contents( $T . 'inc/account.php' ), "add_action( 'woocommerce_account_dashboard'" ) );
 $css = (string) file_get_contents( $T . 'style.css' );
 check( 'on a phone the side menu is hidden: the profile is the menu', str_contains( $css, ".woocommerce-account.logged-in .woocommerce-MyAccount-navigation { display: none; }\n  .fd-profile-back { display: block; }" ) );
+
+echo "── the page heading (client, 9 Nov: \"Rename it to Profile\") ──\n";
+check( 'signed in, the first screen is headed "Profile"', 'Profile' === foodify_account_heading( true, '' ) );
+check( 'an order\'s page is headed "Order summary"', 'Order summary' === foodify_account_heading( true, 'view-order' ) );
+check( 'signed out, or another section: no change', '' === foodify_account_heading( false, '' ) && '' === foodify_account_heading( true, 'orders' ) );
+check( 'the heading\'s words are replaced, its tag and classes kept', '<h1 class="wp-block-post-title has-3-xl-font-size">Profile</h1>' === foodify_replace_heading_text( '<h1 class="wp-block-post-title has-3-xl-font-size">My account</h1>', 'Profile' ) );
+check( 'no words: the block as it was', '<h1>My account</h1>' === foodify_replace_heading_text( '<h1>My account</h1>', '' ) );
+$psrc = (string) file_get_contents( $T . 'inc/profile.php' );
+check( 'only the account page\'s own title block — never a product card\'s', str_contains( $psrc, "! empty( \$block['attrs']['__woocommerceNamespace'] )" ) && str_contains( $psrc, '! is_account_page()' ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

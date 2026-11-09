@@ -262,3 +262,15 @@ no time promises, no invented fees, and only doors the shop actually has.
     ⋮ → Cancel on a processing order still goes through the cancel flow.
 12. **The profile** lists every account section that is actually installed.
     On a phone, "‹ Profile" appears on each section.
+
+### Then: "Rename it to Profile and add an Order summary heading"
+
+- Signed in, the account's first screen is headed **Profile**; an order's
+  page is headed **Order summary** (`foodify_account_heading()`, on the page's
+  own title block only — product cards never). Signed out keeps its title.
+- WooCommerce's "Order #1194 was placed on … and is currently …" is now one
+  short line under the heading: **Order #1194 · placed 3 Nov 2026 ·
+  Delivered** (the same format string, so the order page and Track order both
+  change).
+- An order's page has one way back, **‹ Orders**, at every width (it had
+  "‹ Profile" and the prototype's "← All orders").

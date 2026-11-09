@@ -105,5 +105,10 @@ check( 'the tab bar steps aside on an order\'s page, whose Order again bar owns 
 $css = (string) file_get_contents( $T . 'style.css' );
 check( 'on a phone, Order again is a bar fixed to the bottom of the order page', str_contains( $css, ".woocommerce-account .order-again {\n    position: fixed;" ) );
 
+echo "── the order summary line ──\n";
+$f = foodify_order_summary_format();
+check( 'WooCommerce\'s three places, in a short line: "Order #1194 · placed 3 Nov 2026 · Delivered"', 'Order #1194 · placed 3 Nov 2026 · Delivered' === sprintf( $f, '1194', '3 Nov 2026', 'Delivered' ) );
+check( 'it replaces exactly WooCommerce\'s sentence (the order page and Track order both print it)', str_contains( $src, "'Order #%1\$s was placed on %2\$s and is currently %3\$s.' === \$text ? foodify_order_summary_format()" ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

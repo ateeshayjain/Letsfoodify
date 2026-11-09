@@ -218,6 +218,16 @@ function foodify_order_item_name_html( string $name_html, string $img, string $p
 		. ( '' !== trim( $pack ) ? '<span class="fd-oitem__pack">' . $e( trim( $pack ) ) . '</span>' : '' );
 }
 
+/**
+ * The line under "Order summary", in WooCommerce's own format string so its
+ * marks still wrap the number, date and status: "Order #1194 · placed
+ * 3 Nov 2026 · Delivered", in place of "Order #1194 was placed on … and is
+ * currently …".
+ */
+function foodify_order_summary_format(): string {
+	return 'Order #%1$s · placed %2$s · %3$s';
+}
+
 /* -------------------------------------------------------------------------
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
@@ -334,3 +344,8 @@ add_filter( 'woocommerce_order_item_name', static function ( $name, $item ) {
 	$id  = $p ? ( $p->get_parent_id() ?: $p->get_id() ) : 0;
 	return foodify_order_item_name_html( (string) $name, $img, $id ? (string) get_post_meta( $id, '_foodify_net_quantity', true ) : '' );
 }, 20, 2 );
+
+/* The sentence at the top of an order (its own page and Track order), shortened. */
+add_filter( 'gettext_woocommerce', static function ( $translation, $text ) {
+	return 'Order #%1$s was placed on %2$s and is currently %3$s.' === $text ? foodify_order_summary_format() : $translation;
+}, 10, 2 );

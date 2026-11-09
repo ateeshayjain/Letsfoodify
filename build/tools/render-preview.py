@@ -1586,7 +1586,6 @@ DLT-registered. Guest checkout stays the default path either way.</div>
 <ul class="fd-ocards fx-orders"></ul>
 </section>
 <section data-panel-body="view-order" hidden>
-<p><a href="#" data-panel="orders" class="fd-secondary">← All orders</a></p>
 <p class="fx-vo-head"></p>
 <div class="fx-vo-progress"></div>
 <section class="woocommerce-order-details"><h2 class="woocommerce-order-details__title">Order details</h2>
@@ -2384,6 +2383,12 @@ MOCK_SCRIPT = r'''<script>
     // inc/profile.php: the profile, filled from the signed-in customer; "‹ Profile" on every other panel.
     $('.fx-profile', root).innerHTML = PROFILE.split('__NAME__').join(esc(S.name || 'Your account')).split('__PHONE__').join(esc(S.mobile || '')).split('__EMAIL__').join(esc(S.email || ''));
     $('.fd-profile-back', root).hidden = panel === 'dashboard';
+    // On an order's page the way back is "‹ Orders" (inc/profile.php).
+    var bk = $('.fd-profile-back a', root); bk.setAttribute('data-panel', panel === 'view-order' ? 'orders' : 'dashboard');
+    bk.lastChild.textContent = panel === 'view-order' ? ' Orders' : ' Profile';
+    $('.fd-profile-back', root).classList.toggle('is-always', panel === 'view-order');
+    // inc/profile.php: the page heading is "Profile" on the profile, "Order summary" on an order.
+    var h1 = $('.fx-posttitle', root); if (h1) h1.textContent = panel === 'dashboard' ? 'Profile' : panel === 'view-order' ? 'Order summary' : 'My account';
     $$('[data-panel-body]', root).forEach(function (s) { s.hidden = s.getAttribute('data-panel-body') !== panel; });
     $$('.woocommerce-MyAccount-navigation-link', root).forEach(function (li) {
       var k = li.querySelector('a').getAttribute('data-panel');
@@ -2412,7 +2417,8 @@ MOCK_SCRIPT = r'''<script>
       $('.fx-vo-repeat', root).innerHTML = repeatOffer(o);
       $('.fx-vo-wa', root).innerHTML = o.wa ? FX_BD.waStop.split('99999').join(String(o.no)) : '';
       $('.fx-vo-progress', root).innerHTML = progress(o);
-      $('.fx-vo-head', root).innerHTML = 'Order <mark class="order-number">#' + o.no + '</mark> was placed on <mark class="order-date">' + o.date + '</mark> and is currently <mark class="order-status">' + o.status + '</mark>.';
+      // inc/order-progress.php: WooCommerce's sentence, shortened (foodify_order_summary_format).
+      $('.fx-vo-head', root).innerHTML = 'Order #<mark class="order-number">' + o.no + '</mark> · placed <mark class="order-date">' + o.date + '</mark> · <mark class="order-status">' + o.status + '</mark>';
       orderTable(o, $('.fx-vo-lines', root), $('.fx-vo-totals', root));
       $('.fx-vo-address', root).innerHTML = addressHTML(o.addr);
       $('.fx-vo-reorder', root).setAttribute('data-reorder', o.no);
@@ -2825,7 +2831,7 @@ MOCK_SCRIPT = r'''<script>
       var all = S.orders.slice(); if (S.last && !all.some(function (o) { return o.no === S.last.no; })) all.unshift(S.last);
       var o = all.filter(function (x) { return x.no === no; })[0], out = $('.fx-track-result', root);
       if (!o) { out.innerHTML = '<ul class="woocommerce-error" role="alert"><li>Sorry, the order could not be found. Please contact us if you are having difficulty finding your order details.</li></ul>'; return; }
-      out.innerHTML = '<div class="woocommerce-message" role="status">Order <mark>#' + o.no + '</mark> was placed on <mark>' + o.date + '</mark> and is currently <mark>' + o.status + '</mark>.</div>' + progress(o) +
+      out.innerHTML = '<p class="order-info">Order #<mark>' + o.no + '</mark> · placed <mark>' + o.date + '</mark> · <mark>' + o.status + '</mark></p>' + progress(o) +
         '<table class="woocommerce-table shop_table order_details"><tbody class="fx-t-lines"></tbody><tfoot class="fx-t-totals"></tfoot></table>';
       orderTable(o, $('.fx-t-lines', out), $('.fx-t-totals', out)); return;
     }
