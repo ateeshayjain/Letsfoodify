@@ -836,6 +836,41 @@ function foodify_card_prep_html( array $chip, int $servings = 0, string $pack = 
 }
 
 /**
+ * A card's price block with the pack size put in front of its unit price —
+ * "80 g · ₹231/100 g" — or, with no unit price, the pack on its own line.
+ * No pack declared: the block as it was.
+ *
+ * On the CARD the unit price is a comparison aid and is shown to the whole
+ * rupee, so the line fits a phone card ("₹231.25/100 g" wrapped mid-unit).
+ * The product page keeps the exact figure (foodify_unit_price()).
+ */
+function foodify_card_pack_unit( string $price_html, string $pack ): string {
+	$pack = trim( $pack );
+	if ( '' === $pack || '' === $price_html ) {
+		return $price_html;
+	}
+	$p    = '<span class="fd-card-pack">' . htmlspecialchars( $pack, ENT_QUOTES ) . '</span>';
+	$open = '<span class="fd-unit-price">';
+	if ( false !== strpos( $price_html, $open ) ) {
+		return preg_replace_callback(
+			'/' . preg_quote( $open, '/' ) . '(.*?)<\/span>/s',
+			static function ( array $m ) use ( $open, $p ): string {
+				$unit = preg_replace_callback( '/(\d[\d,]*)\.(\d{2})/', static function ( array $n ): string {
+					$whole = (int) str_replace( ',', '', $n[1] ) + ( (int) $n[2] >= 50 ? 1 : 0 );
+					return number_format( $whole );
+				}, $m[1], 1 ) ?? $m[1];
+				return $open . $p . ' · <span class="fd-card-unit">' . $unit . '</span></span>';
+			},
+			$price_html,
+			1
+		) ?? $price_html;
+	}
+	$end = strrpos( $price_html, '</div>' );
+	return false === $end ? $price_html . $open . $p . '</span>'
+		: substr( $price_html, 0, $end ) . $open . $p . '</span>' . substr( $price_html, $end );
+}
+
+/**
  * Short allergen names from the declared allergens text, for a one-line
  * "Contains:" under the yield strip (PRODUCT-20). "Milk (ghee), Cereals
  * containing gluten (wheat, in the asafoetida)" → [milk, gluten]. A

@@ -244,7 +244,20 @@ echo "── pack size on the card (client, 9 Nov) ──\n";
 check( 'the second line is "80 g · Serves 2"', str_contains( foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => '' ], 2, '80 g' ), '<span class="fd-card-prep__serves">80 g · Serves 2</span>' ) );
 check( 'a pack with no servings (a box) shows the pack alone', str_contains( foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => '' ], 0, '3 × 80 g' ), '>3 × 80 g</span>' ) );
 check( 'no pack declared: servings alone, as before', str_contains( foodify_card_prep_html( [ 'label' => 'x', 'modifier' => '' ], 2 ), '>Serves 2</span>' ) );
-check( 'the card reads the declared net quantity', str_contains( (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' ), '(string) $product->get_meta( \'_foodify_net_quantity\' ) ) : \'\';' ) );
+$pdsrc = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/product-display.php' );
+check( 'the card reads the declared net quantity — beside its unit price now', str_contains( $pdsrc, "foodify_card_pack_unit( \$html, (string) \$product->get_meta( '_foodify_net_quantity' ) )" ) );
+
+echo "── the card, decluttered (client, 9 Nov: \"too cluttered\") ──\n";
+check( 'under the name, one line: how it is made — no servings, no pack', str_contains( $pdsrc, '$lead  = $chip ? foodify_card_prep_html( $chip ) : \'\';' ) );
+check( 'the diet tags are no longer printed on the card (filters, search and the product page carry them)', ! str_contains( $pdsrc, '= foodify_card_diet_html(' ) );
+$pu = foodify_card_pack_unit( '<div class="p"><ins>₹185</ins><span class="fd-unit-price">₹231.25/100 g</span></div>', '80 g' );
+check( 'the foot reads "80 g · ₹231/100 g", each half unbroken', str_contains( $pu, '<span class="fd-unit-price"><span class="fd-card-pack">80 g</span> · <span class="fd-card-unit">₹231/100 g</span></span>' ) );
+check( 'the card rounds the unit price to the rupee (half up; thousands grouped)', str_contains( foodify_card_pack_unit( '<span class="fd-unit-price">₹216.67/100 g</span>', '90 g' ), '₹217/100 g' ) && str_contains( foodify_card_pack_unit( '<span class="fd-unit-price">₹1,216.49/kg</span>', '1 kg' ), '₹1,216/kg' ) );
+check( 'no unit price: the pack alone; no pack: the block untouched', str_contains( foodify_card_pack_unit( '<div>₹99</div>', '2 × 80 g' ), '<span class="fd-unit-price"><span class="fd-card-pack">2 × 80 g</span></span></div>' ) && '<div>x</div>' === foodify_card_pack_unit( '<div>x</div>', '' ) );
+$css = (string) file_get_contents( __DIR__ . '/../theme/foodify/style.css' );
+check( 'one badge on the photo: a real saving hides Bestseller; Sold out hides the saving', str_contains( $css, '.fd-products > .wp-block-post:has(.wc-block-components-product-price .fd-save) .fd-badges .fd-badge--flame { display: none; }' ) && str_contains( $css, '.fd-products > .wp-block-post:has(.fd-badges .fd-badge--out) .wc-block-components-product-price .fd-save { display: none; }' ) );
+check( 'the stepper on a card is drawn like Add (white, ink outline), not a solid pill', str_contains( $css, ".fd-products .fd-cartctl__stepper, .fd-again .fd-cartctl__stepper {\n  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--flame-ink);" ) );
+check( 'a combo\'s contents line is one line, so it cannot stretch its row', str_contains( $css, '.fd-products .fd-yield { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }' ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

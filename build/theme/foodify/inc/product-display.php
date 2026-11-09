@@ -118,7 +118,10 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 	// the old yield line, under the name, as before.
 	$chip  = foodify_prep_chip_parts( $product );
 	$combo = function_exists( 'foodify_combo_data' ) && null !== foodify_combo_data( $product );
-	$lead  = $chip ? foodify_card_prep_html( $chip, $combo ? 0 : (int) $product->get_meta( '_foodify_servings' ), (string) $product->get_meta( '_foodify_net_quantity' ) ) : '';
+	// "Too cluttered" (client, 9 Nov 2026): one line under the name — how it is
+	// made. Servings and the diet tags live on the product page, in the
+	// filters and in search; the pack size moved down beside the unit price.
+	$lead  = $chip ? foodify_card_prep_html( $chip ) : '';
 	$yield = '' !== $lead ? '' : foodify_card_yield( [
 		'servings'     => (string) $product->get_meta( '_foodify_servings' ),
 		'prep_minutes' => (string) $product->get_meta( '_foodify_prep_minutes' ),
@@ -126,10 +129,7 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 	// A combo answers a different question under its name — what is in the
 	// pack, not how many one sachet serves — so product-combo.php swaps the line.
 	$yield = (string) apply_filters( 'foodify_card_yield_line', $yield, $product );
-	// BROWSE-18: the dietary tags as text under the name, not a badge on the image.
-	$state = foodify_badge_state( $product );
-	$diet  = foodify_card_diet_html( foodify_diet_tags( $state['dietary'], $state['ingredients'] ) );
-	return $lead . $html . ( '' !== $yield ? '<p class="fd-yield">' . esc_html( $yield ) . '</p>' : '' ) . $diet; // $lead and $diet escaped in their builders.
+	return $lead . $html . ( '' !== $yield ? '<p class="fd-yield">' . esc_html( $yield ) . '</p>' : '' ); // $lead escaped in its builder.
 }, 10, 2 );
 
 /** The declared diet, the one field the veg mark reads. */
@@ -232,6 +232,15 @@ add_filter( 'render_block_woocommerce/product-image', static function ( string $
 	// Inside the wrapper, after the image, so the wrapper's position anchors them.
 	$pos = strrpos( $html, '</div>' );
 	return false === $pos ? $html . $badges : substr( $html, 0, $pos ) . $badges . substr( $html, $pos );
+}, 10, 2 );
+
+/** On a card, the pack size leads the unit price line: "80 g · ₹231.25/100 g". */
+add_filter( 'render_block_woocommerce/product-price', static function ( string $html, array $block ): string {
+	if ( '' === $html || empty( $block['attrs']['isDescendentOfQueryLoop'] ) || ! function_exists( 'wc_get_product' ) ) {
+		return $html;
+	}
+	$product = wc_get_product( get_the_ID() );
+	return $product instanceof WC_Product ? foodify_card_pack_unit( $html, (string) $product->get_meta( '_foodify_net_quantity' ) ) : $html;
 }, 10, 2 );
 
 /** Wireframe 02, rule 5: the yield strip directly under the price, product page only. */

@@ -199,7 +199,7 @@ pages.append(screen_page(
     "shop-desktop", "shop-phone",
     ["<b>Filters by what matters here</b>: prep method, dietary, price. Open beside the products on a laptop; on a phone one <b>Filter</b> line that says how many are on — “Filter · 2” — so the products come first.",
      "<b>Sort is a labelled control</b> next to the result count, and the count is announced to screen readers when a filter changes it.",
-     "Every card <b>leads with how it is made</b> — “Hot water · 6 min”, then servings — and carries Jain, vegan or gluten free as words, not a badge on the photo. A <b>Save badge appears only when the discount is genuinely 15% or more</b>.",
+     "Every card is five things: the name, <b>how it is made</b> (“Hot water · 6 min”), the rating, the price, and the pack with its unit price (“80 g · ₹231/100 g”). Servings and diet labels are on the product page and in the filters. <b>One badge at most</b> on the photo, and a Save badge only when the discount is genuinely 15% or more.",
      "<b>Add sits on the photo’s corner and becomes − 1 +</b> once the meal is in the cart. Adding never leaves the page: a <b>View cart</b> bar comes up at the bottom (“3 items”), so a shopper keeps browsing. Sold-out items say <b>Sold out</b>, sit last, and offer “Notify me”."],
     "Laptop · category page with filters open", "Phone · filters folded, with a count",
     "Category / shop"))

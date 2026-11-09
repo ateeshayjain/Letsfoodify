@@ -87,7 +87,7 @@ check( 'the shelf has no add-to-cart script of its own any more', ! function_exi
 // BROWSE-7 / ACCOUNT-20 / BROWSE-17: the card carries what the grid card carries, and says when it is in the cart.
 $card = foodify_buy_again_html( [ [ 'id' => 5, 'name' => 'Dal Fry', 'url' => '/p/', 'price' => '₹175', 'add_url' => '/?add-to-cart=5',
 	'chip' => [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 'servings' => 2, 'veg' => true ] ] );
-check( 'BROWSE-7: the prep line is the grid card\'s own', str_contains( $card, foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ], 2 ) ) && str_contains( $card, 'Hot water · 6 min' ) && str_contains( $card, 'Serves 2' ) );
+check( 'BROWSE-7: the prep line is the grid card\'s own', str_contains( $card, foodify_card_prep_html( [ 'label' => 'Hot water · 6 min', 'modifier' => 'fd-chip--hot' ] ) ) && str_contains( $card, 'Hot water · 6 min' ) );
 check( 'BROWSE-7: the veg mark sits before the name', str_contains( $card, '<span class="fd-again__name">' . foodify_veg_mark_html( 'vegetarian' ) . 'Dal Fry</span>' ) );
 check( 'BROWSE-7: no veg mark without a vegetarian declaration', ! str_contains( foodify_buy_again_html( [ [ 'id' => 6, 'name' => 'X', 'url' => '', 'price' => '', 'add_url' => '', 'veg' => false ] ] ), 'fd-veg' ) );
 check( 'nothing about the cart is printed: the stepper reads it in the browser', str_contains( $card, 'data-fd-cartctl data-product-id="5"' ) && ! str_contains( $card, 'in cart' ) );

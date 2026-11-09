@@ -148,3 +148,28 @@ The client asked for all eleven.
    struck-through prices plus any code plus any box discount on a real cart.
 9. **The tab bar on a real phone** clears the home indicator, and the View
    cart bar sits above it.
+
+---
+
+## Third round: "This is too cluttered" (the card)
+
+The client's screenshot showed a card with eight rows and two badges, with a
+solid red stepper covering a third of the photo. The client added: "Serves 2
+can be displayed when we click. We can remove Jain and High Protein."
+
+| Was | Now |
+|---|---|
+| Bestseller **and** SAVE 17% stacked on the photo | **One badge**: Sold out, else a real saving, else Bestseller / New |
+| A solid red − 1 + pill over the photo | The same size (− and + stay 44px), drawn like **Add**: white, with an ink outline |
+| ● **Hot water · 6 min** (bold, coloured dot) | Hot water · 6 min, in quiet regular weight |
+| 80 g · Serves 2 | Serves 2 is on the product page. The pack size moved to the foot |
+| Jain · High protein | Removed from the card. They remain on the product page, as filters, in search and as the Jain shelf |
+| ₹231.25/100 g, on a line of its own | **80 g · ₹231/100 g** on one line. The card rounds to the rupee; the product page keeps the exact figure |
+| A combo's full list of meals (stretching every card in its row) | One line, since its name already says "3 meals" |
+
+The card now reads: photo · name · how it is made · ★ rating · price ·
+pack and unit price. In the phone's swipe rows it is 289px tall instead of
+348px, and the empty band above the price is gone.
+
+Tested in `tests/pdp-test.php` ("the card, decluttered") and in
+`tests/preview-doors.js`.

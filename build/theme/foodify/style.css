@@ -2561,3 +2561,34 @@ body:has(.fd-sticky-atc:not([hidden])) .fd-viewcart:not([hidden]) {
     padding-bottom: calc(var(--wp--preset--spacing--80) + var(--wp--custom--tap-target) * 2 + var(--wp--preset--spacing--60) + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ==== The product card, decluttered (client, 9 Nov 2026: "too cluttered") ==
+   Eight rows became five: name · how it is made · ★ rating · price · pack and
+   unit price. Diet and servings left the card (filters, search and the
+   product page carry them).
+   · ONE badge on the photo: Sold out, else a real saving (SAVE 17%), else
+     Bestseller / New. Two stacked pills fought the stepper for the photo.
+   · The stepper is drawn like Add — white, an ink outline — not a solid red
+     pill over a third of the photo. Its size stays: − and + are 44px each.
+   · How it is made is a quiet line: no dot, regular weight, muted. */
+.fd-products > .wp-block-post:has(.wc-block-components-product-price .fd-save) .fd-badges .fd-badge--flame { display: none; }
+.fd-products > .wp-block-post:has(.fd-badges .fd-badge--out) .wc-block-components-product-price .fd-save { display: none; }
+.fd-products > .wp-block-post .wc-block-components-product-price .fd-save,
+.fd-products > .wp-block-post:has(.fd-badges .fd-badge) .wc-block-components-product-price .fd-save {
+  top: calc(var(--wp--preset--spacing--20) * 2);
+}
+.fd-products .fd-cartctl__stepper, .fd-again .fd-cartctl__stepper {
+  background: var(--wp--preset--color--surface); color: var(--wp--preset--color--flame-ink);
+  border: 2px solid var(--wp--preset--color--flame-ink); font-weight: 700;
+}
+:is(.fd-products, .fd-again) .fd-cartctl__step:hover:not(:disabled) { background: var(--wp--preset--color--flame-wash); }
+:is(.fd-products, .fd-again) .fd-cartctl__step:focus-visible { outline-color: var(--wp--preset--color--flame-ink); }
+:is(.fd-products, .fd-again) .fd-cartctl[aria-busy="true"] .fd-cartctl__qty { color: var(--wp--preset--color--mute); }
+:is(.fd-products, .fd-again) .fd-card-prep .fd-chip { font-weight: 400; color: var(--wp--preset--color--mute); }
+:is(.fd-products, .fd-again) .fd-card-prep .fd-chip::before { display: none; }
+.fd-products .wc-block-components-product-price .fd-unit-price { color: var(--wp--preset--color--mute); }
+.fd-products .fd-card-pack { color: var(--wp--preset--color--char); }
+.fd-products .fd-card-pack, .fd-products .fd-card-unit { white-space: nowrap; }
+/* A combo's "what is in it" line stops at one line (its name already says "3 meals"): one long list stretched
+   every card in its row (a row is as tall as its tallest card). */
+.fd-products .fd-yield { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }

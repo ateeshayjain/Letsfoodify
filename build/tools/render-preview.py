@@ -787,13 +787,14 @@ def diet_html(p, card=True):
     return php("echo foodify_pdp_tags_html($a[0], json_decode($a[1], true))", commercial, tags)
 
 
-def card_prep(p):
-    """BROWSE-1: the card leads with method + time ("Hot water · 6 min · Serves 2")."""
+def card_prep(p, again=False):
+    """The card's one line under the name: how it is made ("Hot water · 6 min").
+    Buy again keeps the pack size under it (it has no unit price line)."""
     if p[1] not in CHIP:
         return ""
     mod, label = CHIP[p[1]]
-    return php("echo foodify_card_prep_html($a[0], (int)$a[1], $a[2])",
-               {"label": f"{label} · {p[2].split()[0]} min", "modifier": mod}, p[8], pdp_values(p).get("net_quantity", ""))
+    return php("echo foodify_card_prep_html($a[0], 0, $a[1])",
+               {"label": f"{label} · {p[2].split()[0]} min", "modifier": mod}, pdp_values(p).get("net_quantity", "") if again else "")
 
 
 def veg_mark():
@@ -871,7 +872,7 @@ def catalog_json():
     for p in PRODUCTS + COMBOS:
         out[slug_of(p)] = {"name": p[0], "price": p[3], "was": p[4], "hue": p[5],
                            "stock": "soldout" not in p[9], "screen": screen_of(p),
-                           "combo": bool(combo_of(p)), "prep": card_prep(p), "id": pid_of(p),
+                           "combo": bool(combo_of(p)), "prep": card_prep(p, again=True), "id": pid_of(p),
                            "ctl": cart_control(p, "fd-again__ctl") if "soldout" not in p[9] else ""}
     return out
 
@@ -1052,7 +1053,7 @@ def dynamic(name, attrs, inner):
             lead = card_prep(CUR)
             return (lead + f'<h{lvl} class="wp-block-post-title {cls_for(a)}">{veg_mark()}<a href="/product/{slug_of(CUR)}/" '
                     f'data-s="{screen_of(CUR)}">{html.escape(CUR[0])}</a></h{lvl}>'
-                    + ("" if lead else card_yield(CUR)) + diet_html(CUR))
+                    + ("" if lead else card_yield(CUR)))
         # The page's own title. It always said "Express Dal Fry", so the cart
         # screen was headed with a product name — a fixture artefact that reads
         # as a bug in a client review.
@@ -1154,7 +1155,9 @@ def dynamic(name, attrs, inner):
         return php("echo foodify_pdp_rating_html((float)$a[0], (int)$a[1])", row[6], row[7])
     if name == "woocommerce/product-price":
         if CUR:
-            return price_html(CUR, cls_for(a))
+            # inc/product-display.php: the pack size leads the card's unit price line.
+            return php("echo foodify_card_pack_unit($a[0], $a[1])", price_html(CUR, cls_for(a)),
+                       "" if combo_of(CUR) else pdp_values(CUR).get("net_quantity", ""))
         # The product page: the price, then the yield strip the theme appends.
         # A combo answers that strip in meals and per-meal price — the theme
         # swaps it through foodify_pdp_yield_parts, so the preview calls the

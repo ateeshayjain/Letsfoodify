@@ -121,7 +121,7 @@ function foodify_buy_again_html( array $products ): string {
 			: '<span class="fd-again__img is-empty" aria-hidden="true"></span>';
 		$veg  = ! empty( $p['veg'] ) && function_exists( 'foodify_veg_mark_html' ) ? foodify_veg_mark_html( 'vegetarian' ) : '';
 		$prep = ! empty( $p['chip'] ) && is_array( $p['chip'] ) && function_exists( 'foodify_card_prep_html' )
-			? foodify_card_prep_html( $p['chip'], (int) ( $p['servings'] ?? 0 ), (string) ( $p['pack'] ?? '' ) )
+			? foodify_card_prep_html( $p['chip'], 0, (string) ( $p['pack'] ?? '' ) )
 			: '';
 		$id   = (int) ( $p['id'] ?? 0 );
 		$add  = (string) ( $p['add_url'] ?? '' );
