@@ -652,7 +652,7 @@ DEMO_DELIVERY = {
         {"label": "Delhi NCR", "states": ["DL"], "pin_prefixes": ["2013", "2010", "2012", "1220", "1210"], "min_days": 1, "max_days": 2},
         {"label": "North India", "states": ["UP", "HR", "PB", "RJ", "UK", "HP", "CH", "JK", "LA"], "pin_prefixes": [], "min_days": 2, "max_days": 4},
         {"label": "Rest of India", "states": ["MH", "KA", "TN", "GJ", "WB", "KL", "TS", "AP", "GA", "MP", "CT", "OR", "BR", "JH", "DN", "DD", "PY"], "pin_prefixes": [], "min_days": 3, "max_days": 6},
-        {"label": "North East and islands", "states": ["AS", "AR", "MN", "ML", "MZ", "NL", "SK", "TR", "AN", "LD"], "pin_prefixes": [], "min_days": 5, "max_days": 8},
+        {"label": "North East", "states": ["AS", "AR", "MN", "ML", "MZ", "NL", "SK", "TR"], "pin_prefixes": [], "min_days": 5, "max_days": 8},
     ],
     "cutoff_hour": 14, "no_dispatch_weekdays": [7], "no_delivery_weekdays": [7], "holidays": [],
 }
@@ -1437,7 +1437,7 @@ convenience or platform fee is added.</p>
 <div class="fx-pay"><label><input type="radio" name="fx-pay" value="razorpay" checked> Pay now · UPI, card, netbanking
 <span class="fd-pay-saving">Save ₹25</span></label>
 <label><input type="radio" name="fx-pay" value="cod"> Cash on delivery</label></div>
-<button type="button" class="wp-element-button fx-add fx-add--lg fx-place">Place order</button></aside></div>'''
+<button type="button" id="place_order" class="wp-element-button fx-add fx-add--lg fx-place">Place order</button></aside>{php("echo foodify_pin_block_dialog_html()")}</div>'''
 
 
 def order_received():
@@ -2045,6 +2045,7 @@ MOCK_SCRIPT = r'''<script>
         // foodify_pin_prefill_script(): a PIN checked on a product page fills an empty PIN field.
         field('pin').value = rememberedPin(); autofillCity(field('pin'), field('city'), field('state'));
       }
+      pinNote();   // a PIN already filled is checked as the page opens
     }
     $('.fx-co-lines', root).innerHTML = L.map(function (l) {
       var p = CATALOG[l.s];
@@ -2430,9 +2431,34 @@ MOCK_SCRIPT = r'''<script>
     var f = document.getElementById('fx-co-pin'); if (!f) return;
     var n = document.getElementById('fx-co-pin-note');
     if (!n) { n = document.createElement('p'); n.id = 'fx-co-pin-note'; n.className = 'fd-pin-note'; n.setAttribute('role', 'status'); f.closest('label').insertAdjacentElement('afterend', n); }
-    var pin = f.value.trim(), hit = /^\d{6}$/.test(pin) && window.foodifyPinLookup(pin);
-    n.textContent = !/^\d{6}$/.test(pin) ? '' : !hit ? 'PIN not found — type your city.' : (deliveryFor(pin) || 'Sorry, we don\'t deliver to ' + pin + ' yet.');
+    var pin = f.value.trim(), six = /^\d{6}$/.test(pin), hit = six && window.foodifyPinLookup(pin);
+    // checkout-flow.php's eta(): the product page's answer, with the state the
+    // customer picked for a PIN filed under two.
+    var st = document.getElementById('fx-co-state'), opt = st && st.options[st.selectedIndex];
+    var a = hit && window.foodifyDelivery ? window.foodifyDelivery.answer(pin, { city: hit.city || '', state: hit.state || (opt && opt.getAttribute('data-code')) || '' }, FX_BD.delivery, Date.now()) : null;
+    n.textContent = !six ? '' : !hit ? 'PIN not found — type your city.' : (a ? a.message : '');
+    n.className = 'fd-pin-note' + (a && a.status === 'unserviceable' ? ' is-no' : '');
+    if (a && a.status === 'unserviceable') pinBlock(pin, a.message); else pinUnblock();
   }
+  // An undeliverable PIN stops the order: foodify_checkout_pin_script()'s
+  // block / popup / lock, and the server's refusal behind it.
+  var PIN_BLOCK = null;
+  function pinPopup(msg) {
+    var d = document.getElementById('fd-pin-block'); if (!d) return;
+    d.querySelector('[data-fd-pin-block-msg]').textContent = msg;
+    if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
+  }
+  function lockPlace() {
+    var b = document.getElementById('place_order'); if (!b) return;
+    b.classList.toggle('is-blocked', !!PIN_BLOCK);
+    if (PIN_BLOCK) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled');
+  }
+  function pinBlock(pin, msg) { var was = PIN_BLOCK; PIN_BLOCK = { pin: pin, msg: msg }; lockPlace(); if (!was || was.pin !== pin) pinPopup(msg); }
+  function pinUnblock() { PIN_BLOCK = null; lockPlace(); }
+  document.addEventListener('close', function (e) {
+    if (e.target.id !== 'fd-pin-block') return;
+    var f = document.getElementById('fx-co-pin'); if (f) { f.focus(); f.select(); }
+  }, true);
   function autofillCity(pinField, cityField, stateField) {
     var hit = /^\d{6}$/.test(pinField.value) && window.foodifyPinLookup && window.foodifyPinLookup(pinField.value);
     if (!hit) return;
@@ -2516,6 +2542,7 @@ MOCK_SCRIPT = r'''<script>
     if (t.closest('.showcoupon')) { e.preventDefault(); var cf = $('#s-checkout .fx-co-coupon'); cf.hidden = !cf.hidden; if (!cf.hidden) $('#fx-co-code').focus(); return; }
     if (t.closest('.fx-place')) {
       e.preventDefault();
+      if (PIN_BLOCK) { pinPopup(PIN_BLOCK.msg); return; }
       var errs = validateCheckout();
       if (errs.length) { notice(screen('checkout'), 'error', errs.map(function (x) { return x[1]; })); return; }
       clearNotice(screen('checkout')); $('.woocommerce-NoticeGroup', screen('checkout')).hidden = true;
@@ -3553,7 +3580,8 @@ for the PIN check, box sizes and discounts (3 · 6 · 9 packs at 5 · 10 · 12% 
 problem, referral amounts (give ₹100, get ₹100 on a first order over ₹499), and the review photos (drawn
 bowls). On the live site each of these features stays hidden until its setting is entered. WhatsApp updates,
 repeat-order reminders and cart reminders also send real messages, so they ship switched off; nothing here is
-sent anywhere.
+sent anywhere. The delivery zones leave out the Andaman &amp; Nicobar and Lakshadweep islands, so you can see
+what checkout does with a PIN the shop does not deliver to: try <b>744101</b> (Port Blair).
 The live site prints <i>NOT CONFIGURED</i> for a licence it has not been given — nothing here is
 live until you confirm it.</p></details></div>
 {''.join(panels)}

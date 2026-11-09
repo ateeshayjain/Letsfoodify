@@ -26,7 +26,20 @@ before payment, so this is a preview, not a contract.
 not available here" would be unenforced. If the courier restricts COD by PIN,
 that belongs in payments.php first; the widget can then say it.
 
-**Nothing is a default.** Unset `foodify_delivery_zones` → no widget. The
+**An address outside the zones stops the order** (client decision, 8 Nov
+2026). Checkout opens a pop-up — "We don't deliver there yet", the PIN and
+place, one button back to the PIN field — and Place order stays locked while
+that PIN stands; pressing it re-opens the pop-up. The server refuses the
+order again in `woocommerce_after_checkout_validation`, so a stale tab or a
+script failure cannot get one through. The rule is
+`foodify_checkout_pin_refusal()` (checkout-flow.php): only a definite
+"unserviceable" answer blocks; a PIN missing from the table is treated as a
+typo, not a refusal. **Consequence: the zones list is now the list of where
+the shop sells.** A state left out of it is refused at checkout, not merely
+given no date.
+
+**Nothing is a default.** Unset `foodify_delivery_zones` → no widget, and
+checkout refuses no PIN. The
 config also requires `cutoff_hour` and `no_dispatch_weekdays` (may be `[]`),
 because "ships every day" is a claim and an absent key is not consent to make it.
 

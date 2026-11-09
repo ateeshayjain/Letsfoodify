@@ -486,9 +486,9 @@ if [[ "$PHASE" == "all" ]]; then
   log "Lane A · Product page: delivery dates, stock alerts, offers"
   if [[ $DRY -eq 0 ]]; then
     if command wp option get foodify_delivery_zones >/dev/null 2>&1; then
-      ok "foodify_delivery_zones is set — product pages show the PIN delivery check"
+      ok "foodify_delivery_zones is set — product pages show the PIN delivery check, and checkout REFUSES any PIN outside these zones (check every state you deliver to is listed)"
     else
-      warn "foodify_delivery_zones NOT set — no delivery check on product pages (client to confirm zones, transit days, cut-off, dispatch days)"
+      warn "foodify_delivery_zones NOT set — no delivery check on product pages, and checkout refuses no PIN (client to confirm zones, transit days, cut-off, dispatch days)"
     fi
     if command wp option get foodify_stock_alert_retention_days >/dev/null 2>&1; then
       ok "foodify_stock_alert_retention_days is set — unsent stock alerts expire"

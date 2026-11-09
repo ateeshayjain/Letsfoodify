@@ -250,6 +250,8 @@ add_action( 'wp_enqueue_scripts', static function (): void {
 				'endpoint' => $endpoint,
 				'aliases'  => $aliases,
 				'delivery' => $delivery,
+				// The undeliverable-PIN pop-up, only where zones can refuse one.
+				'blockDialog' => null !== $delivery && function_exists( 'foodify_pin_block_dialog_html' ) ? foodify_pin_block_dialog_html() : '',
 			]
 		) . ';'
 		. ( null !== $delivery && function_exists( 'foodify_delivery_script' ) ? "\n" . foodify_delivery_script() : '' ),

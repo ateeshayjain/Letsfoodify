@@ -162,5 +162,35 @@ $src = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/checkout-fie
 check( 'checkout\'s default endpoint is the site\'s own',
 	1 === preg_match( "/apply_filters\\(\\s*'foodify_pincode_endpoint',\\s*rest_url\\(/", $src ) );
 
+echo "── An address we do not deliver to stops the order (client decision 8 Nov) ──\n";
+require_once __DIR__ . '/../theme/foodify/inc/delivery-estimate.php';
+$zones = foodify_delivery_normalise_config( [
+	'zones' => [
+		[ 'label' => 'NCR', 'states' => [ 'DL' ], 'pin_prefixes' => [ '2013' ], 'min_days' => 1, 'max_days' => 2 ],
+		[ 'label' => 'North', 'states' => [ 'HR', 'PB' ], 'pin_prefixes' => [], 'min_days' => 2, 'max_days' => 4 ],
+	],
+	'cutoff_hour' => 14, 'no_dispatch_weekdays' => [ 7 ], 'no_delivery_weekdays' => [ 7 ], 'holidays' => [],
+] );
+check( 'the test zones are a valid setting', null !== $zones );
+$why = foodify_checkout_pin_refusal( '744101', [ 'city' => 'South Andaman', 'state' => 'AN' ], '', $zones );
+check( 'a PIN in no zone is refused, naming the PIN and the place', str_contains( $why, "don't deliver to 744101 (South Andaman)" ) && str_contains( $why, 'Use an address we deliver to.' ) );
+check( 'a PIN in a zone by state goes through', '' === foodify_checkout_pin_refusal( '110001', [ 'city' => 'New Delhi', 'state' => 'DL' ], '', $zones ) );
+check( 'a PIN-prefix zone beats the state (201301 is UP, but 2013 is served)', '' === foodify_checkout_pin_refusal( '201301', [ 'city' => 'Gautam Buddha Nagar', 'state' => 'UP' ], '', $zones ) );
+check( 'a PIN missing from the table is a likely typo, not a refusal', '' === foodify_checkout_pin_refusal( '999999', null, '', $zones ) );
+check( 'a PIN filed under two states follows the state the customer chose — outside', '' !== foodify_checkout_pin_refusal( '744101', [ 'city' => 'X', 'state' => '' ], 'an', $zones ) );
+check( '— and inside', '' === foodify_checkout_pin_refusal( '134101', [ 'city' => 'X', 'state' => '' ], 'HR', $zones ) );
+check( 'no zones set: nothing to judge against, nothing is refused', '' === foodify_checkout_pin_refusal( '744101', [ 'city' => 'X', 'state' => 'AN' ], '', null ) );
+$dlg = foodify_pin_block_dialog_html();
+check( 'the pop-up is a labelled modal with the answer line and one way out', str_starts_with( $dlg, '<dialog class="fd-pin-block"' ) && str_contains( $dlg, 'aria-labelledby="fd-pin-block-title"' )
+	&& str_contains( $dlg, 'data-fd-pin-block-msg' ) && str_contains( $dlg, '<form method="dialog"' ) && str_contains( $dlg, '>Change PIN code</button>' ) );
+$pjs = foodify_checkout_pin_script();
+check( 'the script blocks only on "unserviceable" and lifts the block on any other answer', str_contains( $pjs, "block(pre, pin, a.message)" ) && substr_count( $pjs, 'unblock(pre)' ) >= 5 );
+check( 'Place order is refused while blocked (checkout_place_order returns false) and re-opens the pop-up', 1 === preg_match( "/checkout_place_order', function\(\)\{\s*var b = blocked\[active\(\)\]; if \(!b\) return true;\s*popup\(b\.msg\); return false;/", $pjs ) );
+check( 'the lock survives WooCommerce re-rendering the button', str_contains( $pjs, "on('updated_checkout', lock)" ) );
+check( 'a PIN already filled is checked as the page opens', str_contains( $pjs, "if (pin.length === 6) apply(pre, pin);" ) );
+check( 'the server refuses it too', 1 === preg_match( "/'woocommerce_after_checkout_validation'.*?foodify_checkout_pin_refusal\(/s", $flow ) );
+$fields2 = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/checkout-fields.php' );
+check( 'the page receives the pop-up only where zones can refuse', str_contains( $fields2, "'blockDialog' => null !== \$delivery" ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 exit( $fail > 0 ? 1 : 0 );

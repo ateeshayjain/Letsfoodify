@@ -427,6 +427,28 @@ const path = require('path');
   check('a complete box never costs more than the same packs loose (no ₹59 comes back)', p0.boxed <= p0.loose && /Free delivery/.test(p0.shipping), p0);
   check('choosing a saved address fills checkout with it at once', p0.pin === '201301', p0);
 
+  // Client decision 8 Nov: a PIN no delivery zone covers pops up and stops the order.
+  const nodel = await page.evaluate(async () => {
+    const sl = ms => new Promise(r => setTimeout(r, ms));
+    const orders = () => (JSON.parse(localStorage.getItem('foodify-prototype-v3') || '{}').orders || []).length;
+    window.fxSetCart([['pav-bhaji', 4]], null); window.fxShow('checkout', false);
+    const pin = document.getElementById('fx-co-pin'), d = () => document.getElementById('fd-pin-block'), btn = document.getElementById('place_order');
+    const r = { before: orders() };
+    pin.value = '744101'; pin.dispatchEvent(new Event('input', { bubbles: true })); await sl(30);
+    r.popped = !!(d() && d().open); r.msg = d() && d().querySelector('[data-fd-pin-block-msg]').textContent; r.locked = btn.getAttribute('aria-disabled');
+    d().close(); await sl(10); r.focusBack = document.activeElement === pin;
+    btn.click(); await sl(30);
+    r.reopened = d().open; r.payWindow = !document.querySelector('.fx-rzp').hidden; r.after = orders();
+    d().close();
+    pin.value = '201301'; pin.dispatchEvent(new Event('input', { bubbles: true })); await sl(30);
+    r.unlocked = btn.getAttribute('aria-disabled') === null && !btn.classList.contains('is-blocked');
+    return r;
+  });
+  check('a PIN we do not deliver to pops up, names the place, and locks Place order', nodel.popped && /744101 \(South Andaman\)/.test(nodel.msg) && nodel.locked === 'true', nodel);
+  check('closing the pop-up puts the cursor back in the PIN field', nodel.focusBack, nodel);
+  check('Place order then re-opens the pop-up — no payment window, no order', nodel.reopened && !nodel.payWindow && nodel.after === nodel.before, nodel);
+  check('a PIN we deliver to unlocks it', nodel.unlocked, nodel);
+
   // On a phone: the product page opens on the product, and the account is in the menu.
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await phone.goto('file://' + path.resolve(__dirname, '../preview/storefront.html'));

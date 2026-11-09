@@ -139,6 +139,46 @@ function foodify_shipping_rates_to_keep( array $methods ): array {
 }
 
 /**
+ * Why an order may NOT go to this PIN, or '' when it may (client decision,
+ * 8 Nov 2026: "pop up that you don't deliver, and don't let them check out").
+ *
+ * Only a definite no blocks: delivery zones are set AND the PIN's state (or
+ * the state the customer chose, for a PIN filed under two) is in none of them
+ * — foodify_delivery_answer()'s "unserviceable", the same answer the product
+ * page and the checkout note give. A PIN missing from the table is a likely
+ * typo, not a refusal: the field note asks for the city and checkout goes on.
+ * No zones set: nothing to judge against, nothing blocks.
+ *
+ * @param array{city?:string,state?:string}|null $lookup foodify_pin_lookup()'s answer.
+ */
+function foodify_checkout_pin_refusal( string $pin, ?array $lookup, string $chosen_state, ?array $cfg ): string {
+	if ( null === $cfg || ! function_exists( 'foodify_delivery_answer' ) ) {
+		return '';
+	}
+	if ( null !== $lookup && '' === trim( (string) ( $lookup['state'] ?? '' ) ) ) {
+		$lookup['state'] = strtoupper( trim( $chosen_state ) );
+	}
+	$a = foodify_delivery_answer( $pin, $lookup, $cfg, new DateTimeImmutable( 'now' ) );
+	return 'unserviceable' === $a['status'] ? $a['message'] . ' Use an address we deliver to.' : '';
+}
+
+/**
+ * The pop-up checkout opens over an undeliverable PIN. One copy: the checkout
+ * script receives it in window.FOODIFY_PIN.blockDialog and the prototype
+ * renders this same function. "Change PIN code" is a method="dialog" form, so
+ * it closes without script; the checkout script then puts focus back in the
+ * PIN field. The message line is filled with the answer for that PIN.
+ */
+function foodify_pin_block_dialog_html(): string {
+	return '<dialog class="fd-pin-block" id="fd-pin-block" aria-labelledby="fd-pin-block-title" aria-describedby="fd-pin-block-msg fd-pin-block-help">'
+		. '<h2 class="fd-pin-block__title" id="fd-pin-block-title">We don’t deliver there yet</h2>'
+		. '<p class="fd-pin-block__msg" id="fd-pin-block-msg" data-fd-pin-block-msg></p>'
+		. '<p class="fd-pin-block__help" id="fd-pin-block-help">This order can’t be placed to this address. Change the PIN code, or choose another saved address.</p>'
+		. '<form method="dialog" class="fd-pin-block__actions"><button type="submit" class="wp-element-button" value="change">Change PIN code</button></form>'
+		. '</dialog>';
+}
+
+/**
  * A delivery method's label in the cart and checkout totals (UX recheck).
  *
  * WooCommerce prints a method as "Title: ₹59" in a row it heads "Shipping".
@@ -295,6 +335,39 @@ function foodify_checkout_pin_script(): string {
   var cache  = {};
   var auto   = {};   // prefix -> the city this script last filled
   var timer;
+  var blocked = {};  // prefix -> {pin, msg} while that PIN is one we do not deliver to
+
+  // Which address the order goes to: the shipping one only when the customer ticked it.
+  function active(){ return $('#ship-to-different-address-checkbox').is(':checked') ? 'shipping' : 'billing'; }
+  function dialog(){
+    var d = document.getElementById('fd-pin-block');
+    if (d || !cfg.blockDialog) return d;
+    var w = document.createElement('div'); w.innerHTML = cfg.blockDialog; d = w.firstChild;
+    document.body.appendChild(d);
+    d.addEventListener('close', function(){
+      var f = document.getElementById(active() + '_postcode');
+      if (f) { f.focus(); if (f.select) f.select(); }
+    });
+    return d;
+  }
+  function popup(msg){
+    var d = dialog(); if (!d) return;
+    d.querySelector('[data-fd-pin-block-msg]').textContent = msg;
+    if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
+  }
+  // WooCommerce re-renders #place_order on every update_checkout, so the lock
+  // is re-applied after each one; the submit itself is refused below.
+  function lock(){
+    var on = !!blocked[active()];
+    $('#place_order').toggleClass('is-blocked', on).attr('aria-disabled', on ? 'true' : null);
+  }
+  function block(pre, pin, msg){
+    var was = blocked[pre];
+    blocked[pre] = { pin: pin, msg: msg };
+    lock();
+    if ((!was || was.pin !== pin) && pre === active()) popup(msg);
+  }
+  function unblock(pre){ delete blocked[pre]; lock(); }
 
   function norm(s){ return (s||'').toString().trim().toLowerCase().replace(/\s+/g,' '); }
   function digits(v){ return (v||'').toString().replace(/\D/g,''); }
@@ -350,16 +423,17 @@ function foodify_checkout_pin_script(): string {
     if (!cfg.delivery || !window.foodifyDelivery) return false;
     var state = (res && res.state) || $('#' + pre + '_state').val() || '';
     var a = window.foodifyDelivery.answer(pin, res ? { city: res.city || '', state: state } : null, cfg.delivery, Date.now());
-    if (a.status === 'ok') { say(pre, 'ok', a.estimate.label, a.estimate.detail); return true; }
-    if (a.status === 'unserviceable') { say(pre, 'no', a.message, ''); return true; }
+    if (a.status === 'ok') { say(pre, 'ok', a.estimate.label, a.estimate.detail); unblock(pre); return true; }
+    if (a.status === 'unserviceable') { say(pre, 'no', a.message, ''); block(pre, pin, a.message); return true; }
+    unblock(pre);
     return false;
   }
 
   function apply(pre, pin){
     lookup(pin).then(function(res){
       if (digits($('#' + pre + '_postcode').val()) !== pin) return;   // the PIN changed while we looked
-      if (res === 'error') { say(pre, '', '', ''); return; }
-      if (!res) { say(pre, 'error', 'PIN not found — type your city.', ''); return; }
+      if (res === 'error') { say(pre, '', '', ''); unblock(pre); return; }
+      if (!res) { say(pre, 'error', 'PIN not found — type your city.', ''); unblock(pre); return; }
       var $city = $('#' + pre + '_city'), cur = $.trim($city.val() || '');
       if ($city.length && res.city && (cur === '' || cur === auto[pre])) {
         $city.val(res.city).trigger('change');
@@ -376,13 +450,34 @@ function foodify_checkout_pin_script(): string {
         pin = digits($f.val()),
         pre = $f.attr('id').split('_')[0];
     clearTimeout(timer);
-    if (pin.length !== 6) { say(pre, '', '', ''); return; }
+    if (pin.length !== 6) { say(pre, '', '', ''); unblock(pre); return; }
     timer = setTimeout(function(){ apply(pre, pin); }, 250);   // one call, not one per keystroke
   });
   // A PIN that spans two states: the date follows the state the customer picks.
   $(document.body).on('change', '#billing_state, #shipping_state', function(){
     var pre = this.id.split('_')[0], pin = digits($('#' + pre + '_postcode').val());
     if (pin.length === 6 && cache[pin] !== undefined && cache[pin]) eta(pre, pin, cache[pin]);
+  });
+  // An undeliverable PIN does not reach payment: Place order re-opens the
+  // pop-up instead (checkout_place_order returning false stops WooCommerce's
+  // submit; the click guard covers a form submitted another way). The server
+  // refuses it again in woocommerce_after_checkout_validation.
+  $(document.body).on('updated_checkout', lock);
+  $(document.body).on('change', '#ship-to-different-address-checkbox', lock);
+  $('form.checkout').on('checkout_place_order', function(){
+    var b = blocked[active()]; if (!b) return true;
+    popup(b.msg); return false;
+  });
+  document.addEventListener('click', function(e){
+    var b = blocked[active()];
+    if (b && e.target.closest && e.target.closest('#place_order')) { e.preventDefault(); e.stopImmediatePropagation(); popup(b.msg); }
+  }, true);
+  // A returning customer's PIN is already filled: check it as the page opens.
+  $(function(){
+    ['billing', 'shipping'].forEach(function(pre){
+      var pin = digits($('#' + pre + '_postcode').val());
+      if (pin.length === 6) apply(pre, pin);
+    });
   });
 })(jQuery);
 JS;
@@ -642,6 +737,28 @@ add_filter( 'woocommerce_cart_shipping_method_full_label', static function ( $la
 	$title = is_object( $method ) && method_exists( $method, 'get_label' ) ? (string) $method->get_label() : '';
 	return foodify_shipping_method_label( (string) $label, $title );
 }, 10, 2 );
+
+/**
+ * The order itself is refused for a PIN we do not deliver to — the pop-up is
+ * the courtesy, this is the rule (it holds with scripts off or a stale tab).
+ * foodify_checkout_pin_refusal().
+ */
+add_action( 'woocommerce_after_checkout_validation', static function ( array $data, WP_Error $errors ): void {
+	if ( ! function_exists( 'foodify_delivery_config' ) || ! function_exists( 'foodify_pin_lookup' ) ) {
+		return;
+	}
+	$pre = ! empty( $data['ship_to_different_address'] ) ? 'shipping' : 'billing';
+	$pin = (string) ( $data[ $pre . '_postcode' ] ?? '' );
+	$why = foodify_checkout_pin_refusal(
+		$pin,
+		foodify_pin_lookup( $pin, foodify_pin_data( FOODIFY_DIR . '/assets/data/pincodes.json' ) ),
+		(string) ( $data[ $pre . '_state' ] ?? '' ),
+		foodify_delivery_config()
+	);
+	if ( '' !== $why ) {
+		$errors->add( $pre . '_postcode', $why );
+	}
+}, 20, 2 );
 
 /** A wrong code says which code and what to do (review BUY-9). */
 add_filter( 'woocommerce_coupon_error', static function ( $err, $err_code, $coupon = null ) {

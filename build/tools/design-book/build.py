@@ -341,6 +341,7 @@ pages.append(screen_page(
      "<b>A returning customer types nothing</b> — they pick a saved address and pay.",
      "Cash on delivery sits beside online payment, with the prepaid saving named.",
      "The page has no menu to wander off into, and nothing is added to the price after this screen.",
+     "<b>An address you do not deliver to stops the order</b>: a pop-up says so the moment the PIN is typed, and Place order stays locked until it changes.",
      "Two optional ticks, <b>off unless the customer ticks them</b>: order updates on WhatsApp, and one email with their cart if they do not finish."],
     "Laptop · checkout with a saved address", "Phone · the same nine fields",
     "Checkout"))
@@ -435,10 +436,11 @@ pages.append(f"""<section class="page">
     <p>Tablets show the menu button rather than squeezing five links in. &nbsp;·&nbsp; On phones the filters start folded and the
     Save badge sits above the price. &nbsp;·&nbsp; Cards carry one extra line: Jain, vegan or gluten free as words. &nbsp;·&nbsp;
     The phone cart button shows how many items, not the total.</p>
-    <p class="big" style="margin-top:3mm">Three things only you can confirm</p>
+    <p class="big" style="margin-top:3mm">Things only you can confirm</p>
     <p><b>Is “No preservatives” true of every product?</b> It now appears on each product page. &nbsp;·&nbsp;
     <b>Box savings:</b> at the current prices five of the six boxes save under 15%, so they show the saving in rupees but no
-    Save badge. &nbsp;·&nbsp; <b>A PIN you do not deliver to</b> is flagged at checkout but not blocked — should it stop the order?</p>
+    Save badge. &nbsp;·&nbsp; <b>Where you deliver</b>: an address outside your delivery zones now stops the order with a
+    pop-up, as you asked — so the zones list has to name every state you serve.</p>
   </div>
   {foot('The usability review')}
 </section>""")

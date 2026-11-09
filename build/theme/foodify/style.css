@@ -2069,3 +2069,32 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 .fd-search-again__label { font-weight: 600; font-size: var(--wp--preset--font-size--base); }
 .fd-search-again__row { display: flex; gap: var(--wp--preset--spacing--20); }
 .fd-search-again__input { flex: 1; min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--card); padding: 0 var(--wp--preset--spacing--30); }
+
+/* ==== Undeliverable PIN (client decision 8 Nov 2026) ========================
+   foodify_pin_block_dialog_html(): the pop-up checkout opens over a PIN no
+   delivery zone covers. Place order is locked while it stands — outlined and
+   muted like the box's disabled Add, and pressing it re-opens the pop-up. */
+.fd-pin-block {
+  box-sizing: border-box;
+  width: min(28rem, calc(100vw - 2 * var(--wp--preset--spacing--40)));
+  padding: var(--wp--preset--spacing--60);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+  background: var(--wp--preset--color--paper);
+  color: var(--wp--preset--color--char);
+  font-size: var(--wp--preset--font-size--base);
+}
+.fd-pin-block::backdrop { background: color-mix(in srgb, var(--wp--preset--color--char) 55%, transparent); }
+.fd-pin-block__title {
+  margin: 0 0 var(--wp--preset--spacing--30);
+  font-family: var(--wp--preset--font-family--display);
+  font-size: var(--wp--preset--font-size--lg); line-height: 1.2; text-wrap: balance;
+}
+.fd-pin-block__msg { margin: 0 0 var(--wp--preset--spacing--20); font-weight: 600; color: var(--wp--preset--color--danger); }
+.fd-pin-block__help { margin: 0 0 var(--wp--preset--spacing--50); color: var(--wp--preset--color--mute); }
+.fd-pin-block__actions { margin: 0; }
+.fd-pin-block__actions .wp-element-button { width: 100%; min-height: var(--wp--custom--tap-target); }
+#place_order.is-blocked {
+  background: transparent; color: var(--wp--preset--color--mute);
+  border: 1px solid var(--wp--preset--color--line-strong); cursor: not-allowed;
+}
