@@ -1520,6 +1520,33 @@ def order_received():
 SIGNED_IN = True   # flipped per screen by main()
 
 
+def screen_picker(ids):
+    """The prototype's own control (NOT the site's menu, which is the header's
+    Express · Hot & Fresh · Flavors · Combos · How it works): a grouped list of
+    the screens a reviewer may want, named the way the site names them.
+    "account:orders" opens the account on a panel."""
+    first_combo = screen_of(COMBOS[0]) if COMBOS else ""
+    groups = [
+        ("Shop", [("home", "Home"), ("shop", "All meals"), ("cat-express", "A category (Express)"), ("combos", "Combos"),
+                  ("box", "Build a box"), ("search", "Search results")]),
+        ("Product", [(screen_of(PRODUCTS[0]), "Product page"), (first_combo, "Combo product page")]),
+        ("Cart and checkout", [("cart", "Cart"), ("checkout", "Checkout"), ("order", "Order received")]),
+        ("Account", [("account", "Profile"), ("account:orders", "Orders"), ("account:view-order", "Order summary"),
+                     ("signin", "Sign in (signs you out)")]),
+        ("Help pages", [("page-track-order", "Track order"), ("page-shipping", "Delivery"), ("page-returns", "Returns"),
+                        ("page-contact-us", "Contact us")]),
+        ("Other", [("notfound", "Page not found")]),
+    ]
+    out = '<select class="proto-jump__select" id="proto-jump" aria-label="Jump to a prototype screen">'
+    out += '<option value="" hidden>Another screen</option>'
+    for title, items in groups:
+        opts = "".join(f'<option value="{v}"{" selected" if v == "home" else ""}>{html.escape(l)}</option>'
+                       for v, l in items if v and v.split(":")[0] in ids)
+        if opts:
+            out += f'<optgroup label="{html.escape(title)}">{opts}</optgroup>'
+    return out + '</select>'
+
+
 def profile_template():
     """inc/profile.php's screen for the mock's account, with tokens the page
     script fills from the signed-in customer (name, mobile, email)."""
@@ -1776,7 +1803,12 @@ MOCK_SCRIPT = r'''<script>
   function screen(id) { return document.getElementById('s-' + id); }
 
   // ── screens ──────────────────────────────────────────────────────────────
-  var TABS = $$('.proto .tab');
+  var TABS = $$('.proto .tab'), PICK = document.getElementById('proto-jump');
+  function syncPick() {
+    if (!PICK) return;
+    var want = current === 'account' ? (panel === 'dashboard' ? 'account' : 'account:' + panel) : current;
+    PICK.value = [].some.call(PICK.options, function (o) { return o.value === want; }) ? want : '';
+  }
   var current = null, afterSignIn = null;
   var CATS = __CATS__;
   // Order again and Account both open the account (its landing IS the orders list here);
@@ -1818,6 +1850,7 @@ MOCK_SCRIPT = r'''<script>
     if (anchor) { var t = screen(id).querySelector('#' + anchor); if (t) { t.scrollIntoView(); } else window.scrollTo(0, 0); }
     else window.scrollTo(0, 0);
     if (push !== false) history.pushState({ s: id }, '', '#' + id);
+    syncPick();
   }
   window.addEventListener('popstate', function (e) {
     show((e.state && e.state.s) || location.hash.slice(1) || 'home', false);
@@ -2383,6 +2416,7 @@ MOCK_SCRIPT = r'''<script>
     // inc/profile.php: the profile, filled from the signed-in customer; "‹ Profile" on every other panel.
     $('.fx-profile', root).innerHTML = PROFILE.split('__NAME__').join(esc(S.name || 'Your account')).split('__PHONE__').join(esc(S.mobile || '')).split('__EMAIL__').join(esc(S.email || ''));
     $('.fd-profile-back', root).hidden = panel === 'dashboard';
+    if (typeof syncPick === 'function') syncPick();
     // On an order's page the way back is "‹ Orders" (inc/profile.php).
     var bk = $('.fd-profile-back a', root); bk.setAttribute('data-panel', panel === 'view-order' ? 'orders' : 'dashboard');
     bk.lastChild.textContent = panel === 'view-order' ? ' Orders' : ' Profile';
@@ -2758,6 +2792,14 @@ MOCK_SCRIPT = r'''<script>
   });
   // The tab strip is the reviewer's jump list.
   TABS.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.s); }); });
+  if (PICK) PICK.addEventListener('change', function () {
+    var v = PICK.value.split(':'); if (!v[0]) return;
+    TAB_AGAIN = v[1] === 'orders' || v[1] === 'view-order';
+    // The sign-in page exists only for someone signed out, as on the site.
+    if (v[0] === 'signin' && S.signedIn) { S.signedIn = false; checkoutMode = null; save(); paintHeader(); }
+    show(v[0]);
+    if (v[1] === 'view-order' && current === 'account' && S.orders.length) { viewing = S.orders[0].no; goPanel('view-order'); }
+  });
 
   // ── forms ────────────────────────────────────────────────────────────────
   document.addEventListener('submit', function (e) {
@@ -3726,18 +3768,19 @@ def main():
 {theme_css}
 .proto{{position:sticky;top:0;z-index:99;background:#14201C;color:#F5F2EA;border-bottom:1px solid #23332D}}
 .proto-in{{max-width:1240px;margin:0 auto;padding:9px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}}
-.proto-tag{{font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;
-  font-family:var(--wp--preset--font-family--ui)}}
-.tabs{{display:flex;gap:3px;flex-wrap:wrap}}
-.proto-reset{{margin-left:auto;background:none;border:1px solid #3A4C45;border-radius:999px;color:#C9D6D0;
+.proto-tag{{font:700 10px/1 var(--wp--preset--font-family--ui);letter-spacing:.1em;text-transform:uppercase;
+  color:#241703;background:#E9C46A;border-radius:4px;padding:4px 6px}}
+.proto-jump{{display:inline-flex;align-items:center;gap:8px;font:600 12.5px/1 var(--wp--preset--font-family--ui);color:#C9D6D0}}
+.proto-jump__select{{font:600 13px/1 var(--wp--preset--font-family--ui);color:#F5F2EA;background:#22312B;border:1px solid #3A4C45;
+  border-radius:8px;padding:6px 28px 6px 10px;min-height:32px;cursor:pointer;max-width:60vw}}
+.proto-jump__select:focus-visible{{outline:2px solid var(--wp--preset--color--flame);outline-offset:2px}}
+.proto-note{{font:12px/1.2 var(--wp--preset--font-family--ui);color:#9DAEA6}}
+.proto-reset{{background:none;border:1px solid #3A4C45;border-radius:999px;color:#C9D6D0;
   font:600 12px/1 var(--wp--preset--font-family--ui);padding:7px 12px;cursor:pointer;min-height:32px}}
 .proto-reset:hover{{color:#F5F2EA;border-color:#9DAEA6}}
 @media (max-width:781px){{
   .proto-in{{flex-wrap:nowrap;padding:7px 12px;gap:10px}}
-  .proto-tag{{display:none}}
-  .tabs{{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}}
-  .tabs::-webkit-scrollbar{{display:none}}
-  .tab{{flex:none}}
+  .proto-jump__label,.proto-note{{display:none}}
   .proto-reset{{margin-left:0;flex:none}}
   .banner{{font-size:11px;padding:8px 12px}}
 }}
@@ -3752,9 +3795,10 @@ def main():
 .banner details p{{margin:.5em 0 0;max-width:72rem}}
 </style>
 <div class="proto"><div class="proto-in">
-<span class="proto-tag">Foodify · clickable prototype · rendered from the theme</span>
-<div class="tabs" role="tablist" aria-label="Jump to a page">{''.join(tabs)}</div>
+<span class="proto-tag">Prototype</span>
+<label class="proto-jump"><span class="proto-jump__label">Jump to screen</span>{screen_picker(ids)}</label>
 <button type="button" class="proto-reset">Reset</button>
+<span class="proto-note">This bar is not part of the site.</span>
 </div></div>
 <div class="banner"><b>A working prototype of the new letsfoodify.com</b>, generated from the real WordPress theme.
 Browse, filter, open any product, add to the cart, check out, and find the order in your account. In the cart, try the
