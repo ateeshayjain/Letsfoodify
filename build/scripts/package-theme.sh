@@ -15,6 +15,10 @@
 #
 #   scripts/package-theme.sh            # -> dist/foodify-<version>-<commit>.zip
 set -euo pipefail
+# PIPED CHECKS NEVER USE `grep -q`. Under pipefail, -q stops reading at the first
+# match; a long producer (`wp rewrite list`, a 180 KB style.css) is then killed by
+# SIGPIPE, exits 141, and a check that FOUND its line reports it missing. Every
+# piped grep sends its output to /dev/null instead, which reads to the end.
 KIT="$(cd "$(dirname "$0")/.." && pwd)"
 THEME="$KIT/theme/foodify"
 G="\033[32m"; R="\033[31m"; N="\033[0m"
@@ -44,7 +48,7 @@ grep -qx 'foodify/style.css'           <<<"$LIST" || fail "foodify/style.css is 
 grep -qx 'foodify/templates/index.html' <<<"$LIST" || fail "templates/index.html missing — WordPress would not treat it as a block theme"
 grep -qx 'foodify/theme.json'          <<<"$LIST" || fail "theme.json missing"
 [[ "$(grep -c '^foodify/' <<<"$LIST")" -eq "$(wc -l <<<"$LIST")" ]] || fail "files outside foodify/ in the archive"
-unzip -p "$OUT" foodify/style.css | grep -q '^Theme Name:[[:space:]]*Foodify' || fail "style.css has no Theme Name header"
+unzip -p "$OUT" foodify/style.css | grep >/dev/null '^Theme Name:[[:space:]]*Foodify' || fail "style.css has no Theme Name header"
 unzip -p "$OUT" foodify/theme.json | python3 -c 'import json,sys; json.load(sys.stdin)' || fail "theme.json does not parse"
 for f in Fraunces-Variable.woff2 InstrumentSans-Variable.woff2; do
   grep -qx "foodify/assets/fonts/$f" <<<"$LIST" || fail "font $f is not in the archive — the site would fall back to system fonts"

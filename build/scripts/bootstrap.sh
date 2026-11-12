@@ -17,6 +17,10 @@
 #   ./bootstrap.sh --env=prod --dry-run
 #
 set -Eeuo pipefail
+# PIPED CHECKS NEVER USE `grep -q`. Under pipefail, -q stops reading at the first
+# match; a long producer (`wp rewrite list`, a 180 KB style.css) is then killed by
+# SIGPIPE, exits 141, and a check that FOUND its line reports it missing. Every
+# piped grep sends its output to /dev/null instead, which reads to the end.
 
 ENV="staging"; PHASE="all"; DRY=0
 for arg in "$@"; do
@@ -106,7 +110,7 @@ if [[ "$PHASE" == "1" || "$PHASE" == "all" ]]; then
   # Page-builder templates and the portfolio CPT. The portfolio slug is DETECTED,
   # never guessed — the audit says "an empty portfolio section", not which CPT.
   for pt in elementor_library; do
-    if command wp post-type list --field=name 2>/dev/null | grep -qx "$pt"; then
+    if command wp post-type list --field=name 2>/dev/null | grep >/dev/null -x "$pt"; then
       rm_patch rank-math-options-titles "pt_${pt}_custom_robots" on
       rm_patch rank-math-options-titles "pt_${pt}_robots" '["noindex"]' --format=json
       rm_patch rank-math-options-sitemap "pt_${pt}_sitemap" off
@@ -392,7 +396,7 @@ if [[ "$PHASE" == "all" ]]; then
       LEAKED=""
       for CAP in manage_woocommerce install_plugins activate_plugins edit_users \
                  promote_users export delete_shop_orders edit_products unfiltered_html; do
-        if command wp cap list foodify_shop_staff 2>/dev/null | grep -qx "$CAP"; then
+        if command wp cap list foodify_shop_staff 2>/dev/null | grep >/dev/null -x "$CAP"; then
           LEAKED="$LEAKED $CAP"
         fi
       done
@@ -460,7 +464,7 @@ if [[ "$PHASE" == "all" ]]; then
   # ASSERT it, do not assume it. A dead account link is invisible to everyone
   # except the customer who taps it.
   if [[ $DRY -eq 0 ]]; then
-    if command wp rewrite list --format=csv 2>/dev/null | grep -q 'address-book'; then
+    if command wp rewrite list --format=csv 2>/dev/null | grep >/dev/null 'address-book'; then
       ok "address-book endpoint present in the rewrite table"
     else
       warn "address-book endpoint NOT in the rewrite table — /my-account/address-book/ will 404."
@@ -548,7 +552,7 @@ if [[ "$PHASE" == "all" ]]; then
   # client's, so a page without the form is reported, never rewritten.
   TRACK_PID="$(command wp post list --post_type=page --name=track-order --field=ID --posts_per_page=1 2>/dev/null | head -1 || true)"
   if [[ -n "$TRACK_PID" ]]; then
-    if command wp post get "$TRACK_PID" --field=post_content 2>/dev/null | grep -q 'woocommerce_order_tracking'; then
+    if command wp post get "$TRACK_PID" --field=post_content 2>/dev/null | grep >/dev/null 'woocommerce_order_tracking'; then
       ok "page /track-order/ present with the tracking form (#$TRACK_PID)"
     else
       warn "page /track-order/ (#$TRACK_PID) has no [woocommerce_order_tracking] — add the shortcode block to it, or customers cannot track"
@@ -631,7 +635,7 @@ if [[ "$PHASE" == "all" ]]; then
     done
     # The two account screens are rewrite endpoints; assert them, a dead menu link is invisible to everyone but the customer.
     for EP in repeat-orders refer-a-friend; do
-      if command wp rewrite list --format=csv 2>/dev/null | grep -q "$EP"; then ok "$EP endpoint present in the rewrite table"
+      if command wp rewrite list --format=csv 2>/dev/null | grep >/dev/null "$EP"; then ok "$EP endpoint present in the rewrite table"
       else warn "$EP endpoint NOT in the rewrite table — run: wp rewrite flush (with the foodify theme active)"; fi
     done
   fi
@@ -640,8 +644,8 @@ fi
 
 log "Verifying"
 if [[ $DRY -eq 0 ]]; then
-  command wp option get woocommerce_enable_reviews | grep -q yes && ok "reviews: on" || warn "reviews: OFF"
-  command wp option get woocommerce_enable_guest_checkout | grep -q yes && ok "guest checkout: on" || warn "guest checkout: OFF"
+  command wp option get woocommerce_enable_reviews | grep >/dev/null yes && ok "reviews: on" || warn "reviews: OFF"
+  command wp option get woocommerce_enable_guest_checkout | grep >/dev/null yes && ok "guest checkout: on" || warn "guest checkout: OFF"
   command wp plugin is-active seo-by-rank-math >/dev/null 2>&1 && ok "Rank Math: active" || warn "Rank Math: INACTIVE"
   command wp plugin is-active woocommerce-pdf-invoices-packing-slips >/dev/null 2>&1 && ok "PDF invoices: active" || warn "PDF invoices: INACTIVE — customers cannot download a GST invoice"
 fi
