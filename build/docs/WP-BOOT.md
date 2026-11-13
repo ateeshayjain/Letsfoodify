@@ -149,3 +149,63 @@ test called without asking that it exists.
 Also found by that crawl: WordPress ships its Privacy Policy page as a DRAFT,
 so the footer link 404s on a new site. The setup screen reports it and leaves
 publishing to a person — it never publishes or rewrites a page it did not make.
+
+---
+
+## With WooCommerce (13 Nov 2026)
+
+The sandbox that could not reach wordpress.org was replaced by one that can, and
+the theme was rendered by a real WooCommerce for the first time. **It found 33
+defects, 2 of them on every page of a section** (every My account page showed
+the cart; the checkout had no layout at all). All of it — what was seen, the
+cause, the fix, and what is still unverified — is in
+**`docs/WOO-RENDER-2026-11-13.md`**. Read that before trusting any shop screen.
+
+### Building the two sites
+
+One script builds both, from `downloads.wordpress.org` (WordPress core, the
+SQLite plugin, WooCommerce — all free, all wordpress.org's own):
+
+```bash
+build/scripts/wp-site-build.sh /home/user/wpsite              # WordPress only — wp-boot-test, wp-render-test, run-all-tests.sh
+build/scripts/wp-site-build.sh /home/user/wpsite-woo --woo    # + WooCommerce — wp-woo-test
+mkdir -p /tmp/node_modules && ln -sfn "$(npm root -g)/playwright" /tmp/node_modules/playwright-core   # where the tools look for Playwright
+```
+
+An existing directory is left alone; delete it to rebuild. The manual `git
+clone` recipe above still works where only github.com is reachable — but it
+cannot fetch WooCommerce (a monorepo that needs a build), which is why the
+shop pages went unrendered for so long.
+
+WooCommerce runs on SQLite here: its installer created all its tables, and
+products, the Store API cart, classic checkout, orders and the account all
+worked. **It has not been run on MySQL/MariaDB** — which is what the live site
+uses. Orders in the check are stored in WooCommerce's HPOS tables (its default
+on a new install); the live shop may be on either. Both are staging checks.
+
+### The check
+
+```bash
+build/scripts/wp-woo-test.sh                                   # 118 checks, about three minutes
+FOODIFY_WOO_SHOTS=/tmp/shots build/scripts/wp-woo-test.sh      # + a screenshot of every page
+FOODIFY_THEME_SRC=/path/to/unzipped/foodify build/scripts/wp-woo-test.sh
+```
+
+It puts the database back to "a WooCommerce nobody has set up", activates the
+theme, then goes through the site as a person does (`tools/wp-woo-check.js`):
+Appearance → Foodify setup **by its buttons** (checking the database after
+each, and that a second run changes nothing), a delivery zone and going Live,
+every page type at 1280 and 390, Add on a card, the cart's steppers and a
+coupon, a guest order and a signed-in order through the real checkout, the
+account, Order again, removing the samples — and finally the PHP error log.
+
+**It is not in `run-all-tests.sh`**, on purpose: that gate must stay runnable
+where WooCommerce cannot be downloaded. Run this one where it can — before a
+hand-over, and after any change to a template, `style.css` or `inc/`. With no
+WooCommerce, no browser or no server it prints **"did NOT run"** and exits 2;
+it was also run against the theme as it stood on `main` before the fixes, and
+failed about sixty checks.
+
+It proves what it clicks. It does not prove a payment gateway, an SMS sign-in,
+an email arriving, MySQL, or a real phone — the findings document lists
+every one of those.

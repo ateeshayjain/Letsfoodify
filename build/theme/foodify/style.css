@@ -3140,3 +3140,45 @@ body .woocommerce-form-login-toggle .wc-block-components-notice-banner {
 .fd-received .wc-block-order-confirmation-totals__table td:last-child,
 .fd-received .wc-block-order-confirmation-totals__table th:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .fd-received__next { margin-top: var(--wp--preset--spacing--50); }
+
+/* ==== Signed-out account, and the forms WooCommerce draws itself ============
+   With "create an account on My account" on (bootstrap.sh), WooCommerce
+   prints Login and Register as two floated columns, and WooCommerce's layout
+   stylesheet is not loaded here. One 26rem column, sign-in first — the same
+   box the sign-in card already had. Seen on the real render, 13 Nov 2026. */
+.woocommerce-account:not(.logged-in) .u-columns > div {
+  float: none; width: auto; max-width: 26rem; margin: 0 auto var(--wp--preset--spacing--60);
+}
+.woocommerce-account:not(.logged-in) .u-columns h2 { font-size: var(--wp--preset--font-size--xl); margin: 0 0 var(--wp--preset--spacing--30); }
+.woocommerce-account:not(.logged-in) form.woocommerce-form-register {
+  margin: 0; padding: var(--wp--preset--spacing--50);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card);
+}
+.woocommerce-account:not(.logged-in) form.woocommerce-form-login { margin: 0; }
+.woocommerce-account:not(.logged-in) form .form-row { display: block; float: none; width: auto; padding: 0; margin: 0 0 var(--wp--preset--spacing--40); }
+.woocommerce-account:not(.logged-in) form .form-row > label { display: block; margin: 0 0 var(--wp--preset--spacing--10); font-weight: 600; line-height: 1.4; }
+.woocommerce-account:not(.logged-in) form .input-text { box-sizing: border-box; width: 100%; padding: 0 var(--wp--preset--spacing--30); }
+.woocommerce-account:not(.logged-in) form.woocommerce-form-register .wp-element-button { width: 100%; }
+.woocommerce-account:not(.logged-in) form p { font-size: var(--wp--preset--font-size--base); }
+/* The password field's show/hide button: WooCommerce styles it only in its
+   layout stylesheet. Inside the field, on the right, a 44px target. */
+.woocommerce form .password-input { position: relative; display: block; }
+.woocommerce form .password-input .input-text { padding-right: var(--wp--custom--tap-target); }
+.woocommerce form .show-password-input {
+  position: absolute; top: 0; right: 0; width: var(--wp--custom--tap-target); height: var(--wp--custom--tap-target);
+  padding: 0; background: none; border: 0; cursor: pointer; color: var(--wp--preset--color--mute);
+}
+.woocommerce form .show-password-input::before {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 1.25rem; height: 1.25rem;
+  background: currentColor;
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5C7 5 3 9 1.5 12 3 15 7 19 12 19s9-4 10.500-7C21 9 17 5 12 5zm0 11a4 4 0 110-8 4 4 0 010 8z"/></svg>') center / contain no-repeat;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5C7 5 3 9 1.5 12 3 15 7 19 12 19s9-4 10.500-7C21 9 17 5 12 5zm0 11a4 4 0 110-8 4 4 0 010 8z"/></svg>') center / contain no-repeat;
+}
+.woocommerce form .show-password-input.display-password { color: var(--wp--preset--color--flame-ink); }
+/* Track your order: WooCommerce's form, a label over each 44px field. */
+form.track_order { max-width: 26rem; }
+form.track_order .form-row { display: block; float: none; width: auto; padding: 0; margin: 0 0 var(--wp--preset--spacing--40); }
+form.track_order .form-row > label { display: block; margin: 0 0 var(--wp--preset--spacing--10); font-weight: 600; }
+form.track_order .input-text { box-sizing: border-box; width: 100%; padding: 0 var(--wp--preset--spacing--30); }

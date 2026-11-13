@@ -15,7 +15,11 @@ before `build/docs/REVIEW-NOTES.md` — it records what was checked against prim
 sources, what was wrong, and what changed. Items 3, 4 and 6 of REVIEW-NOTES are
 closed; the rest are still open.
 
-**Nothing has run against a real WordPress.** Syntax and logic only, except
+**The theme has run in a real WordPress with WooCommerce — locally, on SQLite,
+since 13 Nov 2026** (`build/docs/WOO-RENDER-2026-11-13.md`: what that found, and
+what it still cannot prove). It has NOT run on the live site's stack (MySQL,
+the real catalogue, a payment gateway). Before that date nothing had: syntax and
+logic only, except
 `build/scripts/smoke-test.sh`, which is behaviour-tested against fixture sites via
 `build/tests/selftest.py`. Budget a full day to shake the kit out on staging
 before the schedule depends on it.
@@ -172,6 +176,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/WP-BOOT.md` | **Read this.** How to run the theme in a real WordPress, and what it found |
 | `scripts/wp-boot-test.sh` | 28 assertions against a real WordPress. `php -l` cannot see what this sees |
 | `scripts/wp-render-test.sh` | Serves that WordPress and LOOKS at the home page in a browser (contrast, raw shortcodes, empty shelves). The prototype does not load WordPress's block CSS, so it cannot see what this sees. Also run on the zip by `package-theme.sh` |
+| `scripts/wp-woo-test.sh` | **The same, WITH WooCommerce** (118 checks): a WooCommerce nobody has set up → the setup screen by its buttons → every page type at 1280 and 390 → a guest order and a signed-in order through the real checkout → the account, Order again, removing the samples (`tools/wp-woo-check.js`). Builds its site with `scripts/wp-site-build.sh … --woo` (needs downloads.wordpress.org). **NOT in `run-all-tests.sh`** — run it wherever WooCommerce can be downloaded; it says "did NOT run" and exits 2 otherwise |
+| `docs/WOO-RENDER-2026-11-13.md` | **The first real WooCommerce render**: 33 defects (every account page showed the cart; the checkout had no layout; orders saved without a country; dead Order again and Install buttons), each with cause, fix and file — and everything still NOT verified (payment gateway, OTP, email, MySQL, the real catalogue) |
 | `inc/setup.php` | **Appearance → Foodify setup.** The shop set up from wp-admin by button, for an install with no SSH: pages + readable links, the SAME shop settings as bootstrap.sh Phase 4 (`tests/setup-test.php` compares the two lists — change one, change the other), business details, sample products on an empty store |
 | `inc/requirements.php` | The plugins the theme needs, said in wp-admin with Install/Activate buttons. A theme cannot use the `Requires Plugins` header |
 | `tests/wp11-test.php` | 51 assertions. Tax parts sum to the whole; COD collects the right amount |

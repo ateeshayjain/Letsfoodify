@@ -255,7 +255,17 @@ function foodify_setup_steps( array $f ): array {
 		'key'   => 'plugins',
 		'title' => 'WooCommerce',
 		'state' => $wc ? 'done' : 'todo',
-		'lines' => $wc ? [ 'WooCommerce is active.' ] : [ 'The shop, cart, checkout and accounts are WooCommerce. Nothing below about the shop can be set up until it is active.' ],
+		'lines' => $wc
+			? array_merge(
+				[ 'WooCommerce is active.' ],
+				// A new WooCommerce starts in "Coming soon" mode: the person setting
+				// the site up (signed in) sees the shop, and everyone they send the
+				// link to sees "Great things are on the horizon" on every shop page.
+				// Found on the first real WooCommerce install, 13 Nov 2026. Going
+				// live is a person's decision, so this says it and changes nothing.
+				! empty( $f['coming_soon'] ) ? [ 'WooCommerce is in “Coming soon” mode: you can see the shop because you are signed in, but visitors get a “coming soon” page instead of the shop, the products, the cart and the checkout. Switch it to Live under WooCommerce → Settings → Site visibility when the site is ready to be seen.' ] : []
+			)
+			: [ 'The shop, cart, checkout and accounts are WooCommerce. Nothing below about the shop can be set up until it is active.' ],
 	];
 
 	$missing = array_values( (array) ( $f['pages_missing'] ?? [] ) );
@@ -471,6 +481,7 @@ function foodify_setup_facts(): array {
 	$profile = function_exists( 'foodify_business_profile' ) ? foodify_business_profile() : $stored;
 	return [
 		'wc_active'          => $wc,
+		'coming_soon'        => $wc && 'yes' === get_option( 'woocommerce_coming_soon' ),
 		'permalinks_plain'   => '' === (string) get_option( 'permalink_structure' ),
 		'pages_missing'      => $missing,
 		'pages_unwired'      => $unwired,
@@ -504,6 +515,9 @@ add_action( 'admin_menu', static function (): void {
 		$steps = foodify_setup_steps( $facts );
 		$forms = [];
 
+		if ( $facts['wc_active'] && $facts['coming_soon'] ) {
+			$forms['plugins'] = '<p><a class="button" href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=site-visibility' ) ) . '">Open Site visibility</a></p>';
+		}
 		if ( ! $facts['wc_active'] ) {
 			// inc/requirements.php prints the Install / Activate button on this screen too.
 			$forms['plugins'] = '<p>Use the <strong>Install WooCommerce</strong> button in the notice at the top of this page, then come back here.</p>';

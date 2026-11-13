@@ -74,7 +74,24 @@ else
   fail "the zip's home page does not render clean — not shipping it"
 fi
 
+# The shop pages need WooCommerce, which only some machines can download. Where a
+# WooCommerce test site exists the ZIP is set up and bought from, and a failure
+# stops the hand-over; where none does, that is SAID — the zip is not called
+# checked for something that did not run.
+WOO_NOTE=""
+if [[ -f "${FOODIFY_WOO_DIR:-/home/user/wpsite-woo}/wp-load.php" ]]; then
+  if FOODIFY_THEME_SRC="$UNZ/foodify" "$KIT/scripts/wp-woo-test.sh" >"$UNZ/woo.log" 2>&1; then
+    pass "the zip's shop works in a real WooCommerce: set up, crawled and bought from ($(grep -o '[0-9]* checks' "$UNZ/woo.log" | tail -1))"
+  else
+    grep -E 'FAIL|did NOT' "$UNZ/woo.log" | sed 's/^/    /' | head -24
+    fail "the zip's shop does not work clean in WooCommerce — not shipping it"
+  fi
+else
+  WOO_NOTE="        note: the WooCommerce check did NOT run on this zip (no site at ${FOODIFY_WOO_DIR:-/home/user/wpsite-woo}) — scripts/wp-woo-test.sh, docs/WP-BOOT.md"
+fi
+
 SUM="$(sha256sum "$OUT" | cut -d' ' -f1)"
 echo "$SUM  $(basename "$OUT")" > "$OUT.sha256"
 printf "\n${G}ready${N}  %s  (%s)\n        sha256 %s\n" "dist/$NAME.zip" "$(du -h "$OUT" | cut -f1)" "$SUM"
+[[ -z "$WOO_NOTE" ]] || printf "%s\n" "$WOO_NOTE"
 [[ -z "$DIRTY" ]] || printf "        note: built from UNCOMMITTED theme changes — commit before handing this over\n"

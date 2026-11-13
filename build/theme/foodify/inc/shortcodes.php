@@ -137,6 +137,13 @@ function foodify_render_shipping_progress(): string {
 	if ( ! $state['applicable'] ) {
 		return '';
 	}
+	// An empty cart is not "₹599 away from free delivery" — it is empty, and
+	// the cart template was written on the understanding that nothing prints
+	// (BUY-17). Nothing did not: a real WooCommerce showed the bar, full
+	// width, over "Your cart is currently empty" (13 Nov 2026).
+	if ( function_exists( 'WC' ) && WC()->cart && WC()->cart->is_empty() ) {
+		return '';
+	}
 
 	if ( $state['qualified'] ) {
 		$message = '<strong>' . esc_html__( 'Free delivery unlocked.', 'foodify' ) . '</strong> '
@@ -174,9 +181,9 @@ add_shortcode( 'foodify_free_shipping_progress', static function (): string {
  */
 add_filter( 'woocommerce_add_to_cart_fragments', static function ( array $fragments ): array {
 	$html = foodify_render_shipping_progress();
-	if ( '' !== $html ) {
-		$fragments['[data-foodify-shipping-progress]'] = $html;
-	}
+	// Nothing to say (the last line was removed): the bar on the page must go,
+	// not stay with its old figure. A hidden stand-in keeps the hook for later.
+	$fragments['[data-foodify-shipping-progress]'] = '' !== $html ? $html : '<div data-foodify-shipping-progress hidden></div>';
 	return $fragments;
 } );
 

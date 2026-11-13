@@ -88,6 +88,10 @@ check( 'a blank WordPress: WooCommerce, pages and details to do; the shop steps 
 check( 'plain links are named as the reason /shop/ shows the wrong page', str_contains( implode( ' ', $blank[1]['lines'] ), 'plain links' ) && str_contains( implode( ' ', $blank[1]['lines'] ), '2 pages the theme links to do not exist: /shop/, /cart/.' ) );
 $ready = [ 'wc_active' => true, 'details' => [ 'tagline' => 'x', 'phone' => '1', 'fssai' => '10012345000001' ], 'product_count' => 44 ];
 check( 'a set-up shop: every step done', [ 'done' ] === array_values( array_unique( array_column( foodify_setup_steps( $ready ), 'state' ) ) ) && 0 === foodify_setup_open_count( foodify_setup_steps( $ready ) ) );
+// First real WooCommerce install, 13 Nov 2026: a new WooCommerce hides the shop from visitors.
+$soon = foodify_setup_steps( $ready + [ 'coming_soon' => true ] );
+check( 'WooCommerce in "Coming soon" mode is SAID, with where to change it', str_contains( implode( ' ', $soon[0]['lines'] ), 'Coming soon' ) && str_contains( implode( ' ', $soon[0]['lines'] ), 'Site visibility' ) );
+check( 'and not said when the shop is live', ! str_contains( implode( ' ', foodify_setup_steps( $ready )[0]['lines'] ), 'Coming soon' ) );
 $draft = foodify_setup_steps( $ready + [ 'pages_draft' => [ 'Privacy policy' ] ] );
 check( 'a page that is only a draft is not "done" — visitors get page-not-found', 'todo' === $draft[1]['state'] && str_contains( implode( ' ', $draft[1]['lines'] ), 'Not published yet' ) );
 $live = foodify_setup_steps( [ 'wc_active' => true, 'has_orders' => true, 'option_changes' => [ [ 'option' => 'a', 'now' => 'b', 'want' => 'c' ] ] ] );

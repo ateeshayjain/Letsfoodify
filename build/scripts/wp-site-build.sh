@@ -79,4 +79,11 @@ if [[ "$WOO" == --woo ]]; then
     exit( wc_get_page_id( "cart" ) > 0 ? 0 : 1 );' \
     || die "WooCommerce activated but did not install its tables and pages"
 fi
+# A copy of the database as it is right now — a WooCommerce nobody has set up.
+# wp-woo-test.sh puts it back before every run, so the setup screen is always
+# clicked through from the beginning and a run never depends on the last one.
+# (The plugin puts the file in a randomly named folder and records where.)
+DB="$(php -r 'echo (string) @include $argv[1];' "$WP/wp-content/database/db-path.php" 2>/dev/null || true)"
+[[ -n "$DB" && -f "$DB" ]] || DB="$WP/wp-content/database/.ht.sqlite"
+[[ -f "$DB" ]] && cp "$DB" "$DB.pristine"
 echo "  built: $WP (WordPress $VER${WOO:+ + WooCommerce})"

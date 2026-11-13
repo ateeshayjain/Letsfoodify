@@ -44,6 +44,19 @@ if ( ! $customer ) {
 	$customer = get_user_by( 'id', $id );
 }
 
+// "Live": WooCommerce → Settings → Site visibility. A new WooCommerce shows
+// visitors a "coming soon" page until a person switches this.
+update_option( 'woocommerce_coming_soon', 'no' );
+
+// A coupon, so the cart's code field has something real to accept.
+if ( ! wc_get_coupon_id_by_code( 'test10' ) ) {
+	$coupon = new WC_Coupon();
+	$coupon->set_code( 'test10' );
+	$coupon->set_discount_type( 'percent' );
+	$coupon->set_amount( 10 );
+	$coupon->save();
+}
+
 $pp = get_page_by_path( 'privacy-policy' );
 if ( $pp && 'publish' !== $pp->post_status ) { wp_publish_post( $pp->ID ); }
 
