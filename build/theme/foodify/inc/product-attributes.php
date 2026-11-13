@@ -143,7 +143,21 @@ add_filter( 'rank_math/frontend/robots', static function ( array $robots ): arra
  * run. Pure mapping in foodify_resolve_filter_attribute() so it can be tested.
  */
 function foodify_resolve_filter_attribute( array $block, callable $id_by_slug ): array {
-	if ( ( $block['blockName'] ?? '' ) !== 'woocommerce/attribute-filter' ) {
+	// The filters sit INSIDE woocommerce/product-filters, which renders its
+	// inner blocks itself (new WP_Block, straight from the parsed tree) — they
+	// never pass through render_block_data on their own. So the wrapper's
+	// tree is walked here; without this both lists showed the first attribute
+	// WooCommerce has, whichever was asked for (first real render, 13 Nov 2026).
+	if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+		foreach ( $block['innerBlocks'] as $i => $inner ) {
+			if ( is_array( $inner ) ) {
+				$block['innerBlocks'][ $i ] = foodify_resolve_filter_attribute( $inner, $id_by_slug );
+			}
+		}
+	}
+	// Both of WooCommerce's attribute filters: the current server-rendered one
+	// the templates use, and the older React one a Site Editor edit may add.
+	if ( ! in_array( $block['blockName'] ?? '', [ 'woocommerce/product-filter-attribute', 'woocommerce/attribute-filter' ], true ) ) {
 		return $block;
 	}
 	$slug = (string) ( $block['attrs']['foodifyAttribute'] ?? '' );

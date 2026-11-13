@@ -41,7 +41,11 @@
 </div>
 <!-- /wp:columns -->
 
-<!-- wp:group {"align":"wide","className":"fd-pdp__body","layout":{"type":"constrained"}} -->
+<!-- A DEFAULT-layout group, like the shop's wide wrappers: constrained, WordPress
+     re-centres every child at the content width, and the tabs and the label
+     table sat in a narrow centred column instead of on the page's left rail
+     (first real render, 13 Nov 2026 — the prototype has no layout CSS). -->
+<!-- wp:group {"align":"wide","className":"fd-pdp__body","layout":{"type":"default"}} -->
 <div class="wp-block-group alignwide fd-pdp__body">
 <!-- The tabbed body (About · Ingredients & nutrition · How to make · FAQ) and
      the always-open Pack & label table render here, from inc/product-spec.php
@@ -52,7 +56,7 @@
 </div>
 <!-- /wp:group -->
 
-<!-- wp:group {"align":"wide","className":"fd-pdp__reviews","style":{"spacing":{"padding":{"top":"var:preset|spacing|70"}}},"layout":{"type":"constrained"}} -->
+<!-- wp:group {"align":"wide","className":"fd-pdp__reviews","style":{"spacing":{"padding":{"top":"var:preset|spacing|70"}}},"layout":{"type":"default"}} -->
 <div class="wp-block-group alignwide fd-pdp__reviews" style="padding-top:var(--wp--preset--spacing--70)">
 <!-- With no reviews yet, reviews.php renames this heading "Reviews" and
      replaces the line with how to leave one (PRODUCT-24). -->
@@ -66,22 +70,29 @@
 </div>
 <!-- /wp:group -->
 
-<!-- wp:group {"align":"wide","style":{"spacing":{"padding":{"top":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
+<!-- "Complete the meal" is WooCommerce's related products (curated cross-sells
+     first — product-display.php). It is a core/query carrying the
+     woocommerce/related-products NAMESPACE: that is what WooCommerce's
+     RelatedProducts class looks for. Written as a wp:woocommerce/related-products
+     wrapper around a bare post-template, the loop had no query of its own, ran
+     the page's, and on a real WooCommerce listed a blog post (13 Nov 2026). The
+     heading is inside the query, so a product with nothing related shows neither. -->
+<!-- wp:group {"align":"wide","style":{"spacing":{"padding":{"top":"var:preset|spacing|80"}}},"layout":{"type":"default"}} -->
 <div class="wp-block-group alignwide" style="padding-top:var(--wp--preset--spacing--80)">
+<!-- wp:query {"queryId":30,"query":{"perPage":4,"pages":0,"offset":0,"postType":"product","order":"asc","orderBy":"title","inherit":false},"namespace":"woocommerce/related-products","className":"fd-related","layout":{"type":"default"}} -->
+<div class="wp-block-query fd-related">
 <!-- wp:heading {"fontSize":"2xl"} -->
 <h2 class="wp-block-heading has-2-xl-font-size">Complete the meal</h2>
 <!-- /wp:heading -->
-<!-- wp:woocommerce/related-products {"query":{"perPage":4,"pages":0,"offset":0,"postType":"product","order":"desc","orderBy":"date","inherit":false},"align":"wide"} -->
-<div class="wp-block-woocommerce-related-products alignwide">
 <!-- wp:post-template {"className":"fd-products","layout":{"type":"grid","columnCount":4}} -->
-<!-- wp:woocommerce/product-image {"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
+<!-- wp:woocommerce/product-image {"showSaleBadge":false,"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
 <!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
 <!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
 <!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->
 <!-- wp:woocommerce/product-button {"isDescendentOfQueryLoop":true} /-->
 <!-- /wp:post-template -->
 </div>
-<!-- /wp:woocommerce/related-products -->
+<!-- /wp:query -->
 </div>
 <!-- /wp:group -->
 </main>

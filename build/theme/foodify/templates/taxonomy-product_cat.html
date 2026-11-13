@@ -9,7 +9,7 @@
      content width, which is the drift being fixed. -->
 <!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
 <div class="wp-block-group alignwide">
-<!-- wp:query-title {"type":"archive","fontSize":"3xl"} /-->
+<!-- wp:query-title {"type":"archive","showPrefix":false,"fontSize":"3xl"} /-->
 <!-- wp:term-description {"className":"fd-lede","textColor":"mute","fontSize":"md","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|60"}}}} /-->
 </div>
 <!-- /wp:group -->
@@ -26,21 +26,37 @@
      .fd-filters__count holds the number of active filters ("Filter · 2"). -->
 <!-- wp:details {"className":"fd-filters"} -->
 <details class="wp-block-details fd-filters"><summary>Filter<span class="fd-filters__count"></span></summary>
-<!-- wp:woocommerce/filter-wrapper {"filterType":"attribute-filter","heading":"Prep method"} -->
-<div class="wp-block-woocommerce-filter-wrapper">
-<!-- wp:woocommerce/attribute-filter {"attributeId":0,"foodifyAttribute":"prep","heading":"Prep method","displayStyle":"list","showCounts":true} /-->
+<!-- WooCommerce's CURRENT filter blocks (product-filters): rendered on the
+     server, counts included, driven by the Interactivity API. The older
+     attribute-filter / price-filter blocks this template first used are React
+     blocks that render nothing without their saved markup — on the first real
+     WooCommerce render (13 Nov 2026) the filter column was empty, and they
+     pulled ~55 scripts onto the page for it. "overlayMode":"off": the theme's
+     own Filter control (the details element) is the phone pattern; WooCommerce's
+     overlay would be a second one. The attribute id is 0 here and resolved per
+     install from foodifyAttribute (inc/product-attributes.php). -->
+<!-- wp:woocommerce/product-filters {"overlayMode":"off","className":"fd-filterset"} -->
+<div class="wp-block-woocommerce-product-filters fd-filterset">
+<!-- wp:woocommerce/product-filter-attribute {"attributeId":0,"foodifyAttribute":"prep","showCounts":true,"queryType":"or"} -->
+<!-- wp:heading {"level":3,"className":"fd-filterset__title"} -->
+<h3 class="wp-block-heading fd-filterset__title">Prep method</h3>
+<!-- /wp:heading -->
+<!-- wp:woocommerce/product-filter-checkbox-list /-->
+<!-- /wp:woocommerce/product-filter-attribute -->
+<!-- wp:woocommerce/product-filter-attribute {"attributeId":0,"foodifyAttribute":"dietary","showCounts":true,"queryType":"or"} -->
+<!-- wp:heading {"level":3,"className":"fd-filterset__title"} -->
+<h3 class="wp-block-heading fd-filterset__title">Dietary</h3>
+<!-- /wp:heading -->
+<!-- wp:woocommerce/product-filter-checkbox-list /-->
+<!-- /wp:woocommerce/product-filter-attribute -->
+<!-- wp:woocommerce/product-filter-price -->
+<!-- wp:heading {"level":3,"className":"fd-filterset__title"} -->
+<h3 class="wp-block-heading fd-filterset__title">Price</h3>
+<!-- /wp:heading -->
+<!-- wp:woocommerce/product-filter-price-slider {"showInputFields":true} /-->
+<!-- /wp:woocommerce/product-filter-price -->
 </div>
-<!-- /wp:woocommerce/filter-wrapper -->
-<!-- wp:woocommerce/filter-wrapper {"filterType":"attribute-filter","heading":"Dietary"} -->
-<div class="wp-block-woocommerce-filter-wrapper">
-<!-- wp:woocommerce/attribute-filter {"attributeId":0,"foodifyAttribute":"dietary","heading":"Dietary","displayStyle":"list","showCounts":true} /-->
-</div>
-<!-- /wp:woocommerce/filter-wrapper -->
-<!-- wp:woocommerce/filter-wrapper {"filterType":"price-filter","heading":"Price"} -->
-<div class="wp-block-woocommerce-filter-wrapper">
-<!-- wp:woocommerce/price-filter {"heading":"Price"} /-->
-</div>
-<!-- /wp:woocommerce/filter-wrapper -->
+<!-- /wp:woocommerce/product-filters -->
 </details>
 <!-- /wp:details -->
 <!-- wp:html -->
@@ -69,7 +85,7 @@
 <!-- wp:query {"queryId":0,"query":{"perPage":12,"pages":0,"offset":0,"postType":"product","order":"asc","orderBy":"title","inherit":true},"namespace":"woocommerce/product-query","layout":{"type":"default"}} -->
 <div class="wp-block-query">
 <!-- wp:post-template {"className":"fd-products","layout":{"type":"grid","columnCount":3}} -->
-<!-- wp:woocommerce/product-image {"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
+<!-- wp:woocommerce/product-image {"showSaleBadge":false,"imageSizing":"thumbnail","isDescendentOfQueryLoop":true} /-->
 <!-- wp:post-title {"textAlign":"left","level":3,"isLink":true,"fontSize":"md","__woocommerceNamespace":"woocommerce/product-collection/product-title"} /-->
 <!-- wp:woocommerce/product-rating {"isDescendentOfQueryLoop":true} /-->
 <!-- wp:woocommerce/product-price {"isDescendentOfQueryLoop":true,"fontSize":"lg"} /-->

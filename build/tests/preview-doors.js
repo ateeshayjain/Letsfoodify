@@ -85,7 +85,7 @@ const path = require('path');
     r.p2 = vis(); r.c2 = count(); r.prev = !!root.querySelector('.wp-block-query-pagination-previous');
     root.querySelector('.wp-block-query-pagination .page-numbers[data-page="4"]').click();
     r.p4 = vis(); r.c4 = count(); r.next4 = !!root.querySelector('.wp-block-query-pagination-next');
-    const jain = root.querySelector('.wc-block-components-checkbox__input[value="Jain"]');
+    const jain = root.querySelector('.wc-block-product-filter-checkbox-list__input[value="Jain"]');
     jain.click(); jain.dispatchEvent(new Event('change', { bubbles: true }));
     r.jain = vis(); r.cj = count(); r.navHidden = root.querySelector('.wp-block-query-pagination').hidden;
     jain.click(); jain.dispatchEvent(new Event('change', { bubbles: true }));
@@ -126,7 +126,7 @@ const path = require('path');
   await go('shop');
   const filtered = await page.evaluate(() => {
     const r = document.getElementById('s-shop');
-    const box = [...r.querySelectorAll('.wc-block-components-checkbox__input')].find(c => c.value === 'Requires cooking');
+    const box = [...r.querySelectorAll('.wc-block-product-filter-checkbox-list__input')].find(c => c.value === 'Requires cooking');
     box.click();
     const vis = [...r.querySelectorAll('.fd-products > li')].filter(li => !li.hidden);
     const all = [...r.querySelectorAll('.fd-products > li')].filter(li => li.dataset.prep.includes('Requires cooking')).length;
@@ -137,10 +137,10 @@ const path = require('path');
   });
   check('a Prep method filter leaves only matching products and recounts', filtered.n === filtered.all && filtered.n > 3 && filtered.n <= 12 && filtered.allCook && filtered.count === `Showing all ${filtered.n} results`, filtered);
   const priced = await page.evaluate(() => {
-    const r = document.getElementById('s-shop'), mx = r.querySelector('.wc-block-price-filter__amount--max');
-    mx.value = 200; mx.dispatchEvent(new Event('change', { bubbles: true }));
+    const r = document.getElementById('s-shop'), mx = r.querySelector('.wc-block-product-filter-price-slider__right input');
+    mx.value = '₹200'; mx.dispatchEvent(new Event('change', { bubbles: true }));
     const vis = [...r.querySelectorAll('.fd-products > li')].filter(li => !li.hidden).map(li => +li.dataset.price);
-    mx.value = mx.dataset.ceil; mx.dispatchEvent(new Event('change', { bubbles: true }));
+    mx.value = '₹' + mx.dataset.ceil; mx.dispatchEvent(new Event('change', { bubbles: true }));
     return vis;
   });
   check('the price filter hides everything above the maximum', priced.length > 0 && priced.every(p => p <= 200), priced);
@@ -154,7 +154,7 @@ const path = require('path');
   check('"Price: low to high" sorts the grid', sorted.every((p, i) => i === 0 || sorted[i - 1] <= p), sorted);
   const empty = await page.evaluate(() => {
     const r = document.getElementById('s-shop');
-    const a = [...r.querySelectorAll('.wc-block-components-checkbox__input')];
+    const a = [...r.querySelectorAll('.wc-block-product-filter-checkbox-list__input')];
     // No chutney is high in protein: an honest empty result.
     a.find(c => c.value === 'Stir with drinking water').click(); a.find(c => c.value === 'High protein').click();
     const shownNo = !r.querySelector('.fx-noresults').hidden;

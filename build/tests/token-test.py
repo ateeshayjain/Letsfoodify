@@ -30,7 +30,13 @@ def custom_keys(node, prefix=""):
 known = set()
 st = tj["settings"]
 for c in st["color"]["palette"]:            known.add("color--" + c["slug"])
-for f in st["typography"]["fontSizes"]:      known.add("font-size--" + f["slug"])
+# WordPress kebab-cases a preset's slug too (_wp_to_kebab_case): "2xl" is
+# emitted as --wp--preset--font-size--2-xl. This check used the raw slug, so it
+# passed var(--…--2xl) — which resolves to nothing in WordPress — in six rules
+# and two theme.json headings until a real render showed it (13 Nov 2026).
+def wp_kebab(slug):
+    return re.sub(r"(\d)([a-zA-Z])", r"\1-\2", re.sub(r"([a-z])(\d)", r"\1-\2", slug)).lower()
+for f in st["typography"]["fontSizes"]:      known.add("font-size--" + wp_kebab(f["slug"]))
 for f in st["typography"].get("fontFamilies", []): known.add("font-family--" + f["slug"])
 for sp in st["spacing"]["spacingSizes"]:     known.add("spacing--" + sp["slug"])
 for k in custom_keys(st.get("custom", {})):  known.add("custom--" + k)

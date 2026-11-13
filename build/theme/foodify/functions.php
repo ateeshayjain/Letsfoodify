@@ -160,14 +160,63 @@ function foodify_defer_script_tag( string $tag, string $handle, bool $has_inline
 	return str_replace( ' src=', ' defer src=', $tag );
 }
 
+/**
+ * Every handle a synchronous script needs, however far down — none of them may
+ * be deferred either.
+ *
+ * FOUND BY THE FIRST REAL WOOCOMMERCE RENDER (13 Nov 2026). The rule above kept
+ * a handle with inline data synchronous but still deferred what it DEPENDS on.
+ * WordPress's own wp-i18n carries an inline script and needs wp-hooks; with
+ * wp-hooks deferred, wp-i18n ran first and threw, and every script after it
+ * went down with it ("wp is not defined") — ten errors on the shop page, and
+ * the filters never drew. No WooCommerce, no wp-* scripts on the front end, so
+ * nothing before that render could see it.
+ *
+ * @param array<string,list<string>> $deps Handle → the handles it depends on.
+ * @param list<string>               $sync Handles that will run synchronously.
+ * @return list<string> $sync and everything it needs, transitively.
+ */
+function foodify_defer_blocked( array $deps, array $sync ): array {
+	$seen  = [];
+	$stack = array_values( $sync );
+	while ( $stack ) {
+		$h = (string) array_pop( $stack );
+		if ( isset( $seen[ $h ] ) ) {
+			continue;
+		}
+		$seen[ $h ] = true;
+		foreach ( (array) ( $deps[ $h ] ?? [] ) as $d ) {
+			$stack[] = $d;
+		}
+	}
+	return array_keys( $seen );
+}
+
 add_filter( 'script_loader_tag', static function ( string $tag, string $handle ): string {
 	if ( is_admin() ) {
 		return $tag;
 	}
 
-	$never = (array) apply_filters( 'foodify_never_defer', [
-		'jquery', 'jquery-core', 'jquery-migrate', 'wp-polyfill',
-	] );
+	// Worked out once for the head and once for the footer, not once per page:
+	// WooCommerce attaches wc-settings' inline data on wp_print_footer_scripts,
+	// after the head is out. Cached once, wc-settings stayed synchronous while
+	// wc-types — which it needs — was deferred, and the filters still did not draw.
+	static $blocked = null, $group = null;
+	if ( null === $blocked || did_action( 'wp_print_footer_scripts' ) !== $group ) {
+		$group = did_action( 'wp_print_footer_scripts' );
+		$never = (array) apply_filters( 'foodify_never_defer', [
+			'jquery', 'jquery-core', 'jquery-migrate', 'wp-polyfill',
+		] );
+		$deps = [];
+		$sync = $never;
+		foreach ( wp_scripts()->registered as $h => $script ) {
+			$deps[ $h ] = array_values( (array) $script->deps );
+			if ( ! empty( $script->extra['before'] ) || ! empty( $script->extra['after'] ) ) {
+				$sync[] = (string) $h;
+			}
+		}
+		$blocked = array_fill_keys( foodify_defer_blocked( $deps, $sync ), true );
+	}
 
 	$scripts    = wp_scripts();
 	$has_inline = false;
@@ -178,7 +227,7 @@ add_filter( 'script_loader_tag', static function ( string $tag, string $handle )
 		}
 	}
 
-	return foodify_defer_script_tag( $tag, $handle, $has_inline, $never );
+	return foodify_defer_script_tag( $tag, $handle, $has_inline || isset( $blocked[ $handle ] ), [] );
 }, 10, 2 );
 
 /*

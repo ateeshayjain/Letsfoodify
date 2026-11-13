@@ -48,6 +48,18 @@ $out = foodify_resolve_filter_attribute( $block( [ 'attributeId' => 42, 'foodify
 check( 'an id set by hand in the Site Editor is respected',  42 === $out['attrs']['attributeId'] );
 $out = foodify_resolve_filter_attribute( $block( [ 'attributeId' => 0 ], 'woocommerce/price-filter' ), $ids );
 check( 'other blocks pass through untouched',                0 === $out['attrs']['attributeId'] );
+// First real WooCommerce render, 13 Nov 2026: the filters live inside
+// woocommerce/product-filters, which renders its inner blocks itself — so the
+// id has to be resolved by walking the wrapper's tree.
+$out = foodify_resolve_filter_attribute( $block( [ 'attributeId' => 0, 'foodifyAttribute' => 'dietary' ], 'woocommerce/product-filter-attribute' ), $ids );
+check( "WooCommerce's current attribute filter resolves too",     9 === $out['attrs']['attributeId'] );
+$tree = [ 'blockName' => 'woocommerce/product-filters', 'attrs' => [], 'innerBlocks' => [
+	$block( [ 'attributeId' => 0, 'foodifyAttribute' => 'prep' ], 'woocommerce/product-filter-attribute' ),
+	[ 'blockName' => 'core/group', 'attrs' => [], 'innerBlocks' => [ $block( [ 'attributeId' => 0, 'foodifyAttribute' => 'dietary' ], 'woocommerce/product-filter-attribute' ) ] ],
+] ];
+$out = foodify_resolve_filter_attribute( $tree, $ids );
+check( 'a filter INSIDE the filters wrapper is resolved',         7 === $out['innerBlocks'][0]['attrs']['attributeId'] );
+check( 'and one nested deeper',                                    9 === $out['innerBlocks'][1]['innerBlocks'][0]['attrs']['attributeId'] );
 $out = foodify_resolve_filter_attribute( $block( [ 'heading' => 'Prep method' ] ), $ids );
 check( 'no slug, no change',                                 ! isset( $out['attrs']['attributeId'] ) );
 
@@ -57,7 +69,9 @@ $tpl = __DIR__ . '/../theme/foodify/templates/';
 $shop = (string) file_get_contents( $tpl . 'archive-product.html' );
 $cat  = (string) file_get_contents( $tpl . 'taxonomy-product_cat.html' );
 check( 'the category template IS the shop template',        $shop === $cat );
-preg_match_all( '/wp:woocommerce\/attribute-filter\s*(\{.*?\})/', $shop, $m );
+preg_match_all( '/wp:woocommerce\/product-filter-attribute\s*(\{.*?\})/', $shop, $m );
+check( 'no template uses the old React filter blocks, which render nothing without saved markup', ! preg_match( '/wp:woocommerce\/(attribute-filter|price-filter|filter-wrapper)\b/', $shop . $cat ) );
+check( "WooCommerce's own phone overlay is off — the theme's Filter control is the one", str_contains( $shop, '"overlayMode":"off"' ) );
 check( 'two attribute filters on the shop',                  2 === count( $m[1] ) );
 $slugs = [];
 foreach ( $m[1] as $json ) {

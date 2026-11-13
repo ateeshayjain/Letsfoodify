@@ -38,12 +38,20 @@ def kebab(s):
     return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "-", s).lower()
 
 
+def wp_kebab(slug):
+    """WordPress's _wp_to_kebab_case, for the part that matters here: 2xl -> 2-xl."""
+    return re.sub(r"(\d)([a-zA-Z])", r"\1-\2", slug).lower()
+
+
 def token_css():
     out = [":root{"]
     for c in S["color"]["palette"]:
         out.append(f"--wp--preset--color--{c['slug']}:{c['color']};")
     for f in S["typography"]["fontSizes"]:
-        out.append(f"--wp--preset--font-size--{f['slug']}:{f['size']};")
+        # WordPress kebab-cases a slug into its variable: "2xl" becomes --2-xl.
+        # Printing the raw slug here made var(--…--2xl) work in the prototype
+        # and nowhere else (first real WooCommerce render, 13 Nov 2026).
+        out.append(f"--wp--preset--font-size--{wp_kebab(f['slug'])}:{f['size']};")
     for fam in S["typography"]["fontFamilies"]:
         out.append(f"--wp--preset--font-family--{fam['slug']}:{fam['fontFamily']};")
     for sp in S["spacing"]["spacingSizes"]:
@@ -71,7 +79,7 @@ def token_css():
         out.append(f".has-{c['slug']}-border-color{{border-color:var(--wp--preset--color--{c['slug']})}}")
     for f in S["typography"]["fontSizes"]:
         cls = re.sub(r"(\d)([a-z])", r"\1-\2", f["slug"])   # 4xl -> 4-xl, as WP does
-        out.append(f".has-{cls}-font-size{{font-size:var(--wp--preset--font-size--{f['slug']})}}")
+        out.append(f".has-{cls}-font-size{{font-size:var(--wp--preset--font-size--{wp_kebab(f['slug'])})}}")
     for fam in S["typography"]["fontFamilies"]:
         out.append(f".has-{fam['slug']}-font-family{{font-family:var(--wp--preset--font-family--{fam['slug']})}}")
     return "\n".join(out)
@@ -1043,6 +1051,9 @@ def crumb_for(p):
 
 
 # WooCommerce and core dynamic blocks -> fixture markup.
+FILTER_ATTR = ""
+
+
 def dynamic(name, attrs, inner):
     a = attrs or {}
     if name == "site-title":
@@ -1286,37 +1297,40 @@ def dynamic(name, attrs, inner):
                 else f"Showing 1&ndash;{per} of {n} results")
         return ('<p class="woocommerce-result-count wp-block-woocommerce-product-results-count">'
                 + text + '</p>')
-    if name == "woocommerce/price-filter":
+    if name == "woocommerce/product-filter-price-slider":
+        # WooCommerce's product-filter-price-slider markup, as WooCommerce 11.3
+        # prints it (checked against a real render, 13 Nov 2026): the range,
+        # then the two amounts as TEXT inputs carrying the currency sign.
         lo = min(r[3] for r in LISTING)
         hi = max(r[3] for r in LISTING)
         lo, hi = (lo // 50) * 50, -(-hi // 50) * 50
-        return ('<div class="wp-block-woocommerce-price-filter"><h3 class="wc-block-price-filter__title">Price</h3>'
-                '<div class="wc-block-price-filter__range-input-wrapper"><div class="fx-range"><i></i></div></div>'
-                '<div class="wc-block-price-filter__controls">'
-                f'<label><span class="screen-reader-text">Lowest price</span>₹<input type="number" class="wc-block-price-filter__amount wc-block-price-filter__amount--min" value="{lo}" min="{lo}" max="{hi}" step="50" data-floor="{lo}" inputmode="numeric"></label>'
-                f'<label><span class="screen-reader-text">Highest price</span>₹<input type="number" class="wc-block-price-filter__amount wc-block-price-filter__amount--max" value="{hi}" min="{lo}" max="{hi}" step="50" data-ceil="{hi}" inputmode="numeric"></label>'
+        return ('<div class="wp-block-woocommerce-product-filter-price-slider"><div class="wc-block-product-filter-price-slider__content">'
+                '<div class="wc-block-product-filter-price-slider__range fx-range"><i></i></div>'
+                f'<div class="wc-block-product-filter-price-slider__left text"><input class="min" type="text" inputmode="numeric" value="₹{lo}" data-floor="{lo}" aria-label="Filter products by minimum price"></div>'
+                f'<div class="wc-block-product-filter-price-slider__right text"><input class="max" type="text" inputmode="numeric" value="₹{hi}" data-ceil="{hi}" aria-label="Filter products by maximum price"></div>'
                 '</div></div>')
-    if name == "woocommerce/attribute-filter":
-        # Woo's checkbox-list markup. In WordPress this block hydrates client-side;
-        # the server sends the same classes with the list rendered from the
-        # attribute the theme resolves from `foodifyAttribute` at render time.
-        # Counts are for THIS listing, and a term with nothing in it is left
-        # out, as WooCommerce leaves it out.
-        attr = a.get("foodifyAttribute", "")
+    if name == "woocommerce/product-filter-checkbox-list":
+        # WooCommerce's product-filter-checkbox-list markup, server-rendered
+        # with the counts for THIS listing; a term with nothing in it is left
+        # out, as WooCommerce leaves it out. The attribute is the enclosing
+        # product-filter-attribute block's (FILTER_ATTR, set by render()).
+        attr = FILTER_ATTR
         terms = {"prep": ["Just add hot water", "Stir with drinking water", "Requires cooking"],
                  "dietary": ["Vegan", "Gluten free", "Jain", "Millet based", "High protein"]}.get(attr, [])
         of = prep_terms if attr == "prep" else diet_terms
-        h = a.get("heading", "Filter")
-        lis = "".join(
-            '<li class="wc-block-checkbox-list__item"><div class="wc-block-components-checkbox"><label>'
-            f'<input type="checkbox" class="wc-block-components-checkbox__input" data-attr="{attr}" value="{html.escape(t)}">'
-            f'<span class="wc-block-components-checkbox__label">{t} '
-            f'<span class="wc-filter-element-label-list-count">({n})</span></span></label></div></li>'
+        mark = ('<svg class="wc-block-product-filter-checkbox-list__mark" viewBox="0 0 10 8" fill="none" aria-hidden="true">'
+                '<path d="M9.25 1.19922L3.75 6.69922L1 3.94922" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+        items = "".join(
+            '<div class="wc-block-product-filter-checkbox-list__item"><label class="wc-block-product-filter-checkbox-list__label">'
+            '<span class="wc-block-product-filter-checkbox-list__input-wrapper">'
+            f'<input type="checkbox" class="wc-block-product-filter-checkbox-list__input" data-attr="{attr}" value="{html.escape(t)}">{mark}</span>'
+            f'<span class="wc-block-product-filter-checkbox-list__text-wrapper"><span class="wc-block-product-filter-checkbox-list__text">{t}</span> '
+            f'<span class="wc-block-product-filter-checkbox-list__count">({n})</span></span></label></div>'
             for t in terms if (n := sum(1 for r in LISTING if t in of(r))))
-        if not lis:
+        if not items:
             return ""
-        return (f'<div class="wp-block-woocommerce-attribute-filter"><h3 class="wc-block-attribute-filter__title">{h}</h3>'
-                f'<ul class="wc-block-checkbox-list">{lis}</ul></div>')
+        return ('<div class="wp-block-woocommerce-product-filter-checkbox-list"><fieldset>'
+                f'<div class="wc-block-product-filter-checkbox-list__items">{items}</div></fieldset></div>')
     if name == "woocommerce/classic-shortcode":
         sc = a.get("shortcode", "cart")
         if sc == "my_account":
@@ -2510,9 +2524,11 @@ MOCK_SCRIPT = r'''<script>
     var grid = $('.fd-shop__results .wp-block-post-template', root);
     if (!grid) return;
     var want = { prep: [], dietary: [] };
-    $$('.wc-block-components-checkbox__input:checked', root).forEach(function (c) { want[c.getAttribute('data-attr')].push(c.value); });
-    var lo = parseFloat(($('.wc-block-price-filter__amount--min', root) || {}).value) || 0;
-    var hi = parseFloat(($('.wc-block-price-filter__amount--max', root) || {}).value) || 1e9;
+    $$('.wc-block-product-filter-checkbox-list__input:checked', root).forEach(function (c) { want[c.getAttribute('data-attr')].push(c.value); });
+    // WooCommerce's amounts are text fields that carry the rupee sign.
+    var amount = function (el) { return el ? parseFloat(String(el.value).replace(/[^0-9.]/g, '')) : NaN; };
+    var lo = amount($('.wc-block-product-filter-price-slider__left input', root)) || 0;
+    var hi = amount($('.wc-block-product-filter-price-slider__right input', root)) || 1e9;
     var shown = 0;
     $$('li.wp-block-post', grid).forEach(function (li) {
       var prep = li.getAttribute('data-prep').split('|'), diet = li.getAttribute('data-diet').split('|');
@@ -2524,12 +2540,12 @@ MOCK_SCRIPT = r'''<script>
     });
     var nr = $('.fx-noresults', root); if (nr) nr.hidden = shown > 0;
     // "Filter · 2" on the closed phone panel (the number only; CSS adds the dot).
-    var active = $$('.wc-block-components-checkbox__input:checked', root).length +
-      ((lo > (parseFloat(($('.wc-block-price-filter__amount--min', root) || {}).getAttribute ? $('.wc-block-price-filter__amount--min', root).getAttribute('data-floor') : 0) || 0)) ||
-       hi < (parseFloat(($('.wc-block-price-filter__amount--max', root) || {}).getAttribute ? $('.wc-block-price-filter__amount--max', root).getAttribute('data-ceil') : 1e9) || 1e9) ? 1 : 0);
+    var active = $$('.wc-block-product-filter-checkbox-list__input:checked', root).length +
+      ((lo > (parseFloat(($('.wc-block-product-filter-price-slider__left input', root) || {}).getAttribute ? $('.wc-block-product-filter-price-slider__left input', root).getAttribute('data-floor') : 0) || 0)) ||
+       hi < (parseFloat(($('.wc-block-product-filter-price-slider__right input', root) || {}).getAttribute ? $('.wc-block-product-filter-price-slider__right input', root).getAttribute('data-ceil') : 1e9) || 1e9) ? 1 : 0);
     $$('.fd-filters__count', root).forEach(function (c) { c.textContent = active ? String(active) : ''; });
     paginate(root, 1);
-    var mn = $('.wc-block-price-filter__amount--min', root), mx = $('.wc-block-price-filter__amount--max', root), bar = $('.fx-range i', root);
+    var mn = $('.wc-block-product-filter-price-slider__left input', root), mx = $('.wc-block-product-filter-price-slider__right input', root), bar = $('.fx-range i', root);
     if (mn && mx && bar) {
       var f = parseFloat(mn.getAttribute('data-floor')), c = parseFloat(mx.getAttribute('data-ceil')), span = Math.max(1, c - f);
       bar.style.left = Math.max(0, Math.min(100, (lo - f) / span * 100)) + '%';
@@ -2574,9 +2590,9 @@ MOCK_SCRIPT = r'''<script>
   }
   $$('.fd-shop__results .wp-block-post-template').forEach(function (g) { paginate(g.closest('.fx-shell'), 1); });
   function resetFilters(root) {
-    $$('.wc-block-components-checkbox__input', root).forEach(function (c) { c.checked = false; });
-    var mn = $('.wc-block-price-filter__amount--min', root), mx = $('.wc-block-price-filter__amount--max', root);
-    if (mn) mn.value = mn.getAttribute('data-floor'); if (mx) mx.value = mx.getAttribute('data-ceil');
+    $$('.wc-block-product-filter-checkbox-list__input', root).forEach(function (c) { c.checked = false; });
+    var mn = $('.wc-block-product-filter-price-slider__left input', root), mx = $('.wc-block-product-filter-price-slider__right input', root);
+    if (mn) mn.value = '₹' + mn.getAttribute('data-floor'); if (mx) mx.value = '₹' + mx.getAttribute('data-ceil');
     applyFilters(root);
   }
 
@@ -2906,11 +2922,11 @@ MOCK_SCRIPT = r'''<script>
       }, 700);
       return;
     }
-    if (t.matches('.wc-block-price-filter__amount')) applyFilters(root);
+    if (t.matches('.wc-block-product-filter-price-slider__content .text input')) applyFilters(root);
   });
   document.addEventListener('change', function (e) {
     var t = e.target, root = t.closest('.fx-shell');
-    if (t.matches('.wc-block-components-checkbox__input, .wc-block-price-filter__amount')) { applyFilters(root); return; }
+    if (t.matches('.wc-block-product-filter-checkbox-list__input, .wc-block-product-filter-price-slider__content .text input')) { applyFilters(root); return; }
     if (t.matches('select.orderby')) { applySort(root, t.value); return; }
     if (t.matches('#s-checkout input[name=fx-pay]')) { RENDER.checkout(screen('checkout')); return; }
   });
@@ -3096,6 +3112,25 @@ def render(markup, depth=0):
                        f'wp-block-post-template-is-layout-grid"{per}>{items}</ul>')
             pos = skip_to = ce
             continue
+        if name in ("woocommerce/product-filters", "woocommerce/product-filter-attribute", "woocommerce/product-filter-price") and not selfclose:
+            # WooCommerce's product-filters blocks render their inner blocks
+            # themselves and print their own wrappers; the saved <div> in the
+            # template is not what reaches the page. Same wrappers here.
+            global FILTER_ATTR
+            cs, ce = find_close(markup, name, pos)
+            inner_src = markup[pos:cs]
+            if name == "woocommerce/product-filters":
+                inner_src = re.sub(r'^\s*<div[^>]*>|</div>\s*$', '', inner_src.strip())
+                out.append(f'<div class="wc-block-product-filters {html.escape(a.get("className", ""))} wp-block-woocommerce-product-filters">'
+                           '<div class="wc-block-product-filters__content">' + render(inner_src, depth + 1) + '</div></div>')
+            else:
+                FILTER_ATTR = a.get("foodifyAttribute", "")
+                body = render(inner_src, depth + 1)
+                # An attribute with no terms in this listing prints nothing at all.
+                if name == "woocommerce/product-filter-price" or "wc-block-product-filter-checkbox-list__item" in body:
+                    out.append(f'<div class="wp-block-{name.replace("/", "-")}">{body}</div>')
+            pos = skip_to = ce
+            continue
         if name == "query-no-results" and not selfclose:
             # WordPress renders this only for an empty loop. The fixture loop is
             # never empty on load, but filtering can empty it, so the theme's own
@@ -3245,7 +3280,7 @@ FIXTURE_CSS = """
 .fx-price{font-weight:700;margin:auto 0 0;padding-top:var(--wp--preset--spacing--30);
   font-size:var(--wp--preset--font-size--lg);font-variant-numeric:tabular-nums}
 .fx-price s{color:var(--wp--preset--color--mute);font-weight:400;margin-right:6px}
-.fx-price--lg{font-size:var(--wp--preset--font-size--2xl)}
+.fx-price--lg{font-size:var(--wp--preset--font-size--2-xl)}
 .fx-off{font-size:12px;background:var(--wp--preset--color--flame-wash);color:var(--wp--preset--color--flame-deep);
   padding:3px 8px;border-radius:3px;vertical-align:middle}
 .fx-add{width:100%;margin-top:var(--wp--preset--spacing--30)}
@@ -3406,16 +3441,10 @@ html.fx-locked{overflow:hidden}
 .fx-shell mark{background:var(--wp--preset--color--flame-wash);color:inherit;padding:0 .2em;border-radius:3px}
 .woocommerce-MyAccount-navigation-link.is-active a{color:var(--wp--preset--color--flame-ink);font-weight:700}
 .woocommerce-EditAccountForm,.fd-address-form{max-width:32rem}
-/* The listing's price filter: WooCommerce's two amount inputs and its bar. */
-.wc-block-price-filter__controls{display:flex;gap:var(--wp--preset--spacing--20)}
-.wc-block-price-filter__controls label{display:flex;align-items:center;gap:4px;font-size:var(--wp--preset--font-size--base)}
-.wc-block-price-filter__amount{width:5.5rem;min-height:var(--wp--custom--tap-target);padding:0 var(--wp--preset--spacing--20);font:inherit;
-  border:1px solid var(--wp--preset--color--line-strong);border-radius:var(--wp--custom--radius--control);background:var(--wp--preset--color--surface);color:inherit}
+/* The listing's price filter bar (the range itself is WooCommerce's script on the site). */
 .fx-range::after{content:none}
 .fx-range i{position:absolute;left:0;right:0;top:0;bottom:0;background:var(--wp--preset--color--flame-ink);border-radius:999px}
 .fx-noresults{padding:var(--wp--preset--spacing--60) 0}
-.wc-block-components-checkbox label{display:flex;align-items:center;gap:var(--wp--preset--spacing--20);min-height:var(--wp--custom--tap-target);cursor:pointer}
-.wc-block-components-checkbox__input{width:18px;height:18px;accent-color:var(--wp--preset--color--flame-ink)}
 .woocommerce-noreviews{color:var(--wp--preset--color--mute)}
 .fx-stock.out-of-stock{color:var(--wp--preset--color--danger)}
 .fx-pending{margin:var(--wp--preset--spacing--50) 0;line-height:1.55}
@@ -3470,7 +3499,7 @@ html.fx-locked{overflow:hidden}
   padding:var(--wp--preset--spacing--50);display:flex;flex-direction:column;gap:var(--wp--preset--spacing--30);font-family:var(--wp--preset--font-family--ui)}
 .fx-rzp__box h2{margin:0;font-size:var(--wp--preset--font-size--xl)}
 .fx-rzp__brand{margin:0;font-size:var(--wp--preset--font-size--xs);letter-spacing:.08em;text-transform:uppercase;color:var(--wp--preset--color--mute)}
-.fx-rzp__amt{margin:0;font-size:var(--wp--preset--font-size--2xl);font-weight:700;font-variant-numeric:tabular-nums}
+.fx-rzp__amt{margin:0;font-size:var(--wp--preset--font-size--2-xl);font-weight:700;font-variant-numeric:tabular-nums}
 .fx-rzp__note{margin:0;font-size:var(--wp--preset--font-size--sm);color:var(--wp--preset--color--mute)}
 .fx-rzp .fd-secondary{align-self:center}
 /* No menu button: below 1024px the theme shows its category row under the search instead. */

@@ -280,6 +280,7 @@
 			"tapTarget": "44px",
 			"ease": "cubic-bezier(.2,.8,.2,1)",
 			"radius": {
+				"check": "4px",
 				"control": "8px",
 				"card": "12px",
 				"pill": "999px"
@@ -315,13 +316,13 @@
 			},
 			"h1": {
 				"typography": {
-					"fontSize": "var(--wp--preset--font-size--4xl)",
+					"fontSize": "var(--wp--preset--font-size--4-xl)",
 					"lineHeight": "1.05"
 				}
 			},
 			"h2": {
 				"typography": {
-					"fontSize": "var(--wp--preset--font-size--2xl)"
+					"fontSize": "var(--wp--preset--font-size--2-xl)"
 				}
 			},
 			"h3": {

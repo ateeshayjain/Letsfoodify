@@ -152,6 +152,10 @@ check( 'cooking never claims no pan is needed',
 	false === stripos( implode( ' ', array_column( $s, 'detail' ) ), 'no pan' ) );
 
 // Guessing cooking instructions for food is not a graceful fallback.
+// A real product gives the attribute's slug, not its label (13 Nov 2026).
+check( 'the slug hot_water gets the hot-water steps', 3 === count( foodify_prep_steps( 'hot_water', '6 minutes' ) ) && 'Add boiling water' === foodify_prep_steps( 'hot_water' )[1]['title'] );
+check( 'the slug drinking-water gets the chutney steps', 'Add drinking water' === ( foodify_prep_steps( 'drinking-water' )[1]['title'] ?? '' ) );
+check( 'the slug cooking gets the pan steps', 'Empty into a pan' === ( foodify_prep_steps( 'cooking' )[0]['title'] ?? '' ) );
 check( 'an UNKNOWN method invents nothing', [] === foodify_prep_steps( 'Sous vide for 40 minutes' ) );
 check( 'an empty method invents nothing',   [] === foodify_prep_steps( '' ) );
 

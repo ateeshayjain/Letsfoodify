@@ -122,6 +122,16 @@ a, button, .fd-card {
   font-weight: 400;
 }
 .price, .amount { font-variant-numeric: tabular-nums; }
+/* WooCommerce writes a block's font size as has-2xl-font-size; WordPress
+   generates .has-2-xl-font-size (it splits the digit from the letters). So the
+   product page's price — "fontSize":"2xl" in the template — matched no rule
+   and printed at body size on the first real render (13 Nov 2026). The
+   prototype wrote WordPress's spelling and never showed it. */
+.wc-block-components-product-price.has-2xl-font-size { font-size: var(--wp--preset--font-size--2-xl); }
+.wc-block-components-product-price.has-3xl-font-size { font-size: var(--wp--preset--font-size--3-xl); }
+/* On a card the foot is the pack and the unit price, nothing else (client,
+   9 Nov 2026: "too cluttered"). The per-serving line is the product page's. */
+.fd-products .fd-per-serving { display: none; }
 
 /* Free-shipping progress */
 .fd-progress {
@@ -236,7 +246,7 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
   border: 1px solid var(--wp--preset--color--line);
   border-radius: var(--wp--custom--radius--card);
 }
-.woocommerce-form-login h2 { font-size: var(--wp--preset--font-size--2xl); margin: 0 0 var(--wp--preset--spacing--20); }
+.woocommerce-form-login h2 { font-size: var(--wp--preset--font-size--2-xl); margin: 0 0 var(--wp--preset--spacing--20); }
 .woocommerce-form-login .woocommerce-form-row { margin: 0 0 var(--wp--preset--spacing--40); }
 .woocommerce-form-login label { display: block; font-weight: 600; font-size: var(--wp--preset--font-size--base); margin-bottom: var(--wp--preset--spacing--10); }
 /* Every WooCommerce form label is read before it is typed into: 16px. */
@@ -539,7 +549,7 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
   background: var(--wp--preset--color--kraft-pale);
   border-radius: var(--wp--custom--radius--card);
 }
-.fd-prep__title { font-size: var(--wp--preset--font-size--2xl); margin: 0 0 var(--wp--preset--spacing--50); }
+.fd-prep__title { font-size: var(--wp--preset--font-size--2-xl); margin: 0 0 var(--wp--preset--spacing--50); }
 .fd-prep__steps {
   list-style: none; margin: 0; padding: 0;
   display: grid; grid-template-columns: repeat(3, 1fr);
@@ -786,9 +796,13 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
   font-weight: 600; cursor: pointer;
 }
 .fd-filters__count { font-variant-numeric: tabular-nums; }
-.wp-block-woocommerce-filter-wrapper { margin-bottom: var(--wp--preset--spacing--50); }
-.wc-block-attribute-filter__title, .wc-block-price-filter__title,
-.wp-block-woocommerce-filter-wrapper h3 {
+/* The filters are WooCommerce's product-filters blocks — server-rendered, so
+   these are the classes WooCommerce really prints (checked against a real
+   WooCommerce 11.3 render, 13 Nov 2026; the classes the prototype first used
+   belonged to the older React blocks and matched nothing). */
+.fd-filterset.wc-block-product-filters { display: block; }
+.fd-filterset .wc-block-product-filters__content { display: flex; flex-direction: column; gap: var(--wp--preset--spacing--50); }
+.fd-filterset .fd-filterset__title {
   /* A heading the customer reads to choose, not a column label: 16px, sentence
      case, charcoal (was 12px uppercase mute — BROWSE-4). */
   font-family: var(--wp--preset--font-family--ui);
@@ -796,24 +810,52 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
   color: var(--wp--preset--color--char);
   margin: 0 0 var(--wp--preset--spacing--10);
 }
-.wc-block-checkbox-list { list-style: none; margin: 0; padding: 0; }
-.wc-block-checkbox-list__item { margin: 0; }
-.wc-block-components-checkbox label {
+.fd-filterset .wp-block-woocommerce-product-filter-checkbox-list fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.fd-filterset .wc-block-product-filter-checkbox-list__items { display: block; }
+.fd-filterset .wc-block-product-filter-checkbox-list__label {
   display: flex; align-items: center; gap: var(--wp--preset--spacing--30);
   min-height: var(--wp--custom--tap-target);
   font-size: var(--wp--preset--font-size--base); cursor: pointer;
 }
-.wc-block-components-checkbox .wc-block-components-checkbox__input {
-  width: 1.25rem; height: 1.25rem; margin: 0; flex: 0 0 auto;
-  accent-color: var(--wp--preset--color--flame-ink);
+.fd-filterset .wc-block-product-filter-checkbox-list__text-wrapper { font-size: var(--wp--preset--font-size--base); }
+/* The box: WooCommerce draws a 1em tinted square with no border. A form
+   control needs the Line Strong border (3.2:1) and a 20px box. */
+.fd-filterset .wc-block-product-filter-checkbox-list__input-wrapper { position: relative; display: block; flex: 0 0 auto; font-size: 1.25rem; line-height: 0; }
+.fd-filterset .wc-block-product-filter-checkbox-list__input-wrapper::before { content: none; }
+.fd-filterset input[type=checkbox].wc-block-product-filter-checkbox-list__input {
+  appearance: none; display: block; width: 1em; height: 1em; margin: 0; font-size: inherit; cursor: pointer;
+  background: var(--wp--preset--color--surface);
+  border: 1.5px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--check);
+}
+.fd-filterset input[type=checkbox].wc-block-product-filter-checkbox-list__input:checked {
+  background: var(--wp--preset--color--flame-ink); border-color: var(--wp--preset--color--flame-ink);
+}
+.fd-filterset svg.wc-block-product-filter-checkbox-list__mark {
+  display: none; position: absolute; top: 0; left: 0; width: 1em; height: 1em; padding: .2em; box-sizing: border-box;
+  pointer-events: none; color: var(--wp--preset--color--surface);
+}
+.fd-filterset input[type=checkbox].wc-block-product-filter-checkbox-list__input:checked + .wc-block-product-filter-checkbox-list__mark { display: block; }
+.fd-filterset .wc-block-product-filter-checkbox-list__count { color: var(--wp--preset--color--mute); }
+.fd-filterset .wc-block-product-filter-checkbox-list__show-more { font-size: var(--wp--preset--font-size--base); }
+/* Price: the slider, then the two amounts under it, each a 44px field. */
+.fd-filterset .wc-block-product-filter-price-slider__content {
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "price-slider price-slider" "left-input right-input";
+  gap: var(--wp--preset--spacing--30) var(--wp--preset--spacing--20);
+}
+.fd-filterset .wc-block-product-filter-price-slider__range {
+  min-width: 0;
+  --range-color: var(--wp--preset--color--flame-ink);
+  color: var(--wp--preset--color--flame-ink);
+}
+.fd-filterset .wc-block-product-filter-price-slider__content .text { min-width: 0; }
+.fd-filterset .wc-block-product-filter-price-slider__content .text input[type=text] {
+  width: 100%; box-sizing: border-box; min-height: var(--wp--custom--tap-target);
+  padding: 0 var(--wp--preset--spacing--20);
+  font: inherit; font-size: var(--wp--preset--font-size--base); font-variant-numeric: tabular-nums;
+  color: var(--wp--preset--color--char); background: var(--wp--preset--color--surface);
   border: 1.5px solid var(--wp--preset--color--line-strong);
   border-radius: var(--wp--custom--radius--control);
-}
-.wc-filter-element-label-list-count { color: var(--wp--preset--color--mute); }
-.wc-block-price-filter__controls {
-  display: flex; justify-content: space-between;
-  font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute);
-  margin-top: var(--wp--preset--spacing--20);
 }
 
 /* Product cards — the Product Query loop's own list items. Home, shop,
@@ -1677,7 +1719,7 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 
 /* ---- 7 · buy again (inc/buy-again.php, templates/front-page.html) ------- */
 .fd-again { padding-top: var(--wp--preset--spacing--70); }
-.fd-again__title { margin: 0; font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--2xl); }
+.fd-again__title { margin: 0; font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--2-xl); }
 .fd-again__lede { margin: var(--wp--preset--spacing--20) 0 var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); font-size: var(--wp--preset--font-size--base); }
 .fd-again__list {
   list-style: none; margin: 0; padding: 0;
@@ -1859,7 +1901,7 @@ h1 > .fd-veg::after { width: var(--wp--preset--spacing--30); height: var(--wp--p
 /* ---- Reviews: the average, the histogram, the filter -------------------- */
 .fd-rsum { display: grid; gap: var(--wp--preset--spacing--30); margin-bottom: var(--wp--preset--spacing--50); max-width: 36rem; }
 .fd-rsum__avg { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--wp--preset--spacing--20); font-size: var(--wp--preset--font-size--base); }
-.fd-rsum__score { font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--2xl); line-height: 1; }
+.fd-rsum__score { font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--2-xl); line-height: 1; }
 .fd-rsum__basis { color: var(--wp--preset--color--mute); }
 .fd-rsum__bars { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wp--preset--spacing--10); }
 .fd-rsum__row {
@@ -2817,7 +2859,7 @@ span.fd-oitem__img { display: block; }
    what the profile now shows. */
 .woocommerce-MyAccount-content:has(> .fd-profile) > p { display: none; }
 .fd-profile { display: grid; gap: var(--wp--preset--spacing--30); max-width: 40rem; }
-.fd-profile__name { margin: 0; font-size: var(--wp--preset--font-size--2xl); line-height: 1.15; }
+.fd-profile__name { margin: 0; font-size: var(--wp--preset--font-size--2-xl); line-height: 1.15; }
 .fd-profile__facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--wp--preset--spacing--10) var(--wp--preset--spacing--40); color: var(--wp--preset--color--mute); }
 .fd-profile__facts li { display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--10); min-width: 0; overflow-wrap: anywhere; }
 .fd-profile__facts svg { flex: 0 0 auto; width: 1.1rem; height: 1.1rem; }
@@ -2887,7 +2929,7 @@ mark.order-number, mark.order-date, mark.order-status, .woocommerce .order-info 
   padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
 }
 .fd-viewcart__thumb img, .fd-viewcart__thumb.is-count { width: 2.25rem; height: 2.25rem; }
-.fd-viewcart__go { width: auto; height: auto; background: none; font-size: var(--wp--preset--font-size--2xl); line-height: 1; padding: 0 var(--wp--preset--spacing--10); }
+.fd-viewcart__go { width: auto; height: auto; background: none; font-size: var(--wp--preset--font-size--2-xl); line-height: 1; padding: 0 var(--wp--preset--spacing--10); }
 .fd-viewcart__link:hover .fd-viewcart__go { background: none; }
 .fd-viewcart__link:focus-visible { outline: 2px solid var(--wp--preset--color--surface); outline-offset: -4px; }
 

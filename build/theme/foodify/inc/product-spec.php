@@ -170,7 +170,12 @@ function foodify_nutrition_rows( array $n ): array {
  * @return array<int,array{n:int,title:string,detail:string}>
  */
 function foodify_prep_steps( string $method, string $minutes = '' ): array {
-	$m    = strtolower( trim( $method ) );
+	// The method arrives as the attribute's SLUG from a real product —
+	// "hot_water", "drinking-water" (foodify_prep_method) — and as its label
+	// from the prototype ("Just add hot water"). Matching on the label alone,
+	// no real product page had a How to make tab (first WooCommerce render,
+	// 13 Nov 2026).
+	$m    = strtolower( trim( str_replace( [ '_', '-' ], ' ', $method ) ) );
 	$time = '' !== trim( $minutes ) ? trim( $minutes ) : '6 minutes';
 
 	if ( false !== strpos( $m, 'hot water' ) ) {
@@ -1043,7 +1048,7 @@ function foodify_product_spec_values( WC_Product $product ): array {
 		'cooked_weight'=> $meta( 'cooked_weight' ),
 		'diet'         => $meta( 'diet' ),
 		'storage'      => $meta( 'storage' ),
-		'mrp'          => $product->get_regular_price() ? wp_strip_all_tags( wc_price( (float) $product->get_regular_price() ) ) . ' (incl. all taxes)' : '',
+		'mrp'          => $product->get_regular_price() ? html_entity_decode( wp_strip_all_tags( wc_price( (float) $product->get_regular_price() ) ), ENT_QUOTES, 'UTF-8' ) . ' (incl. all taxes)' : '',
 		'best_before'  => $meta( 'best_before' ),
 		'shelf_life'   => $meta( 'shelf_life' ),
 		'origin'       => $meta( 'origin' ) ?: 'India',
@@ -1076,7 +1081,8 @@ function foodify_pdp_data( WC_Product $product ): array {
 		'taste'     => foodify_taste_chips( $meta( 'taste' ) ),
 		'groups'    => foodify_spec_model( foodify_product_spec_values( $product ) ),
 		'nutrition' => foodify_nutrition_rows( foodify_product_nutrition_values( $product ) ),
-		'steps'     => foodify_prep_steps( $method, $meta( 'prep_minutes' ) ),
+		// The meta is a bare number ("6"); a step reads "Wait 6 minutes".
+		'steps'     => foodify_prep_steps( $method, ctype_digit( $meta( 'prep_minutes' ) ) ? $meta( 'prep_minutes' ) . ( '1' === $meta( 'prep_minutes' ) ? ' minute' : ' minutes' ) : $meta( 'prep_minutes' ) ),
 		'faq'       => foodify_faq_pairs( $meta( 'faq' ) ),
 	];
 }
@@ -1086,6 +1092,18 @@ function foodify_pdp_data( WC_Product $product ): array {
  * questions are asked. One hook, one renderer, the same renderer the preview
  * calls with fixture data.
  */
+/*
+ * WooCommerce's own tabs — Description, Additional information, Reviews — are
+ * not this page's: the description is the About tab below, the attributes are
+ * the badges under the name, and reviews have their own section further down
+ * (the product-reviews block). Left on, they printed ABOVE this body, unstyled,
+ * with a second review form (first real WooCommerce render, 13 Nov 2026). A
+ * plugin that adds a tab of its own still gets it.
+ */
+add_filter( 'woocommerce_product_tabs', static function ( $tabs ) {
+	return array_diff_key( (array) $tabs, [ 'description' => 1, 'additional_information' => 1, 'reviews' => 1 ] );
+}, 98 );
+
 add_action( 'woocommerce_after_single_product_summary', static function (): void {
 	global $product;
 	if ( ! $product instanceof WC_Product ) {

@@ -84,7 +84,7 @@ check("the scan saw the allowed uppercase labels (an empty scan is a broken scan
 for sel in [r"\.fd-products \.fd-unit-price", r"\.fd-products \.fd-yield", r"^\.fd-rating-count", r"\.fd-shop__toolbar \.woocommerce-result-count",
             r"^\.fd-ship$", r"^\.fd-cart-promise$", r"^\.fd-pay-saving$", r"td\.product-name \.variation", r"^\.fd-yield-strip$",
             r"^\.fd-assure__item$", r"^\.fd-review figcaption$", r"^\.fd-prep__body span$", r"^\.fd-spec__group\.is-label dd$",
-            r"^\.woocommerce-form-login label$", r"\.wc-block-attribute-filter__title"]:
+            r"^\.woocommerce-form-login label$", r"\.fd-filterset \.fd-filterset__title"]:
     bodies = rule(sel)
     check(f"{sel.strip('^$')} is 16px", bool(bodies) and all("font-size--base" in b for b in bodies if "font-size" in b) and any("font-size--base" in b for b in bodies))
 check("WooCommerce notices are 16px", bool(re.search(r"\.woocommerce-message, \.woocommerce-info, \.woocommerce-error[^{]*\{[^}]*font-size:\s*var\(--wp--preset--font-size--base\)", nocomment)))

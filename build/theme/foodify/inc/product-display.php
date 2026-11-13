@@ -83,6 +83,15 @@ function foodify_render_prep_chip(): void {
 	if ( ! $product instanceof WC_Product ) {
 		return;
 	}
+	// On the shop and category pages WooCommerce replays the classic loop hooks
+	// around the blocks of a block-built grid (its "compatibility layer", on the
+	// render_block filter). The block card already carries its prep line, so
+	// printing here as well put the method on every card twice — seen on the
+	// first real WooCommerce render, 13 Nov 2026. Classic loops are not inside
+	// that filter and still get their chip.
+	if ( doing_filter( 'render_block' ) ) {
+		return;
+	}
 	echo foodify_prep_chip_html( $product ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the builder.
 }
 
@@ -158,7 +167,11 @@ add_filter( 'render_block_core/post-title', static function ( string $html, arra
 		return $html;
 	}
 	$mark = foodify_veg_mark_html( foodify_product_diet( $product ) );
-	return '' === $mark ? $html : (string) preg_replace( '/^(\s*<h[1-6]\b[^>]*>)/', '$1' . $mark, $html, 1 );
+	// The FIRST heading tag, wherever it starts: on the shop and category pages
+	// WooCommerce's compatibility layer has already put classic-hook output in
+	// front of the heading, and anchored to the start of the string the mark
+	// was on the home page's cards and on none of the shop's.
+	return '' === $mark ? $html : (string) preg_replace( '/(<h[1-6]\b[^>]*>)/', '$1' . $mark, $html, 1 );
 }, 5, 2 );
 
 /**
@@ -307,7 +320,9 @@ add_filter( 'woocommerce_format_sale_price', static function ( $price, $regular,
 		return $price;
 	}
 	$reg = wc_price( (float) $regular );
-	return foodify_sale_price_html( $reg, wc_price( (float) $sale ), wp_strip_all_tags( $reg ) );
+	// Decoded: wc_price() writes the rupee sign as an entity, and the builder
+	// escapes its text — together a reader heard "MRP &#8377;225".
+	return foodify_sale_price_html( $reg, wc_price( (float) $sale ), html_entity_decode( wp_strip_all_tags( $reg ), ENT_QUOTES, 'UTF-8' ) );
 }, 10, 3 );
 
 /** "Add another · 1 in cart" on the card button once the product is in the cart (BROWSE-7). */
@@ -444,7 +459,7 @@ add_action( 'wp_footer', static function (): void {
 	// The template prints the filters closed and opens them from 782px itself
 	// (UX review BROWSE-2). This only writes how many filters are on into the
 	// closed panel's summary — "Filter · 2" — so a phone shows that it is filtered.
-	echo "<script>(function(){var c=document.querySelector('.fd-filters__count');if(!c)return;var n=document.querySelectorAll('.fd-filters input[type=checkbox]:checked').length;c.textContent=n?String(n):'';})();</script>\n";
+	echo "<script>(function(){var c=document.querySelector('.fd-filters__count');if(!c)return;var n=document.querySelectorAll('.fd-filters input[type=checkbox]:checked').length+(/[?&](min|max)_price=/.test(location.search)?1:0);c.textContent=n?String(n):'';})();</script>\n";
 } );
 
 /* The visible "Sort by" label names the select (BROWSE-20); the result count is
@@ -549,3 +564,20 @@ add_filter( 'woocommerce_related_products', static function ( array $related, in
 
 	return $curated ? array_map( 'intval', $curated ) : $related;
 }, 10, 2 );
+
+/**
+ * Whole rupees are printed whole: ₹185, not ₹185.00. Every screen the client
+ * signed off shows them that way, and the first real WooCommerce render
+ * (13 Nov 2026) showed ".00" on every card, line and total — the prototype
+ * formats prices itself and never ran wc_price(). The store still keeps two
+ * decimals (bootstrap.sh), so ₹92.50 stays ₹92.50; only a zero fraction goes.
+ */
+add_filter( 'woocommerce_price_trim_zeros', '__return_true' );
+
+/**
+ * WooCommerce's round "Sale!" flash over the product photograph is not this
+ * design's: the saving is the SAVE badge beside the price, shown only from 15%
+ * (foodify_save_badge). The prototype never drew the flash because it does not
+ * run WooCommerce's gallery; the real page did.
+ */
+add_filter( 'woocommerce_sale_flash', '__return_empty_string' );
