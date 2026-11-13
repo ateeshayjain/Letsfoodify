@@ -172,6 +172,7 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/WP-BOOT.md` | **Read this.** How to run the theme in a real WordPress, and what it found |
 | `scripts/wp-boot-test.sh` | 28 assertions against a real WordPress. `php -l` cannot see what this sees |
 | `scripts/wp-render-test.sh` | Serves that WordPress and LOOKS at the home page in a browser (contrast, raw shortcodes, empty shelves). The prototype does not load WordPress's block CSS, so it cannot see what this sees. Also run on the zip by `package-theme.sh` |
+| `inc/setup.php` | **Appearance → Foodify setup.** The shop set up from wp-admin by button, for an install with no SSH: pages + readable links, the SAME shop settings as bootstrap.sh Phase 4 (`tests/setup-test.php` compares the two lists — change one, change the other), business details, sample products on an empty store |
 | `inc/requirements.php` | The plugins the theme needs, said in wp-admin with Install/Activate buttons. A theme cannot use the `Requires Plugins` header |
 | `tests/wp11-test.php` | 51 assertions. Tax parts sum to the whole; COD collects the right amount |
 | `docs/WP-12-NOTES.md` | The product-data editor and the Merchant Center feed |

@@ -130,3 +130,22 @@ never been rendered by real WooCommerce here — only by the prototype. They nee
 a staging pass before anyone calls them verified. And a blank WordPress has no
 products, pages or settings: those come from the live shop's database and
 `scripts/bootstrap.sh` (WP-CLI), neither of which a wp-admin upload provides.
+
+### Later the same day: the setup screen, and a fatal
+
+Building **Appearance → Foodify setup** (`inc/setup.php`) meant opening the
+inner pages in that blank WordPress for the first time. Every one of them — any
+page, post, search or 404 — was a **blank page with a 200**: `business-profile.php`
+called WooCommerce's `is_shop()` unguarded, a fatal wherever `is_front_page()`
+was false. Only the home page had ever been opened without WooCommerce.
+
+`scripts/wp-render-test.sh` now runs the setup screen's page step for real
+(twice — the second run must create nothing), then opens the home page, every
+page the header and footer link to, cart, checkout, a 404 and the setup screen
+itself, and fails on an unfinished document, a missing H1 or raw code.
+`tests/blank-install-test.php` fails, by file and line, on any WooCommerce page
+test called without asking that it exists.
+
+Also found by that crawl: WordPress ships its Privacy Policy page as a DRAFT,
+so the footer link 404s on a new site. The setup screen reports it and leaves
+publishing to a person — it never publishes or rewrites a page it did not make.

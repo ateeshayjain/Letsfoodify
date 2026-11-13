@@ -301,6 +301,15 @@ add_action( 'foodify_flush_google_reviews', static function (): void {
 	delete_transient( FOODIFY_REVIEWS_TRANSIENT );
 } );
 
+/**
+ * A shop shortcode that nothing ran — WooCommerce's, on a site where WooCommerce
+ * is not active — is dropped rather than shown to a visitor as `[woocommerce_…]`.
+ * Only this theme's and WooCommerce's own names; anyone else's text is left alone.
+ */
+function foodify_drop_unrun_shortcodes( string $html ): string {
+	return (string) preg_replace( '/\[\/?(?:woocommerce|foodify)_[a-z0-9_]*[^\]]*\]/', '', $html );
+}
+
 /*
  * SHORTCODES INSIDE A PATTERN ARE NEVER RUN BY WORDPRESS. A block template gets
  * one do_shortcode() pass over its own text BEFORE its blocks are expanded, so a
@@ -311,7 +320,7 @@ add_action( 'foodify_flush_google_reviews', static function (): void {
  * fixes every pattern at once; a second pass over text already run is a no-op.
  * Found on a blank install, 13 Nov 2026.
  */
-add_filter( 'render_block_core/shortcode', static fn( $html ): string => do_shortcode( shortcode_unautop( (string) $html ) ), 20 );
+add_filter( 'render_block_core/shortcode', static fn( $html ): string => foodify_drop_unrun_shortcodes( do_shortcode( shortcode_unautop( (string) $html ) ) ), 20 );
 
 add_shortcode( 'foodify_google_reviews', static function ( $atts ): string {
 	$atts  = shortcode_atts( [ 'limit' => 3 ], (array) $atts, 'foodify_google_reviews' );

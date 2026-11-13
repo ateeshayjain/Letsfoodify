@@ -237,6 +237,7 @@ add_filter( 'script_loader_tag', static function ( string $tag, string $handle )
 
 /** Feature modules. Each is independently removable. */
 require_once FOODIFY_DIR . '/inc/requirements.php';     // the plugins it needs, said in wp-admin
+require_once FOODIFY_DIR . '/inc/setup.php';            // Appearance → Foodify setup: the shop set up by button
 require_once FOODIFY_DIR . '/inc/pincodes.php';         // PIN → city/state, answered on-site
 require_once FOODIFY_DIR . '/inc/checkout-fields.php';
 require_once FOODIFY_DIR . '/inc/checkout-flow.php';    // WP-06: the page around the form

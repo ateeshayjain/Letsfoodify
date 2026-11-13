@@ -1,0 +1,233 @@
+[
+ {
+  "name": "Express Dal Fry",
+  "slug": "express-dal-fry",
+  "category": "express",
+  "category_name": "Express",
+  "prep": "hot-water",
+  "prep_minutes": 6,
+  "regular_price": 225,
+  "sale_price": 185,
+  "servings": 2,
+  "net_quantity": "80 g",
+  "cooked_weight": "260 g",
+  "dietary": [
+   "Jain",
+   "High protein"
+  ],
+  "ingredients": "Split yellow lentils (moong, toor), tomato, ghee, cumin, turmeric, coriander, asafoetida, salt, red chilli.",
+  "excerpt": "Yellow moong and toor, tempered with cumin, tomato and a little ghee. Dried slowly so the tempering survives.",
+  "in_stock": true
+ },
+ {
+  "name": "Idli Sambhar",
+  "slug": "idli-sambhar",
+  "category": "express",
+  "category_name": "Express",
+  "prep": "hot-water",
+  "prep_minutes": 6,
+  "regular_price": 225,
+  "sale_price": 195,
+  "servings": 2,
+  "net_quantity": "90 g",
+  "cooked_weight": "300 g",
+  "dietary": [
+   "Gluten free"
+  ],
+  "ingredients": "Rice, black gram, toor dal, tamarind, drumstick, tomato, sambhar spices, curry leaves, salt.",
+  "excerpt": "Soft rice idli and a tamarind sambhar, both from one pack and one kettle.",
+  "in_stock": true
+ },
+ {
+  "name": "Express Dal Khichdi",
+  "slug": "express-dal-khichdi",
+  "category": "express",
+  "category_name": "Express",
+  "prep": "hot-water",
+  "prep_minutes": 6,
+  "regular_price": 185,
+  "sale_price": 0,
+  "servings": 2,
+  "net_quantity": "80 g",
+  "cooked_weight": "270 g",
+  "dietary": [
+   "Gluten free"
+  ],
+  "ingredients": "Rice, split moong dal, ghee, cumin, turmeric, gluten-free asafoetida, salt.",
+  "excerpt": "Rice and moong, soft and lightly spiced. The meal for a long day or a tired stomach.",
+  "in_stock": true
+ },
+ {
+  "name": "Aloo ka Mazaa",
+  "slug": "aloo-ka-mazaa",
+  "category": "express",
+  "category_name": "Express",
+  "prep": "hot-water",
+  "prep_minutes": 5,
+  "regular_price": 100,
+  "sale_price": 0,
+  "servings": 1,
+  "net_quantity": "60 g",
+  "cooked_weight": "200 g",
+  "dietary": [],
+  "ingredients": "Potato, tomato, onion, oil, cumin, coriander, red chilli, salt.",
+  "excerpt": "A dry, spiced potato sabzi for parathas, puris or a slice of bread.",
+  "in_stock": false
+ },
+ {
+  "name": "Super Millet Idli",
+  "slug": "super-millet-idli",
+  "category": "express",
+  "category_name": "Express",
+  "prep": "hot-water",
+  "prep_minutes": 6,
+  "regular_price": 210,
+  "sale_price": 0,
+  "servings": 2,
+  "net_quantity": "90 g",
+  "cooked_weight": "290 g",
+  "dietary": [
+   "Millet based",
+   "Gluten free"
+  ],
+  "ingredients": "Foxtail millet, little millet, black gram, salt.",
+  "excerpt": "Idli made from foxtail and little millet — the same kettle, a slower-burning breakfast.",
+  "in_stock": true
+ },
+ {
+  "name": "Pav Bhaji",
+  "slug": "pav-bhaji",
+  "category": "express",
+  "category_name": "Express",
+  "prep": "hot-water",
+  "prep_minutes": 6,
+  "regular_price": 185,
+  "sale_price": 0,
+  "servings": 2,
+  "net_quantity": "85 g",
+  "cooked_weight": "280 g",
+  "dietary": [],
+  "ingredients": "Potato, tomato, peas, cauliflower, capsicum, onion, butter, pav bhaji masala, salt.",
+  "excerpt": "Mumbai's street bhaji, mashed, buttered and spiced. Bring your own pav.",
+  "in_stock": true
+ },
+ {
+  "name": "Coconut Red Chutney",
+  "slug": "coconut-red-chutney",
+  "category": "flavors",
+  "category_name": "Flavors",
+  "prep": "drinking-water",
+  "prep_minutes": 1,
+  "regular_price": 240,
+  "sale_price": 0,
+  "servings": 4,
+  "net_quantity": "50 g",
+  "cooked_weight": "",
+  "dietary": [
+   "Vegan",
+   "Jain",
+   "Gluten free"
+  ],
+  "ingredients": "Coconut, roasted chana dal, dry red chilli, tamarind, salt, curry leaves.",
+  "excerpt": "Coconut, roasted chana and red chilli. Stir with cold water — no grinding stone.",
+  "in_stock": true
+ },
+ {
+  "name": "Masala Chai",
+  "slug": "masala-chai",
+  "category": "hot-and-fresh",
+  "category_name": "Hot & Fresh",
+  "prep": "cooking",
+  "prep_minutes": 3,
+  "regular_price": 375,
+  "sale_price": 0,
+  "servings": 1,
+  "net_quantity": "250 g",
+  "cooked_weight": "",
+  "dietary": [
+   "Gluten free"
+  ],
+  "ingredients": "Assam tea, cardamom, ginger, cinnamon, clove, black pepper.",
+  "excerpt": "Assam tea with cardamom, ginger and clove. Boil, simmer, strain.",
+  "in_stock": true
+ },
+ {
+  "name": "Dal Makhni",
+  "slug": "dal-makhni",
+  "category": "express",
+  "category_name": "Express",
+  "prep": "hot-water",
+  "prep_minutes": 6,
+  "regular_price": 210,
+  "sale_price": 0,
+  "servings": 2,
+  "net_quantity": "85 g",
+  "cooked_weight": "280 g",
+  "dietary": [
+   "High protein",
+   "Gluten free"
+  ],
+  "ingredients": "Whole black gram, kidney beans, butter, cream, tomato, garam masala, salt.",
+  "excerpt": "Black dal slow-cooked with butter and cream. Six minutes for something that took a night.",
+  "in_stock": true
+ },
+ {
+  "name": "Palak Gravy",
+  "slug": "palak-gravy",
+  "category": "express",
+  "category_name": "Express",
+  "prep": "hot-water",
+  "prep_minutes": 6,
+  "regular_price": 195,
+  "sale_price": 0,
+  "servings": 2,
+  "net_quantity": "70 g",
+  "cooked_weight": "240 g",
+  "dietary": [
+   "Gluten free"
+  ],
+  "ingredients": "Spinach, onion, tomato, garlic, ginger, cumin, garam masala, salt.",
+  "excerpt": "A spinach gravy to pour over paneer, potatoes or rice.",
+  "in_stock": true
+ },
+ {
+  "name": "Sprouted Millet & Beetroot Cheela",
+  "slug": "sprouted-millet-beetroot-cheela",
+  "category": "hot-and-fresh",
+  "category_name": "Hot & Fresh",
+  "prep": "cooking",
+  "prep_minutes": 6,
+  "regular_price": 240,
+  "sale_price": 0,
+  "servings": 2,
+  "net_quantity": "150 g",
+  "cooked_weight": "",
+  "dietary": [
+   "Millet based",
+   "Vegan"
+  ],
+  "ingredients": "Sprouted finger millet, beetroot, green gram, coriander, cumin, salt.",
+  "excerpt": "A batter mix of sprouted ragi and beetroot. Whisk with water, pour on a hot pan.",
+  "in_stock": true
+ },
+ {
+  "name": "Lemon Masala Tea",
+  "slug": "lemon-masala-tea",
+  "category": "hot-and-fresh",
+  "category_name": "Hot & Fresh",
+  "prep": "cooking",
+  "prep_minutes": 3,
+  "regular_price": 325,
+  "sale_price": 0,
+  "servings": 1,
+  "net_quantity": "200 g",
+  "cooked_weight": "",
+  "dietary": [
+   "Vegan",
+   "Gluten free"
+  ],
+  "ingredients": "Assam tea, dried lemon peel, black salt, black pepper, mint.",
+  "excerpt": "Black tea with lemon peel, black salt and mint. Brewed, not boiled with milk.",
+  "in_stock": true
+ }
+]

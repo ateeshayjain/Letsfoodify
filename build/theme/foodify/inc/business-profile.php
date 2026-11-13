@@ -240,7 +240,7 @@ if ( ! function_exists( 'add_action' ) ) {
  * and ships empty on purpose — see the note at the top of this file.
  */
 function foodify_business_profile(): array {
-	return (array) apply_filters( 'foodify_business_profile', [
+	$profile = [
 		'legal_name' => 'AVAC Ventures',
 		'brand'      => 'The Foodify Company',
 		'street'     => 'N-7011 Parx Laureate, Sector 108',
@@ -253,7 +253,13 @@ function foodify_business_profile(): array {
 		'fssai'      => '',   // client to supply. Until then the site says NOT CONFIGURED.
 		'url'        => home_url( '/' ),
 		'place_id'   => '',   // GBP not created yet — WP-08 client dependency
-	] );
+	];
+	// Phone and licence typed on Appearance → Foodify setup (inc/setup.php). The
+	// filter still has the last word, so a value pinned in code beats a form.
+	if ( function_exists( 'foodify_business_details_merge' ) ) {
+		$profile = foodify_business_details_merge( $profile, get_option( 'foodify_business_details', [] ) );
+	}
+	return (array) apply_filters( 'foodify_business_profile', $profile );
 }
 
 /**
@@ -281,7 +287,10 @@ add_filter( 'render_block', static function ( $html ) {
 
 /** Publish the business node — only when there is a real business to describe. */
 add_action( 'wp_head', static function (): void {
-	if ( ! is_front_page() && ! is_shop() ) {
+	// is_shop() is WooCommerce's. Unguarded, this line was a FATAL on every page
+	// but the home page of a site without WooCommerce — the visitor got a blank
+	// page with a 200 (found on a blank install, 13 Nov 2026).
+	if ( ! is_front_page() && ! ( function_exists( 'is_shop' ) && is_shop() ) ) {
 		return;   // one place per site, not on every URL
 	}
 	$node = foodify_local_business_schema( foodify_business_profile() );
@@ -304,10 +313,12 @@ add_action( 'admin_notices', static function (): void {
 		return;
 	}
 	printf(
-		'<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s <code>%3$s</code></p><p>%4$s</p></div>',
+		'<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s <code>%3$s</code></p><p>%4$s <a href="%5$s">%6$s</a></p></div>',
 		esc_html__( 'Foodify:', 'foodify' ),
 		esc_html__( 'the business profile is incomplete, so no LocalBusiness structured data is published and the FSSAI licence shows as NOT CONFIGURED. Missing or placeholder:', 'foodify' ),
 		esc_html( implode( ', ', $missing ) ),
-		esc_html__( 'These must match the Google Business Profile exactly — NAP consistency is what the profile is ranked on. Set them with the foodify_business_profile filter.', 'foodify' )
+		esc_html__( 'These must match the Google Business Profile exactly — NAP consistency is what the profile is ranked on. Phone and FSSAI licence are entered on', 'foodify' ),
+		esc_url( admin_url( 'themes.php?page=foodify-setup#fd-setup-details' ) ),
+		esc_html__( 'Appearance → Foodify setup.', 'foodify' )
 	);
 } );

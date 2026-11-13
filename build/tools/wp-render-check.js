@@ -11,13 +11,18 @@
 //     shortcode inside a pattern is never run by WordPress.
 // wp-boot-test.sh reads PHP diagnostics; neither of these is one. This looks.
 //
-// WooCommerce is not installed in this WordPress (see wp-boot-test.sh), so this
-// covers the home page of a site WITHOUT it — exactly the first thing a person
-// sees after uploading the zip. The shop pages still need staging.
+// A third lived there too: is_shop() called unguarded, a FATAL on every page but
+// the home page — a blank page with a 200 — on a site without WooCommerce.
 //
-//   node tools/wp-render-check.js http://localhost:8765
+// WooCommerce is not installed in this WordPress (see wp-boot-test.sh), so this
+// covers a site WITHOUT it — exactly what a person sees after uploading the zip
+// to an empty WordPress: the home page, every page the theme links to (after
+// Appearance → Foodify setup has created them), a post, search and a 404; and
+// the setup screen itself. The shop pages WITH WooCommerce still need staging.
+//
+//   node tools/wp-render-check.js http://localhost:8765 [/login-file.php]
 const { chromium } = require('/tmp/node_modules/playwright-core');
-const BASE = process.argv[2];
+const BASE = process.argv[2], LOGIN = process.argv[3] || '';
 let fail = 0;
 const check = (label, ok, detail) => { console.log(`  ${ok ? '\x1b[32mPASS\x1b[0m' : '\x1b[31mFAIL\x1b[0m'} ${label}${ok || !detail ? '' : '\n         ' + detail}`); if (!ok) fail++; };
 
@@ -61,6 +66,37 @@ const check = (label, ok, detail) => { console.log(`  ${ok ? '\x1b[32mPASS\x1b[0
     check(`no script error ${at}`, !errors.length, errors.slice(0, 3).join(' · '));
     await page.close();
   }
+
+  // Every page: finished (a fatal cuts the document short — its footer never
+  // arrives), headed, readable, and free of raw code.
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const look = async (path, want) => {
+    const res = await page.goto(BASE + path, { waitUntil: 'load', timeout: 60000 });
+    const s = await page.evaluate(() => ({ footer: !!document.querySelector('footer'), h1: document.querySelectorAll('h1').length,
+      raw: (document.body.innerText.match(/\[\/?(?:foodify|woocommerce)_[^\]]*\]|FOODIFY_[A-Z_]+|Fatal error|Warning: /g) || []) }));
+    check(`${path} — ${want.status}, finished, one H1, no raw code`, res.status() === want.status && s.footer && s.h1 === 1 && !s.raw.length,
+      `status ${res.status()} · footer ${s.footer} · ${s.h1} h1 · ${s.raw.slice(0, 3).join(' ')}`);
+  };
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  const links = await page.evaluate(() => [...new Set([...document.querySelectorAll('header a[href], footer a[href]')].map(a => new URL(a.href))
+    .filter(u => u.origin === location.origin).map(u => u.pathname))]);
+  // Product categories and the partner page are WooCommerce's and the coupon
+  // module's; without WooCommerce they do not exist, and that is not this check's.
+  const pages = links.filter(p => p !== '/' && !/^\/(product-category|partner|wp-)/.test(p));
+  check(`the header and footer link to pages (${pages.length})`, pages.length >= 8, pages.join(' '));
+  for (const p of pages) await look(p, { status: 200 });
+  for (const p of ['/cart/', '/checkout/']) await look(p, { status: 200 });
+  await look('/this-page-does-not-exist/', { status: 404 });
+
+  if (LOGIN) {
+    await page.goto(BASE + LOGIN, { waitUntil: 'load', timeout: 60000 });
+    const s = await page.evaluate(() => ({ steps: [...document.querySelectorAll('.fd-setup__step')].map(e => e.id.replace('fd-setup-', '') + ':' + (e.className.match(/--(\w+)/) || [])[1]),
+      raw: (document.body.innerText.match(/Fatal error|Warning: [^\n]*foodify[^\n]*/g) || []), install: !!document.querySelector('.fd-requirements a.button') }));
+    check('Appearance → Foodify setup opens, with its five steps', s.steps.length === 5 && !s.raw.length, s.steps.join(' ') + ' ' + s.raw.join(' '));
+    check('  pages are done; the shop steps wait for WooCommerce', s.steps.includes('pages:done') && s.steps.includes('settings:blocked') && s.steps.includes('products:blocked'), s.steps.join(' '));
+    check('  and it offers the Install WooCommerce button', s.install);
+  }
+  await page.close();
   await browser.close();
   console.log(`\n${fail ? fail + ' failed' : 'real-WordPress render: clean'}`);
   process.exit(fail ? 1 : 0);

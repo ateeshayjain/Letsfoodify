@@ -7,7 +7,7 @@
  * only — a theme's style.css cannot use it. So the theme says it itself: one
  * notice on every admin screen while WooCommerce is missing (the shop, cart,
  * checkout and account do not exist without it), and a quieter one, on the
- * Themes and Plugins screens only, for the free plugins scripts/bootstrap.sh
+ * Themes, Plugins and Foodify setup screens only, for the free plugins scripts/bootstrap.sh
  * installs. Each line is a real button — Install or Activate — for a user who
  * may install plugins; anyone else is told to ask an administrator.
  *
@@ -121,7 +121,7 @@ add_action( 'admin_notices', static function (): void {
 	}
 	// The rest: only where someone is choosing themes or plugins, so it never nags.
 	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-	if ( $optional && $screen && in_array( $screen->id, [ 'themes', 'plugins' ], true ) && current_user_can( 'install_plugins' ) ) {
+	if ( $optional && $screen && in_array( $screen->id, [ 'themes', 'plugins', 'appearance_page_foodify-setup' ], true ) && current_user_can( 'install_plugins' ) ) {
 		echo foodify_requirements_notice_html( $optional, $links, false ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside.
 	}
 } );

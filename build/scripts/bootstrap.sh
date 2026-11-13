@@ -509,6 +509,18 @@ if [[ "$PHASE" == "all" ]]; then
   fi
 fi
 # ==== END LANE A ====
+# ==== Business details (inc/setup.php — Appearance → Foodify setup) ====
+# Phone and FSSAI licence are typed by the client on the setup screen and stored
+# in ONE option. They are client FACTS, so nothing is written here — but a value
+# typed on staging lives in staging's database and does NOT travel to production
+# (rule 2). At cutover, set it on production from the licence itself:
+#   wp option update foodify_business_details --format=json '{"phone":"<as on the Google Business Profile>","fssai":"<14 digits>"}'
+if [[ $DRY -eq 0 ]] && command wp option get foodify_business_details >/dev/null 2>&1; then
+  ok "foodify_business_details is set — phone and FSSAI licence print on the site"
+else
+  warn "foodify_business_details NOT SET — the site prints NOT CONFIGURED for the FSSAI licence (Appearance → Foodify setup, or the wp option update above)"
+fi
+# ==== END business details ====
 # ==== LANE B settings (search, buy-again, order-actions) ====
 log "Lane B · search, buy again, cancel and returns"
 # Search needs no setting: the index is built from the catalogue and rebuilt on

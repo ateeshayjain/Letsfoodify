@@ -51,7 +51,7 @@ $src = (string) file_get_contents( $T . 'inc/requirements.php' );
 check( 'the theme loads it', str_contains( (string) file_get_contents( $T . 'functions.php' ), "require_once FOODIFY_DIR . '/inc/requirements.php';" ) );
 check( 'install and activate links carry WordPress\'s own nonces', str_contains( $src, "'install-plugin_' . \$m['slug']" ) && str_contains( $src, "'activate-plugin_' . \$m['file']" ) );
 check( 'buttons only for users allowed to press them', str_contains( $src, "current_user_can( 'install_plugins' )" ) && str_contains( $src, "current_user_can( 'activate_plugins' )" ) );
-check( 'the recommended list only on the Themes and Plugins screens — it never nags', str_contains( $src, "[ 'themes', 'plugins' ]" ) );
+check( 'the recommended list only on the Themes, Plugins and Foodify setup screens — it never nags', str_contains( $src, "[ 'themes', 'plugins', 'appearance_page_foodify-setup' ]" ) );
 check( 'nothing installs by itself', ! preg_match( '/Plugin_Upgrader|activate_plugin\s*\(/', $src ) );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
