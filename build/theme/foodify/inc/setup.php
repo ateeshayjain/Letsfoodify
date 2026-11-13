@@ -88,6 +88,7 @@ function foodify_setup_options(): array {
 		'woocommerce_enable_checkout_login_reminder'     => 'yes',
 		'woocommerce_enable_signup_and_login_from_checkout' => 'no',
 		'woocommerce_enable_myaccount_registration'      => 'yes',
+		'woocommerce_ship_to_destination'                => 'billing_only',
 		'woocommerce_enable_shipping_calc'               => 'yes',
 		'woocommerce_shipping_cost_requires_address'     => 'no',
 		'woocommerce_cart_redirect_after_add'            => 'no',

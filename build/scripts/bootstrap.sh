@@ -290,6 +290,10 @@ if [[ "$PHASE" == "all" ]]; then
   wp option update woocommerce_enable_checkout_login_reminder yes
   wp option update woocommerce_enable_signup_and_login_from_checkout no
   wp option update woocommerce_enable_myaccount_registration yes
+  # One address: checkout asks for nine fields and delivers to the address
+  # typed. Without this WooCommerce adds "Ship to a different address?" and a
+  # second set of fields behind it (first real WooCommerce render, 13 Nov 2026).
+  wp option update woocommerce_ship_to_destination billing_only
 
   # Every charge is disclosed in the cart. Nothing new may appear at checkout.
   wp option update woocommerce_enable_shipping_calc yes

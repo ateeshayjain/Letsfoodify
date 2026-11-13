@@ -258,6 +258,14 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
 /* Account — WooCommerce's my-account markup, styled to the token set.
    Two columns on desktop, stacked on mobile; the nav is a real list of links,
    not a sidebar widget. */
+/* WooCommerce's component stylesheet puts a clearfix ::before / ::after on
+   .woocommerce. In a grid those are ITEMS: the ::before took the 15rem column,
+   the nav landed in the wide one and the page's content was squeezed into
+   240px under it (first real render, 13 Nov 2026). */
+.woocommerce-account .woocommerce::before, .woocommerce-account .woocommerce::after,
+.woocommerce-cart .woocommerce::before, .woocommerce-cart .woocommerce::after { content: none; }
+/* The account is on the wide rail; WooCommerce caps it at 1000px. */
+.woocommerce-account.logged-in main .woocommerce { max-width: none; }
 /* Signed-in only. WordPress adds `logged-in` to <body> for a signed-in
    visitor; without the scope the signed-out page got the same grid and its
    sign-in form was placed in the 15rem column meant for the account nav. */
@@ -921,6 +929,13 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
 .fd-products .wc-block-components-product-button { margin: var(--wp--preset--spacing--30) 0 0; }
 .fd-products .wc-block-components-product-button .wp-block-button__link { width: 100%; }
 
+/* WooCommerce's block-theme stylesheet caps the cart, checkout and account —
+   title and body — at 1000px. The cart and the account are on this theme's
+   wide rail (their templates say alignwide), so they follow it. */
+.woocommerce-cart main .woocommerce.alignwide, .woocommerce-cart .wp-block-post-title.alignwide,
+.woocommerce-account main .woocommerce.alignwide, .woocommerce-account .wp-block-post-title.alignwide {
+  max-width: var(--wp--style--global--wide-size);
+}
 /* Cart — WooCommerce's classic cart markup: two columns, the totals a card. */
 .woocommerce-cart .woocommerce {
   display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
@@ -1028,6 +1043,9 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
 .woocommerce-cart .wc-proceed-to-checkout { padding: 0; margin-top: var(--wp--preset--spacing--40); }
 .woocommerce-cart .wc-proceed-to-checkout a.checkout-button {
   display: flex; width: 100%; margin: 0; font-size: var(--wp--preset--font-size--base);
+  /* WooCommerce gives this link padding in a content-box: at width:100% it
+     hung 30px out of the bill card on the real render. */
+  box-sizing: border-box; justify-content: center;
 }
 
 @media (max-width: 781px) {
@@ -2942,3 +2960,183 @@ mark.order-number, mark.order-date, mark.order-status, .woocommerce .order-info 
    block prints no .wp-block-post when its query is empty. (13 Nov 2026) */
 .fd-row:not(:has(.wp-block-post)) { display: none; }
 .fd-reviews-section:not(:has(.fd-review)) { display: none; }
+
+
+/* ==== Checkout — WooCommerce's CLASSIC checkout markup (form.checkout) =======
+   Until the first real WooCommerce render (13 Nov 2026) the theme had no
+   checkout layout at all: the screen the client approved was drawn by the
+   prototype with markup and CSS of its own (.fx-checkout, .fx-summary), so the
+   real page was one unstyled column in WooCommerce's colours. These rules give
+   WooCommerce's own elements that design: the fields on the left, "Your order"
+   as a card on the right carrying the lines, the totals, how to pay and the
+   button. Selectors are WooCommerce's (checkout/form-checkout.php,
+   review-order.php, payment.php), read from the rendered page. */
+.woocommerce-checkout form.checkout {
+  display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  grid-template-rows: auto 1fr; column-gap: var(--wp--preset--spacing--60); align-items: start;
+}
+.woocommerce-checkout form.checkout > * { grid-column: 1 / -1; min-width: 0; }
+.woocommerce-checkout form.checkout > #customer_details { grid-column: 1; grid-row: 1 / span 2; }
+.woocommerce-checkout form.checkout > #order_review_heading { grid-column: 2; grid-row: 1; }
+.woocommerce-checkout form.checkout > #order_review { grid-column: 2; grid-row: 2; }
+.woocommerce-checkout #customer_details .col-1,
+.woocommerce-checkout #customer_details .col-2 { float: none; width: auto; max-width: none; }
+/* One address, typed once: the section headings WooCommerce prints for a
+   billing/shipping split are not this page's. Kept for a screen reader. */
+.woocommerce-checkout .woocommerce-billing-fields > h3,
+.woocommerce-checkout .woocommerce-additional-fields > h3 {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+/* Fields: a bold 16px label over a 44px box with the form border. */
+.woocommerce-checkout form .form-row { display: block; float: none; width: auto; margin: 0 0 var(--wp--preset--spacing--30); padding: 0; }
+.woocommerce-checkout form .form-row > label {
+  display: block; margin: 0 0 var(--wp--preset--spacing--10);
+  font-size: var(--wp--preset--font-size--base); font-weight: 600; line-height: 1.4;
+}
+.woocommerce-checkout form .form-row .required { color: var(--wp--preset--color--danger); text-decoration: none; }
+.woocommerce-checkout form .form-row .input-text,
+.woocommerce-checkout form .form-row select,
+.woocommerce-checkout form .form-row textarea {
+  box-sizing: border-box; width: 100%; min-height: var(--wp--custom--tap-target);
+  padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+  font: inherit; font-size: var(--wp--preset--font-size--base); line-height: 1.4;
+  color: var(--wp--preset--color--char); background: var(--wp--preset--color--surface);
+  border: 1.5px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control);
+}
+.woocommerce-checkout form .form-row .input-text::placeholder,
+.woocommerce-checkout form .form-row textarea::placeholder { font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+.woocommerce-checkout form .form-row .input-text:focus,
+.woocommerce-checkout form .form-row select:focus,
+.woocommerce-checkout form .form-row textarea:focus { border-color: var(--wp--preset--color--flame-ink); }
+.woocommerce-checkout form .form-row .description { display: block; margin-top: var(--wp--preset--spacing--10); font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+/* The State field is WooCommerce's enhanced select (selectWoo): its own box,
+   drawn over the real <select>. Same box as every other field. */
+.woocommerce-checkout .select2-container .select2-selection--single {
+  box-sizing: border-box; height: auto; min-height: var(--wp--custom--tap-target);
+  display: flex; align-items: center;
+  background: var(--wp--preset--color--surface);
+  border: 1.5px solid var(--wp--preset--color--line-strong);
+  border-radius: var(--wp--custom--radius--control);
+}
+.woocommerce-checkout .select2-container .select2-selection--single .select2-selection__rendered {
+  flex: 1; padding: 0 var(--wp--preset--spacing--30); line-height: 1.4;
+  font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--char);
+}
+.woocommerce-checkout .select2-container .select2-selection--single .select2-selection__arrow { height: 100%; }
+.select2-container .select2-results__option, .select2-container .select2-search__field { font-size: var(--wp--preset--font-size--base); }
+.woocommerce-checkout .select2-container--focus .select2-selection--single,
+.woocommerce-checkout .select2-container--open .select2-selection--single { border-color: var(--wp--preset--color--flame-ink); }
+/* "Your order": the heading is the card's top, the review its body. */
+.woocommerce-checkout form.checkout > #order_review_heading {
+  margin: 0; padding: var(--wp--preset--spacing--50) var(--wp--preset--spacing--50) var(--wp--preset--spacing--20);
+  font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line); border-bottom: 0;
+  border-radius: var(--wp--custom--radius--card) var(--wp--custom--radius--card) 0 0;
+}
+.woocommerce-checkout form.checkout > #order_review {
+  padding: 0 var(--wp--preset--spacing--50) var(--wp--preset--spacing--50);
+  background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line); border-top: 0;
+  border-radius: 0 0 var(--wp--custom--radius--card) var(--wp--custom--radius--card);
+}
+.woocommerce-checkout table.woocommerce-checkout-review-order-table { border: 0; border-collapse: collapse; margin: 0; border-radius: 0; }
+.woocommerce-checkout table.woocommerce-checkout-review-order-table thead {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
+.woocommerce-checkout table.woocommerce-checkout-review-order-table th,
+.woocommerce-checkout table.woocommerce-checkout-review-order-table td {
+  padding: var(--wp--preset--spacing--20) 0; border: 0; background: none;
+  font-size: var(--wp--preset--font-size--base); font-weight: 400; text-align: left; vertical-align: top; line-height: 1.4;
+}
+.woocommerce-checkout table.woocommerce-checkout-review-order-table { width: 100%; table-layout: auto; }
+.woocommerce-checkout table.woocommerce-checkout-review-order-table td[colspan] { padding-left: 0; white-space: normal; }
+.woocommerce-checkout table.woocommerce-checkout-review-order-table td:last-child:not([colspan]) {
+  text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap;
+  padding-left: var(--wp--preset--spacing--30);
+}
+.woocommerce-checkout table.woocommerce-checkout-review-order-table .product-quantity { font-weight: 400; color: var(--wp--preset--color--mute); }
+.woocommerce-checkout table.woocommerce-checkout-review-order-table tr.cart-discount,
+.woocommerce-checkout table.woocommerce-checkout-review-order-table tr.fee { color: var(--wp--preset--color--leaf-ink); }
+.woocommerce-checkout table.woocommerce-checkout-review-order-table tr.order-total th,
+.woocommerce-checkout table.woocommerce-checkout-review-order-table tr.order-total td {
+  border-top: 1px solid var(--wp--preset--color--line-strong); padding-top: var(--wp--preset--spacing--30);
+  font-family: var(--wp--preset--font-family--display); font-size: var(--wp--preset--font-size--lg); font-weight: 700;
+}
+.woocommerce-checkout table.woocommerce-checkout-review-order-table #shipping_method { list-style: none; margin: 0; padding: 0; }
+.woocommerce-checkout table.woocommerce-checkout-review-order-table #shipping_method li { margin: 0; }
+/* How to pay, and the button — in the card, not in WooCommerce's grey panel. */
+.woocommerce-checkout #payment { background: none; border-radius: 0; margin-top: var(--wp--preset--spacing--30); }
+.woocommerce-checkout #payment ul.payment_methods { list-style: none; margin: 0; padding: 0; border: 0; }
+.woocommerce-checkout #payment ul.payment_methods li { margin: 0; padding: 0; line-height: 1.4; }
+.woocommerce-checkout #payment ul.payment_methods li > label {
+  display: inline-flex; align-items: center; gap: var(--wp--preset--spacing--20); flex-wrap: wrap;
+  min-height: var(--wp--custom--tap-target); font-size: var(--wp--preset--font-size--base); cursor: pointer;
+}
+.woocommerce-checkout #payment ul.payment_methods li > input[type=radio] {
+  width: 1.25rem; height: 1.25rem; margin: 0 var(--wp--preset--spacing--20) 0 0; vertical-align: middle;
+  accent-color: var(--wp--preset--color--flame-ink);
+}
+.woocommerce-checkout #payment div.payment_box {
+  margin: 0 0 var(--wp--preset--spacing--20); padding: 0; background: none;
+  font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute);
+}
+.woocommerce-checkout #payment div.payment_box::before { content: none; }
+.woocommerce-checkout #payment div.payment_box p { margin: 0; }
+.woocommerce-checkout #payment div.place-order { margin: var(--wp--preset--spacing--30) 0 0; padding: 0; }
+.woocommerce-checkout #payment .woocommerce-privacy-policy-text p { margin: 0 0 var(--wp--preset--spacing--30); font-size: var(--wp--preset--font-size--base); color: var(--wp--preset--color--mute); }
+.woocommerce-checkout #payment #place_order {
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box; float: none; width: 100%;
+  min-height: calc(var(--wp--custom--tap-target) + var(--wp--preset--spacing--20));
+  font-size: var(--wp--preset--font-size--base); text-align: center; white-space: normal;
+}
+@media (max-width: 900px) {
+  .woocommerce-checkout form.checkout { display: block; }
+  .woocommerce-checkout form.checkout > #order_review_heading { margin-top: var(--wp--preset--spacing--50); }
+}
+/* WooCommerce prints its notices as "notice banners" in a block theme — not
+   the .woocommerce-info / -message / -error boxes the older rules above were
+   written for — in its own blue, green and red. In this theme's colours. */
+.wc-block-components-notice-banner {
+  align-items: flex-start; gap: var(--wp--preset--spacing--20);
+  margin: 0 0 var(--wp--preset--spacing--40); padding: var(--wp--preset--spacing--30) var(--wp--preset--spacing--40);
+  color: var(--wp--preset--color--char); background: var(--wp--preset--color--surface);
+  border: 1px solid var(--wp--preset--color--line-strong); border-radius: var(--wp--custom--radius--control);
+}
+body .wc-block-components-notice-banner.is-info { color: var(--wp--preset--color--char); background: var(--wp--preset--color--surface); border-color: var(--wp--preset--color--line-strong); }
+.wc-block-components-notice-banner > svg { flex: 0 0 auto; padding: 0; background: none; fill: currentColor; }
+body .wc-block-components-notice-banner.is-success { background: var(--wp--preset--color--leaf-wash); border-color: var(--wp--preset--color--leaf); }
+.wc-block-components-notice-banner.is-success > svg { background: none; fill: var(--wp--preset--color--leaf-ink); }
+body .wc-block-components-notice-banner.is-error { background: var(--wp--preset--color--flame-wash); border-color: var(--wp--preset--color--danger); }
+.wc-block-components-notice-banner.is-error > svg { background: none; fill: var(--wp--preset--color--danger); }
+.wc-block-components-notice-banner.is-info > svg { background: none; fill: var(--wp--preset--color--mute); }
+/* The two lines above the checkout fields are sentences, not alerts. */
+body .woocommerce-form-coupon-toggle .wc-block-components-notice-banner,
+body .woocommerce-form-login-toggle .wc-block-components-notice-banner {
+  padding: 0; margin: 0 0 var(--wp--preset--spacing--30); background: none; border: 0; color: var(--wp--preset--color--mute);
+}
+.woocommerce-form-coupon-toggle .wc-block-components-notice-banner > svg,
+.woocommerce-form-login-toggle .wc-block-components-notice-banner > svg { display: none; }
+.woocommerce-form-coupon-toggle .wc-block-components-notice-banner__content,
+.woocommerce-form-login-toggle .wc-block-components-notice-banner__content { padding: 0; }
+.woocommerce-form-coupon-toggle .showcoupon, .woocommerce-form-login-toggle .showlogin {
+  display: inline-flex; align-items: center; min-height: var(--wp--custom--tap-target);
+}
+
+/* ==== Order received — WooCommerce's order-confirmation blocks =============
+   (templates/order-confirmation.html). WooCommerce marks some of its blocks
+   alignwide by itself; one column, one left edge. */
+.fd-received > .alignwide { max-width: var(--wp--style--global--content-size); }
+.fd-received .wc-block-order-confirmation-status h1 { margin: 0 0 var(--wp--preset--spacing--30); }
+.fd-received .wc-block-order-confirmation-summary-list { gap: var(--wp--preset--spacing--30) var(--wp--preset--spacing--50); font-size: var(--wp--preset--font-size--base); }
+.fd-received .wc-block-order-confirmation-totals__table,
+.fd-received .wc-block-order-confirmation-shipping-address {
+  background: var(--wp--preset--color--surface); border-color: var(--wp--preset--color--line);
+  border-radius: var(--wp--custom--radius--card); font-size: var(--wp--preset--font-size--base);
+}
+.fd-received .wc-block-order-confirmation-totals__table th,
+.fd-received .wc-block-order-confirmation-totals__table td { border-color: var(--wp--preset--color--line); }
+.fd-received .wc-block-order-confirmation-totals__table td:last-child,
+.fd-received .wc-block-order-confirmation-totals__table th:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fd-received__next { margin-top: var(--wp--preset--spacing--50); }

@@ -948,6 +948,9 @@ PDP_REVIEWS = {
 
 
 def shortcode(code):
+    if "woocommerce_my_account" in code:
+        # WooCommerce's account shortcode (templates/page-my-account.html).
+        return my_account(SIGNED_IN)
     if "foodify_buy_again" in code:
         return '<div class="fx-again alignwide" data-fx-again></div>'
     if "foodify_box_builder" in code:
@@ -1333,8 +1336,6 @@ def dynamic(name, attrs, inner):
                 f'<div class="wc-block-product-filter-checkbox-list__items">{items}</div></fieldset></div>')
     if name == "woocommerce/classic-shortcode":
         sc = a.get("shortcode", "cart")
-        if sc == "my_account":
-            return my_account(SIGNED_IN)
         if sc == "checkout" and SCREEN_ID == "order":
             return order_received()
         return cart_or_checkout(sc)

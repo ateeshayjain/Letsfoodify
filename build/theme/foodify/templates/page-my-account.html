@@ -8,7 +8,14 @@
 <!-- wp:post-title {"level":1,"align":"wide","fontSize":"3xl"} /-->
 <!-- wp:group {"align":"wide","layout":{"type":"default"}} -->
 <div class="wp-block-group alignwide">
-<!-- wp:woocommerce/classic-shortcode {"shortcode":"my_account"} /-->
+<!-- The account is WooCommerce's [woocommerce_my_account] SHORTCODE. It was
+     written as wp:woocommerce/classic-shortcode {"shortcode":"my_account"} —
+     but that block knows only "cart" and "checkout" and renders the CART for
+     anything else, so on a real WooCommerce every account page showed the
+     cart (found 13 Nov 2026; the prototype draws the account itself). -->
+<!-- wp:shortcode -->
+[woocommerce_my_account]
+<!-- /wp:shortcode -->
 </div>
 <!-- /wp:group -->
 </main>

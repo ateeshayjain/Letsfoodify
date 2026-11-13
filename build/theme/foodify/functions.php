@@ -106,6 +106,25 @@ add_action( 'wp_enqueue_scripts', static function (): void {
 }, 99 );
 
 /**
+ * WooCommerce's two LAYOUT stylesheets are not loaded: woocommerce-layout
+ * (floats and percentage widths for the cart, checkout columns and account)
+ * and woocommerce-smallscreen (its phone versions of the same). Every one of
+ * those layouts is this theme's own, in style.css, written and reviewed in a
+ * prototype that never loaded WooCommerce's CSS — and on the first real render
+ * (13 Nov 2026) the two fought: the bill card floated right at 48% of its
+ * column with its totals hanging out of it, and the cart scrolled sideways on
+ * a phone. WooCommerce's component stylesheet (woocommerce-general: notices,
+ * stars, the gallery, form fields) stays. This is WooCommerce's own switch
+ * for it.
+ */
+add_filter( 'woocommerce_enqueue_styles', static function ( $styles ) {
+	if ( is_array( $styles ) ) {
+		unset( $styles['woocommerce-layout'], $styles['woocommerce-smallscreen'] );
+	}
+	return $styles;
+} );
+
+/**
  * jQuery Migrate exists to shim deprecated jQuery calls. Nothing in this theme
  * needs it and modern WooCommerce does not either — it is roughly 10KB of
  * parse-and-execute on every page for compatibility with code from 2016.

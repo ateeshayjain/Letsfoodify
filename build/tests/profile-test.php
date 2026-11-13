@@ -17,6 +17,19 @@ function check( string $label, bool $ok ): void {
 }
 $T = __DIR__ . '/../theme/foodify/';
 
+echo "── the header's account button, from WooCommerce's real markup (13 Nov 2026) ──\n";
+$out_html = '<div data-block-name="woocommerce/customer-account" class="wp-block-woocommerce-customer-account " style=""><a class="wc-block-customer-account__link" href="/my-account/"><div class="wc-block-customer-account__visual"><svg class="wc-block-customer-account__account-icon"></svg></div><span class="label">Login</span></a></div>';
+$b = foodify_account_button_html( $out_html );
+check( 'the wrapper gets the class style.css styles', str_contains( $b, 'class="wc-block-customer-account wp-block-woocommerce-customer-account' ) );
+check( 'so does the link', str_contains( $b, 'wc-block-customer-account__link wc-block-customer-account__account-link' ) );
+check( '"Login" reads "Sign in"', str_contains( $b, '<span class="label">Sign in</span>' ) );
+$in_html = str_replace( [ '<svg class="wc-block-customer-account__account-icon"></svg>', 'Login' ], [ '<img decoding="async" alt="" src="https://secure.gravatar.com/avatar/abc?s=48" class="avatar avatar-48 photo wc-block-customer-account__avatar" height="48" width="48">', 'My Account' ], $out_html );
+$b = foodify_account_button_html( $in_html );
+check( 'a signed-in customer gets the icon, and NO request to gravatar.com', ! str_contains( $b, 'gravatar' ) && ! str_contains( $b, '<img' ) && str_contains( $b, '<svg class="wc-block-customer-account__account-icon"' ) );
+check( '"My Account" reads "My account"', str_contains( $b, '>My account<' ) );
+check( 'run twice, nothing is added twice', $b === foodify_account_button_html( $b ) );
+check( 'markup that is not the account block is returned untouched', '<p>Login</p>' === foodify_account_button_html( '<p>Login</p>' ) );
+
 echo "── the menu, the profile's way ──\n";
 $menu = [ 'dashboard' => 'Dashboard', 'orders' => 'Orders &amp; reorder', 'address-book' => 'Saved addresses', 'partner-earnings' => '<b>Partner</b>', 'customer-logout' => 'Log out' ];
 $m    = foodify_profile_menu( $menu, static fn( string $k ): string => '/a/' . $k . '/' );

@@ -269,7 +269,13 @@ add_filter( 'woocommerce_my_account_my_orders_actions', static function ( array 
 		return $actions;
 	}
 	$again = [
-		'url'        => wp_nonce_url( add_query_arg( 'order_again', $order->get_id(), wc_get_cart_url() ), 'woocommerce-order_again' ),
+		// A RAW url: whoever prints an action escapes it (WooCommerce's template
+		// and this theme's cards both call esc_url). wp_nonce_url() returns one
+		// already escaped, so the link went out as "&amp;amp;_wpnonce", the
+		// nonce arrived under the name "amp;_wpnonce", and Order again on the
+		// orders list opened the cart and added nothing (found by clicking it
+		// on a real WooCommerce, 13 Nov 2026).
+		'url'        => add_query_arg( [ 'order_again' => $order->get_id(), '_wpnonce' => wp_create_nonce( 'woocommerce-order_again' ) ], wc_get_cart_url() ),
 		'name'       => __( 'Order again', 'foodify' ),
 		/* translators: %s: order number */
 		'aria-label' => sprintf( __( 'Order again: put everything from order %s in your cart', 'foodify' ), $order->get_order_number() ),
@@ -277,6 +283,20 @@ add_filter( 'woocommerce_my_account_my_orders_actions', static function ( array 
 	];
 	return [ 'order-again' => $again ] + $actions;
 }, 5, 2 );
+
+/*
+ * On ONE order's page the actions are this theme's own, under the table: Order
+ * again, and "Cancel this order" with its reasons (order-actions.php).
+ * WooCommerce 8+ also prints an "Actions:" row inside the table with the same
+ * two as bare buttons — on the first real render (13 Nov 2026) the page had
+ * Order again twice and two ways to cancel, one of which skipped the reasons.
+ */
+add_filter( 'woocommerce_my_account_my_orders_actions', static function ( array $actions ): array {
+	return function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'view-order' ) ? [] : $actions;
+}, 99 );
+
+/* "₹59 via Delivery" — the method is called Delivery, so the row said it twice. */
+add_filter( 'woocommerce_order_shipping_to_display_shipped_via', '__return_empty_string' );
 
 /** The orders list as cards — WooCommerce's own query and filters, the theme's markup. */
 add_action( 'init', static function (): void {

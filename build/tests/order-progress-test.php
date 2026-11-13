@@ -55,7 +55,11 @@ check( 'from processing, completed, a reported problem and cancelled — not unp
 $src = (string) file_get_contents( $T . 'inc/order-progress.php' );
 $acc = (string) file_get_contents( $T . 'inc/account.php' );
 check( 'it is WooCommerce\'s own order-again URL and nonce — WooCommerce\'s handler does the adding and the owner check',
-	str_contains( $src, "wp_nonce_url( add_query_arg( 'order_again', \$order->get_id(), wc_get_cart_url() ), 'woocommerce-order_again' )" ) );
+	str_contains( $src, "add_query_arg( [ 'order_again' => \$order->get_id(), '_wpnonce' => wp_create_nonce( 'woocommerce-order_again' ) ], wc_get_cart_url() )" ) );
+// 13 Nov 2026, clicked on a real WooCommerce: wp_nonce_url() returns "&amp;",
+// the card escapes again, and the nonce arrived as "amp;_wpnonce" — the button
+// opened the cart and added nothing.
+check( 'the URL is handed over RAW — never wp_nonce_url(), which is already escaped', ! preg_match( "/'url'\s*=>\s*wp_nonce_url\(/", $src ) );
 check( 'it is ADDED, first — WooCommerce\'s orders list has no order-again action to relabel', str_contains( $src, "return [ 'order-again' => \$again ] + \$actions;" ) && ! str_contains( $acc, "isset( \$actions['order-again'] )" ) );
 check( 'it says "Order again" and names the order for a screen reader', str_contains( $src, "__( 'Order again', 'foodify' )" ) && str_contains( $src, "Order again: put everything from order %s in your cart" ) );
 check( 'WooCommerce\'s handler accepts the same statuses', str_contains( $src, "add_filter( 'woocommerce_valid_order_statuses_for_order_again'" ) );

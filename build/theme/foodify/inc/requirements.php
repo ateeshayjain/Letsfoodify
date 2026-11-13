@@ -106,9 +106,14 @@ add_action( 'admin_notices', static function (): void {
 	$links = [];
 	foreach ( $missing as $m ) {
 		if ( 'install' === $m['need'] && current_user_can( 'install_plugins' ) ) {
-			$links[ $m['slug'] ] = wp_nonce_url( self_admin_url( 'update.php?action=install-plugin&plugin=' . rawurlencode( $m['slug'] ) ), 'install-plugin_' . $m['slug'] );
+			// RAW urls: foodify_requirements_notice_html() escapes them. wp_nonce_url()
+			// returns "&amp;" already, so the buttons went out as "&amp;amp;_wpnonce"
+			// and WordPress answered "The link you followed has expired" — the
+			// Install WooCommerce button did not install (found 13 Nov 2026, by
+			// reading the href a real wp-admin printed).
+			$links[ $m['slug'] ] = add_query_arg( '_wpnonce', wp_create_nonce( 'install-plugin_' . $m['slug'] ), self_admin_url( 'update.php?action=install-plugin&plugin=' . rawurlencode( $m['slug'] ) ) );
 		} elseif ( 'activate' === $m['need'] && current_user_can( 'activate_plugins' ) ) {
-			$links[ $m['slug'] ] = wp_nonce_url( self_admin_url( 'plugins.php?action=activate&plugin=' . rawurlencode( $m['file'] ) ), 'activate-plugin_' . $m['file'] );
+			$links[ $m['slug'] ] = add_query_arg( '_wpnonce', wp_create_nonce( 'activate-plugin_' . $m['file'] ), self_admin_url( 'plugins.php?action=activate&plugin=' . rawurlencode( $m['file'] ) ) );
 		}
 	}
 

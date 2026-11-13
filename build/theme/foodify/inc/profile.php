@@ -147,6 +147,40 @@ function foodify_replace_heading_text( string $html, string $text ): string {
  * WordPress from here down.
  * ---------------------------------------------------------------------- */
 
+/**
+ * The header's account button, made into the one this theme styles.
+ *
+ * FOUND ON THE FIRST REAL WOOCOMMERCE RENDER (13 Nov 2026). WooCommerce 11
+ * prints the Customer Account block as
+ *   <div class="wp-block-woocommerce-customer-account"><a class="wc-block-customer-account__link">
+ * — not the .wc-block-customer-account / __account-link pair style.css (and the
+ * prototype) were written against, so the round 44px icon never applied and
+ * the header read "Login" as a text link. And for a signed-in customer it
+ * swaps the icon for their Gravatar: a request to gravatar.com from every
+ * page, carrying a hash of their email address. This adds the two classes,
+ * puts the person icon back, and says "Sign in" / "My account" like the rest
+ * of the site. Anything it does not recognise is returned untouched.
+ */
+function foodify_account_button_html( string $html ): string {
+	if ( false === strpos( $html, 'wp-block-woocommerce-customer-account' ) ) {
+		return $html;
+	}
+	$icon = '<svg class="wc-block-customer-account__account-icon" xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 25 25" aria-hidden="true" focusable="false">'
+		. '<path fill-rule="evenodd" clip-rule="evenodd" fill="currentColor" d="M8.00009 8.34785C10.3096 8.34785 12.1819 6.47909 12.1819 4.17393C12.1819 1.86876 10.3096 0 8.00009 0C5.69055 0 3.81824 1.86876 3.81824 4.17393C3.81824 6.47909 5.69055 8.34785 8.00009 8.34785ZM0.333496 15.6522C0.333496 15.8444 0.489412 16 0.681933 16H15.3184C15.5109 16 15.6668 15.8444 15.6668 15.6522V14.9565C15.6668 12.1428 13.7821 9.73911 10.0912 9.73911H5.90931C2.21828 9.73911 0.333645 12.1428 0.333645 14.9565L0.333496 15.6522Z"/></svg>';
+	if ( false === strpos( $html, 'wc-block-customer-account ' ) && false === strpos( $html, 'wc-block-customer-account"' ) ) {
+		$html = (string) preg_replace( '/class="\s*wp-block-woocommerce-customer-account\b/', 'class="wc-block-customer-account wp-block-woocommerce-customer-account', $html, 1 );
+	}
+	if ( false === strpos( $html, 'wc-block-customer-account__account-link' ) ) {
+		$html = (string) preg_replace( '/class="\s*wc-block-customer-account__link\b/', 'class="wc-block-customer-account__link wc-block-customer-account__account-link', $html, 1 );
+	}
+	$html = (string) preg_replace( '/<img\b[^>]*\bwc-block-customer-account__avatar\b[^>]*>/', $icon, $html );
+	return (string) preg_replace(
+		[ '/>\s*(?:Log ?in)\s*</i', '/>\s*My Account\s*</' ],
+		[ '>Sign in<', '>My account<' ],
+		$html
+	);
+}
+
 if ( ! function_exists( 'add_action' ) ) {
 	return;   // loaded by the test harness
 }

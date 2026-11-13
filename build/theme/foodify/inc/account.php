@@ -263,8 +263,6 @@ add_action( 'template_redirect', static function (): void {
  * output only — nothing else WooCommerce prints is touched.
  */
 add_filter( 'render_block_woocommerce/customer-account', static function ( string $html ): string {
-	return strtr( $html, [
-		'>My Account<' => '>' . esc_html__( 'My account', 'foodify' ) . '<',
-		'>Log in<'     => '>' . esc_html__( 'Sign in', 'foodify' ) . '<',
-	] );
+	// The markup, the icon and the words: foodify_account_button_html() (profile.php).
+	return function_exists( 'foodify_account_button_html' ) ? foodify_account_button_html( $html ) : $html;
 } );

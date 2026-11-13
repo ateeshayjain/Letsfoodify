@@ -40,6 +40,11 @@ $wc = array_values( array_filter( $m, static fn( $x ) => $x['required'] ) );
 $h  = foodify_requirements_notice_html( $wc, [ 'woocommerce' => '/wp-admin/plugins.php?action=activate&plugin=woocommerce%2Fwoocommerce.php&_wpnonce=a"b' ], true );
 check( 'required: an error notice that says what breaks without it', str_contains( $h, 'class="notice notice-error fd-requirements"' ) && str_contains( $h, 'shop, cart and checkout pages are empty' ) );
 check( 'a real button with the right verb, its URL escaped', str_contains( $h, '<a class="button button-small" href="/wp-admin/plugins.php?action=activate&amp;plugin=woocommerce%2Fwoocommerce.php&amp;_wpnonce=a&quot;b">Activate WooCommerce</a>' ) );
+// 13 Nov 2026: the caller passed wp_nonce_url()'s ALREADY-escaped url and the
+// button went out as "&amp;amp;_wpnonce" — WordPress said the link had expired.
+check( 'a url is escaped exactly once — "&" leaves as "&amp;", never "&amp;amp;"', str_contains( $h, 'action=activate&amp;plugin=' ) && ! str_contains( $h, '&amp;amp;' ) );
+$src = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/requirements.php' );
+check( 'and no caller hands it a pre-escaped url (wp_nonce_url) to escape again', ! preg_match( '/=\s*wp_nonce_url\(/', $src ) );
 $no = foodify_requirements_notice_html( $wc, [], true );
 check( 'someone who cannot install: no button, told to ask an administrator', ! str_contains( $no, '<a ' ) && str_contains( $no, 'Ask a site administrator to install it.' ) );
 $opt = foodify_requirements_notice_html( array_values( array_filter( $m, static fn( $x ) => ! $x['required'] ) ), [ 'judgeme-product-reviews-woocommerce' => '/i' ], false );

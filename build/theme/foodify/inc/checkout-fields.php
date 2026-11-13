@@ -163,6 +163,25 @@ add_action( 'woocommerce_checkout_create_order', static function ( WC_Order $ord
 	}
 }, 5 );
 
+/**
+ * A returning customer's "Full name" is their whole name.
+ *
+ * The field is billing_first_name relabelled, so WooCommerce prefills it with
+ * the FIRST name only — and every customer the shop already has was saved with
+ * the name split. The first signed-in order on a real WooCommerce (13 Nov
+ * 2026) showed "Asha" for Asha Verma and saved the order, and its delivery
+ * label, without the surname. Joined here; split again on save, as above.
+ */
+add_filter( 'woocommerce_checkout_get_value', static function ( $value, string $input ) {
+	if ( null !== $value || ! in_array( $input, [ 'billing_first_name', 'shipping_first_name' ], true ) || ! function_exists( 'WC' ) || ! WC()->customer ) {
+		return $value;
+	}
+	$ctx   = 'billing_first_name' === $input ? 'billing' : 'shipping';
+	$first = trim( (string) WC()->customer->{"get_{$ctx}_first_name"}() );
+	$last  = trim( (string) WC()->customer->{"get_{$ctx}_last_name"}() );
+	return '' !== $first && '' !== $last ? $first . ' ' . $last : $value;
+}, 5, 2 );
+
 /** Same split when a customer edits an address in their account (WP-05 address book). */
 add_action( 'woocommerce_customer_save_address', static function ( int $customer_id, string $load_address ): void {
 	$full = (string) get_user_meta( $customer_id, $load_address . '_first_name', true );
@@ -174,6 +193,29 @@ add_action( 'woocommerce_customer_save_address', static function ( int $customer
 }, 20, 2 );
 
 /** Country is India, always. Hidden, not asked. */
+/*
+ * The country field is not shown, so WooCommerce received none and saved every
+ * order WITHOUT a country (first real checkout, 13 Nov 2026): the address
+ * printed the state as "UP", and anything downstream that reads the country —
+ * the courier manifest, the payment gateway, GST — got an empty string.
+ * "Hidden, not asked" has to mean "India", not "blank".
+ *
+ * "Ship to a different address?" is switched off by a SETTING, not here:
+ * woocommerce_ship_to_destination = billing_only (bootstrap.sh Phase 4 and
+ * Appearance → Foodify setup). With it WooCommerce hides the tick box AND
+ * copies the typed address to the shipping address; a filter that only hid
+ * the box left the shipping address empty.
+ */
+function foodify_checkout_country_data( array $data ): array {
+	foreach ( [ 'billing_country', 'shipping_country' ] as $key ) {
+		if ( '' === trim( (string) ( $data[ $key ] ?? '' ) ) ) {
+			$data[ $key ] = 'IN';
+		}
+	}
+	return $data;
+}
+add_filter( 'woocommerce_checkout_posted_data', 'foodify_checkout_country_data' );
+
 add_filter( 'woocommerce_countries_allowed_countries', static fn(): array => [ 'IN' => __( 'India', 'foodify' ) ] );
 add_filter( 'default_checkout_billing_country', static fn(): string => 'IN' );
 add_filter( 'default_checkout_shipping_country', static fn(): string => 'IN' );

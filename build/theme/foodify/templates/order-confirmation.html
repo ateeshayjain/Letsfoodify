@@ -1,0 +1,39 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+<!-- The order-received page. In a block theme WooCommerce does NOT render this
+     through the checkout page and its classic thankyou.php (which is what the
+     theme and the prototype assumed until the first real order, 13 Nov 2026):
+     it has a template of its own, order-confirmation, built from the blocks
+     below. WooCommerce's default version prints the address twice — "Shipping
+     address" and "Billing address" — for a shop that asks for one. This one
+     prints it once, as "Delivery address", on the theme's rail.
+     What happens next (the sentence under the heading) is
+     woocommerce_thankyou_order_received_text, and the account offer and the
+     COD instructions arrive through the additional-information block — both
+     from inc/checkout-flow.php and inc/account.php, unchanged. -->
+<!-- wp:group {"tagName":"main","className":"fd-received","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|80"}}},"layout":{"type":"constrained"}} -->
+<main class="wp-block-group fd-received" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--80)">
+<!-- wp:woocommerce/order-confirmation-status {"fontSize":"md"} /-->
+<!-- wp:woocommerce/order-confirmation-summary /-->
+<!-- wp:woocommerce/order-confirmation-totals-wrapper -->
+<!-- wp:heading {"fontSize":"xl"} -->
+<h2 class="wp-block-heading has-xl-font-size">Order details</h2>
+<!-- /wp:heading -->
+<!-- wp:woocommerce/order-confirmation-totals {"lock":{"remove":true}} /-->
+<!-- /wp:woocommerce/order-confirmation-totals-wrapper -->
+<!-- wp:woocommerce/order-confirmation-shipping-wrapper -->
+<!-- wp:heading {"fontSize":"xl"} -->
+<h2 class="wp-block-heading has-xl-font-size">Delivery address</h2>
+<!-- /wp:heading -->
+<!-- wp:woocommerce/order-confirmation-shipping-address {"lock":{"remove":true}} /-->
+<!-- /wp:woocommerce/order-confirmation-shipping-wrapper -->
+<!-- wp:woocommerce/order-confirmation-additional-information /-->
+<!-- wp:buttons {"className":"fd-received__next"} -->
+<div class="wp-block-buttons fd-received__next"><!-- wp:button -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/shop/">Continue shopping</a></div>
+<!-- /wp:button --><!-- wp:button {"className":"is-style-outline"} -->
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="/my-account/orders/">See your orders</a></div>
+<!-- /wp:button --></div>
+<!-- /wp:buttons -->
+</main>
+<!-- /wp:group -->
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

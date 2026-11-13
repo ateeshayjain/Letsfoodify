@@ -683,6 +683,15 @@ add_action( 'wp_enqueue_scripts', static function (): void {
 	wp_register_script( 'foodify-cart', false, [ 'jquery' ], FOODIFY_VERSION, true );
 	wp_enqueue_script( 'foodify-cart' );
 	wp_add_inline_script( 'foodify-cart', foodify_cart_qty_script() );   // empty / non-whole quantities never submit (BUY-6)
+	// WooCommerce stopped loading wc-cart-fragments by itself (it now comes
+	// only with the classic mini-cart widget), and the free-delivery bar above
+	// the cart is refreshed BY a fragment (shortcodes.php). Without the script
+	// the bar kept saying "₹174 away from free delivery" over a ₹905 cart —
+	// seen on the first real WooCommerce render, 13 Nov 2026. WooCommerce's
+	// cart script already asks for the refresh; this is what answers.
+	if ( wp_script_is( 'wc-cart-fragments', 'registered' ) ) {
+		wp_enqueue_script( 'wc-cart-fragments' );
+	}
 } );
 
 /**
@@ -810,3 +819,23 @@ add_filter( 'woocommerce_get_order_item_totals', static function ( $rows ) {
 	}
 	return $rows;
 }, 20 );
+
+/*
+ * One name per thing, after the order too (first real WooCommerce order,
+ * 13 Nov 2026). The cart and checkout say "Delivery"; the order's own totals
+ * said "Shipping:". And with one address typed (ship to the address given —
+ * woocommerce_ship_to_destination = billing_only) WooCommerce heads it
+ * "Billing address", which is not what the customer gave it for.
+ */
+add_filter( 'woocommerce_get_order_item_totals', static function ( $rows ) {
+	if ( is_array( $rows ) && isset( $rows['shipping']['label'] ) ) {
+		$rows['shipping']['label'] = __( 'Delivery:', 'foodify' );
+	}
+	return $rows;
+} );
+add_filter( 'gettext_woocommerce', static function ( $translation, $text ) {
+	if ( 'Billing address' === $text && function_exists( 'wc_ship_to_billing_address_only' ) && wc_ship_to_billing_address_only() && ! is_admin() ) {
+		return __( 'Delivery address', 'foodify' );
+	}
+	return $translation;
+}, 10, 2 );
