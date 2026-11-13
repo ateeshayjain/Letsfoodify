@@ -34,7 +34,7 @@ run "bash-syntax"     bash -c 'for f in scripts/*.sh run-all-tests.sh; do bash -
 run "theme.json"      python3 -c "import json;json.load(open('theme/foodify/theme.json'));print('valid')"
 
 echo "── pure suites ──"
-for t in perf shortcode otp address checkout payments reviews partner admin product-spec wp11 wp12 wp13 shop pdp combo lane-a search account-actions box retention cart-stepper cart-extras order-progress tab-bar profile requirements; do
+for t in perf shortcode otp address checkout payments reviews partner admin product-spec wp11 wp12 wp13 shop pdp combo lane-a search account-actions box retention cart-stepper cart-extras order-progress tab-bar profile requirements blank-install; do
   run "$t" php "tests/$t-test.php"
 done
 run "undefined-functions" php tests/undefined-functions.php
@@ -53,6 +53,7 @@ run "wp02-map-selftest"   bash tests/wp02-map-selftest.sh
 
 echo "── real renderers ──"
 run "wordpress-boot"  ./scripts/wp-boot-test.sh
+run "wordpress-render" ./scripts/wp-render-test.sh
 if [[ -x /opt/pw-browsers/chromium && -d /tmp/node_modules/playwright-core ]]; then
   run "browser-sweep" node tools/mobile-sweep.js
   run "preview-doors" node tests/preview-doors.js

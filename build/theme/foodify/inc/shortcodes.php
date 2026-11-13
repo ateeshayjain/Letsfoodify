@@ -301,14 +301,28 @@ add_action( 'foodify_flush_google_reviews', static function (): void {
 	delete_transient( FOODIFY_REVIEWS_TRANSIENT );
 } );
 
+/*
+ * SHORTCODES INSIDE A PATTERN ARE NEVER RUN BY WORDPRESS. A block template gets
+ * one do_shortcode() pass over its own text BEFORE its blocks are expanded, so a
+ * shortcode block that arrives through <!-- wp:pattern {"slug":…} /--> is
+ * expanded too late and prints as its raw text: the home page showed
+ * `[foodify_google_reviews limit="3"]` to visitors on every real install, with
+ * the shortcode registered and working. Running the shortcode block's own output
+ * fixes every pattern at once; a second pass over text already run is a no-op.
+ * Found on a blank install, 13 Nov 2026.
+ */
+add_filter( 'render_block_core/shortcode', static fn( $html ): string => do_shortcode( shortcode_unautop( (string) $html ) ), 20 );
+
 add_shortcode( 'foodify_google_reviews', static function ( $atts ): string {
 	$atts  = shortcode_atts( [ 'limit' => 3 ], (array) $atts, 'foodify_google_reviews' );
 	$limit = max( 1, min( 5, (int) $atts['limit'] ) );   // Places returns at most five
 
 	$reviews = array_slice( foodify_fetch_google_reviews(), 0, $limit );
 
-	// Nothing real to show: render nothing. The pattern's heading stands alone,
-	// which is honest. Inventing filler here is the thing being removed.
+	// Nothing real to show: render nothing, and style.css hides the section
+	// (.fd-reviews-section without a .fd-review) — a heading promising reviews
+	// over an empty box reads as a broken page. Inventing filler is the thing
+	// being removed; so is the empty frame.
 	if ( ! $reviews ) {
 		return '';
 	}

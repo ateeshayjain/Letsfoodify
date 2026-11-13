@@ -106,3 +106,27 @@ pins them equal.
 
 No static check could have found this. It took a WordPress boot, which this
 project had never done until today.
+
+## What a blank install showed (13 Nov 2026)
+
+The client's developer uploaded the zip to an empty WordPress through wp-admin
+and reported "file is no good, many things missing". Reproduced here, the home
+page showed:
+
+| Seen | Cause | Now |
+|---|---|---|
+| Headline and "How it works" button invisible | A cover block's text is white unless it declares a light overlay; the prototype does not load WordPress's block CSS, so it showed them dark | `"isDark":false` + `.is-light` on the hero |
+| `[foodify_google_reviews limit="3"]` printed as text | WordPress runs shortcodes over a template BEFORE patterns are expanded, so a shortcode inside a pattern never runs | `render_block_core/shortcode` filter runs it |
+| "Hello world!" on the Bestsellers shelf, three headings over nothing | No WooCommerce → no `product` post type → the loop block fell back to posts | A shelf matches nothing without products, and an empty shelf is hidden |
+| "What customers say" over an empty box | Reviews unconfigured | The section is hidden until there is a review |
+| Blank theme card in Appearance → Themes | No `screenshot.png` | Added (`tools/theme-screenshot.js`) |
+
+`scripts/wp-render-test.sh` now opens the real page in a browser at two widths
+and fails on any of these; `package-theme.sh` runs it on the zip itself.
+
+**Still true, and not fixed by any of this:** WooCommerce is not installed in
+this WordPress, so the shop, product, cart, checkout and account pages have
+never been rendered by real WooCommerce here — only by the prototype. They need
+a staging pass before anyone calls them verified. And a blank WordPress has no
+products, pages or settings: those come from the live shop's database and
+`scripts/bootstrap.sh` (WP-CLI), neither of which a wp-admin upload provides.

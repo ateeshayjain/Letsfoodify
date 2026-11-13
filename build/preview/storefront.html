@@ -3337,6 +3337,12 @@ mark.order-number, mark.order-date, mark.order-status, .woocommerce .order-info 
 .fd-card-prep__time { white-space: nowrap; }
 .fd-again__pack { font-weight: 400; color: var(--wp--preset--color--mute); }
 
+/* A shelf with no products, and a reviews section with no reviews, step aside
+   whole — a heading and "See all" over nothing reads as a broken page. The loop
+   block prints no .wp-block-post when its query is empty. (13 Nov 2026) */
+.fd-row:not(:has(.wp-block-post)) { display: none; }
+.fd-reviews-section:not(:has(.fd-review)) { display: none; }
+
 .proto{position:sticky;top:0;z-index:99;background:#14201C;color:#F5F2EA;border-bottom:1px solid #23332D}
 .proto-in{max-width:1240px;margin:0 auto;padding:9px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .proto-tag{font:700 10px/1 var(--wp--preset--font-family--ui);letter-spacing:.1em;text-transform:uppercase;
@@ -3461,7 +3467,7 @@ live until you confirm it.</p></details></div>
 
 
 
-<div class="wp-block-cover alignfull" style="padding-top:var(--wp--preset--spacing--70);padding-bottom:var(--wp--preset--spacing--70);min-height:420px">
+<div class="wp-block-cover alignfull is-light" style="padding-top:var(--wp--preset--spacing--70);padding-bottom:var(--wp--preset--spacing--70);min-height:420px">
 <span aria-hidden="true" class="wp-block-cover__background has-kraft-pale-background-color has-background-dim-0 has-background-dim"></span>
 <div class="wp-block-cover__inner-container">
 
@@ -3944,7 +3950,7 @@ live until you confirm it.</p></details></div>
 
 
 
-<div class="wp-block-group alignwide has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80);padding-left:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--50)">
+<div class="wp-block-group alignwide fd-reviews-section has-kraft-pale-background-color has-background" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80);padding-left:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--50)">
 
 <h2 class="wp-block-heading has-2-xl-font-size">What customers say</h2>
 

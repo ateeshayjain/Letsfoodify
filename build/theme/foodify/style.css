@@ -2894,3 +2894,9 @@ mark.order-number, mark.order-date, mark.order-status, .woocommerce .order-info 
 /* The prep line's time never splits ("1" / "min"); Buy again's pack sits beside its price. */
 .fd-card-prep__time { white-space: nowrap; }
 .fd-again__pack { font-weight: 400; color: var(--wp--preset--color--mute); }
+
+/* A shelf with no products, and a reviews section with no reviews, step aside
+   whole — a heading and "See all" over nothing reads as a broken page. The loop
+   block prints no .wp-block-post when its query is empty. (13 Nov 2026) */
+.fd-row:not(:has(.wp-block-post)) { display: none; }
+.fd-reviews-section:not(:has(.fd-review)) { display: none; }

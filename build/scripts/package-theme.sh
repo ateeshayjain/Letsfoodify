@@ -50,6 +50,7 @@ grep -qx 'foodify/theme.json'          <<<"$LIST" || fail "theme.json missing"
 [[ "$(grep -c '^foodify/' <<<"$LIST")" -eq "$(wc -l <<<"$LIST")" ]] || fail "files outside foodify/ in the archive"
 unzip -p "$OUT" foodify/style.css | grep >/dev/null '^Theme Name:[[:space:]]*Foodify' || fail "style.css has no Theme Name header"
 unzip -p "$OUT" foodify/theme.json | python3 -c 'import json,sys; json.load(sys.stdin)' || fail "theme.json does not parse"
+grep -qx 'foodify/screenshot.png'      <<<"$LIST" || fail "screenshot.png missing — the theme's card in Appearance → Themes would be a blank square"
 for f in Fraunces-Variable.woff2 InstrumentSans-Variable.woff2; do
   grep -qx "foodify/assets/fonts/$f" <<<"$LIST" || fail "font $f is not in the archive — the site would fall back to system fonts"
 done
@@ -63,6 +64,14 @@ if FOODIFY_THEME_SRC="$UNZ/foodify" "$KIT/scripts/wp-boot-test.sh" >"$UNZ/boot.l
 else
   sed 's/^/    /' "$UNZ/boot.log" | tail -20
   fail "the zip did not boot clean — not shipping it"
+fi
+# Booting clean is PHP's verdict. What a person sees after uploading the zip is a
+# page — so the archive's home page is opened in a browser too.
+if FOODIFY_THEME_SRC="$UNZ/foodify" "$KIT/scripts/wp-render-test.sh" >"$UNZ/render.log" 2>&1; then
+  pass "the zip's home page renders clean in a browser (real WordPress, both widths)"
+else
+  sed 's/^/    /' "$UNZ/render.log" | tail -24
+  fail "the zip's home page does not render clean — not shipping it"
 fi
 
 SUM="$(sha256sum "$OUT" | cut -d' ' -f1)"

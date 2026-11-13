@@ -4,10 +4,16 @@
  * Slug: foodify/hero
  * Categories: foodify
  * Description: Homepage hero. Carries the only H1 on the page and the target keyword.
+ *
+ * "isDark":false / .is-light IS LOAD-BEARING. WordPress's own stylesheet sets a
+ * cover block's text to WHITE unless the block says its overlay is light. Without
+ * it the H1 and the outline button were white on kraft-pale — invisible — on
+ * every real install, while the prototype (which does not load WordPress's block
+ * CSS) showed them dark. Found on a blank install, 13 Nov 2026.
  */
 ?>
-<!-- wp:cover {"overlayColor":"kraft-pale","minHeight":420,"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|70","bottom":"var:preset|spacing|70"}}}} -->
-<div class="wp-block-cover alignfull" style="padding-top:var(--wp--preset--spacing--70);padding-bottom:var(--wp--preset--spacing--70);min-height:420px">
+<!-- wp:cover {"overlayColor":"kraft-pale","isDark":false,"minHeight":420,"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|70","bottom":"var:preset|spacing|70"}}}} -->
+<div class="wp-block-cover alignfull is-light" style="padding-top:var(--wp--preset--spacing--70);padding-bottom:var(--wp--preset--spacing--70);min-height:420px">
 <span aria-hidden="true" class="wp-block-cover__background has-kraft-pale-background-color has-background-dim-0 has-background-dim"></span>
 <div class="wp-block-cover__inner-container">
 <!-- wp:columns {"verticalAlignment":"center","align":"wide"} -->

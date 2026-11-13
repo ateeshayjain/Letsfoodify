@@ -171,6 +171,8 @@ Verified against the unpacked kit, 25 Aug 2026.
 | `docs/WP-11-NOTES.md` | GST split, the courier manifest, shipping zones |
 | `docs/WP-BOOT.md` | **Read this.** How to run the theme in a real WordPress, and what it found |
 | `scripts/wp-boot-test.sh` | 28 assertions against a real WordPress. `php -l` cannot see what this sees |
+| `scripts/wp-render-test.sh` | Serves that WordPress and LOOKS at the home page in a browser (contrast, raw shortcodes, empty shelves). The prototype does not load WordPress's block CSS, so it cannot see what this sees. Also run on the zip by `package-theme.sh` |
+| `inc/requirements.php` | The plugins the theme needs, said in wp-admin with Install/Activate buttons. A theme cannot use the `Requires Plugins` header |
 | `tests/wp11-test.php` | 51 assertions. Tax parts sum to the whole; COD collects the right amount |
 | `docs/WP-12-NOTES.md` | The product-data editor and the Merchant Center feed |
 | `docs/AUDIT-HIG-2026-08-26.md` | HIG audit: measured contrast, targets, keyboards. 2 P0, 4 P1 |

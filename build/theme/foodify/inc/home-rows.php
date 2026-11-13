@@ -54,6 +54,18 @@ function foodify_home_row_query_args( string $row ): array {
 	}
 }
 
+/**
+ * A row on a site with no product post type (WooCommerce not active) matches
+ * nothing. Without this the loop block drops the unknown post type and falls
+ * back to POSTS — "Bestsellers" listed "Hello world!" on a blank install.
+ */
+function foodify_home_row_guard( array $query, bool $has_products ): array {
+	if ( ! $has_products ) {
+		$query['post__in'] = [ 0 ];
+	}
+	return $query;
+}
+
 /** Merge a row's args into a loop's, keeping whatever tax/meta clauses the loop already had. */
 function foodify_home_row_merge( array $query, array $add ): array {
 	foreach ( [ 'tax_query', 'meta_query' ] as $k ) {
@@ -96,6 +108,9 @@ if ( ! function_exists( 'add_action' ) ) {
 
 add_filter( 'query_loop_block_query_vars', static function ( array $query, $block ) {
 	$row = is_object( $block ) && isset( $block->context['query']['fdRow'] ) ? (string) $block->context['query']['fdRow'] : '';
+	if ( '' !== $row ) {
+		$query = foodify_home_row_guard( $query, post_type_exists( 'product' ) );
+	}
 	if ( 'cart-suggest' === $row ) {
 		$ids = [];
 		if ( function_exists( 'WC' ) && WC()->cart ) {
