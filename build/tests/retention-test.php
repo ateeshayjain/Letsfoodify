@@ -36,6 +36,10 @@ function check( string $label, bool $ok ): void {
 /* ========================================================================= */
 echo "── 9 · WhatsApp: the number ──\n";
 check( '+91 with spaces',                 '919876543210' === foodify_wa_phone( '+91 98765 43210' ) );
+// 13 Nov 2026: checkout stripped a leading "91" from every number and refused these customers.
+check( 'a ten-digit mobile that BEGINS 91 is a mobile, not a country code and eight digits', '919123456780' === foodify_wa_phone( '9123456780' ) && '919123456780' === foodify_wa_phone( '+91 91234 56780' ) );
+$cf = (string) file_get_contents( __DIR__ . '/../theme/foodify/inc/checkout-fields.php' );
+check( 'checkout validates the mobile by that same rule, and never strips a bare leading 91', str_contains( $cf, 'foodify_wa_phone( $raw )' ) && ! str_contains( $cf, "'/^(0|91)/'" ) );
 check( 'leading 0 and a dash',            '919876543210' === foodify_wa_phone( '098765-43210' ) );
 check( 'ten bare digits',                 '919876543210' === foodify_wa_phone( '9876543210' ) );
 check( '91 without plus',                 '919876543210' === foodify_wa_phone( '919876543210' ) );

@@ -222,10 +222,22 @@ add_filter( 'default_checkout_shipping_country', static fn(): string => 'IN' );
 
 /** Reject obviously invalid Indian mobile numbers before payment is attempted. */
 add_action( 'woocommerce_after_checkout_validation', static function ( array $data, WP_Error $errors ): void {
-	$phone = preg_replace( '/\D/', '', (string) ( $data['billing_phone'] ?? '' ) );
-	$phone = preg_replace( '/^(0|91)/', '', (string) $phone );
+	// A country code is stripped only when there is one: 12 digits starting 91,
+	// or 11 starting 0. This used to strip a leading "91" from ANY number, so a
+	// customer whose ten-digit mobile begins 91 (91234 56780 — a real, common
+	// series) became an 8-digit number and could not check out. Found placing a
+	// real order on WooCommerce, 13 Nov 2026. The rule is foodify_wa_phone()'s
+	// (whatsapp.php), which already had it right and is unit-tested.
+	$raw   = (string) ( $data['billing_phone'] ?? '' );
+	$phone = (string) preg_replace( '/\D/', '', $raw );
+	if ( 12 === strlen( $phone ) && 0 === strpos( $phone, '91' ) ) {
+		$phone = substr( $phone, 2 );
+	} elseif ( 11 === strlen( $phone ) && '0' === $phone[0] ) {
+		$phone = substr( $phone, 1 );
+	}
+	$valid = function_exists( 'foodify_wa_phone' ) ? null !== foodify_wa_phone( $raw ) : 1 === preg_match( '/^[6-9][0-9]{9}$/', $phone );
 
-	if ( strlen( (string) $phone ) !== 10 || ! preg_match( '/^[6-9]/', (string) $phone ) ) {
+	if ( ! $valid ) {
 		$errors->add( 'billing_phone', __( 'Enter a valid 10-digit Indian mobile number.', 'foodify' ) );
 	}
 

@@ -277,7 +277,8 @@ const probe = () => {
   let co = await gp.evaluate(() => ({ fields: [...document.querySelectorAll('.woocommerce-billing-fields .form-row, .woocommerce-additional-fields .form-row')].filter(r => r.offsetParent).length,
     shipDifferent: !!document.querySelector('#ship-to-different-address-checkbox'), methods: [...document.querySelectorAll('.wc_payment_method label')].map(l => l.innerText.trim()), sideways: document.documentElement.scrollWidth - innerWidth }));
   check('checkout asks for nine fields, has no "Ship to a different address?", and offers cash on delivery', co.fields === 9 && !co.shipDifferent && co.methods.includes('Cash on delivery') && co.sideways <= 1, co);
-  await gp.fill('#billing_phone', '9876543210'); await gp.fill('#billing_email', 'guest@example.org'); await gp.fill('#billing_first_name', 'Priya Sharma');
+  // A mobile that BEGINS 91: checkout once stripped that as a country code and refused the customer.
+  await gp.fill('#billing_phone', '9123456780'); await gp.fill('#billing_email', 'guest@example.org'); await gp.fill('#billing_first_name', 'Priya Sharma');
   await gp.fill('#billing_postcode', '201304'); await gp.locator('#billing_postcode').blur(); await gp.waitForTimeout(2500);
   const pin = await gp.evaluate(() => ({ city: document.querySelector('#billing_city').value, state: document.querySelector('#billing_state').value }));
   check('the PIN code fills the city and the state', pin.city !== '' && pin.state === 'UP', pin);
@@ -288,7 +289,7 @@ const probe = () => {
   await gp.waitForTimeout(800);
   const rec = await gp.evaluate(() => ({ h1: (document.querySelector('h1') || {}).innerText, heads: [...document.querySelectorAll('main h2')].map(h => h.innerText.trim()), text: document.querySelector('main') ? document.querySelector('main').innerText : '', sideways: document.documentElement.scrollWidth - innerWidth,
     errors: [...document.querySelectorAll('.woocommerce-NoticeGroup, .woocommerce-error')].map(e => e.innerText.trim().slice(0, 200)) }));
-  check('Place order lands on "Order received"', /order-received/.test(gp.url()) && rec.h1 === 'Order received', rec.errors.length ? rec.errors : gp.url());
+  check('Place order lands on "Order received" (with a ten-digit mobile beginning 91)', /order-received/.test(gp.url()) && rec.h1 === 'Order received', rec.errors.length ? rec.errors : gp.url());
   check('  it says what happens next, the amount to keep ready, and ONE address — headed "Delivery address", with the state by name', /Keep ₹666 ready in cash/.test(rec.text) && rec.heads.filter(h => /address/i.test(h)).join() === 'Delivery address' && /Uttar Pradesh/.test(rec.text) && /Delivery:/.test(rec.text) && !/Shipping/.test(rec.text) && rec.sideways <= 1, rec.heads);
   await shot(gp, 'order-received-390');
   f = facts();

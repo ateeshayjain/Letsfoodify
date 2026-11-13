@@ -155,7 +155,7 @@ publishing to a person — it never publishes or rewrites a page it did not make
 ## With WooCommerce (13 Nov 2026)
 
 The sandbox that could not reach wordpress.org was replaced by one that can, and
-the theme was rendered by a real WooCommerce for the first time. **It found 33
+the theme was rendered by a real WooCommerce for the first time. **It found 34
 defects, 2 of them on every page of a section** (every My account page showed
 the cart; the checkout had no layout at all). All of it — what was seen, the
 cause, the fix, and what is still unverified — is in

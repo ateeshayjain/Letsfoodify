@@ -7,7 +7,7 @@ or scripts**. This document is what happened when a real WordPress with a real
 WooCommerce rendered the theme, was set up through the setup screen's buttons,
 and was bought from in a browser.
 
-**33 defects found. 33 fixed and re-checked in the browser.** Seven things were
+**34 defects found. 34 fixed and re-checked in the browser.** Seven things were
 seen and deliberately left (§5). A longer list could not be tested here at all
 (§6) — read it before calling any of this "verified on staging".
 
@@ -104,7 +104,15 @@ are therefore automated at one width for these pages and by eye at the other.
 nothing, which is the designed behaviour. **The builder itself was not
 exercised** (§6).
 
-Buttons that were clicked and worked: Add on a card (Store API), the card's
+Clicked by hand at 390 after the fixes, working, but **not** in the automated
+check: **Apply** on the advertised offer in the cart (with `foodify_public_offer`
+set — ₹244 → ₹225.50, the button turns "Applied"); **Notify me** on a sold-out
+product (confirmation shown); **Create my account** on a guest's order-received
+page (account created, signed in, the order attached); **Cancel this order**
+from the order page (order status became `cancelled`, the page says nothing
+was charged).
+
+Buttons that were clicked and worked in the automated check: Add on a card (Store API), the card's
 − / +, the View cart bar, Add to cart on the product page (in place), the
 cart's + (twice, crossing the free-delivery line), Apply coupon, Place order
 (guest), Place order (signed in), Order again (orders list and order page),
@@ -168,6 +176,7 @@ Each was seen in the browser, fixed, re-rendered, and is now asserted by
 | 21 | **Orders saved with no country**; state printed "UP"; no shipping address | The country field is hidden, so none was posted | `foodify_checkout_country_data()` defaults both to `IN` — `inc/checkout-fields.php` |
 | 22 | A returning customer's "Full name" was their first name; the order and its label lost the surname | The field is `billing_first_name` relabelled; existing customers are stored split | First + last joined on prefill, split again on save |
 | 23 | Order received showed "Shipping address" and "Billing address" (the same address twice), "Shipping:" in the totals | In a block theme this page is WooCommerce's **order-confirmation template**, not the checkout page's classic thank-you the theme assumed | The theme's own `templates/order-confirmation.html`: one "Delivery address"; "Delivery:"; next-step buttons |
+| 34 | **A customer whose mobile number begins 91 could not check out** ("Enter a valid 10-digit Indian mobile number" for 91234 56780) | The validator stripped a leading `0` or `91` from *any* number, turning a valid ten digits into eight | A country code is stripped only when there is one (12 digits, or 11 with a leading 0) — the rule `foodify_wa_phone()` already had. Pure test: `retention-test.php` (+2); the check's guest now uses such a number |
 | 32 | Checkout errors and the two lines above the fields as blue alert boxes | Notice banners (see 30) | Sentences, not alerts |
 
 ### Account
@@ -224,9 +233,8 @@ as it stood on `main` that morning, rendered by the same check.
 | **OTP sign-in** | Needs an SMS plugin and a DLT-registered sender. The real sign-in page is WooCommerce's username/password form, which is *not* the prototype's mobile-number screen |
 | **Any email** (order, review request, partner, cart recovery) | The container has no mail transport |
 | **PIN delivery estimate, the header delivery line** | `foodify_delivery_zones` is unset, so both stay off, as designed |
-| **Offers / "Apply" on the public offer** | `foodify_public_offer` unset. A plain coupon typed into the cart was tested |
 | **Build a box** | `foodify_box_sizes` unset — only the "coming soon" state was rendered |
-| **Cancel / return an order, the account-claim button, address book add/edit, review with photos, "Notify me", referrals, repeat orders, partner pages, WhatsApp opt-in, search suggestions** | Rendered where they appear; none was clicked through |
+| **Returning an order, address book add/edit, a review with photos, referrals, repeat orders, partner pages, WhatsApp opt-in, search suggestions, the product-page offers list with a real offer** | Rendered where they appear; none was clicked through |
 | **Real catalogue** — photos, galleries, combos, variable products, 44 products, pagination | 12 text-only samples |
 | **Rank Math, Judge.me, WP Mail SMTP, PDF invoices** | Not installed |
 | **The Install WooCommerce button completing an install** | Nonce accepted; the download is blocked by the test server |
